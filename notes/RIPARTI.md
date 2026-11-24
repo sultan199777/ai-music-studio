@@ -16,11 +16,11 @@ Progetto: studio musicale personale (italiano), PWA per iPhone. Sito: https://su
 - Falsi allarmi: l'avviso "commit non inviati" dell'hook è sbagliato; verificare con `git fetch` e `git rev-list --count origin/<ramo>..HEAD`.
 
 ## Stato (dettagli in notes/STATO.md)
-Fatto: Strumentario (29 strumenti veri CC0 + 3 chitarre, guida e ricette), analisi testi, 808 con glide e saturazione, hi-hat con rullate, groove di cassa per stile, registrazione dal microfono (Voce), Auto-Tune + preset trap, master, scheda di stile, arrangiatore 5 stili con batteria a campioni CC0 e melodia varia, Producer con comandi (BPM, tonalità, stile, per strumento e per sezione), testo scorrevole regolabile, tema Cosmo.
+Fatto: Coach che impara e insegna, Laboratorio suoni (strumenti originali), testo→base dalle emozioni, karaoke a sillabe, microfono con MediaRecorder, Strumentario (29 strumenti veri CC0 + 3 chitarre, guida e ricette), analisi testi, 808 con glide e saturazione, hi-hat con rullate, groove di cassa per stile, registrazione dal microfono (Voce), Auto-Tune + preset trap, master, scheda di stile, arrangiatore 5 stili con batteria a campioni CC0 e melodia varia, Producer con comandi (BPM, tonalità, stile, per strumento e per sezione), testo scorrevole regolabile, tema Cosmo.
 Non fatto: percussioni del mondo, cori, 808 da campione, mix per traccia, piano roll/MIDI, Voice Lab avanzato, import basi (Basic Pitch), Coach che impara dalle scelte, video anime reale, social, AI locale (serve un computer).
 
 ## Prossimo passo concordato
-Percussioni del mondo; poi ricerca e progetto dell'autotune nuovo (vedi direzione sotto). Poi mix per traccia, piano roll/MIDI, Voice Lab. Chiedere conferma "vai" solo se cambia la direzione.
+Verificare sull'iPhone microfono e testo che scorre; poi ricerca e progetto dell'autotune nuovo (adattivo al testo, segue gli accordi); percussioni del mondo. Poi mix per traccia, piano roll/MIDI, Voice Lab. Chiedere conferma "vai" solo se cambia la direzione.
 
 ## Direzione decisa dall'utente (24/11/2026)
 Obiettivo: lo studio più grande e completo possibile, non un "mini studio". Due parti distinte: Beat Studio (basi, tutti gli strumenti) e un autotune NUOVO di carattere (non solo preset: ci si deve poter lavorare dentro). Ordine: Fase 0 (fondamenta) + metronomo/misura ritardo, poi il resto. Idee per l'autotune nuovo (ipotesi): segue gli accordi della base battuta per battuta, carattere su pad XY per sezione, curva disegnata col dito, effetti legati al testo (rime, fine frase).

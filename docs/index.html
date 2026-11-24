@@ -313,6 +313,16 @@ details.card[open]>summary{margin-bottom:8px}
     <div id="b-out"></div>
   </div>
 
+  <div class="card"><div class="card-head"><h3>Coach</h3><span class="tag a">Impara da te</span></div>
+    <p class="small muted">Ogni tuo gesto gli insegna qualcosa: "mi piace", basi salvate, voci registrate, varianti scartate subito, strumenti cambiati. Più lo usi, più le sue proposte somigliano a te. Tutto resta sul telefono, gratis.</p>
+    <div class="row" style="margin-top:8px"><button class="btn sm" id="co-like">Mi piace questa base</button><button class="btn sm" id="co-dislike">Non mi piace</button></div>
+    <div class="row" style="margin-top:8px"><button class="btn sm pri" id="co-make">Crea con il Coach</button><button class="btn sm" id="co-check">Controlla il mio lavoro</button></div>
+    <div class="status" id="co-msg"></div>
+    <div id="co-lessons"></div>
+    <div id="co-profile" class="small" style="margin-top:10px"></div>
+    <div id="co-progress" style="margin-top:10px"></div>
+  </div>
+
   <div class="card"><div class="card-head"><h3>Cantare seguendo il testo</h3></div>
     <label class="f"><span>Velocità del testo</span><select id="kar-speed"><option value="auto" selected>Automatica (segue le sillabe)</option><option value="1">Veloce (1 battuta per riga)</option><option value="2">Media (2 battute)</option><option value="4">Lenta (4 battute)</option><option value="8">Molto lenta (8 battute)</option></select></label>
     <div class="karaoke" id="kar"><div><b>Premi "Crea e ascolta" e canta</b><small>Qui vedi la riga giusta a ogni battuta</small></div></div>
@@ -518,7 +528,7 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">136 test automatici superati su 136 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">142 test automatici superati su 142 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -2452,6 +2462,172 @@ details.card[open]>summary{margin-bottom:8px}
   }
 
   return { KNOBS: KNOBS, SYNTHS: SYNTHS, ORIGINALS: ORIGINALS, GENRES: GENRES, render: render, install: install, invent: invent, deps: deps, rangeOf: rangeOf };
+});
+
+/*
+ * Coach: impara dai tuoi gesti e ti insegna. Gira tutto sul telefono, senza servizi a pagamento.
+ *
+ * 1. IMPARA (preferenze): ogni gesto è un voto.
+ *    mi piace +3 · non mi piace -3 · base salvata +2 · voce registrata sulla base +2 ·
+ *    ascoltata fino alla fine +0,5 · "nuova variante" entro 10 s -1 · strumento cambiato: vecchio -1, nuovo +0,5
+ *    I voti vanno su caratteristiche (stile, scala, velocità, strumento per ruolo) sia in generale
+ *    sia legate all'emozione del testo. I voti vecchi pesano un po' meno (decadimento 2% a gesto).
+ * 2. PROPONE: sceglie gli strumenti con punteggio = esperienza di mestiere (ricette) + quello che ha
+ *    imparato di te. Ogni tanto (20%) ti fa provare qualcosa di nuovo, e te lo dice.
+ * 3. INSEGNA: controlla misure reali (voce, mix, testo) e ti spiega cosa non va, perché, e come
+ *    rimediare, con un'azione da un tocco. Tiene il conto delle abilità che hai imparato.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.Coach = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var W = { like: 3, dislike: -3, save: 2, record: 2, complete: 0.5, skip: -1 };
+  var DECAY = 0.98, ROLES = ['melodia', 'accordi', 'pad'];
+
+  function fresh() { return { v: 1, n: 0, prefs: {}, tries: {}, skills: {}, log: [] }; }
+  function bpmBucket(b) { return Math.round((b || 100) / 10) * 10; }
+  function features(ctx) {
+    var f = [];
+    if (ctx.genre) f.push('genre:' + ctx.genre);
+    if (ctx.mode) f.push('mode:' + ctx.mode);
+    if (ctx.bpm) f.push('bpm:' + bpmBucket(ctx.bpm));
+    ROLES.forEach(function (r) { if (ctx.inst && ctx.inst[r]) f.push('inst.' + r + ':' + ctx.inst[r]); });
+    if (ctx.emotion) f.slice().forEach(function (x) { f.push(ctx.emotion + '|' + x); });
+    return f;
+  }
+  function bump(st, feats, w) {
+    Object.keys(st.prefs).forEach(function (k) { st.prefs[k] *= DECAY; if (Math.abs(st.prefs[k]) < 0.01) delete st.prefs[k]; });
+    feats.forEach(function (k) { st.prefs[k] = (st.prefs[k] || 0) + w; });
+  }
+  /** Registra un gesto. type: like|dislike|save|record|complete|skip|change ; ctx: {genre,mode,bpm,inst,emotion}; extra per change: {role, from, to} */
+  function record(st, type, ctx, extra) {
+    st = st || fresh(); ctx = ctx || {};
+    if (type === 'change' && extra) {
+      var e = ctx.emotion ? ctx.emotion + '|' : '';
+      if (extra.from) bump(st, ['inst.' + extra.role + ':' + extra.from, e + 'inst.' + extra.role + ':' + extra.from], -1);
+      if (extra.to) bump(st, ['inst.' + extra.role + ':' + extra.to, e + 'inst.' + extra.role + ':' + extra.to], 0.5);
+    } else if (W[type] != null) bump(st, features(ctx), W[type]);
+    ROLES.forEach(function (r) { if (ctx.inst && ctx.inst[r]) st.tries[ctx.inst[r]] = (st.tries[ctx.inst[r]] || 0) + (type === 'complete' || type === 'like' || type === 'save' ? 1 : 0); });
+    st.n++;
+    st.log.push({ t: type, g: ctx.genre, i: ctx.inst ? ROLES.map(function (r) { return ctx.inst[r] || ''; }).join(',') : '' });
+    if (st.log.length > 200) st.log = st.log.slice(-200);
+    return st;
+  }
+  function score(st, key, emotion) { return (st.prefs[key] || 0) + (emotion ? (st.prefs[emotion + '|' + key] || 0) * 1.5 : 0); }
+
+  /**
+   * Propone strumenti per ogni ruolo.
+   * cands: {melodia:[{id, prior}], ...} (prior = esperienza di mestiere, 0-3); opt: {emotion, seed}
+   */
+  function suggest(st, cands, opt) {
+    st = st || fresh(); opt = opt || {};
+    var s = Math.imul((opt.seed || 1) >>> 0, 2654435761) >>> 0, rnd = function () { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; rnd();
+    var out = { inst: {}, why: [], explore: null };
+    ROLES.forEach(function (r) {
+      var list = (cands[r] || []).map(function (c) { var learned = score(st, 'inst.' + r + ':' + c.id, opt.emotion); return { id: c.id, prior: c.prior || 0, learned: learned, total: (c.prior || 0) + learned }; });
+      if (!list.length) return;
+      list.sort(function (a, b) { return b.total - a.total; });
+      var best = list[0];
+      out.inst[r] = best.id;
+      if (best.learned > 0.5) out.why.push(r + ': ' + best.id + ' perché ti è piaciuto (punteggio ' + best.learned.toFixed(1) + ')');
+      else if (best.learned < -0.5) out.why.push(r + ': ' + best.id + ' anche se l\'hai scartato: le alternative sono andate peggio');
+      else out.why.push(r + ': ' + best.id + ' (scelta di mestiere per questo stile)');
+    });
+    if (st.n >= 5 && rnd() < 0.2) { // esplorazione: un ruolo prova lo strumento meno provato tra i buoni
+      var r = ROLES[Math.floor(rnd() * ROLES.length)], pool = (cands[r] || []).filter(function (c) { return (c.prior || 0) >= 0.5 && c.id !== out.inst[r] && score(st, 'inst.' + r + ':' + c.id, opt.emotion) > -2; });
+      pool.sort(function (a, b) { return (st.tries[a.id] || 0) - (st.tries[b.id] || 0); });
+      if (pool.length) { out.explore = { role: r, from: out.inst[r], to: pool[0].id }; out.inst[r] = pool[0].id; out.why.push('Ti faccio provare ' + pool[0].id + ' per ' + r + ': non l\'hai quasi mai sentito. Se non ti piace, dimmelo con "Non mi piace".'); }
+    }
+    return out;
+  }
+
+  /** Cosa ha imparato: le caratteristiche più amate e più scartate. names(key) -> testo leggibile. */
+  function profile(st, names) {
+    st = st || fresh(); names = names || function (k) { return k; };
+    var items = Object.keys(st.prefs).filter(function (k) { return k.indexOf('|') < 0; }).map(function (k) { return { k: k, v: st.prefs[k] }; });
+    items.sort(function (a, b) { return b.v - a.v; });
+    return { gesti: st.n, piace: items.filter(function (x) { return x.v > 0.8; }).slice(0, 6).map(function (x) { return names(x.k); }), scarti: items.filter(function (x) { return x.v < -0.8; }).slice(-4).reverse().map(function (x) { return names(x.k); }) };
+  }
+
+  // ---------- lezioni ----------
+  var SKILLS = {
+    livelli: 'Livelli e distorsione', mix: 'Equilibrio voce-base', intonazione: 'Intonazione', tonalita: 'Tonalità voce-base',
+    flow: 'Testo e tempo (flow)', arrangiamento: 'Spazio per la voce', struttura: 'Struttura della canzone', varieta: 'Ricerca del suono'
+  };
+  function compatible(a, b) { // stessa tonalità o relativa (Do maggiore = La minore)
+    if (!a || !b) return true;
+    if (a.tonic === b.tonic && a.mode === b.mode) return true;
+    var rel = function (k) { return k.mode === 'maggiore' ? (k.tonic + 9) % 12 : (k.tonic + 3) % 12; };
+    return a.mode !== b.mode && rel(a) === b.tonic;
+  }
+  /**
+   * Controlla le misure e restituisce le lezioni. m (tutto facoltativo):
+   *  take: {peakDb, rmsDb, clippingShare, cents, voiced, key:{tonic,mode,confidence,name}}
+   *  base: {tonic, mode, bpm, bars, melodia (livello 0-1.8), name}
+   *  mixDb: livello voce - livello base (dB) · lines: [{text, need}] (need = battute necessarie)
+   *  modesSet: numero righe con modo scelto · recentInst: ultimi strumenti melodia (array)
+   */
+  function lessons(m) {
+    m = m || {}; var L = [], checked = [];
+    var add = function (o) { L.push(o); };
+    if (m.take) {
+      checked.push('livelli', 'intonazione');
+      if (m.take.clippingShare > 0.001 || m.take.peakDb > -0.3) add({ id: 'clip', skill: 'livelli', level: 'errore', title: 'La voce distorce', what: 'Picco ' + m.take.peakDb.toFixed(1) + ' dB, campioni al massimo: ' + (m.take.clippingShare * 100).toFixed(2) + '%.', why: 'Quando il segnale tocca il massimo l\'onda viene tagliata: si sente un "gracchio" che nessun effetto può togliere dopo.', how: 'Allontanati 15-20 cm dal microfono o canta un po\' più piano nei punti forti. Riprova la registrazione.' });
+      if (m.take.cents != null && m.take.voiced > 0.2) {
+        if (m.take.cents > 35) add({ id: 'pitch', skill: 'intonazione', level: 'errore', title: 'Intonazione da sistemare', what: 'In media sei a ' + Math.round(m.take.cents) + ' cent dalla nota (100 cent = un semitono).', why: 'Oltre 30-35 cent l\'orecchio sente la stonatura, soprattutto sulle note lunghe.', how: 'Usa l\'autotune nella pagina Voce con correzione forte, oppure riascolta la melodia guida e canta le note lunghe più ferme.', fix: { type: 'autotune' } });
+        else if (m.take.cents > 20) add({ id: 'pitch2', skill: 'intonazione', level: 'consiglio', title: 'Intonazione quasi a posto', what: 'Scostamento medio ' + Math.round(m.take.cents) + ' cent.', why: 'Va bene per il parlato e il rap; nel cantato una correzione leggera rende più pulito.', how: 'Autotune con velocità media (naturale), non robotico.', fix: { type: 'autotune' } });
+      }
+      if (m.take.key && m.take.key.confidence !== 'bassa' && m.base) {
+        checked.push('tonalita');
+        if (!compatible(m.take.key, m.base)) add({ id: 'key', skill: 'tonalita', level: 'errore', title: 'Voce e base in tonalità diverse', what: 'La voce sembra in ' + m.take.key.name + ', la base è in ' + m.base.name + '.', why: 'Se le note della voce non stanno nella scala della base, alcune parole suonano "storte" anche se canti bene.', how: 'Porta la base nella tonalità della tua voce: è più facile che cambiare il modo in cui canti.', fix: { type: 'key', tonic: m.take.key.tonic, mode: m.take.key.mode } });
+      }
+    }
+    if (m.mixDb != null) {
+      checked.push('mix');
+      if (m.mixDb < -3) add({ id: 'quiet', skill: 'mix', level: 'errore', title: 'Voce troppo bassa nel mix', what: 'La voce è ' + Math.abs(m.mixDb).toFixed(1) + ' dB sotto la base.', why: 'Nel rap e nella trap la voce sta davanti: se la base la copre, il testo non si capisce.', how: 'Alza la voce o abbassa la base di qualche dB.', fix: { type: 'voicegain', delta: Math.min(6, -m.mixDb + 1) } });
+      else if (m.mixDb > 9) add({ id: 'loud', skill: 'mix', level: 'consiglio', title: 'Voce molto sopra la base', what: 'La voce è ' + m.mixDb.toFixed(1) + ' dB sopra la base.', why: 'Troppo distacco fa sembrare la voce "appoggiata" e non dentro la canzone.', how: 'Abbassa un po\' la voce o aggiungi riverbero.', fix: { type: 'voicegain', delta: -3 } });
+    }
+    if (m.base && m.take && m.base.melodia >= 0.95) {
+      checked.push('arrangiamento');
+      add({ id: 'clash', skill: 'arrangiamento', level: 'consiglio', title: 'La melodia della base parla sopra di te', what: 'Melodia guida al ' + Math.round(m.base.melodia * 100) + '% mentre canti.', why: 'Due melodie insieme si disturbano: l\'orecchio non sa chi seguire.', how: 'Abbassa la melodia guida al 50-60% quando c\'è la voce (nel ritornello resta come colore).', fix: { type: 'level', key: 'melodia', value: 0.55 } });
+    }
+    if (m.lines && m.lines.length) {
+      checked.push('flow');
+      var dense = m.lines.filter(function (l) { return l.need > 4.2; });
+      if (dense.length) add({ id: 'dense', skill: 'flow', level: 'consiglio', title: 'Righe troppo piene per questo tempo', what: dense.length + ' righe richiedono più di 4 battute (es. "' + dense[0].text.slice(0, 40) + '").', why: 'Una riga troppo lunga costringe a correre: le parole si mangiano e il ritmo si perde.', how: 'Dividi la riga in due, oppure segnala "parla" (rap) nella Guida alla voce, oppure rallenta la base.', fix: { type: 'parla', lines: dense.map(function (l) { return l.text; }) } });
+    }
+    if (m.base && m.lines && m.lines.length >= 6) {
+      checked.push('struttura');
+      if (m.base.bars < 16) add({ id: 'short', skill: 'struttura', level: 'consiglio', title: 'Base più corta del testo', what: 'La base ha ' + m.base.bars + ' battute per ' + m.lines.length + ' righe.', why: 'Con poche battute non c\'è spazio per strofa, ritornello e respiro: la canzone sembra un loop.', how: 'Fai durare la base quanto il testo.', fix: { type: 'follow' } });
+    }
+    if (m.recentInst && m.recentInst.length >= 6) {
+      checked.push('varieta');
+      var same = m.recentInst.slice(-6).every(function (x) { return x === m.recentInst[m.recentInst.length - 1]; });
+      if (same) add({ id: 'same', skill: 'varieta', level: 'consiglio', title: 'Sempre lo stesso strumento', what: 'Le ultime 6 basi usano tutte ' + m.recentInst[m.recentInst.length - 1] + ' per la melodia.', why: 'Il tuo suono si riconosce anche dalle scelte nuove: prova un originale del Laboratorio.', how: 'Premi "Crea con il Coach": ti farò provare qualcosa di diverso.' });
+    }
+    return { lessons: L, checked: checked };
+  }
+  /** Aggiorna le abilità: un'abilità è imparata dopo 3 controlli di fila senza errori. */
+  function learn(st, res) {
+    st = st || fresh();
+    var bad = {}; res.lessons.forEach(function (l) { bad[l.skill] = true; });
+    res.checked.forEach(function (k) {
+      var s = st.skills[k] || (st.skills[k] = { ok: 0, ko: 0, streak: 0 });
+      if (bad[k]) { s.ko++; s.streak = 0; } else { s.ok++; s.streak++; }
+    });
+    return st;
+  }
+  function progress(st) {
+    st = st || fresh();
+    var list = Object.keys(SKILLS).map(function (k) { var s = st.skills[k] || { ok: 0, ko: 0, streak: 0 }; return { id: k, nome: SKILLS[k], ok: s.ok, ko: s.ko, streak: s.streak, imparata: s.streak >= 3 }; });
+    var n = list.filter(function (x) { return x.imparata; }).length;
+    var lv = ['Principiante', 'Apprendista', 'Producer in crescita', 'Producer', 'Producer autonomo'][Math.min(4, Math.floor(n / 2))];
+    return { skills: list, imparate: n, totale: list.length, livello: lv };
+  }
+
+  return { fresh: fresh, record: record, suggest: suggest, profile: profile, lessons: lessons, learn: learn, progress: progress, features: features, compatible: compatible, SKILLS: SKILLS, WEIGHTS: W };
 });
 
 /*
@@ -4549,12 +4725,14 @@ details.card[open]>summary{margin-bottom:8px}
   }
   async function makeAndPlay(newVariant) {
     var st = $('#b-status'), p = cur().prod;
+    if (newVariant && SESSION.lastPlay && performance.now() - SESSION.lastPlay.t < 10000) coachRec('skip', SESSION.lastPlay.ctx);
     if (newVariant) p.seed++;
     st.textContent = 'Sto componendo la base…'; await tick();
     await ensureInst();
     try {
       var mx = buildMix({ voice: false });
-      var ok = playBuf(mx.samples, mx.sr, karaokeTick(mx.bpm), function () { $('#kar').innerHTML = '<div><b>Fine</b><small>Premi di nuovo per ricantare</small></div>'; });
+      var lp = SESSION.lastPlay = { t: performance.now(), ctx: coachCtx(), dur: mx.samples.length / mx.sr };
+      var ok = playBuf(mx.samples, mx.sr, karaokeTick(mx.bpm), function () { $('#kar').innerHTML = '<div><b>Fine</b><small>Premi di nuovo per ricantare</small></div>'; if ((performance.now() - lp.t) / 1000 > lp.dur * 0.9) coachRec('complete', lp.ctx); });
       if (!ok) { st.textContent = 'Questo browser non riesce a riprodurre audio.'; return null; }
       st.textContent = ''; SESSION.baseMade = true;
       var s = cur(); if (['idea', 'testo'].indexOf(s.status) !== -1) { s.status = 'base'; persist(); }
@@ -4566,7 +4744,7 @@ details.card[open]>summary{margin-bottom:8px}
   $('#b-play').addEventListener('click', function () { makeAndPlay(false); });
   $('#b-new').addEventListener('click', function () { makeAndPlay(true); });
   $('#b-stop').addEventListener('click', stopPlay);
-  $('#b-save').addEventListener('click', async function () { var mx = buildMix({ voice: false }); saveAudio(mx.samples, mx.sr, 'base-' + (cur().title || 'canzone').replace(/\W+/g, '-'), $('#b-status')); });
+  $('#b-save').addEventListener('click', async function () { coachRec('save', coachCtx()); var mx = buildMix({ voice: false }); saveAudio(mx.samples, mx.sr, 'base-' + (cur().title || 'canzone').replace(/\W+/g, '-'), $('#b-status')); });
 
   /* ================= Strumenti veri ================= */
   var INST_BASES = ['inst/', 'https://sultan199777.github.io/ai-music-studio/inst/'];
@@ -4610,7 +4788,8 @@ details.card[open]>summary{margin-bottom:8px}
   function fillInst() { var inst = cur().prod.inst || {}; Object.keys(ROLES).forEach(function (r) { $(ROLES[r]).value = inst[r] || ''; }); instInfo(); }
   Object.keys(ROLES).forEach(function (r) {
     $(ROLES[r]).addEventListener('change', async function () {
-      var p = cur().prod; p.inst = Object.assign({}, p.inst || {}); p.inst[r] = this.value || null; persist(); instInfo();
+      var p = cur().prod, old = (p.inst || {})[r]; p.inst = Object.assign({}, p.inst || {}); p.inst[r] = this.value || null; persist(); instInfo();
+      coachRec('change', coachCtx(), { role: r, from: old, to: this.value || null });
       if (this.value) { $('#b-status').textContent = 'Carico ' + instName(this.value) + '…'; var ok = await loadInst(this.value); $('#b-status').textContent = ok ? instName(this.value) + ' pronto. Premi "Crea e ascolta".' : 'Download non riuscito: per ora uso il suono sintetizzato.'; }
     });
   });
@@ -4738,6 +4917,89 @@ details.card[open]>summary{margin-bottom:8px}
     var g = t.getAttribute('data-recipe');
     if (g) { var p = cur().prod; if (ALLG[g]) { p.genre = g; p.bpm = ALLG[g].bpm; p.tune = null; if (['trap', 'drill', 'epico'].indexOf(g) >= 0) p.mode = 'minore'; } applyRecipe(g); persist(); fillBase(); $('#st-msg').textContent = 'Ricetta applicata. Vai in Studio e premi "Crea e ascolta".'; ensureInst(); }
   });
+
+  /* ================= Coach ================= */
+  function coachState() { LIB.settings.coach = LIB.settings.coach || Coach.fresh(); return LIB.settings.coach; }
+  function coachCtx() {
+    var s = cur(), p = s.prod, a = analysisOf(s), sug = a ? LyricsToBase.suggest(a, {}) : null;
+    return { genre: p.genre, mode: p.mode, bpm: p.bpm, inst: Object.assign({}, p.inst || {}), emotion: sug && sug.confident ? sug.emotion : null };
+  }
+  function coachRec(type, ctx, extra) { Coach.record(coachState(), type, ctx, extra); persist(); renderCoach(); }
+  function coachName(k) {
+    var parts = k.split(':'), key = parts[0], val = parts.slice(1).join(':');
+    if (key === 'genre') return 'stile ' + (ALLG[val] ? ALLG[val].label : val);
+    if (key === 'mode') return 'scala ' + val;
+    if (key === 'bpm') return 'circa ' + val + ' BPM';
+    if (key.indexOf('inst.') === 0) return instName(val) + ' (' + key.slice(5) + ')';
+    return k;
+  }
+  function coachCands(genre) {
+    var R = Instruments.RECIPES[genre] || Instruments.RECIPES.melodico, out = {};
+    ['melodia', 'accordi', 'pad'].forEach(function (role) {
+      var m = {}, put = function (id, pr) { if (id && (m[id] == null || m[id] < pr)) m[id] = pr; };
+      (R[role] || []).forEach(function (id, i) { put(id, 2 - i * 0.3); });
+      SoundLab.ORIGINALS.forEach(function (o) { if ((o.ruoli.indexOf(role) >= 0 || role === 'pad' && o.tipo === 'sostenuto') && o.stili.indexOf(genre) >= 0) put(o.id, 1.2); });
+      (LIB.settings.lab || []).forEach(function (o) { put(o.id, 1); });
+      Instruments.CATALOG.forEach(function (c) { if (c.ruoli.indexOf(role) >= 0 || role === 'pad' && c.tipo === 'sostenuto') put(c.id, c.stili.indexOf(genre) >= 0 ? 0.8 : (c.id === 'flute' ? -1 : 0.2)); });
+      out[role] = Object.keys(m).map(function (id) { return { id: id, prior: m[id] }; });
+    });
+    return out;
+  }
+  $('#co-like').addEventListener('click', function () { if (!SESSION.baseMade) { $('#co-msg').textContent = 'Prima crea e ascolta una base.'; return; } coachRec('like', coachCtx()); $('#co-msg').textContent = 'Segnato: questa combinazione ti piace. La userò di più.'; });
+  $('#co-dislike').addEventListener('click', function () { if (!SESSION.baseMade) { $('#co-msg').textContent = 'Prima crea e ascolta una base.'; return; } coachRec('dislike', coachCtx()); $('#co-msg').textContent = 'Segnato: la eviterò. Premi "Crea con il Coach" per un\'altra proposta.'; });
+  $('#co-make').addEventListener('click', async function () {
+    var s = cur(), p = s.prod, a = analysisOf(s), ctx = coachCtx();
+    if (a && !SESSION.coachSet) { var sug = LyricsToBase.suggest(a, { tonic: p.tonic }); if (sug.confident && p.genre !== sug.genre) { p.genre = sug.genre; p.mode = sug.mode; p.bpm = sug.bpm; p.tune = null; } }
+    var res = Coach.suggest(coachState(), coachCands(p.genre), { emotion: ctx.emotion, seed: (coachState().n + 1) * 7 + p.seed });
+    p.inst = res.inst; p.seed++; persist(); fillBase();
+    $('#co-msg').innerHTML = '<b>Il Coach ha scelto' + (ctx.emotion ? ' (testo: ' + esc(ctx.emotion) + ')' : '') + ':</b><br>' + res.why.map(function (w) { var ids = Object.keys(res.inst).map(function (k) { return res.inst[k]; }).concat(res.explore ? [res.explore.from] : []); ids.sort(function (x, y) { return y.length - x.length; }); ids.forEach(function (id) { if (id) w = w.split(id).join(instName(id)); }); return esc(w); }).join('<br>') + '<br><span class="muted">Dimmi "Mi piace" o "Non mi piace": così impara.</span>';
+    await makeAndPlay(false);
+  });
+  function coachMeasure() {
+    var s = cur(), p = s.prod, t = activeTake(), m = {};
+    var tl = ClipFx.timeline(lyricLines(s.lyrics), { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {}, barsPerLine: 'auto' }), barSec = 240 / p.bpm;
+    if (tl.length) m.lines = tl.map(function (l) { return { text: l.text, need: l.syllables / ({ parla: 5.5, canta: 3, allunga: 1.8 })[l.mode] / barSec }; });
+    m.base = { tonic: p.tonic, mode: p.mode, bpm: p.bpm, bars: p.bars, melodia: p.levels.melodia, name: NOTES[p.tonic] + ' ' + p.mode };
+    if (t && !t.example) {
+      var r = t.res;
+      m.take = { peakDb: r.levels.peakDb, rmsDb: r.levels.rmsDb, clippingShare: r.levels.clippingShare, cents: r.pitch ? r.pitch.meanAbsCentsFromNote : null, voiced: r.voicedShare, key: t.key && t.key.tonic != null ? { tonic: t.key.tonic, mode: t.key.mode, confidence: t.key.confidence, name: t.key.name } : null };
+      try { // equilibrio voce/base, misurato sul mix reale
+        var b = getBase(), mix = Backing.mix(b, p.levels, p.sec), v = t.final || t.mono, g = +$('#v-gain').value / 100, n = Math.min(v.length, Math.round(mix.length * t.sr / b.sampleRate));
+        var ev = 0, eb = 0, cnt = 0; for (var i = 0; i < n; i += 4) { var x = v[i] * g; if (Math.abs(x) > 0.02) { ev += x * x; var j = Math.round(i * b.sampleRate / t.sr); eb += mix[j] * mix[j]; cnt++; } }
+        if (cnt > 100 && eb > 0) m.mixDb = 10 * Math.log10(ev / eb);
+      } catch (e) {}
+    }
+    m.recentInst = coachState().log.filter(function (x) { return x.t === 'complete' || x.t === 'save' || x.t === 'like'; }).map(function (x) { return x.i.split(',')[0]; }).filter(Boolean);
+    return m;
+  }
+  var LAST_LESSONS = [];
+  function coachCheck(auto) {
+    var res = Coach.lessons(coachMeasure());
+    Coach.learn(coachState(), res); persist(); LAST_LESSONS = res.lessons;
+    $('#co-lessons').innerHTML = res.lessons.length ? res.lessons.map(function (l, i) {
+      return '<div class="note' + (l.level === 'errore' ? ' warn' : '') + '" style="margin-top:8px"><b>' + esc(l.title) + '</b> <span class="tag m">Misurato</span><p class="small">' + esc(l.what) + '</p><p class="small"><b>Perché conta:</b> ' + esc(l.why) + '</p><p class="small"><b>Come si fa:</b> ' + esc(l.how) + '</p>' + (l.fix ? '<button class="btn sm" data-cofix="' + i + '">Correggi per me</button>' : '') + '</div>';
+    }).join('') : '<div class="note" style="margin-top:8px">' + (res.checked.length ? 'Tutto a posto su: ' + res.checked.map(function (k) { return Coach.SKILLS[k]; }).join(', ') + '.' : 'Niente da controllare: scrivi un testo, crea una base e registra la voce.') + '</div>';
+    if (!auto) $('#co-msg').textContent = res.lessons.length ? res.lessons.length + ' cose da migliorare. Ogni abilità si impara dopo 3 controlli giusti di fila.' : '';
+    else if (res.lessons.length) $('#co-msg').textContent = 'Il Coach ha ascoltato la registrazione: guarda i consigli qui sotto.';
+    renderCoach();
+  }
+  $('#co-check').addEventListener('click', function () { coachCheck(false); });
+  $('#co-lessons').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-cofix]'); if (!b) return;
+    var l = LAST_LESSONS[+b.getAttribute('data-cofix')], s = cur(), p = s.prod, f = l.fix, msg = '';
+    if (f.type === 'key') { p.tonic = f.tonic; p.mode = f.mode; msg = 'Base portata in ' + NOTES[f.tonic] + ' ' + f.mode + '.'; }
+    else if (f.type === 'level') { p.levels[f.key] = f.value; msg = 'Melodia guida al ' + Math.round(f.value * 100) + '%.'; }
+    else if (f.type === 'voicegain') { var g = $('#v-gain'); g.value = Math.max(20, Math.min(160, Math.round(+g.value * Math.pow(10, f.delta / 20)))); $('#v-gv').textContent = g.value + '%'; msg = 'Volume voce ora ' + g.value + '%.'; }
+    else if (f.type === 'parla') { s.modes = s.modes || {}; f.lines.forEach(function (x) { s.modes[x] = 'parla'; }); renderGuide(); msg = f.lines.length + ' righe segnate come "parla" (rap).'; }
+    else if (f.type === 'follow') { p.follow = true; followBars(); msg = 'La base ora dura quanto il testo (' + p.bars + ' battute).'; }
+    else if (f.type === 'autotune') { location.hash = '#voce'; msg = 'Apri l\'autotune qui in Voce.'; }
+    persist(); fillBase(); SESSION.baseKey = ''; $('#co-msg').textContent = 'Fatto: ' + msg + ' Riascolta e premi di nuovo "Controlla il mio lavoro".';
+  });
+  function renderCoach() {
+    var st = coachState(), pf = Coach.profile(st, coachName), pg = Coach.progress(st);
+    $('#co-profile').innerHTML = st.n ? '<b>Cosa ho imparato di te</b> (' + pf.gesti + ' gesti): ' + (pf.piace.length ? 'ti piacciono ' + esc(pf.piace.join(', ')) : 'ancora troppo presto per dirlo') + (pf.scarti.length ? '. Scarti spesso: ' + esc(pf.scarti.join(', ')) : '') + '.' : '';
+    $('#co-progress').innerHTML = '<b>Il tuo percorso: ' + esc(pg.livello) + '</b> <span class="small muted">(' + pg.imparate + '/' + pg.totale + ' abilità)</span><div class="chips" style="margin-top:6px">' + pg.skills.map(function (k) { return '<span class="chip' + (k.imparata ? ' on' : '') + '" title="' + k.ok + ' ok, ' + k.ko + ' da sistemare">' + (k.imparata ? '✓ ' : '') + esc(k.nome) + '</span>'; }).join('') + '</div>';
+  }
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {
@@ -4980,6 +5242,8 @@ details.card[open]>summary{margin-bottom:8px}
     dbTake('put', { id: t.id, name: t.name, mono: t.mono, sr: t.sr, lat: t.lat, at: t.at }).then(function (ok) { t.saved = !!ok; });
     var s = cur(); if (['idea', 'testo', 'base'].indexOf(s.status) !== -1) { s.status = 'voce'; persist(); }
     selectTake(t.id);
+    if (!SESSION.useImported) coachRec('record', coachCtx());
+    setTimeout(function () { coachCheck(true); }, 300);
     msg.innerHTML = (pk <= 0.003 ? 'Non ho sentito quasi nulla: controlla che il microfono non sia coperto e che le cuffie abbiano il microfono. ' : (boosted ? 'Il volume era basso: l\'ho alzato automaticamente (picco originale ' + Math.round(pk * 100) + '%). ' : (pk > 0.98 ? 'Il suono satura: canta più lontano o più piano. ' : ''))) + 'Salvata tra le prove. <a href="#voce">Apri Voce per autotune e mix</a>';
   }
 
@@ -5377,7 +5641,7 @@ details.card[open]>summary{margin-bottom:8px}
 
   /* ================= Avvio ================= */
   async function start() {
-    await load(); (LIB.settings.lab || []).forEach(function (r) { try { SoundLab.install(r); } catch (e) {} }); refreshInstSelects(); applyTheme(); cur(); restoreTakes(); initSample().then(function () { if (!$('#v-impostazioni').hidden) renderSettings(); });
+    await load(); renderCoach(); (LIB.settings.lab || []).forEach(function (r) { try { SoundLab.install(r); } catch (e) {} }); refreshInstSelects(); applyTheme(); cur(); restoreTakes(); initSample().then(function () { if (!$('#v-impostazioni').hidden) renderSettings(); });
     route();
   }
   window.__app = { LIB: function () { return LIB; }, SESSION: SESSION, store: store, addTake: addTake, selectTake: selectTake, buildMix: buildMix, route: route };
