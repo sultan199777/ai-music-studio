@@ -4026,12 +4026,12 @@ details.card[open]>summary{margin-bottom:8px}
   function recUi(on) { $('#rec-go').hidden = on; $('#rec-stop').hidden = !on; $('#rec-meter').hidden = !on; }
   $('#rec-go').addEventListener('click', async function () {
     var msg = $('#rec-msg'); msg.className = 'status'; if (REC) return;
-    if (!micOk()) { msg.textContent = 'Il microfono non è disponibile in questa pagina (dentro Claude è bloccato). Apri il sito: https://sultan199777.github.io/ai-music-studio/ (da Safari), oppure registra con Memo Vocali e importa in Voce.'; msg.className = 'status err'; return; }
+    if (!micOk()) { msg.textContent = 'Il microfono non è disponibile in questa pagina (se hai toccato un link dentro Claude, copialo e aprilo in Safari) (dentro Claude è bloccato). Apri il sito: https://sultan199777.github.io/ai-music-studio/ (da Safari), oppure registra con Memo Vocali e importa in Voce.'; msg.className = 'status err'; return; }
     var ctx = getCtx(); if (!ctx || !ctx.createScriptProcessor) { msg.textContent = 'Questo browser non supporta la registrazione.'; msg.className = 'status err'; return; }
     if (!lyricLines(cur().lyrics).length) { msg.textContent = 'Nota: qui non c\'è ancora il testo di questa canzone. Incollalo nel campo "Testo" in alto in questa pagina per vederlo scorrere mentre canti. Chiedo il microfono…'; } else msg.textContent = 'Chiedo il permesso del microfono…';
     var stream;
     try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } }); }
-    catch (e) { msg.textContent = 'Microfono non disponibile o permesso negato. Su iPhone: Impostazioni > Safari > Microfono, oppure riapri la pagina e consenti.'; msg.className = 'status err'; return; }
+    catch (e) { var inApp = /iPhone|iPad/.test(navigator.userAgent) && !/Safari\//.test(navigator.userAgent); msg.textContent = (inApp ? 'Stai aprendo la pagina dentro un\'altra app (es. Claude): lì il microfono è bloccato. Copia il link e incollalo in Safari. ' : 'Il microfono non parte. ') + 'Dettaglio tecnico: ' + (e && e.name ? e.name : 'errore') + '. Su iPhone: Impostazioni > Safari > Microfono, poi riapri la pagina e consenti.'; msg.className = 'status err'; return; }
     msg.textContent = 'Preparo la base…'; await tick();
     var mx = buildMix({ voice: false }), mic = ctx.createMediaStreamSource(stream), proc = ctx.createScriptProcessor(4096, 1, 1), mute = ctx.createGain();
     mute.gain.value = 0; var chunks = [], R = { stream: stream, mic: mic, proc: proc, mute: mute, chunks: chunks, ctx: ctx, level: 0, started: ctx.currentTime };
