@@ -447,7 +447,12 @@
 
 <!-- IMPOSTAZIONI -->
 <!-- ---- Beat Lab (blocco aggiunto): vista #beatlab ---- -->
-<main class="view" id="v-beatlab" hidden><div id="bl-root"></div></main>
+<main class="view" id="v-beatlab" hidden>
+  <div class="card"><div class="card-head"><h3>Cervello Sultan</h3><span class="tag a">Dal testo</span></div>
+    <p class="small muted">Legge il testo della canzone aperta (e il tuo modello artisti, se ne hai spuntato uno) e imposta qui stile, velocità, tonalità e batteria. Un altro testo, un'altra base.</p>
+    <div class="row"><button class="btn pri" id="bl-brain">Crea la base dal testo</button><button class="btn" id="bl-brain2">Altra versione</button></div>
+    <div class="status" id="bl-brain-msg"></div></div>
+  <div id="bl-root"></div></main>
 <!-- ---- fine Beat Lab ---- -->
 
 <main class="view" id="v-impostazioni" hidden>

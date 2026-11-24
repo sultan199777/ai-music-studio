@@ -39,3 +39,10 @@ test('il cervello segue il profilo artista', () => {
   assert.ok(withP.why.some(w => w.includes('modello artisti')));
   assert.ok(['street', 'trapdark', 'boombap', 'drill', 'trap'].includes(withP.genre), withP.genre + ' (senza: ' + without.genre + ')');
 });
+
+test('Beat Lab: il piano del cervello cambia davvero il progetto (testi diversi, basi diverse)', () => {
+  const E = require('../src/beatlab-engine.js'), P = require('../src/beatlab-patterns.js');
+  const mk = (pl) => { const p = E.newProject(); P.randomize(p, 'trap', pl.seed, { keepBpm: true }); return JSON.stringify(E.drumTracks(p).map(t => t.steps)); };
+  const a = B.plan(S1, null), b = B.plan(S2, null);
+  assert.notEqual(mk(a), mk(b));
+});

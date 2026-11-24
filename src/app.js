@@ -556,6 +556,17 @@
     var M = arModel(), s = cur(); if (!M) { $('#ar-adv').innerHTML = '<p class="small">Spunta prima almeno una cartella.</p>'; return; }
     $('#ar-adv').innerHTML = '<ul class="clean small">' + ArtistLab.compare(s.lyrics, M).map(function (x) { return '<li><span class="tag ' + (x.tag === 'Misurato' ? 'm' : 'i') + '">' + x.tag + '</span> ' + esc(x.text) + '</li>'; }).join('') + '</ul>';
   });
+  /* ===== Cervello Sultan nel Beat Lab ===== */
+  function blBrain(again) {
+    var s = cur(), m = $('#bl-brain-msg');
+    if (!s.lyrics.trim()) { m.textContent = 'Scrivi prima il testo in Testo e Base: il cervello parte da quello.'; return; }
+    if (!window.BeatLabUI || !window.BeatLabUI.state.project) { m.textContent = 'Il Beat Lab si sta caricando: riprova tra un secondo.'; return; }
+    s.brainBL = again ? (s.brainBL || 0) + 1 : 0;
+    var pl = SultanBrain.plan(s.lyrics, analysisOf(s), { variant: s.brainBL, profile: arModel() }), r = window.BeatLabUI.applyBrain(pl);
+    m.innerHTML = '<b>' + esc(pl.label) + '</b> → stile Beat Lab "' + esc(r.style) + '" · ' + r.bpm + ' BPM · ' + NOTES[pl.tonic] + ' ' + (pl.mode === 'maggiore' ? 'maggiore' : 'minore') + '<br>' + pl.why.slice(0, 3).map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Premi "Suona". Se non ti piace: "Altra versione".';
+  }
+  $('#bl-brain').addEventListener('click', function () { blBrain(false); });
+  $('#bl-brain2').addEventListener('click', function () { blBrain(true); });
   /* ===== Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti) ===== */
   var BANNED_INST = { flute: 1, ocarina: 1, harmonica: 1, clarinet: 1, kalimba: 0 };
   async function runBrain(again) {
