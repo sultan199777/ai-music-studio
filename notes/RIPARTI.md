@@ -49,3 +49,7 @@ Documento con ricerca, fonti, licenze, architettura e fasi: https://claude.ai/ar
 - Da fare: usare l'Orecchio anche su registrazioni e voce intonata (sibilanti, rumore, livello), e sul Beat Lab.
 - Orecchio voce (Voce > Voice Lab): LUFS, rumore, rimbombo, sibilanti, scatola, presenza + "Applica i consigli". Mix automatico (Voce): regola il volume voce in LUFS. Umori (malinconico, dark, euforico, aggressivo, romantico, nostalgico) nel Cervello e controllo di coerenza umore/base.
 - Rime (Testo e Base): `src/word-bank.js`, dizionario PERSONALE senza licenze di terzi (elenco scritto per il progetto + parole dei tuoi testi + parole singole delle cartelle artista, mai frasi). Dizionari di terzi valutati e scartati per ora: Morph-it/italian-words-dict (CC BY-SA 2.0 + LGPL) e Wiktionary (CC BY-SA 4.0): share-alike, da evitare se si vuole vendere.
+
+## 24/11 sera
+- Aggiunti: correzione del tempo (timing.js), Guida al canto (sing-guide.js), melodie nuove + "Cambia melodia" + stile scritto a parole (sultan-brain parseStyle), Assistente testi AI locale opzionale (local-ai.js, WebLLM 0.2.79 + Qwen2.5, NON provato su telefono).
+- Divisione chat: vedi notes/DIVISIONE-CHAT.md.
