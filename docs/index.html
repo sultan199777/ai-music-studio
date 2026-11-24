@@ -308,7 +308,6 @@ details.card[open]>summary{margin-bottom:8px}
 .dw-chip select,.dw-chip input{padding:0!important;height:24px!important;min-height:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
 .dw-chip{padding:3px 10px}
 .dw-prop{flex-wrap:wrap}.dw-prop div{flex-basis:100%}.dw-prop .btn{flex:1}
-.dw-compl{display:grid;grid-template-columns:1fr 120px;gap:8px;align-items:center}.dw-compl span{font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ===== VOICE LAB (stile Cosmo: usa le variabili del tema) ===== */
 .vl .vl-auto{font-size:1.25rem;min-height:60px;margin:8px 0 4px;letter-spacing:.04em}
@@ -511,16 +510,6 @@ details.card[open]>summary{margin-bottom:8px}
     <textarea id="dw-lyrics" rows="9" placeholder="[Strofa]&#10;La prima riga del tuo testo&#10;&#10;[Ritornello]&#10;Il gancio che tutti ricordano"></textarea>
     <div class="row" style="margin-top:8px"><button class="btn sm" id="dw-fromtext">Base dalle emozioni del testo</button><a class="btn sm" href="#studio">Analisi del testo e guida voce</a></div>
     <div class="status" id="dw-tmsg"></div>
-  </section>
-
-  <section class="dw-panel" id="dw-p-clips">
-    <div class="dw-ph"><h3>Voce: prove e montaggio</h3><span class="tag m">Niente si perde</span></div>
-    <div id="dw-cl-takes"></div>
-    <div id="dw-cl-comp-box"></div>
-    <p class="small muted" style="margin:10px 0 4px">Clip sulla traccia voce (tocca la timeline per mettere il cursore):</p>
-    <div class="chips" id="dw-cl-list"></div>
-    <div class="dw-knobs" id="dw-cl-edit"></div>
-    <div class="status" id="dw-cl-msg"></div>
   </section>
 
   <section class="dw-panel" id="dw-p-mixer">
@@ -904,7 +893,7 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">258 test automatici superati su 258 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">257 test automatici superati su 257 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -3291,7 +3280,21 @@ details.card[open]>summary{margin-bottom:8px}
     box.innerHTML = '<div class="note"><b>Orecchio di Sultan · voce</b> <span class="tag m">Misurato</span> · registrazione: <b>' + esc(a.verdict) + '</b>' +
       '<ul class="clean small">' + line(a, 'Registrazione') + (b ? line(b, 'Dopo il Voice Lab') : '') + '</ul>' +
       (a.findings.length ? '<ul class="clean small">' + a.findings.map(function (f) { return '<li><span class="tag ' + (f.level === 'errore' ? 'soon' : 'm') + '">' + (f.level === 'errore' ? 'Errore' : 'Misurato') + '</span> ' + esc(f.text) + '</li>'; }).join('') + '</ul>' : '<p class="small">Nessun problema misurabile nella ripresa.</p>') +
+      tmHtml(t) +
       (has ? '<div class="row"><button class="btn sm pri" id="vl-ear-fix">Applica i consigli e rifai la voce</button></div>' : '') + '</div>';
+  }
+  var TM = null;
+  function tmHtml(t) {
+    TM = null; if (!root.Timing) return '';
+    var m = root.Timing.measure(t.mono, t.sr, api.bpm ? api.bpm() : 140); TM = m;
+    if (!m.reliable) return '<p class="small"><span class="tag i">Ipotesi</span> Tempo: servono almeno 6 sillabe nette per misurarlo (trovate ' + m.n + ').</p>';
+    var ms = m.offsetMs, big = Math.abs(ms) >= 12;
+    return '<p class="small"><span class="tag m">Misurato</span> Tempo sulla griglia (semicrome a ' + (api.bpm ? api.bpm() : 140) + ' BPM): la voce è ' + (Math.abs(ms) < 6 ? 'in tempo' : Math.abs(ms) + ' ms in ' + (ms > 0 ? 'ritardo' : 'anticipo')) + ' (oscillazione ±' + m.spreadMs + ' ms). <span class="tag i">Ipotesi</span> vale se la registrazione parte insieme alla base.</p>' +
+      (big ? '<div class="row"><button class="btn sm" id="vl-tm-fix">Correggi il tempo (' + (ms > 0 ? '−' : '+') + Math.abs(ms) + ' ms)</button></div>' : '');
+  }
+  function tmFix() {
+    var t = api.activeTake(); if (!t || !TM || !root.Timing) return;
+    t.mono = root.Timing.shift(t.mono, t.sr, TM.offsetMs); t.final = null; applyTake(t, {});
   }
   function earVoiceFix() {
     var t = api.activeTake(); if (!t || !EAR_FIX) return;
@@ -3466,7 +3469,7 @@ details.card[open]>summary{margin-bottom:8px}
 
   /* ---------- eventi ---------- */
   function wire() {
-    document.addEventListener('click', function (e) { if (e.target && e.target.id === 'vl-ear-fix') earVoiceFix(); });
+    document.addEventListener('click', function (e) { if (e.target && e.target.id === 'vl-ear-fix') earVoiceFix(); if (e.target && e.target.id === 'vl-tm-fix') tmFix(); });
     $('#vl-auto').addEventListener('click', function () { var t = api.activeTake(); if (!t) { setStatus('Prima registra o importa una voce.'); return; } st.macros = {}; st.advanced = {}; save(); renderSliders(); applyTake(t, { reanalyze: true }); });
     $('#vl-apply').addEventListener('click', function () { var t = api.activeTake(); if (t) applyTake(t, {}); });
     $('#vl-reset').addEventListener('click', function () { st.macros = {}; st.advanced = {}; save(); renderSliders(); buildAdvanced(); var t = api.activeTake(); if (t) schedule(200); });
@@ -4614,6 +4617,49 @@ details.card[open]>summary{margin-bottom:8px}
   }
 
   return { lufs: lufs, listenVoice: listenVoice, moodOf: moodOf, MOODS: MOODS, listen: listen, spectrum: spectrum, BANDS: BANDS, REF: REF };
+});
+
+/*
+ * Correzione del tempo: misura di quanto la voce è in anticipo o in ritardo rispetto alla griglia della base
+ * (semicrome al BPM del progetto) e sposta la voce. Si assume che la registrazione parta insieme alla base.
+ * Misurato: inizi delle sillabe (onset) e loro distanza dalla semicroma più vicina. Ipotesi: la griglia è quella giusta.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.Timing = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  function onsets(x, sr) {
+    var hop = Math.round(sr * 0.005), n = Math.floor(x.length / hop), env = new Float32Array(n), i, j, s;
+    for (i = 0; i < n; i++) { s = 0; for (j = 0; j < hop; j++) { var v = x[i * hop + j] || 0; s += v * v; } env[i] = Math.sqrt(s / hop); }
+    var mx = 0; for (i = 0; i < n; i++) if (env[i] > mx) mx = env[i];
+    if (mx < 1e-4) return [];
+    var out = [], last = -1e9, thr = mx * 0.12;
+    for (i = 4; i < n; i++) {
+      var prev = 0; for (j = 1; j <= 4; j++) prev += env[i - j] / 4;
+      if (env[i] > thr && env[i] > prev * 2.2 && (i - last) * 0.005 > 0.09) { out.push(i * 0.005); last = i; }
+    }
+    return out;
+  }
+  /* -> {n, offsetMs (+ = voce in ritardo), spreadMs, reliable, grid} */
+  function measure(x, sr, bpm, o) {
+    o = o || {};
+    var grid = 60 / (bpm || 140) / 4, on = onsets(x, sr), res = [], i;
+    if (o.startAt) on = on.filter(function (t) { return t >= o.startAt; });
+    for (i = 0; i < on.length; i++) { var k = Math.round(on[i] / grid); res.push(on[i] - k * grid); }
+    if (res.length < 6) return { n: res.length, offsetMs: 0, spreadMs: 0, reliable: false, grid: grid };
+    var s = res.slice().sort(function (a, b) { return a - b; }), med = s[s.length >> 1];
+    var dev = res.map(function (r) { return Math.abs(r - med); }).sort(function (a, b) { return a - b; });
+    var spread = dev[dev.length >> 1];
+    return { n: res.length, offsetMs: Math.round(med * 1000), spreadMs: Math.round(spread * 1000), reliable: spread < grid * 0.25, grid: grid };
+  }
+  /* sposta la voce di -offsetMs (positivo = ritardo da togliere); restituisce una copia */
+  function shift(x, sr, offsetMs) {
+    var d = Math.round(-offsetMs / 1000 * sr), out = new Float32Array(x.length), i;
+    for (i = 0; i < x.length; i++) { var j = i - d; out[i] = j >= 0 && j < x.length ? x[j] : 0; }
+    return out;
+  }
+  return { onsets: onsets, measure: measure, shift: shift };
 });
 
 /*
@@ -6472,70 +6518,6 @@ details.card[open]>summary{margin-bottom:8px}
   }
 
   return { CH: CH, LIMITS: LIMITS, LABELS: LABELS, PRESETS: PRESETS, channel: channel, preset: preset, satCurve: satCurve, duckCurve: duckCurve, impulse: impulse, build: build };
-});
-
-/*
- * Clip della voce: montaggio non distruttivo come nei DAW (Pro Tools, Logic).
- * Una clip = un pezzo di una prova (take) messo in un punto della canzone:
- *   {take, start (s nella canzone), offset (s dentro la prova), len (s), gain (lineare), fadeIn, fadeOut (s)}
- * Le prove non si toccano mai: render() costruisce l'audio della traccia voce leggendo i pezzi.
- * Dove due clip si toccano si fa una dissolvenza incrociata (niente click).
- * Comping per righe: per ogni riga del testo scegli la prova migliore; le clip nascono già tagliate sulle battute della riga.
- */
-(function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.Clips = factory();
-})(typeof self !== 'undefined' ? self : this, function () {
-  'use strict';
-  var XF = 0.015; // 15 ms di dissolvenza minima ai bordi (anti-click)
-
-  function clip(o) {
-    return { id: o.id || ('c' + Math.random().toString(36).slice(2, 8)), take: o.take, start: Math.max(0, +o.start || 0), offset: Math.max(0, +o.offset || 0),
-      len: Math.max(0.02, +o.len || 0.02), gain: o.gain == null ? 1 : Math.max(0, Math.min(4, +o.gain)), fadeIn: Math.max(0, +o.fadeIn || 0), fadeOut: Math.max(0, +o.fadeOut || 0) };
-  }
-  /** Una clip che copre tutta la prova (come si comporta oggi lo Studio). lat = ritardo misurato della registrazione. */
-  function whole(take, lat) {
-    var dur = take.mono.length / take.sr, off = Math.max(0, lat || 0);
-    return clip({ take: take.id, start: Math.max(0, -(lat || 0)), offset: off, len: Math.max(0.02, dur - off) });
-  }
-  /** Divide una clip al tempo t (canzone). Ritorna [sinistra, destra] o null se t è fuori. */
-  function split(c, t) {
-    if (t <= c.start + 0.02 || t >= c.start + c.len - 0.02) return null;
-    var a = clip(Object.assign({}, c, { id: null, len: t - c.start, fadeOut: XF })), d = t - c.start;
-    var b = clip(Object.assign({}, c, { id: null, start: t, offset: c.offset + d, len: c.len - d, fadeIn: XF }));
-    return [a, b];
-  }
-  /** Comping: lines = [{start, end}] (s), choice[i] = id della prova per la riga i (o null = nessuna). */
-  function compByLines(lines, choice, takes, lat) {
-    var out = [];
-    lines.forEach(function (ln, i) {
-      var id = choice[i]; if (!id) return;
-      var t = takes.filter(function (x) { return x.id === id; })[0]; if (!t) return;
-      var l = (lat && lat[id]) || 0, pre = 0.12; // un respiro prima della riga
-      var st = Math.max(0, ln.start - pre), en = ln.end;
-      out.push(clip({ take: id, start: st, offset: Math.max(0, st + l), len: en - st, fadeIn: 0.03, fadeOut: 0.06 }));
-    });
-    return out;
-  }
-  /** Costruisce l'audio della traccia (sr di uscita, durata in s). takes: {id: {x (Float32Array), sr}}. */
-  function render(clips, takes, sr, dur) {
-    var n = Math.ceil(dur * sr), y = new Float32Array(n);
-    clips.forEach(function (c) {
-      var t = takes[c.take]; if (!t) return;
-      var s0 = Math.round(c.start * sr), m = Math.round(c.len * sr), ratio = t.sr / sr;
-      var fi = Math.max(Math.round(XF * sr), Math.round(c.fadeIn * sr)), fo = Math.max(Math.round(XF * sr), Math.round(c.fadeOut * sr));
-      for (var i = 0; i < m; i++) {
-        var o = s0 + i; if (o < 0 || o >= n) continue;
-        var pos = (c.offset * sr + i) * ratio, k = Math.floor(pos), f = pos - k; if (k + 1 >= t.x.length) break;
-        var v = t.x[k] * (1 - f) + t.x[k + 1] * f, g = c.gain;
-        if (i < fi) g *= i / fi; if (m - i < fo) g *= (m - i) / fo;
-        y[o] += v * g;
-      }
-    });
-    return y;
-  }
-  function end(clips) { return clips.reduce(function (a, c) { return Math.max(a, c.start + c.len); }, 0); }
-  return { XF: XF, clip: clip, whole: whole, split: split, compByLines: compByLines, render: render, end: end };
 });
 
 /*
@@ -9896,7 +9878,7 @@ details.card[open]>summary{margin-bottom:8px}
   }
   $('#b-genre').innerHTML = Object.keys(ALLG).map(function (g) { return '<option value="' + g + '">' + ALLG[g].label + '</option>'; }).join('');
   $('#b-tonic').innerHTML = NOTES.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
-  $('#b-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.tune = null; p.bpm = ALLG[this.value].bpm; if (['trap', 'drill', 'epico', 'boombap', 'street', 'trapdark', 'clubtrap'].indexOf(this.value) >= 0) { p.mode = 'minore'; $('#b-mode').value = 'minore'; } else if (this.value === 'estate') { p.mode = 'maggiore'; $('#b-mode').value = 'maggiore'; } if (Arranger.STYLES[this.value] && p.bars < 16) { p.bars = 32; $('#b-bars').value = 32; $('#b-barsv').textContent = 32; } $('#b-bpm').value = p.bpm; persist(); });
+  $('#b-genre').addEventListener('change', function () { cur().genreManual = true; var p = cur().prod; p.genre = this.value; p.tune = null; p.bpm = ALLG[this.value].bpm; if (['trap', 'drill', 'epico', 'boombap', 'street', 'trapdark', 'clubtrap'].indexOf(this.value) >= 0) { p.mode = 'minore'; $('#b-mode').value = 'minore'; } else if (this.value === 'estate') { p.mode = 'maggiore'; $('#b-mode').value = 'maggiore'; } if (Arranger.STYLES[this.value] && p.bars < 16) { p.bars = 32; $('#b-bars').value = 32; $('#b-barsv').textContent = 32; } $('#b-bpm').value = p.bpm; persist(); });
   ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.addEventListener('change', function () { cur().prod.karBars = this.value === 'auto' ? 'auto' : +this.value; persist(); syncKar(); }); });
   function syncKar() { var v = String(cur().prod.karBars || 'auto'); ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.value = v; }); }
   $('#b-sounds').addEventListener('change', function () { cur().prod.sounds = this.value; persist(); });
@@ -10090,7 +10072,7 @@ details.card[open]>summary{margin-bottom:8px}
   async function runBrain(again) {
     var s = cur(), p = s.prod, m = $('#sb-msg');
     if (!s.lyrics.trim()) { m.textContent = 'Scrivi o incolla prima il testo (in alto): il cervello parte da quello.'; return; }
-    s.brainV = again ? (s.brainV || 0) + 1 : 0;
+    s.brainV = again ? (s.brainV || 0) + 1 : 0; s.brainFor = SultanBrain.hash(s.lyrics.trim()); s.genreManual = false;
     var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel(), mood: $('#sb-mood').value || null }); s.moodTarget = pl.moodTarget; persist();
     p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
     var res = Coach.suggest(coachState(), coachCands(p.genre), { emotion: pl.scene, seed: pl.seed }), R = Instruments.RECIPES[p.genre] || {};
@@ -10105,8 +10087,10 @@ details.card[open]>summary{margin-bottom:8px}
   $('#bl-mood').addEventListener('change', function () { $('#sb-mood').value = this.value; });
   $('#sb-make').addEventListener('click', function () { runBrain(false); });
   $('#sb-again').addEventListener('click', function () { runBrain(true); });
-  $('#b-play').addEventListener('click', function () { makeAndPlay(false); });
-  $('#b-new').addEventListener('click', function () { makeAndPlay(true); });
+  /* il testo decide la base: se non hai scelto tu il genere a mano, parte il Cervello Sultan (una base diversa per ogni testo) */
+  function brainFirst(again) { var s = cur(); if (s.lyrics && s.lyrics.trim() && !s.genreManual && (again || s.brainFor !== SultanBrain.hash(s.lyrics.trim()))) { runBrain(again && s.brainFor === SultanBrain.hash(s.lyrics.trim())); return true; } return false; }
+  $('#b-play').addEventListener('click', function () { if (!brainFirst(false)) makeAndPlay(false); });
+  $('#b-new').addEventListener('click', function () { if (!brainFirst(true)) makeAndPlay(true); });
   $('#b-stop').addEventListener('click', stopPlay);
   $('#b-save').addEventListener('click', async function () { coachRec('save', coachCtx()); var mx = buildMix({ voice: false }); saveAudio(mx.samples, mx.sr, 'base-' + (cur().title || 'canzone').replace(/\W+/g, '-'), $('#b-status')); });
 
@@ -10420,7 +10404,7 @@ details.card[open]>summary{margin-bottom:8px}
   }
   function voiceTake() { var t = activeTake(); return t && !t.example ? t : null; }
   function dwBuffers(b) {
-    var t = voiceTake(), key = SESSION.baseKey + '|' + vclipKey();
+    var t = voiceTake(), key = SESSION.baseKey + '|' + (t ? t.id + (t.final && !DW.raw ? 'f' + (t.finalV || 0) : '') : '');
     if (DW.bufKey === key && DW.bufs) return DW.bufs;
     var bufs = {}, N = b.length, sum = new Float32Array(N), i;
     LANES.forEach(function (L) {
@@ -10432,7 +10416,7 @@ details.card[open]>summary{margin-bottom:8px}
     });
     var pk = 0; for (i = 0; i < N; i++) { var v = sum[i] < 0 ? -sum[i] : sum[i]; if (v > pk) pk = v; }
     DW.k = pk > 0 ? 0.8 / pk : 1;
-    var vb = vclipBuffer(b.duration); if (vb) bufs.voice = vb;
+    if (t) bufs.voice = { x: (!DW.raw && t.final) || t.mono, sr: t.sr, start: -(t.lat || 0) };
     DW.bufs = bufs; DW.bufKey = key; return bufs;
   }
   function gainFor(L) {
@@ -10550,12 +10534,11 @@ details.card[open]>summary{margin-bottom:8px}
       t.lat = R.lat || 0; t.at = Date.now();
       dbTake('put', { id: t.id, name: t.name, mono: t.mono, sr: t.sr, lat: t.lat, at: t.at }).then(function (ok) { t.saved = !!ok; });
       SESSION.takeId = t.id; try { selectTake(t.id); } catch (e) {}
-      cur().vclips = [Clips.whole(t, t.lat || 0)]; CLUI.sel = 0;
       coachRec('record', coachCtx()); DW.bufKey = ''; DW.raw = false;
       $('#dw-msg').textContent = 'Voce registrata. Applico il microfono (' + (micSet().mode === 'autotune' ? 'autotune' : 'pulito') + ')…';
       await micApply(true);
       $('#dw-msg').textContent = 'Voce registrata e regolata. Premi Play per riascoltarla con la base. Il Coach la sta controllando.';
-      await dwRefresh(); clipsRender(); agentsRun(true);
+      await dwRefresh(); agentsRun(true);
     } catch (e) { $('#dw-msg').textContent = 'Non riesco a leggere la registrazione. Riprova.'; }
   }
 
@@ -10729,70 +10712,6 @@ details.card[open]>summary{margin-bottom:8px}
   $('#dw-heads').addEventListener('input', function (e) {
     var id = e.target.getAttribute('data-lv'); if (!id) return;
     var L = LANES.filter(function (x) { return x.id === id; })[0]; cur().prod.levels[L.level] = +e.target.value / 100; persist(); dwGains();
-  });
-  // ---------- Voce: prove e montaggio (clip) ----------
-  function realTakes() { return SESSION.takes.filter(function (t) { return !t.example; }); }
-  function takeById(id) { return SESSION.takes.filter(function (t) { return t.id === id; })[0] || null; }
-  function vclips() {
-    var s = cur();
-    if (Array.isArray(s.vclips)) { s.vclips = s.vclips.filter(function (c) { return takeById(c.take); }); if (s.vclips.length) return s.vclips; }
-    var t = voiceTake(); return t ? [Clips.whole(t, t.lat || 0)] : [];
-  }
-  function vclipKey() { return JSON.stringify(vclips().map(function (c) { var t = takeById(c.take); return [c.take, c.start, c.offset, c.len, c.gain, c.fadeIn, c.fadeOut, t && t.final && !DW.raw ? (t.finalV || 1) : 0]; })); }
-  function vclipBuffer(dur) {
-    var cl = vclips(); if (!cl.length) return null;
-    var map = {}; cl.forEach(function (c) { var t = takeById(c.take); if (t) map[c.take] = { x: (!DW.raw && t.final) || t.mono, sr: t.sr }; });
-    var sr = 44100; return { x: Clips.render(cl, map, sr, Math.max(dur, Clips.end(cl)) + 0.5), sr: sr, start: 0 };
-  }
-  function setClips(cl, msg) { cur().vclips = cl.map(Clips.clip); DW.bufKey = ''; persist(); clipsRender(); if (msg) $('#dw-cl-msg').textContent = msg; var was = DW.playing, at = was ? (getCtx().currentTime - DW.t0 + DW.from) : DW.from; dwStop(true); dwRefresh().then(function () { if (was) dwPlay(at); }); }
-  function fmtS(s) { return Math.floor(s / 60) + ':' + (s % 60).toFixed(1).padStart(4, '0'); }
-  var CLUI = { sel: 0 };
-  function clipsRender() {
-    var tk = realTakes(), cl = vclips(), map = songMap(), lines = map ? map.lines : [];
-    $('#dw-cl-takes').innerHTML = tk.length ? tk.map(function (t, i) { return '<div class="dw-prop"><div><b>Prova ' + (i + 1) + ' · ' + esc(t.name) + '</b><small>' + fmtS(t.mono.length / t.sr) + (t.final ? ' · regolata col microfono' : '') + '</small></div><button class="btn sm" data-ctp="' + t.id + '">▶</button><button class="btn sm pri" data-ctu="' + t.id + '">Usa tutta</button><button class="btn sm" data-ctx="' + t.id + '">Elimina</button></div>'; }).join('') : '<p class="small muted">Nessuna prova: registra con ● in alto. Ogni registrazione diventa una prova, nessuna si perde.</p>';
-    var comp = '';
-    if (lines.length && tk.length >= 2) {
-      var ch = cur().vcomp || {};
-      comp = '<p class="small muted" style="margin:10px 0 4px">Componi la voce: per ogni riga scegli la prova migliore.</p>' + lines.map(function (ln, i) {
-        return '<label class="f dw-compl"><span>' + esc(ln.text.slice(0, 48)) + '</span><select data-cpl="' + i + '"><option value="">— niente —</option>' + tk.map(function (t, k) { return '<option value="' + t.id + '"' + ((ch[i] || tk[tk.length - 1].id) === t.id ? ' selected' : '') + '>Prova ' + (k + 1) + '</option>'; }).join('') + '</select></label>';
-      }).join('') + '<div class="row"><button class="btn sm pri" id="dw-cl-comp">Monta la voce dalle righe scelte</button></div>';
-    } else if (tk.length >= 2) comp = '<p class="small muted">Scrivi il testo per montare la voce riga per riga.</p>';
-    $('#dw-cl-comp-box').innerHTML = comp;
-    CLUI.sel = Math.min(CLUI.sel, Math.max(0, cl.length - 1));
-    $('#dw-cl-list').innerHTML = cl.length ? cl.map(function (c, i) {
-      var t = takeById(c.take), k = realTakes().indexOf(t) + 1;
-      return '<button class="chip' + (i === CLUI.sel ? ' on' : '') + '" data-cls="' + i + '">Clip ' + (i + 1) + ' · prova ' + k + ' · ' + fmtS(c.start) + '–' + fmtS(c.start + c.len) + '</button>';
-    }).join('') : '';
-    var c = cl[CLUI.sel];
-    $('#dw-cl-edit').innerHTML = c ? [
-      ['start', 'Posizione nella canzone', 0, Math.max(30, Clips.end(cl) + 10), 0.01, fmtS(c.start)],
-      ['gain', 'Volume della clip', 0, 2, 0.01, (20 * Math.log10(Math.max(1e-4, c.gain))).toFixed(1) + ' dB'],
-      ['fadeIn', 'Entrata sfumata', 0, 2, 0.01, c.fadeIn.toFixed(2) + ' s'],
-      ['fadeOut', 'Uscita sfumata', 0, 2, 0.01, c.fadeOut.toFixed(2) + ' s']
-    ].map(function (r) { return '<label class="f"><span>' + r[1] + ' <b>' + r[5] + '</b></span><input type="range" min="' + r[2] + '" max="' + r[3] + '" step="' + r[4] + '" value="' + c[r[0]] + '" data-cle="' + r[0] + '"></label>'; }).join('') +
-      '<div class="row"><button class="btn sm" data-clm="-0.05">◀ 50 ms</button><button class="btn sm" data-clm="0.05">50 ms ▶</button><button class="btn sm pri" id="dw-cl-split">Taglia al cursore</button><button class="btn sm" id="dw-cl-del">Togli la clip</button></div>' : '';
-  }
-  $('#dw-p-clips').addEventListener('click', function (e) {
-    var b = e.target.closest('button'); if (!b) return;
-    var cl = vclips().map(function (x) { return Object.assign({}, x); }), el = $('#dw-cl-msg');
-    if (b.getAttribute('data-ctp')) { var t = takeById(b.getAttribute('data-ctp')); dwStop(true); playBuf((!DW.raw && t.final) || t.mono, t.sr); return; }
-    if (b.getAttribute('data-ctu')) { var t2 = takeById(b.getAttribute('data-ctu')); SESSION.takeId = t2.id; CLUI.sel = 0; setClips([Clips.whole(t2, t2.lat || 0)], 'Ora la voce è tutta la ' + esc(t2.name) + '.'); return; }
-    if (b.getAttribute('data-ctx')) { var id = b.getAttribute('data-ctx'); SESSION.takes = SESSION.takes.filter(function (x) { return x.id !== id; }); dbTake('del', id); if (SESSION.takeId === id) SESSION.takeId = realTakes().length ? realTakes()[realTakes().length - 1].id : null; setClips(vclips().filter(function (x) { return x.take !== id; }), 'Prova eliminata.'); return; }
-    if (b.getAttribute('data-cls') != null) { CLUI.sel = +b.getAttribute('data-cls'); clipsRender(); return; }
-    if (b.id === 'dw-cl-comp') {
-      var map = songMap(), ch = {}; $$('#dw-cl-comp-box select').forEach(function (s) { ch[+s.getAttribute('data-cpl')] = s.value; }); cur().vcomp = ch;
-      var lat = {}; realTakes().forEach(function (x) { lat[x.id] = x.lat || 0; });
-      var res = Clips.compByLines(map.lines, map.lines.map(function (_, i) { return ch[i]; }), realTakes(), lat);
-      CLUI.sel = 0; setClips(res, 'Voce montata: ' + res.length + ' clip, una per riga, con dissolvenze. Premi Play.'); coachRec('change', coachCtx(), { role: 'comp', from: null, to: res.length }); return;
-    }
-    var c = cl[CLUI.sel]; if (!c) return;
-    if (b.getAttribute('data-clm')) { c.start = Math.max(0, c.start + +b.getAttribute('data-clm')); setClips(cl, 'Clip spostata di ' + Math.round(+b.getAttribute('data-clm') * 1000) + ' ms.'); return; }
-    if (b.id === 'dw-cl-split') { var at = DW.playing ? (getCtx().currentTime - DW.t0 + DW.from) : (DW.from || 0), parts = Clips.split(c, at); if (!parts) { el.textContent = 'Metti il cursore dentro la clip (tocca la timeline) e riprova.'; return; } cl.splice(CLUI.sel, 1, parts[0], parts[1]); setClips(cl, 'Clip tagliata a ' + fmtS(at) + '.'); return; }
-    if (b.id === 'dw-cl-del') { cl.splice(CLUI.sel, 1); CLUI.sel = 0; setClips(cl, 'Clip tolta (la prova resta salvata).'); return; }
-  });
-  $('#dw-cl-edit').addEventListener('change', function (e) {
-    var k = e.target.getAttribute('data-cle'); if (!k) return;
-    var cl = vclips().map(function (x) { return Object.assign({}, x); }); cl[CLUI.sel][k] = +e.target.value; setClips(cl, '');
   });
   // ---------- Mixer a canali (stessa catena per ascolto e file salvato) ----------
   var MIX_LANES = ['drums', 'bass', 'chords', 'arp', 'lead', 'pad', 'voice'];
@@ -11036,7 +10955,7 @@ details.card[open]>summary{margin-bottom:8px}
     learnUse(pl); el.textContent = 'Base nuova creata dai tuoi gusti (' + pl.from + ' che ti piacciono' + (pl.avoid ? ', ' + pl.avoid + ' da evitare' : '') + '): ' + (Arranger.STYLES[pl.genre] ? Arranger.STYLES[pl.genre].label : pl.genre) + ', ' + pl.bpm + ' BPM, cassa sui passi ' + pl.groove.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + '. Premi Play.';
   });
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
-  SHOW.daw = function () { dwFill(); mixRender(); clipsRender(); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+  SHOW.daw = function () { dwFill(); mixRender(); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {

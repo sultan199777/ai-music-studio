@@ -179,7 +179,21 @@
     box.innerHTML = '<div class="note"><b>Orecchio di Sultan · voce</b> <span class="tag m">Misurato</span> · registrazione: <b>' + esc(a.verdict) + '</b>' +
       '<ul class="clean small">' + line(a, 'Registrazione') + (b ? line(b, 'Dopo il Voice Lab') : '') + '</ul>' +
       (a.findings.length ? '<ul class="clean small">' + a.findings.map(function (f) { return '<li><span class="tag ' + (f.level === 'errore' ? 'soon' : 'm') + '">' + (f.level === 'errore' ? 'Errore' : 'Misurato') + '</span> ' + esc(f.text) + '</li>'; }).join('') + '</ul>' : '<p class="small">Nessun problema misurabile nella ripresa.</p>') +
+      tmHtml(t) +
       (has ? '<div class="row"><button class="btn sm pri" id="vl-ear-fix">Applica i consigli e rifai la voce</button></div>' : '') + '</div>';
+  }
+  var TM = null;
+  function tmHtml(t) {
+    TM = null; if (!root.Timing) return '';
+    var m = root.Timing.measure(t.mono, t.sr, api.bpm ? api.bpm() : 140); TM = m;
+    if (!m.reliable) return '<p class="small"><span class="tag i">Ipotesi</span> Tempo: servono almeno 6 sillabe nette per misurarlo (trovate ' + m.n + ').</p>';
+    var ms = m.offsetMs, big = Math.abs(ms) >= 12;
+    return '<p class="small"><span class="tag m">Misurato</span> Tempo sulla griglia (semicrome a ' + (api.bpm ? api.bpm() : 140) + ' BPM): la voce è ' + (Math.abs(ms) < 6 ? 'in tempo' : Math.abs(ms) + ' ms in ' + (ms > 0 ? 'ritardo' : 'anticipo')) + ' (oscillazione ±' + m.spreadMs + ' ms). <span class="tag i">Ipotesi</span> vale se la registrazione parte insieme alla base.</p>' +
+      (big ? '<div class="row"><button class="btn sm" id="vl-tm-fix">Correggi il tempo (' + (ms > 0 ? '−' : '+') + Math.abs(ms) + ' ms)</button></div>' : '');
+  }
+  function tmFix() {
+    var t = api.activeTake(); if (!t || !TM || !root.Timing) return;
+    t.mono = root.Timing.shift(t.mono, t.sr, TM.offsetMs); t.final = null; applyTake(t, {});
   }
   function earVoiceFix() {
     var t = api.activeTake(); if (!t || !EAR_FIX) return;
@@ -354,7 +368,7 @@
 
   /* ---------- eventi ---------- */
   function wire() {
-    document.addEventListener('click', function (e) { if (e.target && e.target.id === 'vl-ear-fix') earVoiceFix(); });
+    document.addEventListener('click', function (e) { if (e.target && e.target.id === 'vl-ear-fix') earVoiceFix(); if (e.target && e.target.id === 'vl-tm-fix') tmFix(); });
     $('#vl-auto').addEventListener('click', function () { var t = api.activeTake(); if (!t) { setStatus('Prima registra o importa una voce.'); return; } st.macros = {}; st.advanced = {}; save(); renderSliders(); applyTake(t, { reanalyze: true }); });
     $('#vl-apply').addEventListener('click', function () { var t = api.activeTake(); if (t) applyTake(t, {}); });
     $('#vl-reset').addEventListener('click', function () { st.macros = {}; st.advanced = {}; save(); renderSliders(); buildAdvanced(); var t = api.activeTake(); if (t) schedule(200); });
