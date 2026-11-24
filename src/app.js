@@ -103,6 +103,7 @@
     cancelAnimationFrame(player.raf);
     if (player.src) { var s = player.src; player.src = null; try { s.onended = null; s.stop(); } catch (e) {} }
     if (player.onStop) { var f = player.onStop; player.onStop = null; f(); }
+    if (window.VoiceLab) VoiceLab.stop(); // VOICE LAB: ferma anche l'ascolto Prima/Dopo
   }
   // Riproduce; onTick(t) viene chiamata a ogni fotogramma con i secondi trascorsi.
   function playBuf(samples, sr, onTick, onStop) {
@@ -196,10 +197,10 @@
   var AI_RULES = 'Rispondi in italiano, in modo concreto e breve (massimo 150 parole). Distingui chiaramente ciò che è un\'ipotesi da ciò che è un fatto. Non promettere successo, hit o effetti emotivi garantiti. Non citare né copiare testi di altri autori.';
 
   /* ================= Navigazione ================= */
-  var VIEWS = ['home', 'menu', 'canzoni', 'studio', 'strumenti', 'producer', 'voce', 'video', 'marketing', 'social', 'libreria', 'impostazioni'];
+  var VIEWS = ['home', 'menu', 'canzoni', 'studio', 'strumenti', 'producer', 'voce', 'video', 'marketing', 'social', 'libreria', 'impostazioni', 'beatlab' /* Beat Lab */];
   var MENU = [
     ['home', 'Home e Dashboard', 'Il tuo percorso', 'i-home'], ['canzoni', 'Le mie canzoni', 'Schede e versioni', 'i-disc'],
-    ['studio', 'Music Studio', 'Testo, base, cantare', 'i-sliders'], ['strumenti', 'Strumentario', '29 strumenti veri e guida', 'i-sliders'], ['producer', 'AI Producer', 'Comandi a parole', 'i-spark'],
+    ['studio', 'Music Studio', 'Testo, base, cantare', 'i-sliders'], ['strumenti', 'Strumentario', '29 strumenti veri e guida', 'i-sliders'], ['beatlab', 'Beat Lab', 'Fai le tue basi', 'i-note'] /* Beat Lab */, ['producer', 'AI Producer', 'Comandi a parole', 'i-spark'],
     ['voce', 'Vocal Studio', 'Voce e autotune', 'i-mic'], ['video', 'AI Video Studio', 'Clip a tempo', 'i-film'],
     ['marketing', 'Marketing AI', 'Piano a 30 giorni', 'i-mega'], ['social', 'Social Media Manager', 'Calendario', 'i-cal'],
     ['libreria', 'Libreria contenuti', 'Materiali', 'i-folder'], ['impostazioni', 'Impostazioni', 'Aspetto e dati', 'i-gear']
@@ -219,6 +220,10 @@
     window.scrollTo(0, 0);
   }
   window.addEventListener('hashchange', route);
+  /* ---- Beat Lab (blocco aggiunto): si apre con #beatlab; il suono si ferma quando esci ---- */
+  SHOW.beatlab = function () { if (window.BeatLabUI) window.BeatLabUI.mount($('#bl-root')); };
+  window.addEventListener('hashchange', function () { if (location.hash !== '#beatlab' && window.BeatLabUI) window.BeatLabUI.unmount(); });
+  /* ---- fine Beat Lab ---- */
 
 
   /* ================= Atmosfera: i colori seguono l'emozione del testo ================= */
@@ -1002,6 +1007,7 @@
     if (!SESSION.useImported) coachRec('record', coachCtx());
     setTimeout(function () { coachCheck(true); }, 300);
     msg.innerHTML = (pk <= 0.003 ? 'Non ho sentito quasi nulla: controlla che il microfono non sia coperto e che le cuffie abbiano il microfono. ' : (boosted ? 'Il volume era basso: l\'ho alzato automaticamente (picco originale ' + Math.round(pk * 100) + '%). ' : (pk > 0.98 ? 'Il suono satura: canta più lontano o più piano. ' : ''))) + 'Salvata tra le prove. <a href="#voce">Apri Voce per autotune e mix</a>';
+    if (window.VoiceLab && pk > 0.003) VoiceLab.onNewTake(t, msg); // VOICE LAB: applica da solo il carattere scelto (tonalità rilevata da sola)
   }
 
   function renderTakes() {
@@ -1021,6 +1027,7 @@
   function selectTake(id) {
     SESSION.takeId = id; var t = activeTake(); if (!t) return;
     renderTakes(); renderTakeAnalysis(t);
+    if (window.VoiceLab) VoiceLab.onSelect(t); // VOICE LAB
     var k = t.key;
     if (!k) { $('#v-key').textContent = 'Non ho abbastanza note chiare per stimare la tonalità: scegli tu nota e scala (o lascia "tutte le note").'; $('#v-tonic').value = 0; $('#v-mode').value = 'cromatica'; }
     else if (k.confidence === 'bassa') { $('#v-key').innerHTML = 'Stima poco sicura: <b>' + esc(k.name) + '</b> oppure ' + esc(k.alternative.name) + '. Per non rischiare correzioni sbagliate uso "tutte le note". Se conosci la tonalità, sceglila.'; $('#v-tonic').value = k.tonic; $('#v-mode').value = 'cromatica'; }
@@ -1194,6 +1201,12 @@
   });
   SHOW.voce = function () { renderTakes(); if (activeTake()) selectTake(SESSION.takeId); };
   window.addEventListener('resize', function () { var t = activeTake(); if (t && !$('#v-work').hidden) { drawPitch(t); drawNotes(); } });
+
+  /* ===== VOICE LAB (cablaggio): il codice sta in src/voice-chain.js, src/voice-lab.js, src/realtime-tune.js ===== */
+  VoiceLab.init({ esc: esc, fmt: fmt, tick: tick, meter: meter, cssv: cssv, NOTES: NOTES, activeTake: activeTake, getCtx: getCtx, makeBuffer: makeBuffer, stopPlay: stopPlay, micOk: micOk,
+    bpm: function () { return cur().prod.bpm; },
+    refresh: function (t) { renderTakes(); renderTakeAnalysis(t); drawNotes(); $('#v-fix').disabled = false; $('#v-result').innerHTML = t.finalHtml || ''; var s = cur(); if (['idea', 'testo', 'base', 'voce'].indexOf(s.status) !== -1) { s.status = 'voce'; persist(); } } });
+  /* ===== fine VOICE LAB ===== */
 
   /* ================= Video ================= */
   var CV = $('#m-cv'), CX = CV.getContext('2d'), mgTimer = null;

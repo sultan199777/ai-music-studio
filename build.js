@@ -36,11 +36,16 @@ const date = new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'sh
 let html = read('src/app.shell.html');
 const parts = {
   CSS: 'src/app.css', BODY: 'src/app.body.html', LYRICS_ENGINE: 'src/lyrics-engine.js', AUDIO_ANALYSIS: 'src/audio-analysis.js',
-  KEY_DETECT: 'src/key-detect.js', AUTOTUNE: 'src/autotune.js', POLISH: 'src/polish.js', MASTER: 'src/master.js', BACKING: 'src/backing.js', SAMPLES: 'src/samples-data.js', INSTRUMENTS: 'src/instruments.js', SOUND_LAB: 'src/sound-lab.js', COACH: 'src/coach.js', ARRANGER: 'src/arranger.js', STYLE_CARD: 'src/style-card.js',
+  KEY_DETECT: 'src/key-detect.js', FORMANT: 'src/formant.js' /* VOICE LAB */, VOICE_CHAIN: 'src/voice-chain.js', REALTIME: 'src/realtime-tune.js', VOICE_LAB: 'src/voice-lab.js', VOICE_LAB_CSS: 'src/voice-lab.css', AUTOTUNE: 'src/autotune.js', POLISH: 'src/polish.js', MASTER: 'src/master.js', BACKING: 'src/backing.js', SAMPLES: 'src/samples-data.js', INSTRUMENTS: 'src/instruments.js', SOUND_LAB: 'src/sound-lab.js', COACH: 'src/coach.js', ARRANGER: 'src/arranger.js', STYLE_CARD: 'src/style-card.js',
   LYRICS_TO_BASE: 'src/lyrics-to-base.js', CLIP_FX: 'src/clip-fx.js', BASE_ANALYSIS: 'src/base-analysis.js', MANGA: 'src/manga-filter.js',
   PITCH_EDITOR: 'src/pitch-editor.js', VIDEO_IDEAS: 'src/video-ideas.js', PROMO: 'src/promo-plan.js', PRODUCER: 'src/producer-actions.js', APP: 'src/app.js'
 };
+// ---- Beat Lab (blocco aggiunto): file nuovi, stesso meccanismo ----
+const BEATLAB_FILES = ['beatlab-voices', 'beatlab-engine', 'beatlab-patterns', 'beatlab-sampler', 'beatlab-theory', 'beatlab-mix', 'beatlab-midi', 'beatlab-store', 'beatlab-ui', 'beatlab-ui-inst', 'beatlab-ui-edit', 'beatlab-ui-mix', 'beatlab-boot'];
+parts.BEATLAB_CSS = 'src/beatlab.css';
+// ---- fine Beat Lab ----
 for (const k of Object.keys(parts)) html = html.replace('/*__' + k + '__*/', () => read(parts[k]));
+html = html.replace('/*__BEATLAB_JS__*/', () => BEATLAB_FILES.map((f) => `;(function(){\n/* ${f} */\n${read('src/' + f + '.js')}\n})();`).join('\n'));
 html = html.replace('__TEST_SUMMARY__', () => `${passed} test automatici superati su ${total}`).replace('__BUILD_DATE__', () => date);
 
 fs.mkdirSync(path.join(root, 'dist'), { recursive: true });

@@ -173,6 +173,9 @@
     <p class="small muted">La voce finisce tra le prove in Voce, dove applichi autotune e mix. Le prove restano salvate sul telefono (nella versione app).</p>
   </div>
 
+  <!-- VOICE LAB: monitor in cuffia (sperimentale), riempito da src/voice-lab.js -->
+  <div id="vl-mon-root"></div>
+
   <div class="card"><div class="card-head"><h3>1. Importa le registrazioni</h3></div>
     <p class="small muted">Registra con <b>Memo Vocali</b> → Salva su File → qui. Puoi importare più prove (take) e confrontarle.</p>
     <div class="row"><label class="btn pri" for="v-file">Scegli la registrazione</label><input type="file" id="v-file" accept="audio/*" multiple><button class="btn" id="v-demo">Prova con un esempio</button></div>
@@ -180,6 +183,8 @@
     <div id="v-takes"></div>
   </div>
   <div id="v-work" hidden>
+    <!-- VOICE LAB: autotune e catena vocale automatici, riempito da src/voice-lab.js -->
+    <div id="vl-root"></div>
     <div class="card"><div class="card-head"><h3>2. Cosa ho misurato</h3></div><div id="v-analysis"></div><div id="v-chart"></div></div>
     <div class="card"><div class="card-head"><h3>3. Editor delle note</h3><span class="tag m">Misurato</span></div>
       <p class="small muted">Ogni barra è una nota che hai cantato. La <b>linea</b> è dove l'hai cantata, la <b>barra</b> è dove la porti. Tocca una nota per modificarla.</p>
@@ -313,6 +318,10 @@
 </main>
 
 <!-- IMPOSTAZIONI -->
+<!-- ---- Beat Lab (blocco aggiunto): vista #beatlab ---- -->
+<main class="view" id="v-beatlab" hidden><div id="bl-root"></div></main>
+<!-- ---- fine Beat Lab ---- -->
+
 <main class="view" id="v-impostazioni" hidden>
   <div class="head"><div class="eyebrow">Impostazioni</div><h1>Le tue preferenze</h1></div>
   <div class="card"><h3>Aspetto</h3>

@@ -1,0 +1,72 @@
+/* ===== Beat Lab (tema Cosmo: usa le variabili di app.css) ===== */
+#v-beatlab .bl-sticky{position:sticky;top:0;z-index:6;padding:12px 14px}
+#v-beatlab .bl-trow{flex-wrap:wrap;gap:8px}
+#v-beatlab .bl-bpm{display:flex;align-items:center;gap:6px}
+#v-beatlab .bl-bpm input{width:76px;text-align:center;font-weight:800;padding:8px 6px}
+#v-beatlab .bl-bpm .btn{padding:0;width:38px;min-width:38px}
+#v-beatlab .btn.pri{min-width:116px}
+#v-beatlab .bl-modes{margin:12px 0 4px}
+#v-beatlab .bl-barseg{margin:8px 0}
+#v-beatlab .seg button.on{background:var(--grad);color:var(--on-accent);border:0}
+.bl-gridwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px;margin:8px -4px 0;overscroll-behavior-x:contain}
+.bl-grid{min-width:max-content;padding:0 4px}
+.bl-line{display:flex;align-items:stretch;margin-bottom:6px}
+.bl-lab{position:sticky;left:0;z-index:3;width:78px;flex:none;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:0 6px 0 2px;background:var(--card-solid);border-radius:10px 0 0 10px;font-size:.78rem;line-height:1.15}
+.bl-clr{font:inherit;font-size:.66rem;color:var(--muted);background:none;border:0;padding:2px 0;text-align:left;cursor:pointer;min-height:20px}
+.bl-row{display:grid;grid-template-columns:repeat(var(--cols),var(--cw));gap:3px}
+.bl-cell{height:42px;border-radius:9px;border:1px solid var(--field-line);background:var(--field);position:relative;padding:0;overflow:hidden;cursor:pointer;touch-action:pan-x pan-y;-webkit-user-select:none;user-select:none}
+.bl-cell.alt{background:color-mix(in srgb,var(--field) 82%,var(--violet) 18%)}
+.bl-cell.beat{border-left:2px solid var(--violet)}
+.bl-cell i{position:absolute;left:0;right:0;bottom:0;background:var(--grad);opacity:.95;pointer-events:none}
+.bl-cell.v1 i{opacity:.55}.bl-cell.v2 i{opacity:.8}
+.bl-cell em{position:absolute;top:1px;right:3px;font-style:normal;font-size:.62rem;font-weight:800;color:var(--on-accent);text-shadow:0 0 3px rgba(0,0,0,.6);pointer-events:none}
+.bl-cell.now{outline:2px solid var(--cyan);outline-offset:-2px;box-shadow:0 0 12px var(--cyan)}
+#v-beatlab .bl-gridwrap.forza .bl-cell,.bl-modeforza .bl-cell{touch-action:none}
+.bl-ch{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.bl-ch:first-child{border-top:0}
+.bl-ch.off{opacity:.5}
+.bl-chname{display:flex;align-items:center;gap:6px;font-size:.84rem}
+.bl-chname b{min-width:92px}
+.bl-ms{font:inherit;font-weight:800;font-size:.78rem;width:34px;height:32px;border-radius:9px;border:1px solid var(--field-line);background:var(--card-solid);color:var(--muted);cursor:pointer;padding:0}
+.bl-ms.mute.on{background:var(--warn);color:#10121c;border-color:var(--warn)}
+.bl-ms.solo.on{background:var(--cyan);color:#10121c;border-color:var(--cyan)}
+.bl-meter{height:10px;border-radius:6px;background:var(--bg2);overflow:hidden}
+.bl-meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet) 70%,var(--pink))}
+.bl-meter.hot{box-shadow:0 0 0 1px var(--bad)}
+.bl-faders{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px 14px}
+.bl-faders label{display:flex;align-items:center;gap:8px;font-size:.74rem;color:var(--muted)}
+.bl-faders input{flex:1}
+.bl-ch.master .bl-faders{grid-template-columns:1fr}
+.bl-grp{border-top:1px solid var(--line);padding:6px 0}
+.bl-grp>summary{cursor:pointer;font-family:'Sora',sans-serif;font-weight:700;font-size:.95rem;padding:8px 0;list-style:none;min-height:36px}
+.bl-grp>summary::-webkit-details-marker{display:none}
+.bl-grp>summary::after{content:"+";float:right;color:var(--muted)}
+.bl-grp[open]>summary::after{content:"−"}
+.bl-inst{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px dashed var(--line)}
+.bl-instinfo{min-width:0;flex:1;display:flex;flex-wrap:wrap;gap:2px 8px;align-items:center}
+.bl-instinfo small{flex:1 0 100%;color:var(--muted);line-height:1.3}
+.bl-instbtn{display:flex;gap:6px;flex:none}
+.bl-instrow{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bl-instrow select{flex:1 1 150px;min-width:0;padding:7px 10px;font-size:15px}
+.bl-inst .tag,.bl-instrow .tag{white-space:normal}
+.bl-instinfo b{overflow-wrap:anywhere}
+/* tastiera sulla scala */
+.bl-kbdwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px -4px;padding:4px}
+.bl-kbd{display:flex;gap:5px;min-width:max-content}
+.bl-key{font:inherit;width:58px;height:112px;border-radius:12px;border:1px solid var(--field-line);background:var(--card-solid);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;padding:0 0 10px;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.bl-key b{font-size:1rem;font-family:'Sora',sans-serif}.bl-key small{font-size:.66rem;color:var(--muted)}
+.bl-key.in{background:color-mix(in srgb,var(--card-solid) 80%,var(--violet) 20%)}
+.bl-key.tonic{border-color:var(--cyan);box-shadow:0 0 12px var(--glow2)}
+.bl-key.out{opacity:.45;height:84px}
+.bl-key.hit{background:var(--grad);color:var(--on-accent)}.bl-key.hit small{color:var(--on-accent)}
+.bl-chords{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:8px;margin:8px 0}
+.bl-chords .btn{flex-direction:column;gap:0;padding:8px 4px}.bl-chords small{color:var(--muted);font-size:.7rem}
+/* piano roll */
+.bl-rollwrap{overflow:auto;-webkit-overflow-scrolling:touch;max-height:480px;border:1px solid var(--line);border-radius:14px;background:var(--card-solid);margin:8px 0}
+.bl-roll{display:block}.bl-roll.draw{touch-action:none}.bl-roll.scroll{touch-action:pan-x pan-y}
+/* impara */
+.bl-learnbox{display:none;margin:10px 0 0;padding:10px 12px;border-left:3px solid var(--cyan);background:var(--info-bg);border-radius:0 12px 12px 0}
+.bl-learnbox p{margin:2px 0 8px;font-size:.88rem}
+.bl-learn .bl-learnbox{display:block}
+#v-beatlab .bl-bar{position:sticky;top:0;z-index:6;padding:8px 12px;margin:0 0 10px;border-radius:16px;background:var(--tabbg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line)}
+#v-beatlab .bl-bar .bl-trow{margin:0}

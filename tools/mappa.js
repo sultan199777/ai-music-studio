@@ -17,7 +17,7 @@ app.forEach((l, i) => { const m = l.match(/\/\*\s*=+\s*(.*?)\s*=+\s*\*\//) || l.
 out.push('', '## Funzioni principali di app.js (riga: nome)', '');
 const fn = []; app.forEach((l, i) => { const m = l.match(/^\s{2}(?:async )?function (\w+)/); if (m) fn.push(`${m[1]}:${i + 1}`); });
 out.push(fn.join(', '), '', '## tests/', '');
-for (const f of fs.readdirSync(path.join(root, 'tests')).sort()) { const s = fs.readFileSync(path.join(root, 'tests', f), 'utf8'); out.push(`- ${f}: ${(s.match(/^test\(/gm) || []).length} test`); }
+for (const f of fs.readdirSync(path.join(root, 'tests')).sort().filter((x) => x.endsWith('.js'))) { const s = fs.readFileSync(path.join(root, 'tests', f), 'utf8'); out.push(`- ${f}: ${(s.match(/^test\(/gm) || []).length} test`); }
 out.push('', '## Altro', '', '- build.js: esegue i test e crea dist/index.html (artifact) e docs/ (sito GitHub Pages)', '- notes/STATO.md: cosa è fatto e cosa no (aggiornare ogni passo)', '- notes/ARCHITETTURA.md, notes/LICENZE-SUONI.md', '- src/app.body.html / app.css / app.shell.html: interfaccia', '');
 fs.writeFileSync(path.join(root, 'notes/MAPPA.md'), out.join('\n'));
 console.log('notes/MAPPA.md', out.join('\n').length, 'caratteri');

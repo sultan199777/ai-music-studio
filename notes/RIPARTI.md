@@ -16,16 +16,21 @@ Progetto: studio musicale personale (italiano), PWA per iPhone. Sito: https://su
 - Falsi allarmi: l'avviso "commit non inviati" dell'hook è sbagliato; verificare con `git fetch` e `git rev-list --count origin/<ramo>..HEAD`.
 
 ## Stato (dettagli in notes/STATO.md)
-Fatto: Coach che impara e insegna, Laboratorio suoni (strumenti originali), testo→base dalle emozioni, karaoke a sillabe, microfono con MediaRecorder, Strumentario (29 strumenti veri CC0 + 3 chitarre, guida e ricette), analisi testi, 808 con glide e saturazione, hi-hat con rullate, groove di cassa per stile, registrazione dal microfono (Voce), Auto-Tune + preset trap, master, scheda di stile, arrangiatore 5 stili con batteria a campioni CC0 e melodia varia, Producer con comandi (BPM, tonalità, stile, per strumento e per sezione), testo scorrevole regolabile, tema Cosmo.
-Non fatto: percussioni del mondo, cori, 808 da campione, mix per traccia, piano roll/MIDI, Voice Lab avanzato, import basi (Basic Pitch), Coach che impara dalle scelte, video anime reale, social, AI locale (serve un computer).
+Fatto (provato con test e nel browser, NON ascoltato: il suono lo giudica l'utente):
+- Basi: arrangiatore 5 stili (808 glide, hi-hat rullate, groove per stile); **Strumentario** (#strumenti: 29 strumenti CC0 + 3 chitarre, guida, ricette); **Laboratorio suoni** (12 strumenti originali, 5 generi da inventare, editor con strati/morph/11 caratteri, Sorprendimi, strumenti dell'utente salvati); testo→base dalle emozioni con strumenti veri (niente flauto automatico).
+- **Beat Lab** (#beatlab, da altra chat): motore in tempo reale, batteria a step, 20 strumenti CC0 in docs/samples, piano roll, mixer con effetti, export WAV/MIDI.
+- **Voice Lab** (pagina Voce, da altra chat): autotune con retune speed/humanize/flex-tune/formanti, catena vocale, 13 caratteri.
+- Microfono con MediaRecorder (contro lo "sgretolio"); testo che scorre a sillabe con parola evidenziata.
+- **Coach** (Studio): impara dai gesti (anche per emozione del testo), "Crea con il Coach", "Controlla il mio lavoro" con correzioni, 8 abilità e livelli.
+Non fatto: autotune adattivo al testo e agli accordi, correzione del timing, percussioni del mondo, cori, assistente con modello di linguaggio (l'utente NON vuole servizi a pagamento ora; se servirà, dire prima il costo), video, social, AI locale (serve un computer).
 
 ## Prossimo passo concordato
-Verificare sull'iPhone microfono e testo che scorre; poi ricerca e progetto dell'autotune nuovo (adattivo al testo, segue gli accordi); percussioni del mondo. Poi mix per traccia, piano roll/MIDI, Voice Lab. Chiedere conferma "vai" solo se cambia la direzione.
+1. L'utente prova su iPhone microfono, testo che scorre, Laboratorio, Coach, Beat Lab, Voice Lab: correggere in base a cosa sente.
+2. Autotune NUOVO: ricerca su come sono costruiti, poi autotune che segue gli accordi della base e si adatta al testo ("più così").
+3. Collegare Coach e Laboratorio al Beat Lab. Le chat nuove partono da main aggiornato (`git pull origin main`).
 
 ## Direzione decisa dall'utente (24/11/2026)
-Obiettivo: lo studio più grande e completo possibile, non un "mini studio". Due parti distinte: Beat Studio (basi, tutti gli strumenti) e un autotune NUOVO di carattere (non solo preset: ci si deve poter lavorare dentro). Ordine: Fase 0 (fondamenta) + metronomo/misura ritardo, poi il resto. Idee per l'autotune nuovo (ipotesi): segue gli accordi della base battuta per battuta, carattere su pad XY per sezione, curva disegnata col dito, effetti legati al testo (rime, fine frase).
+Lo studio più completo possibile, ORIGINALE (non copie: i campioni sono materia prima da trasformare), facile e spiegato, che impara e insegna, perché l'utente diventi producer autonomo. Base e voce si adattano al testo e alle emozioni. Situazione economica difficile: obiettivo alto, ma promettere solo ciò che si misura. Gli "agenti" che imparano devono funzionare davvero sul telefono, gratis.
 
-Precisazione (24/11, sera): suoni ORIGINALI, non copie: i campioni CC0 sono solo materia prima da rielaborare (Laboratorio suoni: carattere, ibridi, morph). L'app deve migliorare da sola imparando dalle scelte dell'utente ("agenti"/Coach), essere facile e spiegata, e l'utente deve diventare producer autonomo. Autotune: tutte le caratteristiche modificabili + voce e base che si adattano al testo ("più così").
-
-## Piano tecnico dello studio professionale (nuovo, 24/11/2026)
-Documento con ricerca, fonti, licenze, architettura e fasi: https://claude.ai/artifact/QH4k4tg4uf8kRHfPYMpvD2 (leggerlo con Artifact read, solo se serve). Due studi distinti: Beat Studio e Voice Studio. Fase 0 = progetto in dati + motore Tone.js + mixer per traccia + export WAV. Il codice NON è ancora stato cambiato per questo piano (fatti solo 808/hi-hat/groove nell'arrangiatore attuale); l'utente deve confermare da quale fase partire.
+## Piano tecnico dello studio professionale
+Documento con ricerca, fonti, licenze, architettura e fasi: https://claude.ai/artifact/QH4k4tg4uf8kRHfPYMpvD2 (leggerlo con Artifact read, solo se serve).
