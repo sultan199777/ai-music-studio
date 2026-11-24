@@ -36,7 +36,7 @@ const date = new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'sh
 let html = read('src/app.shell.html');
 const parts = {
   CSS: 'src/app.css', BODY: 'src/app.body.html', LYRICS_ENGINE: 'src/lyrics-engine.js', AUDIO_ANALYSIS: 'src/audio-analysis.js',
-  KEY_DETECT: 'src/key-detect.js', FORMANT: 'src/formant.js' /* VOICE LAB */, VOICE_CHAIN: 'src/voice-chain.js', REALTIME: 'src/realtime-tune.js', VOICE_LAB: 'src/voice-lab.js', VOICE_LAB_CSS: 'src/voice-lab.css', AUTOTUNE: 'src/autotune.js', POLISH: 'src/polish.js', MASTER: 'src/master.js', BACKING: 'src/backing.js', SAMPLES: 'src/samples-data.js', ARRANGER: 'src/arranger.js', STYLE_CARD: 'src/style-card.js',
+  KEY_DETECT: 'src/key-detect.js', FORMANT: 'src/formant.js' /* VOICE LAB */, VOICE_CHAIN: 'src/voice-chain.js', REALTIME: 'src/realtime-tune.js', VOICE_LAB: 'src/voice-lab.js', VOICE_LAB_CSS: 'src/voice-lab.css', AUTOTUNE: 'src/autotune.js', POLISH: 'src/polish.js', MASTER: 'src/master.js', BACKING: 'src/backing.js', SAMPLES: 'src/samples-data.js', INSTRUMENTS: 'src/instruments.js', ARRANGER: 'src/arranger.js', STYLE_CARD: 'src/style-card.js',
   LYRICS_TO_BASE: 'src/lyrics-to-base.js', CLIP_FX: 'src/clip-fx.js', BASE_ANALYSIS: 'src/base-analysis.js', MANGA: 'src/manga-filter.js',
   PITCH_EDITOR: 'src/pitch-editor.js', VIDEO_IDEAS: 'src/video-ideas.js', PROMO: 'src/promo-plan.js', PRODUCER: 'src/producer-actions.js', APP: 'src/app.js'
 };
@@ -65,4 +65,9 @@ self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.a
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const c=r.clone();if(new URL(e.request.url).origin===location.origin)caches.open(V).then(x=>x.put(e.request,c));return r}).catch(()=>caches.match(e.request).then(m=>m||caches.match('index.html'))))});
 `);
 fs.writeFileSync(path.join(pwa, '_headers'), '/*\n  X-Content-Type-Options: nosniff\n  X-Frame-Options: DENY\n  Referrer-Policy: no-referrer\n  Permissions-Policy: microphone=(self), camera=(), geolocation=()\n/sw.js\n  Cache-Control: no-cache\n');
-console.log('OK: docs/ (index.html, manifest, sw.js, _headers)');
+// strumenti a campioni: un file per strumento, caricato a richiesta (inst/<id>.json)
+const instSrc = path.join(root, 'assets', 'inst'), instDst = path.join(pwa, 'inst');
+fs.mkdirSync(instDst, { recursive: true });
+let nInst = 0;
+for (const f of fs.readdirSync(instSrc)) { fs.copyFileSync(path.join(instSrc, f), path.join(instDst, f)); nInst++; }
+console.log('OK: docs/ (index.html, manifest, sw.js, _headers, ' + nInst + ' strumenti in inst/)');

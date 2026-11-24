@@ -53,3 +53,6 @@ Totale docs/samples: 8.10 MB (limite che mi ero dato: circa 40 MB).
 Non sono presenti in questi pacchetti: una vera chitarra e un coro cantato. La "Chitarra" e il "Coro" del Beat Lab sono sintetizzatori calcolati dal programma (non campioni); lo Strumstick e' il piu' vicino alla chitarra tra i campioni liberi trovati.
 
 Se aggiungi altri suoni: controlla la licenza di OGNI cartella prima di copiarli (nel pacchetto stargate le cartelle karoryfer e microlag non sono state usate perche' la loro licenza non e' scritta nella cartella stessa).
+# Strumenti melodici (campioni)
+29 strumenti da VSCO 2 Community Edition (https://github.com/sgossner/VSCO-2-CE) e VCSL (https://github.com/sgossner/VCSL) di Versilian Studios, licenza CC0 1.0. Note scelte ogni 3-6 semitoni, mono 22 050 Hz, ADPCM IMA 4 bit, in assets/inst/<id>.json (sito: docs/inst/). Generati con tools/build-instruments.py (altezza di ogni nota misurata).
+Chitarre (acustica, classica, elettrica pulita): sintetizzate (Karplus-Strong), nessun campione.

@@ -6,12 +6,12 @@ Leggi questo file PRIMA di aprire i sorgenti: dice dove sta ogni cosa.
 
 | File | Righe | Scopo | Esporta |
 |---|---|---|---|
-| app.body.html | 302 |  |  |
+| app.body.html | 321 |  |  |
 | app.css | 195 |  |  |
-| app.js | 1131 | ================= Dati e salvataggio ================= |  |
-| app.shell.html | 40 |  |  |
+| app.js | 1222 | ================= Dati e salvataggio ================= |  |
+| app.shell.html | 41 |  |  |
 | app.template.html | 1169 |  |  |
-| arranger.js | 566 | Arrangiatore: costruisce basi ORIGINALI con una struttura vera (intro, strofa, pre, ritornello, bridge, outro) e direzioni di stile diverse. Tutto è sintetizzato dal programma (nessun campione, nessun brano altrui). | generate: generate, planStructure: planStructure, STYLES: STYLES, SECTIONS: SEC |
+| arranger.js | 580 | Arrangiatore: costruisce basi ORIGINALI con una struttura vera (intro, strofa, pre, ritornello, bridge, outro) e direzioni di stile diverse. Tutto è sintetizzato dal programma (nessun campione, nessun brano altrui). | generate: generate, planStructure: planStructure, STYLES: STYLES, SECTIONS: SEC |
 | audio-analysis.js | 223 | Analisi audio della voce (Modulo 1, solo parte MISURABILE con calcolo diretto). Misura: livello, picco, clipping, dinamica, altezza delle note (pitch), estensione e scostamento dall'intonazione "temperata" (La = 440 Hz). | analyze: analyze, detectPitch: detectPitch, synthExample: synthExample, freqToMidi: freqToMidi, midiToFreq: midiToFreq, midiToName: midiToName |
 | autotune.js | 407 | Autotune (correzione dell'intonazione) con la tecnica PSOLA. 1. Si misura l'altezza della voce nel tempo (AudioAnalysis). 2. Per ogni istante si sceglie la nota "giusta" più vicina nella scala scelta. | correct: correct, scaleMask: scaleMask, quantizeMidi: quantizeMidi, stepUp: stepUp, track: track, measure: measure, detectKey: detectKey |
 | backing.js | 291 | Generatore di basi musicali ORIGINALI (batteria, basso, accordi, pad, melodia). Tutto è sintetizzato dal programma con onde semplici: non usa registrazioni, campioni o brani di altri. Il risultato è una bozza utile per c | generate: generate, mix: mix, withVoice: withVoice, resampleLinear: resampleLinear, GENRES: GENRES, chordName: chordName, NAMES: NAMES |
@@ -32,6 +32,7 @@ Leggi questo file PRIMA di aprire i sorgenti: dice dove sta ogni cosa.
 | beatlab.css | 73 |  |  |
 | clip-fx.js | 41 | Effetti del videoclip a tempo di musica: calcolo puro, senza disegno. Dato il tempo trascorso e i battiti al minuto, dice quanto ingrandire l'immagine, quanto farla vibrare e quale riga del testo mostrare. | beatState: beatState, lyricAt: lyricAt, frame: frame |
 | formant.js | 98 | Formant shift (cambio del TIMBRO senza cambiare la nota) con il metodo del CEPSTRUM. Idea: lo spettro della voce = "inviluppo" (la forma della gola e della bocca: i formanti) x "armoniche" (la nota). Si stima l'inviluppo | shift: shift, fft: fft |
+| instruments.js | 280 | Strumenti: catalogo spiegato + campionatore (sampler) + chitarre sintetizzate. - I campioni veri vengono da VSCO-2-CE e VCSL (Versilian Studios, licenza CC0):   ogni strumento è un file assets/inst/<id>.json (nel sito: i |  |
 | key-detect.js | 73 | Riconoscimento della tonalità dalla voce (stima). Metodo: istogramma delle 12 note (senza ottava) pesato sul tempo, confrontato con i profili di Krumhansl-Kessler per le 12 tonalità maggiori e le 12 minori. | detect: detect, fromHistogram: fromHistogram, NAMES: NAMES |
 | lyrics-engine.js | 425 | Motore di analisi dei testi (Modulo 3 e parte del Modulo 4). Tutto qui è calcolato con regole semplici sulla lingua italiana, senza servizi esterni. Sono EURISTICHE: il conteggio delle sillabe può sbagliare | countSyllables: countSyllables, lineSyllables: lineSyllables, rhymeKey: rhymeKey, rhymeRelation: rhymeRelation, tokenize: tokenize, parseStanzas: parseStanzas, analyze: analyze |
 | lyrics-to-base.js | 51 | Dal testo a una base consigliata: genere, scala e velocità. È un'IPOTESI costruita sul tono emotivo (dizionario di parole) e sulla lunghezza delle righe. Serve come punto di partenza, non come verità. | suggest: suggest |
@@ -61,20 +62,21 @@ Leggi questo file PRIMA di aprire i sorgenti: dice dove sta ogni cosa.
 - 319: Studio: testo
 - 375: Guida alla voce: canta / parla / allunga
 - 406: Studio: base
-- 554: AI Producer
-- 613: Vocal Studio
-- 646: Registrazione con il microfono vero (solo nella versione app; dentro Claude il microfono è bloccato)
-- 916: VOICE LAB (cablaggio): il codice sta in src/voice-chain.js, src/voice-lab.js, src/realtime-tune.js
-- 920: fine VOICE LAB
-- 922: Video
-- 1012: Marketing e Social
-- 1077: Libreria
-- 1092: Impostazioni
-- 1123: Avvio
+- 500: Strumenti veri
+- 645: AI Producer
+- 704: Vocal Studio
+- 737: Registrazione con il microfono vero (solo nella versione app; dentro Claude il microfono è bloccato)
+- 1007: VOICE LAB (cablaggio): il codice sta in src/voice-chain.js, src/voice-lab.js, src/realtime-tune.js
+- 1011: fine VOICE LAB
+- 1013: Video
+- 1103: Marketing e Social
+- 1168: Libreria
+- 1183: Impostazioni
+- 1214: Avvio
 
 ## Funzioni principali di app.js (riga: nome)
 
-esc:5, fmt:6, cap:7, tick:8, sleep:9, tag:13, today:14, uid:15, defaultProd:23, newSong:26, cur:29, persist:38, flush:44, sanitize:52, load:58, getCtx:87, makeBuffer:92, stopPlay:97, playBuf:104, getDl:121, saveFile:122, wavBlob:134, saveAudio:142, toMono:159, decode:165, initSample:178, ask:182, songContext:186, route:204, applyMood:227, lyricLines:262, analysisOf:263, topMood:264, songCard:267, inFolder:273, renderAnalysis:321, meter:349, renderGuide:377, followBars:408, fillBase:412, syncKar:424, getBase:444, activeTake:449, buildMix:451, karaokeTick:469, makeAndPlay:479, renderRefs:521, chatPush:556, renderChat:557, renderHist:561, snapshot:565, producerGo:566, localAdvice:589, setAT:618, addTake:626, micOk:648, tdb:649, dbTake:660, restoreTakes:670, recUi:682, finishRec:703, renderTakes:724, selectTake:738, renderTakeAnalysis:750, cssv:768, drawPitch:769, noteName:825, geom:826, drawNotes:833, renderNotes:860, playTone:870, noteAtX:876, ptr:877, endDrag:888, rescale:901, filterPhoto:924, soon:939, wrap:942, drawClip:943, clipMix:966, renderIdeas:992, copyText:1014, post:1019, findItem:1026, postEvents:1027, genPlan:1035, renderPlan:1045, refreshSocial:1058, applyTheme:1093, renderSettings:1097, start:1124
+esc:5, fmt:6, cap:7, tick:8, sleep:9, tag:13, today:14, uid:15, defaultProd:23, newSong:26, cur:29, persist:38, flush:44, sanitize:52, load:58, getCtx:87, makeBuffer:92, stopPlay:97, playBuf:104, getDl:121, saveFile:122, wavBlob:134, saveAudio:142, toMono:159, decode:165, initSample:178, ask:182, songContext:186, route:204, applyMood:227, lyricLines:262, analysisOf:263, topMood:264, songCard:267, inFolder:273, renderAnalysis:321, meter:349, renderGuide:377, followBars:408, fillBase:412, syncKar:424, getBase:444, activeTake:449, buildMix:451, karaokeTick:469, makeAndPlay:479, instName:502, noteNm:503, loadInst:504, ensureInst:509, instOptions:515, instInfo:526, fillInst:531, applyRecipe:538, previewInst:549, renderRefs:612, chatPush:647, renderChat:648, renderHist:652, snapshot:656, producerGo:657, localAdvice:680, setAT:709, addTake:717, micOk:739, tdb:740, dbTake:751, restoreTakes:761, recUi:773, finishRec:794, renderTakes:815, selectTake:829, renderTakeAnalysis:841, cssv:859, drawPitch:860, noteName:916, geom:917, drawNotes:924, renderNotes:951, playTone:961, noteAtX:967, ptr:968, endDrag:979, rescale:992, filterPhoto:1015, soon:1030, wrap:1033, drawClip:1034, clipMix:1057, renderIdeas:1083, copyText:1105, post:1110, findItem:1117, postEvents:1118, genPlan:1126, renderPlan:1136, refreshSocial:1149, applyTheme:1184, renderSettings:1188, start:1215
 
 ## tests/
 
@@ -90,6 +92,7 @@ esc:5, fmt:6, cap:7, tick:8, sleep:9, tag:13, today:14, uid:15, defaultProd:23, 
 - beatlab-patterns.test.js: 5 test
 - beatlab-sampler.test.js: 6 test
 - beatlab-theory.test.js: 5 test
+- instruments.test.js: 6 test
 - lyrics-base-clip.test.js: 7 test
 - lyrics-engine.test.js: 12 test
 - master.test.js: 6 test

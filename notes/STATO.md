@@ -103,3 +103,11 @@ Cablaggio minimo: blocchi "VOICE LAB" in app.js (4 righe + init), app.body.html 
 - Cassa: pattern di 2 battute per stile (scelto dal seme, diverso tra strofa e ritornello) ripetuto, variazione ogni 4ª battuta. Prima era casuale battuta per battuta.
 - Nuovi dati: events.kick, events.hat, events.bass[].slideFrom. Test 123/123.
 - Ancora da fare: strumenti melodici con campioni CC0, 808 da campione vero, mix per traccia.
+
+## 2026-11-24 Strumentario: 29 strumenti veri + 3 chitarre (fatto, testato)
+- `src/instruments.js`: catalogo di 32 strumenti in 7 famiglie (tastiere, archi e corde, legni, ottoni, percussioni intonate, mondo, chitarre) con: come si usa, registro, ruoli, con cosa combacia e perché, stili. Ricette per 5 stili. Campionatore (nota più vicina + intonazione, suoni tenuti allungati con dissolvenza), chitarre Karplus-Strong.
+- Campioni CC0 (VSCO-2-CE, VCSL), 6,1 MB in tutto, scaricati solo quando scegli lo strumento (poi restano nella cache dell'app). Misurato: altezza delle note entro ±0,3 semitoni (rilevatore inaffidabile su campane/kalimba/glock, armoniche irregolari).
+- Arrangiatore: `inst: {melodia, accordi, pad}`; se lo strumento non è caricato usa la sintesi. 32 battute in ~0,3 s.
+- App: in Studio > La base tre menu (Melodia, Accordi, Atmosfera) + "Consiglia per lo stile"; nuova pagina Strumentario (#strumenti): come si costruisce una base, ricette, tutti gli strumenti con Ascolta. Provato in Chromium: nessun errore.
+- Limiti: nell'Artifact di Claude i campioni non si scaricano (solo sul sito). Niente percussioni del mondo, cori o voci campionate ancora. Velocità unica (niente dinamiche multiple).
+- Prossimo: percussioni del mondo (conga, bongo, shaker, cajon…), ricerca e progetto dell'autotune nuovo.

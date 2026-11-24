@@ -78,12 +78,22 @@
     <div id="vg-list"></div><div class="status" id="vg-msg"></div>
   </div>
 
-  <div class="card"><div class="card-head"><h3>La base</h3><span class="tag soon">Suoni sintetici: bozza</span></div>
+  <div class="card"><div class="card-head"><h3>La base</h3><span class="tag a">Strumenti veri + sintesi</span></div>
     <div class="grid2">
       <label class="f"><span>Genere</span><select id="b-genre"></select></label>
       <label class="f"><span>Velocità (BPM) <button class="chip" id="b-tap" type="button" style="min-height:28px;padding:2px 10px">Batti il tempo</button></span><input type="number" id="b-bpm" min="60" max="180"></label>
       <label class="f"><span>Nota di partenza</span><select id="b-tonic"></select></label>
       <label class="f"><span>Scala</span><select id="b-mode"><option value="maggiore">Maggiore</option><option value="minore">Minore</option></select></label>
+    </div>
+    <div class="note" style="margin:10px 0"><b>Strumenti</b> <span class="small muted">· veri (campioni CC0) o sintetizzati. Si caricano la prima volta che li scegli.</span>
+      <div class="grid2" style="margin-top:8px">
+        <label class="f"><span>Melodia</span><select id="b-in-melodia"></select></label>
+        <label class="f"><span>Accordi</span><select id="b-in-accordi"></select></label>
+        <label class="f"><span>Atmosfera (pad)</span><select id="b-in-pad"></select></label>
+        <div class="f" style="justify-content:flex-end"><button class="btn sm" id="b-in-rec" type="button">Consiglia per lo stile</button></div>
+      </div>
+      <div class="small" id="b-in-info"></div>
+      <div class="row" style="margin-top:6px"><a class="btn sm" href="#strumenti">Guida agli strumenti</a></div>
     </div>
     <label class="f"><span>Suoni batteria</span><select id="b-sounds"><option value="campioni" selected>Veri (campioni registrati)</option><option value="sint">Sintetici</option></select></label>
     <label class="f"><span>Master (volume e suono finale)</span><select id="b-master"><option value="off">Spento</option><option value="morbido">Morbido</option><option value="standard" selected>Standard</option><option value="forte">Forte</option></select></label>
@@ -265,6 +275,15 @@
 </main>
 
 <!-- LIBRERIA -->
+<main class="view" id="v-strumenti" hidden>
+  <div class="head"><div class="eyebrow">Strumentario</div><h1>Gli strumenti e come si usano</h1></div>
+  <div class="card"><div class="card-head"><h3>Come si costruisce una base</h3><span class="tag a">Analisi</span></div><div id="st-how"></div></div>
+  <div class="card"><div class="card-head"><h3>Ricette per stile</h3><span class="tag i">Ipotesi</span></div><p class="small muted">Combinazioni di partenza. Caratteristiche generiche di genere, non copie di artisti: poi cambi a orecchio.</p><div id="st-rec"></div></div>
+  <div class="card"><div class="card-head"><h3>Tutti gli strumenti <span class="small muted" id="st-count"></span></h3></div>
+    <div class="chips" id="st-fam" style="margin:8px 0"></div><div id="st-list"></div><div class="status" id="st-msg"></div></div>
+  <div class="card"><h3>Fonti e licenze</h3><p class="small muted">Campioni registrati: VSCO 2 Community Edition e VCSL di Versilian Studios, licenza CC0 1.0 (pubblico dominio, uso libero anche commerciale). Convertiti in mono 22 kHz compressi (ADPCM 4 bit): qualità buona ma inferiore agli originali. Chitarre: sintetizzate dal programma (Karplus-Strong). Ogni nota è stata misurata: l'altezza corrisponde entro ±0,3 semitoni.</p></div>
+</main>
+
 <main class="view" id="v-libreria" hidden>
   <div class="head"><div class="eyebrow">Libreria dei contenuti</div><h1>Materiali</h1></div>
   <div id="l-out"></div>

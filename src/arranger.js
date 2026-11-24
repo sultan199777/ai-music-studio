@@ -10,9 +10,9 @@
  * mixa con Backing.mix.
  */
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) { var sd = null; try { sd = require('./samples-data.js'); } catch (e) {} module.exports = factory(sd); }
-  else root.Arranger = factory(root.SampleData || null);
-})(typeof self !== 'undefined' ? self : this, function (SampleData) {
+  if (typeof module === 'object' && module.exports) { var sd = null, ins = null; try { sd = require('./samples-data.js'); } catch (e) {} try { ins = require('./instruments.js'); } catch (e) {} module.exports = factory(sd, ins); }
+  else root.Arranger = factory(root.SampleData || null, root.Instruments || null);
+})(typeof self !== 'undefined' ? self : this, function (SampleData, Inst) {
   'use strict';
 
   var NAMES = ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'];
@@ -130,6 +130,11 @@
     var T = { kick: new Float32Array(N), snare: new Float32Array(N), hat: new Float32Array(N), bass: new Float32Array(N), chords: new Float32Array(N), pad: new Float32Array(N), lead: new Float32Array(N), fx: new Float32Array(N) };
     var events = { bass: [], chords: [], lead: [], kick: [], hat: [] }, kickStarts = [];
     var LEADS = { trap: ['synth', 'keys', 'bell'], drill: ['dark', 'keys', 'bell'], epico: ['strings', 'synth', 'keys'], melodico: ['keys', 'synth', 'pluck'], estate: ['marimba', 'keys', 'synth'] };
+    // Strumenti veri scelti per ruolo (p.inst = {melodia, accordi, pad}); se non caricati si usa la sintesi.
+    var pin = p.inst || {};
+    function pickInst(role) { var id = pin[role]; return id && Inst && Inst.has(id) ? id : null; }
+    var LI = pickInst('melodia'), CI = pickInst('accordi'), PI = pickInst('pad');
+    function fit(m, id) { var r = (Inst.info(id) || {}).range || [36, 96]; while (m < r[0]) m += 12; while (m > r[1]) m -= 12; return m; }
     var leadKind = p.lead || (LEADS[genreKey] ? LEADS[genreKey][((p.seed || 1) % 3 + 3) % 3] : style.lead);
 
     function at(bar, step) {
@@ -514,12 +519,20 @@
             if (sec.name === 'strofa' && pi % 2 === 1 && style.chord === 'pluck' && genreKey !== 'melodico') return;
             var notes = style.arp ? [ch[arpCount++ % 3] + (pi % 4 === 3 ? 12 : 0)] : ch.map(function (m) { return m + 12; });
             var dur = style.chord === 'ostinato' ? stepSec * 1.6 : 1.2;
+            if (CI) {
+              var tipoC = (Inst.info(CI) || {}).tipo, strum = /guitar|nylon/.test(CI) ? 0.022 : 0.01;
+              notes.forEach(function (m, ni) { var mm = fit(m, CI); add('chords', at(bar, s) + ni * Math.round(strum * sr), Inst.render(CI, mm, tipoC === 'sostenuto' ? stepSec * 2 : 1.0, sr, { vel: pi === 0 ? 1 : 0.8 }), notes.length > 1 ? 0.2 : 0.3); });
+              return;
+            }
             notes.forEach(function (m, ni) { add('chords', at(bar, s) + ni * Math.round(0.012 * sr), style.chord === 'ostinato' ? sawStack([m], dur, [-6, 6], 1800, 0.004, 0.05, false) : pluckBuf(m, dur, genreKey === 'estate'), (style.arp ? 0.3 : 0.2) * cfg.chords); });
           });
         }
 
         // pad / archi / coro: una nota lunga per battuta, legata alla battuta dopo
-        if (cfg.pad) {
+        if (cfg.pad && PI) {
+          var tipoP = (Inst.info(PI) || {}).tipo, durP = barLen / sr * 1.04;
+          ch.concat([ch[0] + 12]).forEach(function (m) { add('pad', bar * barLen, Inst.render(PI, fit(m + 12, PI), durP, sr, { hold: true, attack: tipoP === 'sostenuto' ? 0.25 : 0 }), 0.12 * cfg.pad); });
+        } else if (cfg.pad) {
           var kindPad = style.pad, pm = ch.concat([ch[0] + 12]), dur2 = barLen / sr * 1.06;
           var buf2 = kindPad === 'choir' ? sawStack(pm, dur2, [-10, 0, 9], 2200, 0.25, 0.3, true)
             : sawStack(pm, dur2, [-8, 0, 7], kindPad === 'dark' ? 900 : (kindPad === 'bright' ? 2600 : 1500), 0.3, 0.35, false);
@@ -531,7 +544,8 @@
           var src = sec.name === 'bridge' ? bridgeLine : hook;
           src[k % 4].forEach(function (n) {
             var d3 = n.len * stepSec * 0.95, m3 = n.midi;
-            add('lead', at(bar, n.step), leadBuf(leadKind, m3, d3), (leadKind === 'strings' ? 0.32 : 0.36) * cfg.lead);
+            if (LI) add('lead', at(bar, n.step), Inst.render(LI, fit(m3, LI), d3, sr, { vel: n.step % 4 === 0 ? 1 : 0.85 }), 0.3 * cfg.lead);
+            else add('lead', at(bar, n.step), leadBuf(leadKind, m3, d3), (leadKind === 'strings' ? 0.32 : 0.36) * cfg.lead);
             events.lead.push({ start: at(bar, n.step) / sr, midi: m3, dur: d3 });
           });
         }
@@ -558,7 +572,7 @@
     duck('pad', style.duck); duck('chords', style.duck * 0.6);
 
     return { sampleRate: sr, bpm: bpm, tonic: tonic, mode: mode, bars: bars, genre: genreKey, length: N, duration: N / sr, tracks: T, events: events,
-      sections: sections, progression: events.chords.slice(0, 4).map(function (c) { return c.name; }), arranger: true };
+      inst: { melodia: LI, accordi: CI, pad: PI }, sections: sections, progression: events.chords.slice(0, 4).map(function (c) { return c.name; }), arranger: true };
   }
 
   return { generate: generate, planStructure: planStructure, STYLES: STYLES, SECTIONS: SEC };
