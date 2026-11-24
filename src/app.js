@@ -673,7 +673,7 @@
     var msg = $('#rec-msg'); msg.className = 'status'; if (REC) return;
     if (!micOk()) { msg.textContent = 'Il microfono non è disponibile in questa pagina (dentro Claude è bloccato). Apri la versione app, oppure registra con Memo Vocali e importa in Voce.'; msg.className = 'status err'; return; }
     var ctx = getCtx(); if (!ctx || !ctx.createScriptProcessor) { msg.textContent = 'Questo browser non supporta la registrazione.'; msg.className = 'status err'; return; }
-    msg.textContent = 'Chiedo il permesso del microfono…';
+    if (!lyricLines(cur().lyrics).length) { msg.textContent = 'Nota: qui non c\'è ancora il testo di questa canzone. Incollalo nel campo "Testo" in alto in questa pagina per vederlo scorrere mentre canti. Chiedo il microfono…'; } else msg.textContent = 'Chiedo il permesso del microfono…';
     var stream;
     try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } }); }
     catch (e) { msg.textContent = 'Microfono non disponibile o permesso negato. Su iPhone: Impostazioni > Safari > Microfono, oppure riapri la pagina e consenti.'; msg.className = 'status err'; return; }
@@ -698,13 +698,15 @@
     if (n < sr * 0.8) { msg.textContent = 'Registrazione troppo corta: riprova.'; return; }
     var mono = new Float32Array(n), o = 0; R.chunks.forEach(function (c) { mono.set(c, o); o += c.length; });
     var pk = 0; for (var i = 0; i < n; i += 7) { var v = mono[i] < 0 ? -mono[i] : mono[i]; if (v > pk) pk = v; }
+    var boosted = false;
+    if (pk > 0.003 && pk < 0.3) { var gk = 0.7 / pk; for (var q = 0; q < n; q++) mono[q] *= gk; boosted = true; }
     msg.textContent = 'Analizzo la registrazione…'; await tick();
     var name = 'Registrazione ' + new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
     var t = await addTake(mono, sr, name, false); t.lat = R.delta + R.lat; t.at = Date.now();
     dbTake('put', { id: t.id, name: t.name, mono: t.mono, sr: t.sr, lat: t.lat, at: t.at }).then(function (ok) { t.saved = !!ok; });
     var s = cur(); if (['idea', 'testo', 'base'].indexOf(s.status) !== -1) { s.status = 'voce'; persist(); }
     selectTake(t.id);
-    msg.innerHTML = (pk < 0.02 ? 'Volume molto basso: avvicinati al microfono. ' : (pk > 0.98 ? 'Il suono satura: canta più lontano o più piano. ' : '')) + 'Salvata tra le prove (picco ' + Math.round(pk * 100) + '%). <a href="#voce">Apri Voce per autotune e mix</a>';
+    msg.innerHTML = (pk <= 0.003 ? 'Non ho sentito quasi nulla: controlla che il microfono non sia coperto e che le cuffie abbiano il microfono. ' : (boosted ? 'Il volume era basso: l\'ho alzato automaticamente (picco originale ' + Math.round(pk * 100) + '%). ' : (pk > 0.98 ? 'Il suono satura: canta più lontano o più piano. ' : ''))) + 'Salvata tra le prove. <a href="#voce">Apri Voce per autotune e mix</a>';
   }
 
   function renderTakes() {
