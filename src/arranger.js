@@ -225,6 +225,7 @@
 
     // ---------- strumenti ----------
     function kickBuf(big) {
+      if (typeof p.drumRender === 'function') return memo('dkk' + big, function () { return p.drumRender('kick', { big: big }, sr); });
       if (useSamples) return memo('sk' + big, function () { return cut(samp('kick', vKick), big ? 0.5 : 0.34, 0.03); });
       return memo('k' + big, function () {
         var len = Math.round((big ? 0.5 : 0.34) * sr), b = new Float32Array(len), ph = 0;
@@ -248,6 +249,7 @@
       });
     }
     function snareBuf() {
+      if (typeof p.drumRender === 'function') return memo('dks', function () { return p.drumRender('snare', {}, sr); });
       if (useSamples) return memo('ss', function () { return cut(samp('snare', vSnare), 0.3, 0.03); });
       var len = Math.round(0.24 * sr), b = new Float32Array(len);
       for (var i = 0; i < len; i++) {
@@ -257,6 +259,7 @@
       return b;
     }
     function clapBuf() {
+      if (typeof p.drumRender === 'function') return memo('dkc', function () { return p.drumRender('clap', {}, sr); });
       if (useSamples) return memo('sc', function () { return cut(samp('clap', vClap), 0.3, 0.03); });
       var len = Math.round(0.3 * sr), b = new Float32Array(len), offs = [0, 0.011, 0.022, 0.034];
       for (var i = 0; i < len; i++) {
@@ -276,6 +279,7 @@
     function hatBuf(open, vel, pitch) {
       pitch = pitch || 1;
       var pk = Math.round(pitch * 100) / 100;
+      if (typeof p.drumRender === 'function') return memo('dkh' + open + vel + '_' + pk, function () { var b = repitch(p.drumRender('hat', { open: open }, sr), pk); for (var i = 0; i < b.length; i++) b[i] *= vel; return b; });
       if (useSamples) return memo('sh' + open + vel + '_' + pk, function () { var b = repitch(cut(samp('hat', open ? 1 : 0), open ? 0.2 : 0.05, open ? 0.05 : 0.02), pk); for (var i = 0; i < b.length; i++) b[i] *= vel; return b; });
       return memo('h' + open + vel + '_' + pk, function () {
         var len = Math.round((open ? 0.2 : 0.05) * sr), b = new Float32Array(len), prev = 0;

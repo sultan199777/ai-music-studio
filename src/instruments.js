@@ -135,23 +135,23 @@
 
   // Ricette per stile: quali strumenti per ruolo e perché (caratteristiche generiche di genere, non imitazioni).
   var RECIPES = {
-    trap: { nome: 'Trap melodica', melodia: ['harp', 'piano', 'glock', 'pizz'], accordi: ['piano', 'guitar', 'harp'], pad: ['violins', 'glass'],
+    trap: { nome: 'Trap melodica', melodia: ['pro:bell', 'harp', 'pro:pluck', 'piano', 'glock'], accordi: ['pro:epfm', 'piano', 'guitar', 'harp'], pad: ['pro:pad', 'violins', 'glass'], arpeggio: ['pro:pluck', 'pro:glassbell', 'harp'], kit: 'trap',
       spiega: 'Melodia malinconica in minore (arpa, piano o chitarra), archi lunghi nel ritornello, glockenspiel per brillare. 808 lungo con scivolate, hi-hat con rullate. La voce resta al centro: la melodia della base suona soprattutto quando non canti.' },
-    drill: { nome: 'Drill', melodia: ['pizz', 'bells', 'piano'], accordi: ['pizz', 'piano'], pad: ['violins', 'cellos', 'organ'],
+    drill: { nome: 'Drill', melodia: ['pro:bell', 'pizz', 'bells', 'piano'], accordi: ['pizz', 'pro:stab', 'piano'], pad: ['pro:darkpad', 'pro:choir', 'violins', 'cellos'], arpeggio: ['pizz', 'pro:mallet'], kit: 'drill',
       spiega: 'Atmosfera cupa: pizzicati, campane, cori e archi scuri. Ritmo a terzine sugli hi-hat, 808 che scivola molto e salta d\'ottava.' },
-    epico: { nome: 'Epico / cinematico', melodia: ['horn', 'violins', 'oboe'], accordi: ['harp', 'pizz'], pad: ['violins', 'cellos', 'horn'],
+    epico: { nome: 'Epico / cinematico', melodia: ['horn', 'violins', 'pro:choir', 'oboe'], accordi: ['harp', 'pizz', 'pro:supersaw'], pad: ['violins', 'pro:choir', 'cellos', 'horn'], arpeggio: ['harp', 'pro:glassbell'], kit: 'trap',
       spiega: 'Orchestra: archi in sezione, corni, campane, tamburi grandi. Le dinamiche crescono verso il ritornello.' },
-    melodico: { nome: 'Melodico / pop', melodia: ['piano', 'guitar', 'kalimba'], accordi: ['piano', 'guitar', 'epiano'], pad: ['violins', 'organ'],
+    melodico: { nome: 'Melodico / pop', melodia: ['piano', 'pro:lead', 'guitar', 'kalimba'], accordi: ['pro:epfm', 'piano', 'guitar', 'epiano'], pad: ['pro:pad', 'violins', 'organ'], arpeggio: ['pro:pluck', 'guitar', 'harp'], kit: 'lofi',
       spiega: 'Accordi chiari e caldi, melodia semplice e cantabile, pochi strumenti ben scelti.' },
-    boombap: { nome: 'Boom bap pesante', melodia: ['piano', 'epiano', 'vibes', 'upright'], accordi: ['piano', 'epiano', 'organ', 'clavi'], pad: ['cellos', 'organ', 'violas'],
+    boombap: { nome: 'Boom bap pesante', melodia: ['piano', 'epiano', 'vibes', 'upright'], accordi: ['piano', 'pro:keys', 'epiano', 'organ', 'clavi'], pad: ['cellos', 'organ', 'violas'], arpeggio: ['vibes', 'epiano'], kit: 'boombap',
       spiega: 'Batteria polverosa e larga, piano o piano elettrico che ripete un giro, basso rotondo. Come nel rap italiano classico: pesante ma senza fretta.' },
-    street: { nome: 'Street pesante', melodia: ['piano', 'horn', 'pizz', 'bells'], accordi: ['piano', 'organ', 'cellos'], pad: ['cellos', 'violins'],
+    street: { nome: 'Street pesante', melodia: ['piano', 'pro:bell', 'horn', 'pizz'], accordi: ['pro:stab', 'piano', 'organ', 'cellos'], pad: ['pro:darkpad', 'cellos', 'violins'], arpeggio: ['pizz', 'pro:mallet'], kit: 'drill',
       spiega: 'Colpi di piano e archi scuri, rullante forte sul 2 e 4, 808 grosso. Atmosfera da strada e da sfida, tempo medio.' },
-    trapdark: { nome: 'Trap scura pesante', melodia: ['bells', 'pizz', 'piano', 'glass'], accordi: ['pizz', 'piano', 'organ'], pad: ['cellos', 'organ', 'violas'],
+    trapdark: { nome: 'Trap scura pesante', melodia: ['pro:bell', 'bells', 'pizz', 'piano'], accordi: ['pizz', 'pro:epfm', 'piano', 'organ'], pad: ['pro:darkpad', 'pro:choir', 'cellos', 'organ'], arpeggio: ['pro:glassbell', 'pizz'], kit: 'trap',
       spiega: '808 che scivola, hi-hat a terzine, campane e pizzicati cupi. Poche note, molto peso.' },
-    clubtrap: { nome: 'Club (dembow trap)', melodia: ['kalimba', 'marimba', 'bells', 'piano'], accordi: ['nylon', 'clavi', 'piano'], pad: ['organ'],
+    clubtrap: { nome: 'Club (dembow trap)', melodia: ['pro:mallet', 'kalimba', 'marimba', 'pro:lead'], accordi: ['pro:supersaw', 'nylon', 'clavi', 'piano'], pad: ['pro:pad', 'organ'], arpeggio: ['pro:pluck', 'marimba'], kit: 'club',
       spiega: 'Ritmo dembow ballabile con 808: il rullante in levare fa muovere i fianchi, melodie corte e orecchiabili.' },
-    estate: { nome: 'Estate / latino / afro', melodia: ['marimba', 'nylon', 'kalimba'], accordi: ['nylon', 'clavi', 'marimba'], pad: ['organ'],
+    estate: { nome: 'Estate / latino / afro', melodia: ['marimba', 'pro:mallet', 'nylon', 'kalimba'], accordi: ['nylon', 'clavi', 'pro:keys', 'marimba'], pad: ['pro:pad', 'organ'], arpeggio: ['marimba', 'pro:pluck'], kit: 'club',
       spiega: 'Ritmo in levare, legni e chitarra classica, colori allegri. Il basso è rotondo e segue la cassa.' }
   };
 

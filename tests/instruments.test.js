@@ -29,7 +29,8 @@ test('catalogo: ogni voce spiega come si usa, con cosa combacia (strumenti esist
     c.combina.forEach((k) => assert.ok(ids.has(k), c.id + ' combina con ' + k + ' che non esiste'));
     assert.ok(c.range[0] < c.range[1]);
   }
-  for (const [g, r] of Object.entries(I.RECIPES)) ['melodia', 'accordi', 'pad'].forEach((ru) => r[ru].forEach((k) => assert.ok(ids.has(k), g + ' ' + ru + ' ' + k)));
+  const pro = new Set(require('../src/synth-design.js').PRO.map((x) => x.id)); // banca Synth Pro (sintesi originale)
+  for (const [g, r] of Object.entries(I.RECIPES)) ['melodia', 'accordi', 'pad', 'arpeggio'].forEach((ru) => (r[ru] || []).forEach((k) => assert.ok(ids.has(k) || pro.has(k), g + ' ' + ru + ' ' + k)));
 });
 
 test('campionatore: la nota suonata è quella chiesta anche tra due campioni (misurato)', () => {

@@ -43,3 +43,11 @@ test('percussioni del mondo, 808 pronti e strumento dalla voce', () => {
   const A2 = require('../src/arranger.js'), g = A2.generate({ sampleRate: 8000, bpm: 100, genre: 'melodico', bars: 4, seed: 1, sounds: 'sint', extraFx: [{ bar: 1, step: 4, buf: new Float32Array(400).fill(0.5), track: 'hat' }] });
   const at = Math.round((240 / 100) * 8000 + 4 * (240 / 100 / 16) * 8000); assert.ok(Math.abs(g.tracks.hat[at + 10]) > 0.2, 'colpo sul passo giusto');
 });
+test('synth pro e kit: suonano, note giuste, kit diversi tra loro, l\'arrangiatore li usa', () => {
+  assert.ok(SD.PRO.length >= 12);
+  SD.PRO.forEach(r => { const y = r.fn(69, 0.4, sr); assert.ok(y.length > sr * 0.3, r.id); let pk = 0; for (const v of y) pk = Math.max(pk, Math.abs(v)); assert.ok(pk > 0.05 && pk < 1.5, r.id + ' livello ' + pk); });
+  const e = SD.PRO.find(r => r.id === 'pro:epfm').fn(57, 0.6, sr), acf = (y, a, n) => { const v = []; for (let l = 40; l < 400; l++) { let s = 0; for (let i = a; i < a + n; i++) s += y[i] * y[i + l]; v.push(s); } const mx = Math.max(...v); return sr / (40 + v.findIndex((s, i) => s >= 0.9 * mx && (i === 0 || s >= v[i - 1]) && (i + 1 >= v.length || s >= v[i + 1]))); }; assert.ok(Math.abs(acf(e, 3000, 4000) - 220) < 8, 'epfm nota ' + acf(e, 3000, 4000));
+  const k1 = SD.kitRender('trap', 'kick', {}, sr), k2 = SD.kitRender('boombap', 'kick', {}, sr); assert.notStrictEqual(k1.length, 0); let d = 0; for (let i = 0; i < Math.min(k1.length, k2.length); i++) d += Math.abs(k1[i] - k2[i]); assert.ok(d > 10, 'kit diversi');
+  for (const part of ['kick', 'snare', 'clap', 'hat']) assert.ok(SD.kitRender('drill', part, { open: true }, sr).length > 100, part);
+  const A3 = require('../src/arranger.js'); let calls = 0; A3.generate({ sampleRate: 8000, bpm: 140, genre: 'trap', bars: 2, seed: 1, sounds: 'sint', drumRender: (pt, o, s2) => { calls++; return SD.kitRender('drill', pt, o, s2); } }); assert.ok(calls >= 3, 'kit usato ' + calls);
+});

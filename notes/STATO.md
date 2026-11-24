@@ -189,3 +189,8 @@ Ancora da fare: piano roll accordi/arpeggio, trascinare note voce (stile Melodyn
 - Barra di trasporto fissa in alto (sottile). Impostazioni progetto nell'ingranaggio.
 - Ispettore della traccia: tocco sul nome della traccia → Suono · Note · Canale. Il piano roll (melodia, 808, batteria, accordi/arpeggio) e il canale del mixer (con automazioni) vivono solo lì, legati alla traccia scelta.
 - Nessuna funzione tolta; gli id esistenti restano.
+
+## Strumenti professionali (Synth Pro + kit)
+- `synth-design.js`: motore FM (campane, piano elettrico, keys, mallet, vetro) + banca PRO di 12 strumenti (campana FM, piano elettrico FM, pluck, supersaw, pad largo, pad scuro, coro synth, lead vocale, keys, stab ottoni, vetro digitale, mallet) registrati come strumenti (famiglia "Synth pro" nella scelta suono).
+- 5 kit di batteria sintetizzati (Trap pesante, Drill, Boom bap polveroso, Club duro, Lo-fi morbido) → `p.kit` → `drumRender` nell'arrangiatore; scelta nell'ispettore della Batteria.
+- RECIPES degli stili ora usano anche Synth Pro, arpeggio e kit; cambiare stile nello Studio applica strumenti e kit dello stile (prima restavano sempre gli stessi).

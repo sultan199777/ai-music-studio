@@ -337,3 +337,4 @@ details.card[open]>summary{margin-bottom:8px}
 #v-daw .dw-title .eyebrow{display:none}#v-daw .dw-name{font-size:1.05rem}
 #v-daw .dw-ctrls{gap:8px;margin-top:6px}#v-daw .dw-btn{width:42px;height:42px}#v-daw .dw-btn.dw-play{width:54px;height:54px}
 #v-daw .dw-clock b{font-size:1.25rem}#v-daw .dw-proj{margin-top:8px;padding:7px 10px}
+#dw-sheet{z-index:70}

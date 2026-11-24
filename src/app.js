@@ -454,8 +454,8 @@
     return SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {} });
   }
   function getBase() {
-    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
+    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.kit, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, drumRender: p.kit && SynthDesign.KITS[p.kit] ? function (part, o, s2) { return SynthDesign.kitRender(p.kit, part, o, s2); } : undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -760,7 +760,7 @@
   function applyRecipe(g) {
     var R = Instruments.RECIPES[g] || Instruments.RECIPES[Arranger.STYLES[g] ? g : 'melodico'], p = cur().prod;
     var k = (p.seed || 1) % 2;
-    p.inst = { melodia: R.melodia[k % R.melodia.length], accordi: R.accordi[k % R.accordi.length], pad: R.pad[0] }; persist(); fillInst();
+    p.inst = { melodia: R.melodia[k % R.melodia.length], accordi: R.accordi[k % R.accordi.length], pad: R.pad[0], arpeggio: R.arpeggio ? R.arpeggio[k % R.arpeggio.length] : undefined }; if (R.kit) p.kit = R.kit; persist(); fillInst();
     return R;
   }
   $('#b-in-rec').addEventListener('click', async function () {
@@ -1106,7 +1106,7 @@
     $('#dw-lyl').innerHTML = map && b.bars === map.totalBars ? map.lines.map(function (l) { return '<span style="left:' + (l.startBar * DW.px + 1) + 'px;width:' + (l.bars * DW.px - 2) + 'px" title="' + esc(l.text) + '">' + esc(l.text) + '</span>'; }).join('') : '';
     var inst = cur().prod.inst || {};
     $('#dw-heads').innerHTML = '<div class="dw-hl">Battute</div><div class="dw-hl s">Parti</div><div class="dw-hl l">Testo</div>' + LANES.map(function (L) {
-      var label = L.role ? (inst[L.role] ? instName(inst[L.role]) : 'Sintetizzato') : (L.id === 'drums' ? (cur().prod.sounds === 'sint' ? 'Sintetici' : 'Campioni veri') : (L.id === 'bass' ? (cur().prod.bassStyle === '808' ? '808 sempre' : 'Dallo stile') : (voiceTake() ? voiceTake().name : 'Registra con ●')));
+      var label = L.role ? (inst[L.role] ? instName(inst[L.role]) : 'Sintetizzato') : (L.id === 'drums' ? (cur().prod.kit && SynthDesign.KITS[cur().prod.kit] ? 'Kit ' + SynthDesign.KITS[cur().prod.kit].nome : (cur().prod.sounds === 'sint' ? 'Sintetici' : 'Campioni veri')) : (L.id === 'bass' ? (cur().prod.bassStyle === '808' ? '808 sempre' : 'Dallo stile') : (voiceTake() ? voiceTake().name : 'Registra con ●')));
       return '<div class="dw-lh" style="--lc:' + L.c + '"><b>' + L.nome + '</b><button class="inst" data-inst="' + L.id + '">' + esc(label) + '</button><div class="ms"><button data-m="' + L.id + '" class="' + (DW.mute[L.id] ? 'on' : '') + '">M</button><button data-s="' + L.id + '" class="' + (DW.solo[L.id] ? 'on' : '') + '">S</button><input type="range" min="0" max="160" value="' + Math.round(lvl(L.level) * 100) + '" data-lv="' + L.id + '" aria-label="Volume ' + L.nome + '"></div></div>';
     }).join('');
     var dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -1186,7 +1186,8 @@
     $('#dw-sheet-f').innerHTML = fams.map(function (f) { return '<button class="chip' + (SHEET.fam === f[0] ? ' on' : '') + '" data-sf="' + f[0] + '">' + esc(f[1]) + '</button>'; }).join('');
     var list = [{ id: '', nome: 'Sintetizzato (automatico)', come: 'Suono generato dal programma, cambia con lo stile.' }];
     var orig = SoundLab.ORIGINALS.map(function (r) { return { id: r.id, nome: r.nome, come: r.descr, o: 1 }; }), mine = (LIB.settings.lab || []).concat(LIB.settings.synths || [], LIB.settings.voxInst || []).map(function (r) { return { id: r.id, nome: r.nome, come: r.descr || 'Creato da te.', m: 1 }; });
-    var cat = Instruments.CATALOG.filter(function (c) { return role === 'arpeggio' ? c.tipo !== 'sostenuto' || c.ruoli.indexOf('accordi') >= 0 : (c.ruoli.indexOf(role) >= 0 || (role === 'pad' && c.tipo === 'sostenuto')); }).map(function (c) { return { id: c.id, nome: c.nome, come: c.come, f: c.fam }; });
+    var pro = SynthDesign.PRO.filter(function (r) { return r.ruoli.indexOf(role) >= 0 || (role === 'arpeggio' && r.tipo === 'percussivo'); }).map(function (r) { return { id: r.id, nome: r.nome, come: r.come, f: 'synthpro', fam: 'synthpro', ruoli: r.ruoli, tipo: r.tipo }; });
+    var cat = pro.concat(Instruments.CATALOG).filter(function (c) { if (c.f === 'synthpro') return true; return role === 'arpeggio' ? c.tipo !== 'sostenuto' || c.ruoli.indexOf('accordi') >= 0 : (c.ruoli.indexOf(role) >= 0 || (role === 'pad' && c.tipo === 'sostenuto')); }).map(function (c) { return { id: c.id, nome: c.nome, come: c.come, f: c.fam }; });
     if (SHEET.fam === 'orig') list = orig; else if (SHEET.fam === 'mine') list = mine; else if (SHEET.fam !== 'tutte') list = cat.filter(function (c) { return c.f === SHEET.fam; }); else list = list.concat(orig, mine, cat);
     $('#dw-sheet-g').innerHTML = list.length ? list.map(function (c) { return '<div class="dw-card' + ((c.id || '') === (cur0 || '') ? ' sel' : '') + '"><b>' + esc(c.nome) + '</b><small>' + esc((c.come || '').slice(0, 110)) + '</small><div class="row">' + (c.id ? '<button class="btn sm" data-sp="' + c.id + '">Ascolta</button>' : '') + '<button class="btn sm pri" data-su="' + c.id + '">Usa</button></div></div>'; }).join('') : '<p class="small muted">Niente qui: crea strumenti nel Laboratorio.</p>';
   }
@@ -1318,7 +1319,7 @@
   $('#dw-rec').addEventListener('click', dwRecord);
   $('#dw-new').addEventListener('click', function () { var p = cur().prod; if (SESSION.lastPlay && performance.now() - SESSION.lastPlay.t < 10000) coachRec('skip', SESSION.lastPlay.ctx); p.seed++; dwStop(); dwChanged(true); setTimeout(function () { dwPlay(0); }, 300); });
   $('#dw-name').addEventListener('input', function () { cur().title = this.value.trim() || 'Senza titolo'; $('#top-song').textContent = cur().title; persist(); });
-  $('#dw-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.bpm = Arranger.STYLES[this.value].bpm; p.tune = null; p.groove = null; p.prog = null; p.mix = null; mixRender(); $('#dw-bpm').value = p.bpm; dwStop(); fillBase(); dwChanged(true); });
+  $('#dw-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.bpm = Arranger.STYLES[this.value].bpm; p.tune = null; p.groove = null; p.prog = null; p.mix = null; applyRecipe(this.value); mixRender(); $('#dw-bpm').value = p.bpm; dwStop(); fillBase(); dwChanged(true); });
   $('#dw-bpm').addEventListener('change', function () { cur().prod.bpm = Math.max(60, Math.min(180, +this.value || 100)); this.value = cur().prod.bpm; dwStop(); fillBase(); dwChanged(true); dwLyInfo(); });
   $('#dw-key').addEventListener('change', function () { var v = this.value.split(':'), p = cur().prod; p.tonic = +v[0]; p.mode = v[1]; dwStop(); fillBase(); dwChanged(true); });
   $('#dw-master').addEventListener('change', function () { cur().prod.master = this.value; persist(); fillBase(); });
@@ -2059,7 +2060,7 @@
   function inspSuono(L) {
     var p = cur().prod, inst = p.inst || {}, h = '';
     if (L.role) h = '<p class="small">Suono: <b>' + esc(inst[L.role] ? instName(inst[L.role]) : 'Sintetizzato') + '</b></p><div class="row"><button class="btn pri" data-ins="choose">Cambia suono</button><button class="btn" data-ins="lib">Crea un suono tuo</button></div>';
-    else if (L.id === 'drums') h = '<p class="small">Batteria: <b>' + (p.sounds === 'sint' ? 'sintetica' : 'campioni veri') + '</b>' + (p.perc ? ' · percussioni: ' + esc(SynthDesign.PERC[p.perc.type].nome) : '') + '</p><div class="row"><button class="btn pri" data-ins="drumsnd">Passa a ' + (p.sounds === 'sint' ? 'campioni veri' : 'sintetica') + '</button><button class="btn" data-ins="perc">Percussioni del mondo</button></div>';
+    else if (L.id === 'drums') h = '<p class="small" style="margin:0 0 6px">Kit:</p><div class="chips">' + [['', 'Campioni veri']].concat(Object.keys(SynthDesign.KITS).map(function (k) { return [k, SynthDesign.KITS[k].nome]; })).map(function (k) { return '<button class="chip' + ((p.kit || '') === k[0] ? ' on' : '') + '" data-kit="' + k[0] + '">' + k[1] + '</button>'; }).join('') + '</div><p class="small">Batteria: <b>' + (p.kit && SynthDesign.KITS[p.kit] ? SynthDesign.KITS[p.kit].nome : (p.sounds === 'sint' ? 'sintetica' : 'campioni veri')) + '</b>' + (p.perc ? ' · percussioni: ' + esc(SynthDesign.PERC[p.perc.type].nome) : '') + '</p><div class="row"><button class="btn pri" data-ins="drumsnd">Passa a ' + (p.sounds === 'sint' ? 'campioni veri' : 'sintetica') + '</button><button class="btn" data-ins="perc">Percussioni del mondo</button></div>';
     else if (L.id === 'bass') h = '<p class="small">Basso: <b>' + (p.b808 ? '808 tuo (designer)' : (p.bassStyle === '808' ? '808' : 'dallo stile')) + '</b></p><div class="row"><button class="btn pri" data-ins="808">Disegna il tuo 808</button><button class="btn" data-ins="bassty">' + (p.bassStyle === '808' ? 'Basso dello stile' : 'Usa 808') + '</button></div>';
     else h = '<p class="small">' + (voiceTake() ? 'Prova attiva: <b>' + esc(voiceTake().name) + '</b>' : 'Nessuna voce registrata.') + '</p><div class="row"><button class="btn pri" data-ins="mic">Microfono e prove</button></div>';
     $('#dw-in-suono').innerHTML = h;
@@ -2079,6 +2080,7 @@
   $('#dw-insp').addEventListener('click', function (e) {
     if (e.target === this || e.target.id === 'dw-in-x') { this.hidden = true; return; }
     var t = e.target.closest('[data-int]'); if (t) { inspTab(t.getAttribute('data-int')); return; }
+    var kb = e.target.closest('[data-kit]'); if (kb) { var pk = cur().prod; if (kb.getAttribute('data-kit')) pk.kit = kb.getAttribute('data-kit'); else { delete pk.kit; pk.sounds = 'campioni'; } dwStop(); dwChanged(true); inspSuono(LANES[0]); return; }
     var b = e.target.closest('[data-ins]'); if (!b) return; var a = b.getAttribute('data-ins'), L = LANES.filter(function (x) { return x.id === INSP.lane; })[0], p = cur().prod;
     if (a === 'choose') sheetOpen(L.role);
     else if (a === 'lib' || a === 'perc' || a === '808') { this.hidden = true; DS.tab = a === 'perc' ? 'perc' : (a === '808' ? '808' : 'synth'); dwWs('libreria'); dsRender(); setTimeout(function () { $('#dw-p-design').scrollIntoView({ behavior: 'smooth' }); }, 50); }
@@ -2784,7 +2786,7 @@
 
   /* ================= Avvio ================= */
   async function start() {
-    await load(); renderCoach(); (LIB.settings.lab || []).forEach(function (r) { try { SoundLab.install(r); } catch (e) {} }); (LIB.settings.synths || []).forEach(function (r) { try { synthRegister(r); } catch (e) {} }); (LIB.settings.voxInst || []).forEach(function (r) { try { voxRegister(r); } catch (e) {} }); refreshInstSelects(); applyTheme(); cur(); restoreTakes(); initSample().then(function () { if (!$('#v-impostazioni').hidden) renderSettings(); });
+    await load(); renderCoach(); (LIB.settings.lab || []).forEach(function (r) { try { SoundLab.install(r); } catch (e) {} }); SynthDesign.PRO.forEach(function (r) { Instruments.registerCustom(r.id, { id: r.id, nome: r.nome, fam: 'synthpro', fonte: 'Synth Pro (sintesi originale)', tipo: r.tipo, range: r.range, ruoli: r.ruoli, come: r.come, combina: '', perche: '', stili: [] }, r.fn); }); Instruments.FAMILIES.synthpro = 'Synth pro'; (LIB.settings.synths || []).forEach(function (r) { try { synthRegister(r); } catch (e) {} }); (LIB.settings.voxInst || []).forEach(function (r) { try { voxRegister(r); } catch (e) {} }); refreshInstSelects(); applyTheme(); cur(); restoreTakes(); initSample().then(function () { if (!$('#v-impostazioni').hidden) renderSettings(); });
     route();
   }
   window.__app = { LIB: function () { return LIB; }, SESSION: SESSION, store: store, addTake: addTake, selectTake: selectTake, buildMix: buildMix, route: route };

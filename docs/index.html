@@ -341,6 +341,7 @@ details.card[open]>summary{margin-bottom:8px}
 #v-daw .dw-title .eyebrow{display:none}#v-daw .dw-name{font-size:1.05rem}
 #v-daw .dw-ctrls{gap:8px;margin-top:6px}#v-daw .dw-btn{width:42px;height:42px}#v-daw .dw-btn.dw-play{width:54px;height:54px}
 #v-daw .dw-clock b{font-size:1.25rem}#v-daw .dw-proj{margin-top:8px;padding:7px 10px}
+#dw-sheet{z-index:70}
 
 /* ===== VOICE LAB (stile Cosmo: usa le variabili del tema) ===== */
 .vl .vl-auto{font-size:1.25rem;min-height:60px;margin:8px 0 4px;letter-spacing:.04em}
@@ -642,7 +643,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 20:22</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 20:37</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -1002,7 +1003,7 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">293 test automatici superati su 293 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">294 test automatici superati su 294 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -4089,23 +4090,23 @@ details.card[open]>summary{margin-bottom:8px}
 
   // Ricette per stile: quali strumenti per ruolo e perché (caratteristiche generiche di genere, non imitazioni).
   var RECIPES = {
-    trap: { nome: 'Trap melodica', melodia: ['harp', 'piano', 'glock', 'pizz'], accordi: ['piano', 'guitar', 'harp'], pad: ['violins', 'glass'],
+    trap: { nome: 'Trap melodica', melodia: ['pro:bell', 'harp', 'pro:pluck', 'piano', 'glock'], accordi: ['pro:epfm', 'piano', 'guitar', 'harp'], pad: ['pro:pad', 'violins', 'glass'], arpeggio: ['pro:pluck', 'pro:glassbell', 'harp'], kit: 'trap',
       spiega: 'Melodia malinconica in minore (arpa, piano o chitarra), archi lunghi nel ritornello, glockenspiel per brillare. 808 lungo con scivolate, hi-hat con rullate. La voce resta al centro: la melodia della base suona soprattutto quando non canti.' },
-    drill: { nome: 'Drill', melodia: ['pizz', 'bells', 'piano'], accordi: ['pizz', 'piano'], pad: ['violins', 'cellos', 'organ'],
+    drill: { nome: 'Drill', melodia: ['pro:bell', 'pizz', 'bells', 'piano'], accordi: ['pizz', 'pro:stab', 'piano'], pad: ['pro:darkpad', 'pro:choir', 'violins', 'cellos'], arpeggio: ['pizz', 'pro:mallet'], kit: 'drill',
       spiega: 'Atmosfera cupa: pizzicati, campane, cori e archi scuri. Ritmo a terzine sugli hi-hat, 808 che scivola molto e salta d\'ottava.' },
-    epico: { nome: 'Epico / cinematico', melodia: ['horn', 'violins', 'oboe'], accordi: ['harp', 'pizz'], pad: ['violins', 'cellos', 'horn'],
+    epico: { nome: 'Epico / cinematico', melodia: ['horn', 'violins', 'pro:choir', 'oboe'], accordi: ['harp', 'pizz', 'pro:supersaw'], pad: ['violins', 'pro:choir', 'cellos', 'horn'], arpeggio: ['harp', 'pro:glassbell'], kit: 'trap',
       spiega: 'Orchestra: archi in sezione, corni, campane, tamburi grandi. Le dinamiche crescono verso il ritornello.' },
-    melodico: { nome: 'Melodico / pop', melodia: ['piano', 'guitar', 'kalimba'], accordi: ['piano', 'guitar', 'epiano'], pad: ['violins', 'organ'],
+    melodico: { nome: 'Melodico / pop', melodia: ['piano', 'pro:lead', 'guitar', 'kalimba'], accordi: ['pro:epfm', 'piano', 'guitar', 'epiano'], pad: ['pro:pad', 'violins', 'organ'], arpeggio: ['pro:pluck', 'guitar', 'harp'], kit: 'lofi',
       spiega: 'Accordi chiari e caldi, melodia semplice e cantabile, pochi strumenti ben scelti.' },
-    boombap: { nome: 'Boom bap pesante', melodia: ['piano', 'epiano', 'vibes', 'upright'], accordi: ['piano', 'epiano', 'organ', 'clavi'], pad: ['cellos', 'organ', 'violas'],
+    boombap: { nome: 'Boom bap pesante', melodia: ['piano', 'epiano', 'vibes', 'upright'], accordi: ['piano', 'pro:keys', 'epiano', 'organ', 'clavi'], pad: ['cellos', 'organ', 'violas'], arpeggio: ['vibes', 'epiano'], kit: 'boombap',
       spiega: 'Batteria polverosa e larga, piano o piano elettrico che ripete un giro, basso rotondo. Come nel rap italiano classico: pesante ma senza fretta.' },
-    street: { nome: 'Street pesante', melodia: ['piano', 'horn', 'pizz', 'bells'], accordi: ['piano', 'organ', 'cellos'], pad: ['cellos', 'violins'],
+    street: { nome: 'Street pesante', melodia: ['piano', 'pro:bell', 'horn', 'pizz'], accordi: ['pro:stab', 'piano', 'organ', 'cellos'], pad: ['pro:darkpad', 'cellos', 'violins'], arpeggio: ['pizz', 'pro:mallet'], kit: 'drill',
       spiega: 'Colpi di piano e archi scuri, rullante forte sul 2 e 4, 808 grosso. Atmosfera da strada e da sfida, tempo medio.' },
-    trapdark: { nome: 'Trap scura pesante', melodia: ['bells', 'pizz', 'piano', 'glass'], accordi: ['pizz', 'piano', 'organ'], pad: ['cellos', 'organ', 'violas'],
+    trapdark: { nome: 'Trap scura pesante', melodia: ['pro:bell', 'bells', 'pizz', 'piano'], accordi: ['pizz', 'pro:epfm', 'piano', 'organ'], pad: ['pro:darkpad', 'pro:choir', 'cellos', 'organ'], arpeggio: ['pro:glassbell', 'pizz'], kit: 'trap',
       spiega: '808 che scivola, hi-hat a terzine, campane e pizzicati cupi. Poche note, molto peso.' },
-    clubtrap: { nome: 'Club (dembow trap)', melodia: ['kalimba', 'marimba', 'bells', 'piano'], accordi: ['nylon', 'clavi', 'piano'], pad: ['organ'],
+    clubtrap: { nome: 'Club (dembow trap)', melodia: ['pro:mallet', 'kalimba', 'marimba', 'pro:lead'], accordi: ['pro:supersaw', 'nylon', 'clavi', 'piano'], pad: ['pro:pad', 'organ'], arpeggio: ['pro:pluck', 'marimba'], kit: 'club',
       spiega: 'Ritmo dembow ballabile con 808: il rullante in levare fa muovere i fianchi, melodie corte e orecchiabili.' },
-    estate: { nome: 'Estate / latino / afro', melodia: ['marimba', 'nylon', 'kalimba'], accordi: ['nylon', 'clavi', 'marimba'], pad: ['organ'],
+    estate: { nome: 'Estate / latino / afro', melodia: ['marimba', 'pro:mallet', 'nylon', 'kalimba'], accordi: ['nylon', 'clavi', 'pro:keys', 'marimba'], pad: ['pro:pad', 'organ'], arpeggio: ['marimba', 'pro:pluck'], kit: 'club',
       spiega: 'Ritmo in levare, legni e chitarra classica, colori allegri. Il basso è rotondo e segue la cassa.' }
   };
 
@@ -5597,6 +5598,7 @@ details.card[open]>summary{margin-bottom:8px}
 
     // ---------- strumenti ----------
     function kickBuf(big) {
+      if (typeof p.drumRender === 'function') return memo('dkk' + big, function () { return p.drumRender('kick', { big: big }, sr); });
       if (useSamples) return memo('sk' + big, function () { return cut(samp('kick', vKick), big ? 0.5 : 0.34, 0.03); });
       return memo('k' + big, function () {
         var len = Math.round((big ? 0.5 : 0.34) * sr), b = new Float32Array(len), ph = 0;
@@ -5620,6 +5622,7 @@ details.card[open]>summary{margin-bottom:8px}
       });
     }
     function snareBuf() {
+      if (typeof p.drumRender === 'function') return memo('dks', function () { return p.drumRender('snare', {}, sr); });
       if (useSamples) return memo('ss', function () { return cut(samp('snare', vSnare), 0.3, 0.03); });
       var len = Math.round(0.24 * sr), b = new Float32Array(len);
       for (var i = 0; i < len; i++) {
@@ -5629,6 +5632,7 @@ details.card[open]>summary{margin-bottom:8px}
       return b;
     }
     function clapBuf() {
+      if (typeof p.drumRender === 'function') return memo('dkc', function () { return p.drumRender('clap', {}, sr); });
       if (useSamples) return memo('sc', function () { return cut(samp('clap', vClap), 0.3, 0.03); });
       var len = Math.round(0.3 * sr), b = new Float32Array(len), offs = [0, 0.011, 0.022, 0.034];
       for (var i = 0; i < len; i++) {
@@ -5648,6 +5652,7 @@ details.card[open]>summary{margin-bottom:8px}
     function hatBuf(open, vel, pitch) {
       pitch = pitch || 1;
       var pk = Math.round(pitch * 100) / 100;
+      if (typeof p.drumRender === 'function') return memo('dkh' + open + vel + '_' + pk, function () { var b = repitch(p.drumRender('hat', { open: open }, sr), pk); for (var i = 0; i < b.length; i++) b[i] *= vel; return b; });
       if (useSamples) return memo('sh' + open + vel + '_' + pk, function () { var b = repitch(cut(samp('hat', open ? 1 : 0), open ? 0.2 : 0.05, open ? 0.05 : 0.02), pk); for (var i = 0; i < b.length; i++) b[i] *= vel; return b; });
       return memo('h' + open + vel + '_' + pk, function () {
         var len = Math.round((open ? 0.2 : 0.05) * sr), b = new Float32Array(len), prev = 0;
@@ -7154,7 +7159,62 @@ details.card[open]>summary{margin-bottom:8px}
       return y;
     };
   }
-  return { B808_PRESETS: B808_PRESETS, PERC: PERC, percEvents: percEvents, voiceInstrument: voiceInstrument, TABLES: TABLES, SYNTH_DEF: SYNTH_DEF, SYNTH_PRESETS: SYNTH_PRESETS, synthParams: synthParams, synth: synth, B808_DEF: B808_DEF, b808Params: b808Params, b808: b808, FX: FX, riser: riser, impact: impact, reverseCrash: reverseCrash, downlifter: downlifter };
+  // ---------- FM (come i synth digitali anni 80 usati per bell e piano elettrico) ----------
+  function fm(o, midi, dur, sr) {
+    var f = mtof(midi), rel = o.release || 0.4, n = Math.round((dur + rel) * sr), y = new Float32Array(n), pc = 0, pm = 0, on = dur * sr;
+    for (var i = 0; i < n; i++) {
+      var t = i / sr, env = Math.exp(-t / (o.decay || 1)) * Math.min(1, i / Math.max(1, (o.attack || 0.002) * sr)); if (i > on) env *= Math.exp(-(i - on) / (rel * sr / 4));
+      var idx = (o.index || 3) * Math.exp(-t / (o.idxDecay || 0.3)) + (o.indexSus || 0.3);
+      pm += 2 * Math.PI * f * (o.ratio || 2) / sr; pc += 2 * Math.PI * f / sr;
+      var v = Math.sin(pc + idx * Math.sin(pm));
+      if (o.ratio2) v += 0.25 * Math.exp(-t / 0.04) * Math.sin(pc * o.ratio2); // "tine": colpo metallico breve all'attacco
+      y[i] = v * env * 0.45;
+    }
+    return y;
+  }
+  // ---------- banca SYNTH PRO: strumenti pronti da produzione (usabili come gli strumenti campionati) ----------
+  var PRO = [
+    { id: 'pro:bell', nome: 'Campana FM (trap)', ruoli: ['melodia', 'arpeggio'], tipo: 'percussivo', range: [55, 96], fn: function (m, d, sr) { return fm({ ratio: 3.5, index: 4, idxDecay: 0.4, indexSus: 0.2, decay: 1.4, release: 0.8 }, m, d, sr); }, come: 'Campana digitale cristallina: la melodia tipica della trap scura.' },
+    { id: 'pro:epfm', nome: 'Piano elettrico FM', ruoli: ['accordi', 'melodia'], tipo: 'percussivo', range: [40, 90], fn: function (m, d, sr) { return fm({ ratio: 1, ratio2: 14, index: 1.8, idxDecay: 0.25, indexSus: 0.15, decay: 1.6, release: 0.5 }, m, d, sr); }, come: 'Piano elettrico morbido e lucido: accordi R&B e rap melodico.' },
+    { id: 'pro:pluck', nome: 'Pluck lucido', ruoli: ['melodia', 'arpeggio', 'accordi'], tipo: 'percussivo', range: [48, 96], fn: function (m, d, sr) { return synth(SYNTH_PRESETS['Pluck lucido'], m, d, sr); }, come: 'Colpo corto e brillante: perfetto per arpeggi e giri trap.' },
+    { id: 'pro:supersaw', nome: 'Supersaw trap', ruoli: ['accordi', 'pad', 'melodia'], tipo: 'sostenuto', range: [40, 90], fn: function (m, d, sr) { return synth(SYNTH_PRESETS['Supersaw trap'], m, d, sr); }, come: 'Muro di seghe stonate: accordi larghi da ritornello.' },
+    { id: 'pro:pad', nome: 'Pad largo', ruoli: ['pad', 'accordi'], tipo: 'sostenuto', range: [36, 90], fn: function (m, d, sr) { return synth(SYNTH_PRESETS['Pad largo'], m, d, sr); }, come: 'Tappeto morbido che si muove: atmosfera sotto la voce.' },
+    { id: 'pro:darkpad', nome: 'Pad scuro', ruoli: ['pad'], tipo: 'sostenuto', range: [36, 84], fn: function (m, d, sr) { return synth({ pos: 0.3, voices: 5, detune: 16, cutoff: 0.28, res: 0.3, envAmt: 0.1, attack: 0.8, decay: 1.5, sustain: 0.9, release: 1.5, lfo: 0.3, lfoHz: 0.15 }, m, d, sr); }, come: 'Pad cupo e filtrato: tensione per drill e trap scura.' },
+    { id: 'pro:choir', nome: 'Coro synth', ruoli: ['pad', 'melodia'], tipo: 'sostenuto', range: [48, 84], fn: function (m, d, sr) { return synth({ pos: 1, voices: 5, detune: 14, cutoff: 0.55, res: 0.25, envAmt: 0.1, attack: 0.35, decay: 1, sustain: 0.85, release: 0.9, lfo: 0.25, lfoHz: 4.5 }, m, d, sr); }, come: 'Voci sintetiche "aaa": drammatico, cinematico.' },
+    { id: 'pro:lead', nome: 'Lead vocale', ruoli: ['melodia'], tipo: 'sostenuto', range: [55, 90], fn: function (m, d, sr) { return synth(SYNTH_PRESETS['Lead vocale'], m, d, sr); }, come: 'Melodia che canta, con vibrato: ganci memorabili.' },
+    { id: 'pro:keys', nome: 'Keys morbide', ruoli: ['accordi', 'melodia'], tipo: 'percussivo', range: [40, 90], fn: function (m, d, sr) { return fm({ ratio: 1, index: 0.9, idxDecay: 0.6, indexSus: 0.05, decay: 1.8, release: 0.6 }, m, d, sr); }, come: 'Tasti caldi e rotondi: accompagnamento discreto.' },
+    { id: 'pro:stab', nome: 'Stab ottoni synth', ruoli: ['accordi'], tipo: 'percussivo', range: [45, 84], fn: function (m, d, sr) { return synth({ pos: 0.36, voices: 4, detune: 10, cutoff: 0.32, res: 0.2, envAmt: 0.75, attack: 0.01, decay: 0.22, sustain: 0.25, release: 0.15 }, m, Math.min(d, 0.4), sr); }, come: 'Colpo d\'ottoni sintetico: accenti aggressivi (street, drill).' },
+    { id: 'pro:glassbell', nome: 'Vetro digitale', ruoli: ['melodia', 'arpeggio'], tipo: 'percussivo', range: [60, 100], fn: function (m, d, sr) { return fm({ ratio: 7, index: 2.5, idxDecay: 0.15, indexSus: 0.1, decay: 0.9, release: 0.6 }, m, d, sr); }, come: 'Note di vetro altissime: luccichio sopra il ritornello.' },
+    { id: 'pro:mallet', nome: 'Mallet FM', ruoli: ['melodia', 'arpeggio'], tipo: 'percussivo', range: [48, 92], fn: function (m, d, sr) { return fm({ ratio: 4, index: 2, idxDecay: 0.05, indexSus: 0, decay: 0.45, release: 0.2 }, m, d, sr); }, come: 'Colpo di legno sintetico: ritmi club e afro.' }
+  ];
+  // ---------- KIT di batteria (sintetizzati, caratteri diversi) ----------
+  var KITS = {
+    trap: { nome: 'Trap pesante', kick: { f0: 160, f1: 46, sweep: 38, decay: 0.32, click: 0.35, drive: 1.6 }, snare: { tone: 200, toneAmt: 0.35, noise: 0.7, decay: 0.16, bp: 2200 }, clap: { spread: 0.012, decay: 0.2, bp: 1400 }, hat: { decay: 0.045, hp: 7000 } },
+    drill: { nome: 'Drill', kick: { f0: 140, f1: 50, sweep: 55, decay: 0.22, click: 0.5, drive: 2 }, snare: { tone: 330, toneAmt: 0.5, noise: 0.55, decay: 0.11, bp: 3000 }, clap: { spread: 0.009, decay: 0.14, bp: 1800 }, hat: { decay: 0.035, hp: 8000 } },
+    boombap: { nome: 'Boom bap polveroso', kick: { f0: 120, f1: 52, sweep: 30, decay: 0.28, click: 0.2, drive: 1.3, lp: 2500 }, snare: { tone: 180, toneAmt: 0.45, noise: 0.6, decay: 0.2, bp: 1600, lp: 5000 }, clap: { spread: 0.014, decay: 0.18, bp: 1200, lp: 4000 }, hat: { decay: 0.06, hp: 5000, lp: 9000 } },
+    club: { nome: 'Club duro', kick: { f0: 200, f1: 48, sweep: 50, decay: 0.26, click: 0.6, drive: 2.4 }, snare: { tone: 240, toneAmt: 0.3, noise: 0.8, decay: 0.13, bp: 2600 }, clap: { spread: 0.01, decay: 0.22, bp: 1600 }, hat: { decay: 0.03, hp: 9000 } },
+    lofi: { nome: 'Lo-fi morbido', kick: { f0: 100, f1: 50, sweep: 25, decay: 0.3, click: 0.05, drive: 1.1, lp: 1500 }, snare: { tone: 170, toneAmt: 0.5, noise: 0.4, decay: 0.18, bp: 1200, lp: 3500 }, clap: { spread: 0.016, decay: 0.16, bp: 1000, lp: 3000 }, hat: { decay: 0.05, hp: 4000, lp: 7000 } }
+  };
+  function lp1(y, sr, f) { if (!f) return y; var a = 1 - Math.exp(-2 * Math.PI * f / sr), z = 0; for (var i = 0; i < y.length; i++) { z += a * (y[i] - z); y[i] = z; } return y; }
+  function hp1(y, sr, f) { var a = Math.exp(-2 * Math.PI * f / sr), px = 0, py = 0; for (var i = 0; i < y.length; i++) { var v = a * (py + y[i] - px); px = y[i]; py = v; y[i] = v; } return y; }
+  function kitRender(kitId, part, o, sr) {
+    var K = KITS[kitId] || KITS.trap, r = noise(31 + part.length), i, n, y;
+    if (part === 'kick') { var k = K.kick, ph = 0; n = Math.round(((o && o.big) ? k.decay * 1.6 : k.decay) * sr * 1.6); y = new Float32Array(n);
+      for (i = 0; i < n; i++) { var t = i / sr; ph += 2 * Math.PI * (k.f1 + (k.f0 - k.f1) * Math.exp(-t * k.sweep)) / sr; y[i] = Math.tanh(k.drive * (Math.sin(ph) * Math.exp(-t / k.decay) + k.click * r() * Math.exp(-t * 400))) / Math.tanh(k.drive) * Math.min(1, i / 20); }
+      return lp1(y, sr, k.lp); }
+    if (part === 'snare') { var s = K.snare; n = Math.round(s.decay * 3 * sr); y = new Float32Array(n); var bp = 0, lpz = 0, a = 1 - Math.exp(-2 * Math.PI * s.bp / sr);
+      for (i = 0; i < n; i++) { var t2 = i / sr, x = r(); lpz += a * (x - lpz); bp = x - lpz * 0.6; y[i] = (s.noise * bp * Math.exp(-t2 / s.decay) + s.toneAmt * Math.sin(2 * Math.PI * s.tone * t2) * Math.exp(-t2 / (s.decay * 0.5))) * 0.7; }
+      return lp1(y, sr, s.lp); }
+    if (part === 'clap') { var c = K.clap; n = Math.round((c.decay * 2.5 + c.spread * 3) * sr); y = new Float32Array(n); var offs = [0, c.spread, c.spread * 2, c.spread * 3];
+      for (i = 0; i < n; i++) { var t3 = i / sr, v = 0; for (var q = 0; q < 4; q++) if (t3 >= offs[q]) v += Math.exp(-(t3 - offs[q]) * (q === 3 ? 1 / c.decay : 90)); y[i] = r() * v * 0.3; }
+      return lp1(hp1(y, sr, c.bp * 0.5), sr, c.lp || c.bp * 3); }
+    if (part === 'hat') { var h = K.hat, open = o && o.open; n = Math.round((open ? h.decay * 5 : h.decay) * sr * 1.5); y = new Float32Array(n);
+      for (i = 0; i < n; i++) y[i] = r() * Math.exp(-(i / sr) / (open ? h.decay * 4 : h.decay * 0.6)) * 0.5;
+      return lp1(hp1(y, sr, h.hp), sr, h.lp); }
+    return new Float32Array(1);
+  }
+  // ---------- percussioni del mondo ----------
+  return { fm: fm, PRO: PRO, KITS: KITS, kitRender: kitRender, B808_PRESETS: B808_PRESETS, PERC: PERC, percEvents: percEvents, voiceInstrument: voiceInstrument, TABLES: TABLES, SYNTH_DEF: SYNTH_DEF, SYNTH_PRESETS: SYNTH_PRESETS, synthParams: synthParams, synth: synth, B808_DEF: B808_DEF, b808Params: b808Params, b808: b808, FX: FX, riser: riser, impact: impact, reverseCrash: reverseCrash, downlifter: downlifter };
 });
 
 /*
@@ -10876,8 +10936,8 @@ details.card[open]>summary{margin-bottom:8px}
     return SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {} });
   }
   function getBase() {
-    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
+    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.kit, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, drumRender: p.kit && SynthDesign.KITS[p.kit] ? function (part, o, s2) { return SynthDesign.kitRender(p.kit, part, o, s2); } : undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -11182,7 +11242,7 @@ details.card[open]>summary{margin-bottom:8px}
   function applyRecipe(g) {
     var R = Instruments.RECIPES[g] || Instruments.RECIPES[Arranger.STYLES[g] ? g : 'melodico'], p = cur().prod;
     var k = (p.seed || 1) % 2;
-    p.inst = { melodia: R.melodia[k % R.melodia.length], accordi: R.accordi[k % R.accordi.length], pad: R.pad[0] }; persist(); fillInst();
+    p.inst = { melodia: R.melodia[k % R.melodia.length], accordi: R.accordi[k % R.accordi.length], pad: R.pad[0], arpeggio: R.arpeggio ? R.arpeggio[k % R.arpeggio.length] : undefined }; if (R.kit) p.kit = R.kit; persist(); fillInst();
     return R;
   }
   $('#b-in-rec').addEventListener('click', async function () {
@@ -11528,7 +11588,7 @@ details.card[open]>summary{margin-bottom:8px}
     $('#dw-lyl').innerHTML = map && b.bars === map.totalBars ? map.lines.map(function (l) { return '<span style="left:' + (l.startBar * DW.px + 1) + 'px;width:' + (l.bars * DW.px - 2) + 'px" title="' + esc(l.text) + '">' + esc(l.text) + '</span>'; }).join('') : '';
     var inst = cur().prod.inst || {};
     $('#dw-heads').innerHTML = '<div class="dw-hl">Battute</div><div class="dw-hl s">Parti</div><div class="dw-hl l">Testo</div>' + LANES.map(function (L) {
-      var label = L.role ? (inst[L.role] ? instName(inst[L.role]) : 'Sintetizzato') : (L.id === 'drums' ? (cur().prod.sounds === 'sint' ? 'Sintetici' : 'Campioni veri') : (L.id === 'bass' ? (cur().prod.bassStyle === '808' ? '808 sempre' : 'Dallo stile') : (voiceTake() ? voiceTake().name : 'Registra con ●')));
+      var label = L.role ? (inst[L.role] ? instName(inst[L.role]) : 'Sintetizzato') : (L.id === 'drums' ? (cur().prod.kit && SynthDesign.KITS[cur().prod.kit] ? 'Kit ' + SynthDesign.KITS[cur().prod.kit].nome : (cur().prod.sounds === 'sint' ? 'Sintetici' : 'Campioni veri')) : (L.id === 'bass' ? (cur().prod.bassStyle === '808' ? '808 sempre' : 'Dallo stile') : (voiceTake() ? voiceTake().name : 'Registra con ●')));
       return '<div class="dw-lh" style="--lc:' + L.c + '"><b>' + L.nome + '</b><button class="inst" data-inst="' + L.id + '">' + esc(label) + '</button><div class="ms"><button data-m="' + L.id + '" class="' + (DW.mute[L.id] ? 'on' : '') + '">M</button><button data-s="' + L.id + '" class="' + (DW.solo[L.id] ? 'on' : '') + '">S</button><input type="range" min="0" max="160" value="' + Math.round(lvl(L.level) * 100) + '" data-lv="' + L.id + '" aria-label="Volume ' + L.nome + '"></div></div>';
     }).join('');
     var dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -11608,7 +11668,8 @@ details.card[open]>summary{margin-bottom:8px}
     $('#dw-sheet-f').innerHTML = fams.map(function (f) { return '<button class="chip' + (SHEET.fam === f[0] ? ' on' : '') + '" data-sf="' + f[0] + '">' + esc(f[1]) + '</button>'; }).join('');
     var list = [{ id: '', nome: 'Sintetizzato (automatico)', come: 'Suono generato dal programma, cambia con lo stile.' }];
     var orig = SoundLab.ORIGINALS.map(function (r) { return { id: r.id, nome: r.nome, come: r.descr, o: 1 }; }), mine = (LIB.settings.lab || []).concat(LIB.settings.synths || [], LIB.settings.voxInst || []).map(function (r) { return { id: r.id, nome: r.nome, come: r.descr || 'Creato da te.', m: 1 }; });
-    var cat = Instruments.CATALOG.filter(function (c) { return role === 'arpeggio' ? c.tipo !== 'sostenuto' || c.ruoli.indexOf('accordi') >= 0 : (c.ruoli.indexOf(role) >= 0 || (role === 'pad' && c.tipo === 'sostenuto')); }).map(function (c) { return { id: c.id, nome: c.nome, come: c.come, f: c.fam }; });
+    var pro = SynthDesign.PRO.filter(function (r) { return r.ruoli.indexOf(role) >= 0 || (role === 'arpeggio' && r.tipo === 'percussivo'); }).map(function (r) { return { id: r.id, nome: r.nome, come: r.come, f: 'synthpro', fam: 'synthpro', ruoli: r.ruoli, tipo: r.tipo }; });
+    var cat = pro.concat(Instruments.CATALOG).filter(function (c) { if (c.f === 'synthpro') return true; return role === 'arpeggio' ? c.tipo !== 'sostenuto' || c.ruoli.indexOf('accordi') >= 0 : (c.ruoli.indexOf(role) >= 0 || (role === 'pad' && c.tipo === 'sostenuto')); }).map(function (c) { return { id: c.id, nome: c.nome, come: c.come, f: c.fam }; });
     if (SHEET.fam === 'orig') list = orig; else if (SHEET.fam === 'mine') list = mine; else if (SHEET.fam !== 'tutte') list = cat.filter(function (c) { return c.f === SHEET.fam; }); else list = list.concat(orig, mine, cat);
     $('#dw-sheet-g').innerHTML = list.length ? list.map(function (c) { return '<div class="dw-card' + ((c.id || '') === (cur0 || '') ? ' sel' : '') + '"><b>' + esc(c.nome) + '</b><small>' + esc((c.come || '').slice(0, 110)) + '</small><div class="row">' + (c.id ? '<button class="btn sm" data-sp="' + c.id + '">Ascolta</button>' : '') + '<button class="btn sm pri" data-su="' + c.id + '">Usa</button></div></div>'; }).join('') : '<p class="small muted">Niente qui: crea strumenti nel Laboratorio.</p>';
   }
@@ -11740,7 +11801,7 @@ details.card[open]>summary{margin-bottom:8px}
   $('#dw-rec').addEventListener('click', dwRecord);
   $('#dw-new').addEventListener('click', function () { var p = cur().prod; if (SESSION.lastPlay && performance.now() - SESSION.lastPlay.t < 10000) coachRec('skip', SESSION.lastPlay.ctx); p.seed++; dwStop(); dwChanged(true); setTimeout(function () { dwPlay(0); }, 300); });
   $('#dw-name').addEventListener('input', function () { cur().title = this.value.trim() || 'Senza titolo'; $('#top-song').textContent = cur().title; persist(); });
-  $('#dw-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.bpm = Arranger.STYLES[this.value].bpm; p.tune = null; p.groove = null; p.prog = null; p.mix = null; mixRender(); $('#dw-bpm').value = p.bpm; dwStop(); fillBase(); dwChanged(true); });
+  $('#dw-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.bpm = Arranger.STYLES[this.value].bpm; p.tune = null; p.groove = null; p.prog = null; p.mix = null; applyRecipe(this.value); mixRender(); $('#dw-bpm').value = p.bpm; dwStop(); fillBase(); dwChanged(true); });
   $('#dw-bpm').addEventListener('change', function () { cur().prod.bpm = Math.max(60, Math.min(180, +this.value || 100)); this.value = cur().prod.bpm; dwStop(); fillBase(); dwChanged(true); dwLyInfo(); });
   $('#dw-key').addEventListener('change', function () { var v = this.value.split(':'), p = cur().prod; p.tonic = +v[0]; p.mode = v[1]; dwStop(); fillBase(); dwChanged(true); });
   $('#dw-master').addEventListener('change', function () { cur().prod.master = this.value; persist(); fillBase(); });
@@ -12481,7 +12542,7 @@ details.card[open]>summary{margin-bottom:8px}
   function inspSuono(L) {
     var p = cur().prod, inst = p.inst || {}, h = '';
     if (L.role) h = '<p class="small">Suono: <b>' + esc(inst[L.role] ? instName(inst[L.role]) : 'Sintetizzato') + '</b></p><div class="row"><button class="btn pri" data-ins="choose">Cambia suono</button><button class="btn" data-ins="lib">Crea un suono tuo</button></div>';
-    else if (L.id === 'drums') h = '<p class="small">Batteria: <b>' + (p.sounds === 'sint' ? 'sintetica' : 'campioni veri') + '</b>' + (p.perc ? ' · percussioni: ' + esc(SynthDesign.PERC[p.perc.type].nome) : '') + '</p><div class="row"><button class="btn pri" data-ins="drumsnd">Passa a ' + (p.sounds === 'sint' ? 'campioni veri' : 'sintetica') + '</button><button class="btn" data-ins="perc">Percussioni del mondo</button></div>';
+    else if (L.id === 'drums') h = '<p class="small" style="margin:0 0 6px">Kit:</p><div class="chips">' + [['', 'Campioni veri']].concat(Object.keys(SynthDesign.KITS).map(function (k) { return [k, SynthDesign.KITS[k].nome]; })).map(function (k) { return '<button class="chip' + ((p.kit || '') === k[0] ? ' on' : '') + '" data-kit="' + k[0] + '">' + k[1] + '</button>'; }).join('') + '</div><p class="small">Batteria: <b>' + (p.kit && SynthDesign.KITS[p.kit] ? SynthDesign.KITS[p.kit].nome : (p.sounds === 'sint' ? 'sintetica' : 'campioni veri')) + '</b>' + (p.perc ? ' · percussioni: ' + esc(SynthDesign.PERC[p.perc.type].nome) : '') + '</p><div class="row"><button class="btn pri" data-ins="drumsnd">Passa a ' + (p.sounds === 'sint' ? 'campioni veri' : 'sintetica') + '</button><button class="btn" data-ins="perc">Percussioni del mondo</button></div>';
     else if (L.id === 'bass') h = '<p class="small">Basso: <b>' + (p.b808 ? '808 tuo (designer)' : (p.bassStyle === '808' ? '808' : 'dallo stile')) + '</b></p><div class="row"><button class="btn pri" data-ins="808">Disegna il tuo 808</button><button class="btn" data-ins="bassty">' + (p.bassStyle === '808' ? 'Basso dello stile' : 'Usa 808') + '</button></div>';
     else h = '<p class="small">' + (voiceTake() ? 'Prova attiva: <b>' + esc(voiceTake().name) + '</b>' : 'Nessuna voce registrata.') + '</p><div class="row"><button class="btn pri" data-ins="mic">Microfono e prove</button></div>';
     $('#dw-in-suono').innerHTML = h;
@@ -12501,6 +12562,7 @@ details.card[open]>summary{margin-bottom:8px}
   $('#dw-insp').addEventListener('click', function (e) {
     if (e.target === this || e.target.id === 'dw-in-x') { this.hidden = true; return; }
     var t = e.target.closest('[data-int]'); if (t) { inspTab(t.getAttribute('data-int')); return; }
+    var kb = e.target.closest('[data-kit]'); if (kb) { var pk = cur().prod; if (kb.getAttribute('data-kit')) pk.kit = kb.getAttribute('data-kit'); else { delete pk.kit; pk.sounds = 'campioni'; } dwStop(); dwChanged(true); inspSuono(LANES[0]); return; }
     var b = e.target.closest('[data-ins]'); if (!b) return; var a = b.getAttribute('data-ins'), L = LANES.filter(function (x) { return x.id === INSP.lane; })[0], p = cur().prod;
     if (a === 'choose') sheetOpen(L.role);
     else if (a === 'lib' || a === 'perc' || a === '808') { this.hidden = true; DS.tab = a === 'perc' ? 'perc' : (a === '808' ? '808' : 'synth'); dwWs('libreria'); dsRender(); setTimeout(function () { $('#dw-p-design').scrollIntoView({ behavior: 'smooth' }); }, 50); }
@@ -13206,7 +13268,7 @@ details.card[open]>summary{margin-bottom:8px}
 
   /* ================= Avvio ================= */
   async function start() {
-    await load(); renderCoach(); (LIB.settings.lab || []).forEach(function (r) { try { SoundLab.install(r); } catch (e) {} }); (LIB.settings.synths || []).forEach(function (r) { try { synthRegister(r); } catch (e) {} }); (LIB.settings.voxInst || []).forEach(function (r) { try { voxRegister(r); } catch (e) {} }); refreshInstSelects(); applyTheme(); cur(); restoreTakes(); initSample().then(function () { if (!$('#v-impostazioni').hidden) renderSettings(); });
+    await load(); renderCoach(); (LIB.settings.lab || []).forEach(function (r) { try { SoundLab.install(r); } catch (e) {} }); SynthDesign.PRO.forEach(function (r) { Instruments.registerCustom(r.id, { id: r.id, nome: r.nome, fam: 'synthpro', fonte: 'Synth Pro (sintesi originale)', tipo: r.tipo, range: r.range, ruoli: r.ruoli, come: r.come, combina: '', perche: '', stili: [] }, r.fn); }); Instruments.FAMILIES.synthpro = 'Synth pro'; (LIB.settings.synths || []).forEach(function (r) { try { synthRegister(r); } catch (e) {} }); (LIB.settings.voxInst || []).forEach(function (r) { try { voxRegister(r); } catch (e) {} }); refreshInstSelects(); applyTheme(); cur(); restoreTakes(); initSample().then(function () { if (!$('#v-impostazioni').hidden) renderSettings(); });
     route();
   }
   window.__app = { LIB: function () { return LIB; }, SESSION: SESSION, store: store, addTake: addTake, selectTake: selectTake, buildMix: buildMix, route: route };

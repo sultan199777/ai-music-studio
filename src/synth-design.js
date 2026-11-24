@@ -106,5 +106,60 @@
       return y;
     };
   }
-  return { B808_PRESETS: B808_PRESETS, PERC: PERC, percEvents: percEvents, voiceInstrument: voiceInstrument, TABLES: TABLES, SYNTH_DEF: SYNTH_DEF, SYNTH_PRESETS: SYNTH_PRESETS, synthParams: synthParams, synth: synth, B808_DEF: B808_DEF, b808Params: b808Params, b808: b808, FX: FX, riser: riser, impact: impact, reverseCrash: reverseCrash, downlifter: downlifter };
+  // ---------- FM (come i synth digitali anni 80 usati per bell e piano elettrico) ----------
+  function fm(o, midi, dur, sr) {
+    var f = mtof(midi), rel = o.release || 0.4, n = Math.round((dur + rel) * sr), y = new Float32Array(n), pc = 0, pm = 0, on = dur * sr;
+    for (var i = 0; i < n; i++) {
+      var t = i / sr, env = Math.exp(-t / (o.decay || 1)) * Math.min(1, i / Math.max(1, (o.attack || 0.002) * sr)); if (i > on) env *= Math.exp(-(i - on) / (rel * sr / 4));
+      var idx = (o.index || 3) * Math.exp(-t / (o.idxDecay || 0.3)) + (o.indexSus || 0.3);
+      pm += 2 * Math.PI * f * (o.ratio || 2) / sr; pc += 2 * Math.PI * f / sr;
+      var v = Math.sin(pc + idx * Math.sin(pm));
+      if (o.ratio2) v += 0.25 * Math.exp(-t / 0.04) * Math.sin(pc * o.ratio2); // "tine": colpo metallico breve all'attacco
+      y[i] = v * env * 0.45;
+    }
+    return y;
+  }
+  // ---------- banca SYNTH PRO: strumenti pronti da produzione (usabili come gli strumenti campionati) ----------
+  var PRO = [
+    { id: 'pro:bell', nome: 'Campana FM (trap)', ruoli: ['melodia', 'arpeggio'], tipo: 'percussivo', range: [55, 96], fn: function (m, d, sr) { return fm({ ratio: 3.5, index: 4, idxDecay: 0.4, indexSus: 0.2, decay: 1.4, release: 0.8 }, m, d, sr); }, come: 'Campana digitale cristallina: la melodia tipica della trap scura.' },
+    { id: 'pro:epfm', nome: 'Piano elettrico FM', ruoli: ['accordi', 'melodia'], tipo: 'percussivo', range: [40, 90], fn: function (m, d, sr) { return fm({ ratio: 1, ratio2: 14, index: 1.8, idxDecay: 0.25, indexSus: 0.15, decay: 1.6, release: 0.5 }, m, d, sr); }, come: 'Piano elettrico morbido e lucido: accordi R&B e rap melodico.' },
+    { id: 'pro:pluck', nome: 'Pluck lucido', ruoli: ['melodia', 'arpeggio', 'accordi'], tipo: 'percussivo', range: [48, 96], fn: function (m, d, sr) { return synth(SYNTH_PRESETS['Pluck lucido'], m, d, sr); }, come: 'Colpo corto e brillante: perfetto per arpeggi e giri trap.' },
+    { id: 'pro:supersaw', nome: 'Supersaw trap', ruoli: ['accordi', 'pad', 'melodia'], tipo: 'sostenuto', range: [40, 90], fn: function (m, d, sr) { return synth(SYNTH_PRESETS['Supersaw trap'], m, d, sr); }, come: 'Muro di seghe stonate: accordi larghi da ritornello.' },
+    { id: 'pro:pad', nome: 'Pad largo', ruoli: ['pad', 'accordi'], tipo: 'sostenuto', range: [36, 90], fn: function (m, d, sr) { return synth(SYNTH_PRESETS['Pad largo'], m, d, sr); }, come: 'Tappeto morbido che si muove: atmosfera sotto la voce.' },
+    { id: 'pro:darkpad', nome: 'Pad scuro', ruoli: ['pad'], tipo: 'sostenuto', range: [36, 84], fn: function (m, d, sr) { return synth({ pos: 0.3, voices: 5, detune: 16, cutoff: 0.28, res: 0.3, envAmt: 0.1, attack: 0.8, decay: 1.5, sustain: 0.9, release: 1.5, lfo: 0.3, lfoHz: 0.15 }, m, d, sr); }, come: 'Pad cupo e filtrato: tensione per drill e trap scura.' },
+    { id: 'pro:choir', nome: 'Coro synth', ruoli: ['pad', 'melodia'], tipo: 'sostenuto', range: [48, 84], fn: function (m, d, sr) { return synth({ pos: 1, voices: 5, detune: 14, cutoff: 0.55, res: 0.25, envAmt: 0.1, attack: 0.35, decay: 1, sustain: 0.85, release: 0.9, lfo: 0.25, lfoHz: 4.5 }, m, d, sr); }, come: 'Voci sintetiche "aaa": drammatico, cinematico.' },
+    { id: 'pro:lead', nome: 'Lead vocale', ruoli: ['melodia'], tipo: 'sostenuto', range: [55, 90], fn: function (m, d, sr) { return synth(SYNTH_PRESETS['Lead vocale'], m, d, sr); }, come: 'Melodia che canta, con vibrato: ganci memorabili.' },
+    { id: 'pro:keys', nome: 'Keys morbide', ruoli: ['accordi', 'melodia'], tipo: 'percussivo', range: [40, 90], fn: function (m, d, sr) { return fm({ ratio: 1, index: 0.9, idxDecay: 0.6, indexSus: 0.05, decay: 1.8, release: 0.6 }, m, d, sr); }, come: 'Tasti caldi e rotondi: accompagnamento discreto.' },
+    { id: 'pro:stab', nome: 'Stab ottoni synth', ruoli: ['accordi'], tipo: 'percussivo', range: [45, 84], fn: function (m, d, sr) { return synth({ pos: 0.36, voices: 4, detune: 10, cutoff: 0.32, res: 0.2, envAmt: 0.75, attack: 0.01, decay: 0.22, sustain: 0.25, release: 0.15 }, m, Math.min(d, 0.4), sr); }, come: 'Colpo d\'ottoni sintetico: accenti aggressivi (street, drill).' },
+    { id: 'pro:glassbell', nome: 'Vetro digitale', ruoli: ['melodia', 'arpeggio'], tipo: 'percussivo', range: [60, 100], fn: function (m, d, sr) { return fm({ ratio: 7, index: 2.5, idxDecay: 0.15, indexSus: 0.1, decay: 0.9, release: 0.6 }, m, d, sr); }, come: 'Note di vetro altissime: luccichio sopra il ritornello.' },
+    { id: 'pro:mallet', nome: 'Mallet FM', ruoli: ['melodia', 'arpeggio'], tipo: 'percussivo', range: [48, 92], fn: function (m, d, sr) { return fm({ ratio: 4, index: 2, idxDecay: 0.05, indexSus: 0, decay: 0.45, release: 0.2 }, m, d, sr); }, come: 'Colpo di legno sintetico: ritmi club e afro.' }
+  ];
+  // ---------- KIT di batteria (sintetizzati, caratteri diversi) ----------
+  var KITS = {
+    trap: { nome: 'Trap pesante', kick: { f0: 160, f1: 46, sweep: 38, decay: 0.32, click: 0.35, drive: 1.6 }, snare: { tone: 200, toneAmt: 0.35, noise: 0.7, decay: 0.16, bp: 2200 }, clap: { spread: 0.012, decay: 0.2, bp: 1400 }, hat: { decay: 0.045, hp: 7000 } },
+    drill: { nome: 'Drill', kick: { f0: 140, f1: 50, sweep: 55, decay: 0.22, click: 0.5, drive: 2 }, snare: { tone: 330, toneAmt: 0.5, noise: 0.55, decay: 0.11, bp: 3000 }, clap: { spread: 0.009, decay: 0.14, bp: 1800 }, hat: { decay: 0.035, hp: 8000 } },
+    boombap: { nome: 'Boom bap polveroso', kick: { f0: 120, f1: 52, sweep: 30, decay: 0.28, click: 0.2, drive: 1.3, lp: 2500 }, snare: { tone: 180, toneAmt: 0.45, noise: 0.6, decay: 0.2, bp: 1600, lp: 5000 }, clap: { spread: 0.014, decay: 0.18, bp: 1200, lp: 4000 }, hat: { decay: 0.06, hp: 5000, lp: 9000 } },
+    club: { nome: 'Club duro', kick: { f0: 200, f1: 48, sweep: 50, decay: 0.26, click: 0.6, drive: 2.4 }, snare: { tone: 240, toneAmt: 0.3, noise: 0.8, decay: 0.13, bp: 2600 }, clap: { spread: 0.01, decay: 0.22, bp: 1600 }, hat: { decay: 0.03, hp: 9000 } },
+    lofi: { nome: 'Lo-fi morbido', kick: { f0: 100, f1: 50, sweep: 25, decay: 0.3, click: 0.05, drive: 1.1, lp: 1500 }, snare: { tone: 170, toneAmt: 0.5, noise: 0.4, decay: 0.18, bp: 1200, lp: 3500 }, clap: { spread: 0.016, decay: 0.16, bp: 1000, lp: 3000 }, hat: { decay: 0.05, hp: 4000, lp: 7000 } }
+  };
+  function lp1(y, sr, f) { if (!f) return y; var a = 1 - Math.exp(-2 * Math.PI * f / sr), z = 0; for (var i = 0; i < y.length; i++) { z += a * (y[i] - z); y[i] = z; } return y; }
+  function hp1(y, sr, f) { var a = Math.exp(-2 * Math.PI * f / sr), px = 0, py = 0; for (var i = 0; i < y.length; i++) { var v = a * (py + y[i] - px); px = y[i]; py = v; y[i] = v; } return y; }
+  function kitRender(kitId, part, o, sr) {
+    var K = KITS[kitId] || KITS.trap, r = noise(31 + part.length), i, n, y;
+    if (part === 'kick') { var k = K.kick, ph = 0; n = Math.round(((o && o.big) ? k.decay * 1.6 : k.decay) * sr * 1.6); y = new Float32Array(n);
+      for (i = 0; i < n; i++) { var t = i / sr; ph += 2 * Math.PI * (k.f1 + (k.f0 - k.f1) * Math.exp(-t * k.sweep)) / sr; y[i] = Math.tanh(k.drive * (Math.sin(ph) * Math.exp(-t / k.decay) + k.click * r() * Math.exp(-t * 400))) / Math.tanh(k.drive) * Math.min(1, i / 20); }
+      return lp1(y, sr, k.lp); }
+    if (part === 'snare') { var s = K.snare; n = Math.round(s.decay * 3 * sr); y = new Float32Array(n); var bp = 0, lpz = 0, a = 1 - Math.exp(-2 * Math.PI * s.bp / sr);
+      for (i = 0; i < n; i++) { var t2 = i / sr, x = r(); lpz += a * (x - lpz); bp = x - lpz * 0.6; y[i] = (s.noise * bp * Math.exp(-t2 / s.decay) + s.toneAmt * Math.sin(2 * Math.PI * s.tone * t2) * Math.exp(-t2 / (s.decay * 0.5))) * 0.7; }
+      return lp1(y, sr, s.lp); }
+    if (part === 'clap') { var c = K.clap; n = Math.round((c.decay * 2.5 + c.spread * 3) * sr); y = new Float32Array(n); var offs = [0, c.spread, c.spread * 2, c.spread * 3];
+      for (i = 0; i < n; i++) { var t3 = i / sr, v = 0; for (var q = 0; q < 4; q++) if (t3 >= offs[q]) v += Math.exp(-(t3 - offs[q]) * (q === 3 ? 1 / c.decay : 90)); y[i] = r() * v * 0.3; }
+      return lp1(hp1(y, sr, c.bp * 0.5), sr, c.lp || c.bp * 3); }
+    if (part === 'hat') { var h = K.hat, open = o && o.open; n = Math.round((open ? h.decay * 5 : h.decay) * sr * 1.5); y = new Float32Array(n);
+      for (i = 0; i < n; i++) y[i] = r() * Math.exp(-(i / sr) / (open ? h.decay * 4 : h.decay * 0.6)) * 0.5;
+      return lp1(hp1(y, sr, h.hp), sr, h.lp); }
+    return new Float32Array(1);
+  }
+  // ---------- percussioni del mondo ----------
+  return { fm: fm, PRO: PRO, KITS: KITS, kitRender: kitRender, B808_PRESETS: B808_PRESETS, PERC: PERC, percEvents: percEvents, voiceInstrument: voiceInstrument, TABLES: TABLES, SYNTH_DEF: SYNTH_DEF, SYNTH_PRESETS: SYNTH_PRESETS, synthParams: synthParams, synth: synth, B808_DEF: B808_DEF, b808Params: b808Params, b808: b808, FX: FX, riser: riser, impact: impact, reverseCrash: reverseCrash, downlifter: downlifter };
 });
