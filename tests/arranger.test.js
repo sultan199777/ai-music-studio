@@ -187,3 +187,15 @@ test('cassa: pattern dello stile che si ripete (groove), con variazione ogni 4 b
   const es = secOf(e, 'strofa')[0];
   assert.equal(e.events.kick.filter((k) => k.bar === es.startBar).map((k) => k.step).join(','), '0,4,8,12');
 });
+
+test('arpeggi: ci sono in ogni stile, più fitti nel ritornello, note dell\'accordo nella scala', () => {
+  for (const g of Object.keys(A.STYLES)) {
+    const b = A.generate({ sampleRate: 8000, genre: g, bars: 32, seed: 3, tonic: 9, mode: 'minore' });
+    assert.ok(b.events.arp.length > 40, g + ' arpeggi ' + b.events.arp.length);
+    b.events.arp.forEach((e) => assert.ok(inScale(e.midi, 9, 'minore'), g + ' nota ' + e.midi));
+    const dens = (name) => { const s = secOf(b, name)[0]; return b.events.arp.filter((e) => e.start >= s.startSec && e.start < s.endSec).length / s.bars; };
+    assert.ok(dens('ritornello') >= dens('strofa'), g + ' ritornello più fitto');
+  }
+  const off = A.generate({ sampleRate: 8000, genre: 'trap', bars: 8, seed: 1, arp: false });
+  assert.equal(off.events.arp.length, 0);
+});

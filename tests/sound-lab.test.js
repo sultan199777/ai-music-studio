@@ -60,7 +60,7 @@ test('generi nuovi: usano strumenti esistenti e si suonano con l\'arrangiatore',
   for (const g of L.GENRES) {
     assert.ok(A.STYLES[g.base], g.nome);
     const b = A.generate({ sampleRate: 16000, genre: g.base, bars: 8, seed: 2, inst: g.inst });
-    assert.deepEqual(b.inst, g.inst, g.nome);
+    for (const r of Object.keys(g.inst)) assert.equal(b.inst[r], g.inst[r], g.nome);
     for (const tr of ['lead', 'chords', 'pad']) for (let i = 0; i < b.length; i += 97) assert.ok(Number.isFinite(b.tracks[tr][i]));
   }
 });

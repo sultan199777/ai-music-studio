@@ -16,12 +16,12 @@
 
   /* ================= Dati e salvataggio ================= */
   var STATUSES = ['idea', 'testo', 'base', 'voce', 'mix', 'clip', 'pubblicata'];
-  var LIB = { songs: [], cur: null, settings: { theme: 'notte', artist: '' } };
+  var LIB = { songs: [], cur: null, settings: { theme: 'studio', artist: '', v3: 1 } };
   var SESSION = { takes: [], takeId: null, imported: null, useImported: false, base: null, baseKey: '', photo: null, exports: [], clipDone: false, baseMade: false };
   var store = { kind: 'locale', doc: null, busy: false, again: false, ok: false };
 
   function defaultProd() {
-    return { master: 'standard', genre: 'melodico', bpm: 96, tonic: 0, mode: 'maggiore', inst: { melodia: 'piano', accordi: 'guitar', pad: 'violins' }, v2: 1, bars: 8, bassStyle: null, reverb: 0, seed: 1, follow: false, levels: { batteria: 1, basso: 1, accordi: 1, pad: 1, melodia: 1 } };
+    return { master: 'standard', genre: 'melodico', bpm: 96, tonic: 0, mode: 'maggiore', inst: { melodia: 'piano', accordi: 'guitar', pad: 'violins' }, v2: 1, bars: 8, bassStyle: null, reverb: 0, seed: 1, follow: false, levels: { batteria: 1, basso: 1, accordi: 1, arpeggio: 1, pad: 1, melodia: 1, voce: 1 } };
   }
   function newSong(title) {
     return { id: uid(), title: title || 'Senza titolo', lyrics: '', versions: [], status: 'idea', folder: 'lavorazione', modes: {}, mood: '', key: '', release: '', links: '', notes: '', prod: defaultProd(), plan: null, created: today() };
@@ -51,7 +51,8 @@
   }
   function sanitize(d) {
     if (!d || typeof d !== 'object' || !Array.isArray(d.songs)) return null;
-    d.settings = d.settings || { theme: 'notte', artist: '' };
+    d.settings = d.settings || { theme: 'studio', artist: '' };
+    if (!d.settings.v3) { d.settings.theme = 'studio'; d.settings.v3 = 1; } // nuovo aspetto da studio, una volta sola
     var OLDG = { pop: 'melodico', lofi: 'melodico', hiphop: 'trap', dance: 'estate' };
     d.songs.forEach(function (s) {
       // una volta sola: le basi del vecchio generatore (melodia simile a un flauto) passano al nuovo arrangiatore con strumenti veri
@@ -197,7 +198,7 @@
   var AI_RULES = 'Rispondi in italiano, in modo concreto e breve (massimo 150 parole). Distingui chiaramente ciò che è un\'ipotesi da ciò che è un fatto. Non promettere successo, hit o effetti emotivi garantiti. Non citare né copiare testi di altri autori.';
 
   /* ================= Navigazione ================= */
-  var VIEWS = ['home', 'menu', 'canzoni', 'studio', 'strumenti', 'producer', 'voce', 'video', 'marketing', 'social', 'libreria', 'impostazioni', 'beatlab' /* Beat Lab */];
+  var VIEWS = ['daw', 'home', 'menu', 'canzoni', 'studio', 'strumenti', 'producer', 'voce', 'video', 'marketing', 'social', 'libreria', 'impostazioni', 'beatlab' /* Beat Lab */];
   var MENU = [
     ['home', 'Home e Dashboard', 'Il tuo percorso', 'i-home'], ['canzoni', 'Le mie canzoni', 'Schede e versioni', 'i-disc'],
     ['studio', 'Music Studio', 'Testo, base, cantare', 'i-sliders'], ['strumenti', 'Strumentario', '29 strumenti veri e guida', 'i-sliders'], ['beatlab', 'Beat Lab', 'Fai le tue basi', 'i-note'] /* Beat Lab */, ['producer', 'AI Producer', 'Comandi a parole', 'i-spark'],
@@ -208,10 +209,10 @@
   var SHOW = {};
   function route() {
     var id = (location.hash || '').replace('#', '');
-    if (VIEWS.indexOf(id) === -1) id = 'home';
-    stopPlay();
+    if (VIEWS.indexOf(id) === -1) id = 'daw';
+    stopPlay(); if (typeof dwStop === 'function' && id !== 'daw') dwStop();
     VIEWS.forEach(function (v) { $('#v-' + v).hidden = v !== id; });
-    var main = ['home', 'canzoni', 'studio', 'voce'].indexOf(id) !== -1 ? id : 'menu';
+    var main = ['daw', 'studio', 'voce', 'strumenti'].indexOf(id) !== -1 ? id : 'menu';
     $$('#tabs a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-r') === main); });
     var s = cur();
     $('#top-song').textContent = s.title || 'Senza titolo';
@@ -409,7 +410,7 @@
   });
 
   /* ================= Studio: base ================= */
-  var LEVEL_NAMES = { batteria: 'Batteria', basso: 'Basso', accordi: 'Accordi', pad: 'Atmosfera (pad)', melodia: 'Melodia guida' };
+  var LEVEL_NAMES = { batteria: 'Batteria', basso: 'Basso', accordi: 'Accordi', arpeggio: 'Arpeggio', pad: 'Atmosfera (pad)', melodia: 'Melodia guida' };
   function followBars() {
     var s = cur(); if (!s.prod.follow) return;
     var tl = ClipFx.timeline(lyricLines(s.lyrics), { bpm: s.prod.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {}, barsPerLine: s.prod.karBars || 'auto' });
@@ -447,9 +448,15 @@
     if (taps.length >= 3) { var d = []; for (var i = 1; i < taps.length; i++) d.push(taps[i] - taps[i - 1]); var avg = d.reduce(function (a, b) { return a + b; }, 0) / d.length, bpm = Math.max(60, Math.min(180, Math.round(60000 / avg))); cur().prod.bpm = bpm; $('#b-bpm').value = bpm; persist(); $('#b-status').textContent = 'Tempo battuto: ' + bpm + ' BPM.'; }
     else $('#b-status').textContent = 'Continua a battere il ritmo (almeno 3 colpi).';
   });
+  // Mappa della canzone: se c'è un testo, la struttura della base viene dal testo (righe sulle battute giuste).
+  function songMap() {
+    var s = cur(), p = s.prod;
+    if (p.useLyrics === false || !lyricLines(s.lyrics).length) return null;
+    return SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {} });
+  }
   function getBase() {
-    var p = cur().prod, key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.bassStyle, p.tune, p.sounds, p.inst, Instruments.loaded().length]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
+    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, map && map.plan, Instruments.loaded().length]);
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -475,6 +482,8 @@
   // Testo che scorre: ogni riga dura in base alle sillabe e al modo (canta/parla/allunga); la parola in corso è evidenziata.
   function karaokeTick(bpm, sel) {
     sel = sel || '#kar';
+    var smap = SESSION.useImported ? null : songMap();
+    if (smap) { var lk = ''; return function (t) { var h = lyricHtml(smap, t), k2 = h.key; if (k2 === lk) return; lk = k2; $(sel).innerHTML = h.html; }; }
     var lines = lyricLines(cur().lyrics), per = cur().prod.karBars || 'auto';
     var tl = ClipFx.timeline(lines, { bpm: bpm, syll: LyricsEngine.lineSyllables, modes: cur().modes || {}, barsPerLine: per }), lastKey = '';
     return function (t) {
@@ -680,6 +689,16 @@
     if (g) { var p = cur().prod; if (ALLG[g]) { p.genre = g; p.bpm = ALLG[g].bpm; p.tune = null; if (['trap', 'drill', 'epico'].indexOf(g) >= 0) p.mode = 'minore'; } applyRecipe(g); persist(); fillBase(); $('#st-msg').textContent = 'Ricetta applicata. Vai in Studio e premi "Crea e ascolta".'; ensureInst(); }
   });
 
+  /** Testo da mostrare al tempo t con la mappa (anche nello Studio). */
+  function lyricHtml(map, t) {
+    var a = SongMap.at(map, t);
+    if (a.state === 'vuoto') return { key: 'v', html: '<div><b>Scrivi un testo per vederlo qui</b></div>' };
+    if (a.state === 'prima') return { key: 'p' + a.bars, html: '<div><span class="mode">intro</span><br><b>Si parte tra ' + a.bars + (a.bars > 1 ? ' battute' : ' battuta') + '</b><small>Prima riga: ' + esc(a.next.text) + '</small></div>' };
+    if (a.state === 'fine') return { key: 'f', html: '<div><b>Fine del testo</b><small>La base chiude con l\'outro</small></div>' };
+    var words = a.line.words.map(function (w, k) { return k === a.word ? '<mark>' + esc(w.w) + '</mark>' : (k < a.word ? '<span class="sung">' + esc(w.w) + '</span>' : esc(w.w)); }).join(' ');
+    return { key: a.index + ':' + a.word + ':' + a.bar, html: '<div><span class="mode">' + a.line.section + ' · ' + a.line.mode + ' · ' + a.line.bars + (a.line.bars > 1 ? ' battute' : ' battuta') + '</span><br><b class="kw">' + words + '</b><small>Battuta ' + (a.bar + 1) + '/' + a.line.bars + (a.next ? ' · poi: ' + esc(a.next.text) : ' · ultima riga') + '</small></div>' };
+  }
+
   /* ================= Coach ================= */
   function coachState() { LIB.settings.coach = LIB.settings.coach || Coach.fresh(); return LIB.settings.coach; }
   function coachCtx() {
@@ -721,7 +740,7 @@
     var s = cur(), p = s.prod, t = activeTake(), m = {};
     var tl = ClipFx.timeline(lyricLines(s.lyrics), { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {}, barsPerLine: 'auto' }), barSec = 240 / p.bpm;
     if (tl.length) m.lines = tl.map(function (l) { return { text: l.text, need: l.syllables / ({ parla: 5.5, canta: 3, allunga: 1.8 })[l.mode] / barSec }; });
-    m.base = { tonic: p.tonic, mode: p.mode, bpm: p.bpm, bars: p.bars, melodia: p.levels.melodia, name: NOTES[p.tonic] + ' ' + p.mode };
+    m.base = { tonic: p.tonic, mode: p.mode, bpm: p.bpm, bars: (SESSION.base && songMap()) ? SESSION.base.bars : (songMap() ? 999 : p.bars), melodia: p.levels.melodia, name: NOTES[p.tonic] + ' ' + p.mode };
     if (t && !t.example) {
       var r = t.res;
       m.take = { peakDb: r.levels.peakDb, rmsDb: r.levels.rmsDb, clippingShare: r.levels.clippingShare, cents: r.pitch ? r.pitch.meanAbsCentsFromNote : null, voiced: r.voicedShare, key: t.key && t.key.tonic != null ? { tonic: t.key.tonic, mode: t.key.mode, confidence: t.key.confidence, name: t.key.name } : null };
@@ -748,20 +767,356 @@
   $('#co-check').addEventListener('click', function () { coachCheck(false); });
   $('#co-lessons').addEventListener('click', function (e) {
     var b = e.target.closest('[data-cofix]'); if (!b) return;
-    var l = LAST_LESSONS[+b.getAttribute('data-cofix')], s = cur(), p = s.prod, f = l.fix, msg = '';
+    $('#co-msg').textContent = coachFix(LAST_LESSONS[+b.getAttribute('data-cofix')]);
+  });
+  function coachFix(l) {
+    var s = cur(), p = s.prod, f = l.fix, msg = '';
     if (f.type === 'key') { p.tonic = f.tonic; p.mode = f.mode; msg = 'Base portata in ' + NOTES[f.tonic] + ' ' + f.mode + '.'; }
     else if (f.type === 'level') { p.levels[f.key] = f.value; msg = 'Melodia guida al ' + Math.round(f.value * 100) + '%.'; }
     else if (f.type === 'voicegain') { var g = $('#v-gain'); g.value = Math.max(20, Math.min(160, Math.round(+g.value * Math.pow(10, f.delta / 20)))); $('#v-gv').textContent = g.value + '%'; msg = 'Volume voce ora ' + g.value + '%.'; }
     else if (f.type === 'parla') { s.modes = s.modes || {}; f.lines.forEach(function (x) { s.modes[x] = 'parla'; }); renderGuide(); msg = f.lines.length + ' righe segnate come "parla" (rap).'; }
     else if (f.type === 'follow') { p.follow = true; followBars(); msg = 'La base ora dura quanto il testo (' + p.bars + ' battute).'; }
     else if (f.type === 'autotune') { location.hash = '#voce'; msg = 'Apri l\'autotune qui in Voce.'; }
-    persist(); fillBase(); SESSION.baseKey = ''; $('#co-msg').textContent = 'Fatto: ' + msg + ' Riascolta e premi di nuovo "Controlla il mio lavoro".';
-  });
+    persist(); fillBase(); SESSION.baseKey = ''; return 'Fatto: ' + msg + ' Riascolta e controlla di nuovo.';
+  }
   function renderCoach() {
     var st = coachState(), pf = Coach.profile(st, coachName), pg = Coach.progress(st);
     $('#co-profile').innerHTML = st.n ? '<b>Cosa ho imparato di te</b> (' + pf.gesti + ' gesti): ' + (pf.piace.length ? 'ti piacciono ' + esc(pf.piace.join(', ')) : 'ancora troppo presto per dirlo') + (pf.scarti.length ? '. Scarti spesso: ' + esc(pf.scarti.join(', ')) : '') + '.' : '';
     $('#co-progress').innerHTML = '<b>Il tuo percorso: ' + esc(pg.livello) + '</b> <span class="small muted">(' + pg.imparate + '/' + pg.totale + ' abilità)</span><div class="chips" style="margin-top:6px">' + pg.skills.map(function (k) { return '<span class="chip' + (k.imparata ? ' on' : '') + '" title="' + k.ok + ' ok, ' + k.ko + ' da sistemare">' + (k.imparata ? '✓ ' : '') + esc(k.nome) + '</span>'; }).join('') + '</div>';
   }
+
+  /* ================= Studio (DAW): tracce, trasporto, testo, agenti ================= */
+  var DW = { srcs: [], gains: {}, master: null, playing: false, t0: 0, from: 0, raf: 0, mute: {}, solo: {}, bufs: null, bufKey: '', px: 34, rec: null, recording: false, k: 1 };
+  var LANES = [
+    { id: 'drums', nome: 'Batteria', tracks: ['kick', 'snare', 'hat'], level: 'batteria', c: '#e3c48f' },
+    { id: 'bass', nome: 'Basso 808', tracks: ['bass'], level: 'basso', c: '#ff8f6b' },
+    { id: 'chords', nome: 'Accordi', tracks: ['chords'], level: 'accordi', role: 'accordi', c: '#9c86ff' },
+    { id: 'arp', nome: 'Arpeggio', tracks: ['arp'], level: 'arpeggio', role: 'arpeggio', c: '#6fd8cb' },
+    { id: 'lead', nome: 'Melodia', tracks: ['lead'], level: 'melodia', role: 'melodia', c: '#e6a1c4' },
+    { id: 'pad', nome: 'Atmosfera', tracks: ['pad', 'fx'], level: 'pad', role: 'pad', c: '#8fb4ff' },
+    { id: 'voice', nome: 'Voce', voice: true, level: 'voce', c: '#ff5d6c' }
+  ];
+  var SECCOL = { intro: '#8a8c96', strofa: '#9c86ff', pre: '#6fd8cb', ritornello: '#e3c48f', bridge: '#e6a1c4', outro: '#8a8c96' };
+  function lvl(k) { var v = cur().prod.levels[k]; return v == null ? 1 : v; }
+  function dwFill() {
+    var s = cur(), p = s.prod;
+    $('#dw-name').value = s.title === 'Senza titolo' ? '' : (s.title || '');
+    var gk = Object.keys(Arranger.STYLES);
+    $('#dw-genre').innerHTML = gk.map(function (g) { return '<option value="' + g + '">' + esc(Arranger.STYLES[g].label) + '</option>'; }).join('');
+    if (gk.indexOf(p.genre) < 0) { p.genre = 'melodico'; }
+    $('#dw-genre').value = p.genre; $('#dw-bpm').value = p.bpm;
+    var ko = []; NOTES.forEach(function (n, i) { ko.push('<option value="' + i + ':minore">' + n + ' minore</option>', '<option value="' + i + ':maggiore">' + n + ' maggiore</option>'); });
+    $('#dw-key').innerHTML = ko.join(''); $('#dw-key').value = p.tonic + ':' + p.mode;
+    if ($('#dw-lyrics') !== document.activeElement) $('#dw-lyrics').value = s.lyrics || '';
+    $('#dw-master').value = p.master || 'standard';
+    var off = +($('#v-off') ? $('#v-off').value : 0) || 0; $('#dw-off').value = off; $('#dw-offv').textContent = off;
+    dwLyInfo(); dwSteps();
+  }
+  function dwLyInfo() {
+    var m = songMap();
+    $('#dw-lyinfo').textContent = m ? m.lines.length + ' righe · ' + m.plan.filter(function (x) { return x[0] !== 'intro' && x[0] !== 'outro'; }).length + ' parti · ' + m.totalBars + ' battute' : 'nessun testo';
+  }
+  function dwSteps() {
+    var s = cur(), st = { testo: !!lyricLines(s.lyrics).length, base: !!SESSION.baseMade, voce: SESSION.takes.some(function (t) { return !t.example; }), mix: !!SESSION.dwExported };
+    var first = ['testo', 'base', 'voce', 'mix'].filter(function (k) { return !st[k]; })[0];
+    $$('#dw-steps a').forEach(function (a) { var k = a.getAttribute('data-step'); a.classList.toggle('done', st[k]); a.classList.toggle('now', k === first); });
+  }
+  async function dwBase() {
+    await ensureInst();
+    var b = getBase(); SESSION.baseMade = true; return b;
+  }
+  function voiceTake() { var t = activeTake(); return t && !t.example ? t : null; }
+  function dwBuffers(b) {
+    var t = voiceTake(), key = SESSION.baseKey + '|' + (t ? t.id + (t.final ? 'f' : '') : '');
+    if (DW.bufKey === key && DW.bufs) return DW.bufs;
+    var bufs = {}, N = b.length, sum = new Float32Array(N), i;
+    LANES.forEach(function (L) {
+      if (L.voice) return;
+      var x = new Float32Array(N);
+      L.tracks.forEach(function (tr) { var a = b.tracks[tr]; if (a) for (i = 0; i < N; i++) x[i] += a[i]; });
+      for (i = 0; i < N; i++) sum[i] += x[i];
+      bufs[L.id] = { x: x, sr: b.sampleRate, start: 0 };
+    });
+    var pk = 0; for (i = 0; i < N; i++) { var v = sum[i] < 0 ? -sum[i] : sum[i]; if (v > pk) pk = v; }
+    DW.k = pk > 0 ? 0.8 / pk : 1;
+    if (t) bufs.voice = { x: t.final || t.mono, sr: t.sr, start: -(t.lat || 0) };
+    DW.bufs = bufs; DW.bufKey = key; return bufs;
+  }
+  function gainFor(L) {
+    var any = Object.keys(DW.solo).some(function (k) { return DW.solo[k]; });
+    if (DW.mute[L.id] || (any && !DW.solo[L.id])) return 0;
+    if (L.voice) return DW.recording ? 0 : lvl('voce');
+    return lvl(L.level) * DW.k;
+  }
+  function dwGains() { LANES.forEach(function (L) { var g = DW.gains[L.id]; if (g) g.gain.setTargetAtTime(gainFor(L), g.context.currentTime, 0.02); }); }
+  function dwStop(keepPos, keepRec) {
+    cancelAnimationFrame(DW.raf);
+    DW.srcs.forEach(function (s) { try { s.onended = null; s.stop(); } catch (e) {} }); DW.srcs = []; DW.gains = {};
+    if (DW.playing && !keepPos) DW.from = 0;
+    DW.playing = false; var pb = $('#dw-play'); if (pb) { pb.classList.remove('on'); pb.innerHTML = '<svg><use href="#i-play"/></svg>'; }
+    if (DW.rec && !DW.rec.stopping && !keepRec) dwRecStop();
+  }
+  async function dwPlay(from) {
+    var ctx = getCtx(); if (!ctx) { $('#dw-msg').textContent = 'Questo browser non riproduce audio.'; return; }
+    stopPlay(); dwStop(true, true);
+    $('#dw-msg').textContent = SESSION.base ? '' : 'Compongo la base…'; await tick();
+    var b; try { b = await dwBase(); } catch (e) { $('#dw-msg').textContent = 'Non riesco a creare la base.'; return; }
+    var bufs = dwBuffers(b); dwDraw(b);
+    from = Math.max(0, Math.min(from || 0, b.duration - 0.5)); DW.from = from;
+    var master = ctx.createGain(); master.gain.value = 1; master.connect(ctx.destination); DW.master = master;
+    var t0 = ctx.currentTime + 0.08; DW.t0 = t0; DW.dur = b.duration;
+    LANES.forEach(function (L) {
+      var B = bufs[L.id]; if (!B) return;
+      var src = ctx.createBufferSource(); src.buffer = makeBuffer(ctx, B.x, B.sr);
+      var g = ctx.createGain(); g.gain.value = gainFor(L); src.connect(g); g.connect(master); DW.gains[L.id] = g;
+      var st = B.start - from;
+      if (st >= 0) src.start(t0 + st); else if (-st < B.x.length / B.sr) src.start(t0, -st); else return;
+      DW.srcs.push(src);
+      if (L.id === 'drums') src.onended = function () { if (DW.playing) { var lp = SESSION.lastPlay; if (DW.from === 0 && lp) coachRec('complete', lp.ctx); dwStop(); dwPos(0); } };
+    });
+    DW.playing = true; SESSION.lastPlay = { t: performance.now(), ctx: coachCtx(), dur: b.duration };
+    var pb = $('#dw-play'); pb.classList.add('on'); pb.innerHTML = '<svg><use href="#i-stop"/></svg>';
+    var map = songMap(), lk = '', loop = function () {
+      if (!DW.playing) return;
+      var t = ctx.currentTime - DW.t0 + DW.from; dwPos(t);
+      if (map) { var h = lyricHtml(map, t); if (h.key !== lk) { lk = h.key; $('#dw-kar').innerHTML = h.html; var a = SongMap.at(map, t); $$('#dw-lyl span').forEach(function (sp, i) { sp.classList.toggle('on', a.state === 'riga' && a.index === i); }); } }
+      DW.raf = requestAnimationFrame(loop);
+    };
+    loop(); dwSteps();
+  }
+  function dwPos(t) {
+    var b = SESSION.base; if (!b) return;
+    var barSec = 240 / b.bpm, x = t / barSec * DW.px, ph = $('#dw-playhead'); if (ph) ph.style.transform = 'translateX(' + x + 'px)';
+    $('#dw-time').textContent = Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
+    var bar = Math.floor(t / barSec), sec = (b.sections || []).filter(function (s) { return t >= s.startSec && t < s.endSec; })[0];
+    $('#dw-pos').textContent = 'battuta ' + (bar + 1) + (sec ? ' · ' + sec.name : '');
+    var sc = $('#dw-scroll'); if (DW.playing && sc && (x < sc.scrollLeft + 20 || x > sc.scrollLeft + sc.clientWidth - 40)) sc.scrollLeft = Math.max(0, x - 60);
+  }
+  function dwDraw(b) {
+    b = b || SESSION.base; if (!b) return;
+    var barSec = 240 / b.bpm, W = Math.max(320, Math.round(b.bars * DW.px)), map = songMap(), bufs = DW.bufs || {};
+    $('#dw-canvas').style.width = W + 'px';
+    var step = b.bars > 48 ? 4 : 2, r = '';
+    for (var i = 0; i < b.bars; i += step) r += '<span style="left:' + i * DW.px + 'px">' + (i + 1) + '</span>';
+    $('#dw-ruler').innerHTML = r;
+    $('#dw-secs').innerHTML = (b.sections || []).map(function (s) { return '<span style="left:' + (s.startBar * DW.px + 1) + 'px;width:' + (s.bars * DW.px - 2) + 'px;background:' + (SECCOL[s.name] || '#888') + '">' + s.name + '</span>'; }).join('');
+    $('#dw-lyl').innerHTML = map && b.bars === map.totalBars ? map.lines.map(function (l) { return '<span style="left:' + (l.startBar * DW.px + 1) + 'px;width:' + (l.bars * DW.px - 2) + 'px" title="' + esc(l.text) + '">' + esc(l.text) + '</span>'; }).join('') : '';
+    var inst = cur().prod.inst || {};
+    $('#dw-heads').innerHTML = '<div class="dw-hl">Battute</div><div class="dw-hl s">Parti</div><div class="dw-hl l">Testo</div>' + LANES.map(function (L) {
+      var label = L.role ? (inst[L.role] ? instName(inst[L.role]) : 'Sintetizzato') : (L.id === 'drums' ? (cur().prod.sounds === 'sint' ? 'Sintetici' : 'Campioni veri') : (L.id === 'bass' ? (cur().prod.bassStyle === '808' ? '808 sempre' : 'Dallo stile') : (voiceTake() ? voiceTake().name : 'Registra con ●')));
+      return '<div class="dw-lh" style="--lc:' + L.c + '"><b>' + L.nome + '</b><button class="inst" data-inst="' + L.id + '">' + esc(label) + '</button><div class="ms"><button data-m="' + L.id + '" class="' + (DW.mute[L.id] ? 'on' : '') + '">M</button><button data-s="' + L.id + '" class="' + (DW.solo[L.id] ? 'on' : '') + '">S</button><input type="range" min="0" max="160" value="' + Math.round(lvl(L.level) * 100) + '" data-lv="' + L.id + '" aria-label="Volume ' + L.nome + '"></div></div>';
+    }).join('');
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    $('#dw-lanes').innerHTML = LANES.map(function (L) { return '<div class="dw-lane"><canvas data-c="' + L.id + '" width="' + Math.round(W * dpr) + '" height="' + Math.round(58 * dpr) + '" style="width:' + W + 'px"></canvas></div>'; }).join('');
+    LANES.forEach(function (L) {
+      var cv = $('[data-c="' + L.id + '"]'), g = cv.getContext('2d'), H = cv.height, Wc = cv.width;
+      (b.sections || []).forEach(function (s, k) { if (k % 2) { g.fillStyle = 'rgba(255,255,255,.025)'; g.fillRect(s.startBar * DW.px * dpr, 0, s.bars * DW.px * dpr, H); } });
+      var B = bufs[L.id]; if (!B) return;
+      var x = B.x, sps = barSec * B.sr / (DW.px * dpr), off = B.start * B.sr, pk = 0, j;
+      for (j = 0; j < x.length; j += 4) { var v0 = x[j] < 0 ? -x[j] : x[j]; if (v0 > pk) pk = v0; }
+      if (!pk) return;
+      g.fillStyle = L.c; g.globalAlpha = 0.85;
+      for (var px = 0; px < Wc; px++) {
+        var a = Math.floor(px * sps - off), z = Math.floor((px + 1) * sps - off), m = 0;
+        if (z <= 0 || a >= x.length) continue;
+        for (j = Math.max(0, a); j < Math.min(x.length, z); j += 2) { var v = x[j] < 0 ? -x[j] : x[j]; if (v > m) m = v; }
+        var h = Math.max(1, Math.sqrt(m / pk) * (H * 0.44)); g.fillRect(px, H / 2 - h, 1, h * 2);
+      }
+    });
+    var p = cur().prod, it = p.inst || {};
+    $('#dw-arrinfo').textContent = (Arranger.STYLES[b.genre] ? Arranger.STYLES[b.genre].label : b.genre) + ' · ' + NOTES[b.tonic] + ' ' + b.mode + ' · ' + b.bpm + ' BPM · ' + b.bars + ' battute (' + fmt(b.duration, 0) + ' s)' + (map ? ' · forma dal testo' : '');
+    dwPos(DW.from || 0);
+  }
+  async function dwRefresh() { try { var b = await dwBase(); dwBuffers(b); dwDraw(b); dwSteps(); } catch (e) { $('#dw-msg').textContent = 'Non riesco a creare la base.'; } }
+  var dwT = null;
+  function dwChanged(rebuildAgents) { SESSION.baseKey = ''; DW.bufKey = ''; persist(); clearTimeout(dwT); dwT = setTimeout(function () { dwRefresh(); if (rebuildAgents) agentsRun(); }, 250); }
+
+  // ---------- registrazione nello Studio ----------
+  async function dwRecord() {
+    if (DW.rec) { dwStop(); return; }
+    if (!micOk()) { $('#dw-msg').textContent = 'Microfono non disponibile qui: apri il sito in Safari (dentro Claude è bloccato).'; return; }
+    var ctx = getCtx(), stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } }); }
+    catch (e) { $('#dw-msg').textContent = 'Il microfono non parte (' + (e && e.name || 'errore') + '). Su iPhone: Impostazioni > Safari > Microfono.'; return; }
+    var types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'], mime = window.MediaRecorder ? types.filter(function (t) { return MediaRecorder.isTypeSupported(t); })[0] : null;
+    if (!mime) { stream.getTracks().forEach(function (t) { t.stop(); }); $('#dw-msg').textContent = 'Questo browser non registra.'; return; }
+    var R = { stream: stream, chunks: [], mime: mime, mr: new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 256000 }) };
+    R.mr.ondataavailable = function (e) { if (e.data && e.data.size) R.chunks.push(e.data); };
+    R.done = new Promise(function (res) { R.mr.onstop = res; });
+    DW.rec = R; DW.recording = true; $('#dw-rec').classList.add('on');
+    R.mr.start(); R.at = ctx.currentTime;
+    await dwPlay(0);
+    R.lat = (DW.t0 - R.at) + (ctx.outputLatency || 0) + (ctx.baseLatency || 0);
+    $('#dw-msg').textContent = 'Registro: canta seguendo il testo. Premi ● o ■ per fermare. Usa le cuffie.';
+  }
+  async function dwRecStop() {
+    var R = DW.rec; if (!R) return; R.stopping = true;
+    try { if (R.mr.state !== 'inactive') R.mr.stop(); await R.done; } catch (e) {}
+    R.stream.getTracks().forEach(function (t) { t.stop(); });
+    DW.rec = null; DW.recording = false; $('#dw-rec').classList.remove('on');
+    $('#dw-msg').textContent = 'Analizzo la registrazione…'; await tick();
+    try {
+      var d = await decode(new Blob(R.chunks, { type: R.mime })), mono = d.mono, sr = d.sr;
+      if (mono.length < sr * 0.8) { $('#dw-msg').textContent = 'Registrazione troppo corta.'; return; }
+      var pk = 0, i; for (i = 0; i < mono.length; i += 7) { var v = mono[i] < 0 ? -mono[i] : mono[i]; if (v > pk) pk = v; }
+      if (pk > 0.003 && pk < 0.3) { var gk = 0.7 / pk; for (i = 0; i < mono.length; i++) mono[i] *= gk; }
+      var t = await addTake(mono, sr, 'Studio ' + new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }), false);
+      t.lat = R.lat || 0; t.at = Date.now();
+      dbTake('put', { id: t.id, name: t.name, mono: t.mono, sr: t.sr, lat: t.lat, at: t.at }).then(function (ok) { t.saved = !!ok; });
+      SESSION.takeId = t.id; try { selectTake(t.id); } catch (e) {}
+      coachRec('record', coachCtx()); DW.bufKey = '';
+      $('#dw-msg').textContent = 'Voce registrata. Premi Play per riascoltarla con la base. Il Coach la sta controllando.';
+      await dwRefresh(); agentsRun(true);
+    } catch (e) { $('#dw-msg').textContent = 'Non riesco a leggere la registrazione. Riprova.'; }
+  }
+
+  // ---------- scelta strumento (foglio) ----------
+  var SHEET = { role: null, fam: 'tutte' };
+  function sheetOpen(role) { SHEET.role = role; SHEET.fam = 'tutte'; $('#dw-sheet').hidden = false; sheetRender(); }
+  function sheetRender() {
+    var role = SHEET.role, cur0 = (cur().prod.inst || {})[role];
+    $('#dw-sheet-t').textContent = 'Strumento per: ' + role;
+    var fams = [['tutte', 'Tutti'], ['orig', 'Originali'], ['mine', 'I tuoi']].concat(Object.keys(Instruments.FAMILIES).map(function (f) { return [f, Instruments.FAMILIES[f]]; }));
+    $('#dw-sheet-f').innerHTML = fams.map(function (f) { return '<button class="chip' + (SHEET.fam === f[0] ? ' on' : '') + '" data-sf="' + f[0] + '">' + esc(f[1]) + '</button>'; }).join('');
+    var list = [{ id: '', nome: 'Sintetizzato (automatico)', come: 'Suono generato dal programma, cambia con lo stile.' }];
+    var orig = SoundLab.ORIGINALS.map(function (r) { return { id: r.id, nome: r.nome, come: r.descr, o: 1 }; }), mine = (LIB.settings.lab || []).map(function (r) { return { id: r.id, nome: r.nome, come: r.descr || 'Creato da te.', m: 1 }; });
+    var cat = Instruments.CATALOG.filter(function (c) { return role === 'arpeggio' ? c.tipo !== 'sostenuto' || c.ruoli.indexOf('accordi') >= 0 : (c.ruoli.indexOf(role) >= 0 || (role === 'pad' && c.tipo === 'sostenuto')); }).map(function (c) { return { id: c.id, nome: c.nome, come: c.come, f: c.fam }; });
+    if (SHEET.fam === 'orig') list = orig; else if (SHEET.fam === 'mine') list = mine; else if (SHEET.fam !== 'tutte') list = cat.filter(function (c) { return c.f === SHEET.fam; }); else list = list.concat(orig, mine, cat);
+    $('#dw-sheet-g').innerHTML = list.length ? list.map(function (c) { return '<div class="dw-card' + ((c.id || '') === (cur0 || '') ? ' sel' : '') + '"><b>' + esc(c.nome) + '</b><small>' + esc((c.come || '').slice(0, 110)) + '</small><div class="row">' + (c.id ? '<button class="btn sm" data-sp="' + c.id + '">Ascolta</button>' : '') + '<button class="btn sm pri" data-su="' + c.id + '">Usa</button></div></div>'; }).join('') : '<p class="small muted">Niente qui: crea strumenti nel Laboratorio.</p>';
+  }
+  $('#dw-sheet').addEventListener('click', async function (e) {
+    if (e.target === this || e.target.id === 'dw-sheet-x') { this.hidden = true; return; }
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.getAttribute('data-sf')) { SHEET.fam = b.getAttribute('data-sf'); sheetRender(); return; }
+    if (b.getAttribute('data-sp')) { previewInst(b.getAttribute('data-sp'), $('#dw-msg')); return; }
+    if (b.hasAttribute('data-su')) {
+      var id = b.getAttribute('data-su') || null, p = cur().prod, old = (p.inst || {})[SHEET.role];
+      p.inst = Object.assign({}, p.inst || {}); p.inst[SHEET.role] = id; coachRec('change', coachCtx(), { role: SHEET.role, from: old, to: id });
+      this.hidden = true; $('#dw-msg').textContent = id ? 'Carico ' + instName(id) + '…' : '';
+      if (id && !(await loadInst(id))) $('#dw-msg').textContent = 'Download non riuscito (serve internet la prima volta).';
+      else $('#dw-msg').textContent = (id ? instName(id) : 'Sintetizzato') + ' su ' + SHEET.role + '. Premi Play.';
+      fillInst(); dwChanged(true);
+    }
+  });
+
+  // ---------- agenti ----------
+  var AG = { arr: { st: 'fermo', props: [] }, sd: { st: 'fermo', props: [] }, co: { st: 'fermo', lessons: [] }, busy: false, again: false, key: '' };
+  function agentsRender() {
+    var dot = function (st) { return '<span class="dw-dot ' + (st === 'al lavoro' ? 'work' : (st === 'pronto' ? 'ok' : '')) + '"></span>'; };
+    var h = '<div class="dw-agent"><header>' + dot(AG.arr.st) + '<b>Arrangiatore</b><span class="st">' + AG.arr.st + '</span></header><p class="small muted">Prepara 3 varianti della tua base partendo da quello che ti è piaciuto. Una è sempre un esperimento.</p>' +
+      AG.arr.props.map(function (pr, i) { return '<div class="dw-prop"><div><b>Variante ' + (i + 1) + (pr.explore ? ' · esperimento' : '') + '</b><small>' + esc(pr.desc) + '</small></div><button class="btn sm" data-ap="' + i + '">Ascolta</button><button class="btn sm pri" data-au="' + i + '">Usa</button><button class="btn sm" data-an="' + i + '" aria-label="Non mi piace">✕</button></div>'; }).join('') + '</div>';
+    h += '<div class="dw-agent"><header>' + dot(AG.sd.st) + '<b>Sound designer</b><span class="st">' + AG.sd.st + '</span></header><p class="small muted">Inventa strumenti nuovi mescolando i suoni che preferisci. Se uno ti piace, salvalo: diventa tuo.</p>' +
+      AG.sd.props.map(function (r, i) { return '<div class="dw-prop"><div><b>' + esc(r.nome) + '</b><small>' + esc(r.descr) + '</small></div><button class="btn sm" data-sp2="' + i + '">Ascolta</button><button class="btn sm pri" data-su2="' + i + '">Usa</button><button class="btn sm" data-ss2="' + i + '">Salva</button></div>'; }).join('') + '</div>';
+    h += '<div class="dw-agent"><header>' + dot(AG.co.st) + '<b>Coach</b><span class="st">' + AG.co.st + '</span></header><p class="small muted">Controlla testo, base e voce con misure vere. ' + esc(coachSummary()) + '</p>' +
+      (AG.co.lessons.length ? AG.co.lessons.slice(0, 4).map(function (l, i) { return '<div class="dw-prop"><div><b>' + esc(l.title) + '</b><small>' + esc(l.what) + ' ' + esc(l.how) + '</small></div>' + (l.fix ? '<button class="btn sm pri" data-cf="' + i + '">Correggi</button>' : '') + '</div>'; }).join('') : '<div class="dw-prop"><div><small>Niente da correggere per ora.</small></div></div>') + '</div>';
+    $('#dw-agents').innerHTML = h;
+  }
+  function coachSummary() { var pg = Coach.progress(coachState()), pf = Coach.profile(coachState(), coachName); return 'Livello: ' + pg.livello + ' (' + pg.imparate + '/' + pg.totale + ' abilità).' + (pf.piace.length ? ' Ti piace: ' + pf.piace.slice(0, 3).join(', ') + '.' : ''); }
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  async function agentsRun(coachOnly) {
+    if (AG.busy) { AG.again = true; return; }
+    AG.busy = true;
+    try {
+      AG.co.st = 'al lavoro'; agentsRender(); await wait(30);
+      AG.co.lessons = Coach.lessons(coachMeasure()).lessons; AG.co.st = 'pronto'; agentsRender();
+      if (coachOnly) return;
+      var p = cur().prod, map = songMap(), ctx = coachCtx(), st = coachState();
+      // Arrangiatore: 3 varianti calcolate davvero (base completa a 22 kHz)
+      AG.arr.st = 'al lavoro'; AG.arr.props = []; agentsRender();
+      var seen = {};
+      for (var k = 0; k < 3; k++) {
+        var res = Coach.suggest(st, coachCands(p.genre), { emotion: ctx.emotion, seed: (st.n + 3) * 97 + k * 31 + p.seed });
+        if (k === 2 && !res.explore) { var cands = coachCands(p.genre).melodia.filter(function (c) { return c.prior > 0 && c.id !== res.inst.melodia; }); if (cands.length) { var pick = cands[(st.n + p.seed) % cands.length].id; res.explore = { role: 'melodia', from: res.inst.melodia, to: pick }; res.inst.melodia = pick; } }
+        if (k === 1) { var cc = coachCands(p.genre); ['accordi', 'pad'].forEach(function (rl) { var l2 = cc[rl].slice().sort(function (x, y) { return y.prior - x.prior; }).filter(function (c) { return c.id !== res.inst[rl] && c.prior > 0; }); if (l2.length) res.inst[rl] = l2[0].id; }); }
+        var arps = Object.keys(Arranger.ARP), ap = arps[(p.seed + k * 2 + st.n) % arps.length];
+        res.inst.arpeggio = res.inst.arpeggio || (p.inst || {}).arpeggio || res.inst.accordi;
+        var sig = JSON.stringify(res.inst) + ap; if (seen[sig]) { ap = arps[(arps.indexOf(ap) + 3) % arps.length]; } seen[sig] = 1;
+        for (var r in res.inst) if (res.inst[r]) await loadInst(res.inst[r]);
+        await wait(20);
+        var bb = Arranger.generate({ sampleRate: 22050, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed + k + 1, inst: res.inst, plan: map ? map.plan : undefined, arpPattern: ap, sounds: p.sounds === 'sint' ? 'sint' : 'campioni', tune: p.tune || undefined });
+        var mix = Backing.mix(bb, p.levels, p.sec);
+        AG.arr.props.push({ inst: res.inst, arpPattern: ap, seed: p.seed + k + 1, explore: !!res.explore, mix: mix, sr: bb.sampleRate, ctx: { genre: p.genre, mode: p.mode, bpm: p.bpm, inst: res.inst, emotion: ctx.emotion },
+          desc: ['melodia', 'accordi', 'arpeggio', 'pad'].map(function (r) { return r + ': ' + (res.inst[r] ? instName(res.inst[r]) : 'sintesi'); }).join(' · ') + ' · arpeggio ' + ap });
+        agentsRender(); await wait(30);
+      }
+      AG.arr.st = 'pronto'; agentsRender();
+      // Sound designer: inventa 2 strumenti dai tuoi preferiti
+      AG.sd.st = 'al lavoro'; agentsRender(); await wait(30);
+      var liked = Object.keys(st.prefs).filter(function (k2) { return /^inst\./.test(k2) && st.prefs[k2] > 0.5; }).map(function (k2) { return k2.split(':').slice(1).join(':'); }).filter(function (id) { return Instruments.info(id) && !/^lab:/.test(id); });
+      var pool = liked.length >= 2 ? liked.concat(['glass', 'harp', 'synth:sub', 'synth:air']) : null;
+      AG.sd.props = [];
+      for (var q = 0; q < 2; q++) {
+        var rec = SoundLab.invent((st.n + 1) * 13 + q * 7 + p.seed * 3, pool);
+        rec.id = 'lab:ag' + q; rec.nome = ['Idea', 'Scoperta'][q] + ' n. ' + ((st.n + 1) * 13 + q * 7 + p.seed * 3);
+        var deps = SoundLab.deps(rec), okd = true; for (var d = 0; d < deps.length; d++) if (!(await loadInst(deps[d]))) okd = false;
+        if (!okd) continue;
+        SoundLab.install(rec); AG.sd.props.push(rec);
+      }
+      AG.sd.st = 'pronto'; agentsRender();
+    } catch (e) { AG.arr.st = AG.arr.st === 'al lavoro' ? 'errore' : AG.arr.st; agentsRender(); }
+    finally { AG.busy = false; if (AG.again) { AG.again = false; setTimeout(agentsRun, 400); } }
+  }
+  $('#dw-agents').addEventListener('click', async function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var ap = b.getAttribute('data-ap'), au = b.getAttribute('data-au'), an = b.getAttribute('data-an'), sp = b.getAttribute('data-sp2'), su = b.getAttribute('data-su2'), ss = b.getAttribute('data-ss2'), cf = b.getAttribute('data-cf');
+    if (ap != null) { var pr = AG.arr.props[+ap]; dwStop(); playBuf(pr.mix, pr.sr); $('#dw-msg').textContent = 'Ascolti la variante ' + (+ap + 1) + '. Premi Usa se ti piace.'; }
+    if (au != null) { var pu = AG.arr.props[+au], p = cur().prod; stopPlay(); p.inst = Object.assign({}, pu.inst); p.arpPattern = pu.arpPattern; p.seed = pu.seed; coachRec('like', pu.ctx); fillInst(); $('#dw-msg').textContent = 'Variante applicata: ' + pu.desc; dwChanged(true); }
+    if (an != null) { coachRec('dislike', AG.arr.props[+an].ctx); AG.arr.props.splice(+an, 1); agentsRender(); $('#dw-msg').textContent = 'Segnato: l\'Arrangiatore la eviterà.'; }
+    if (sp != null) previewInst(AG.sd.props[+sp].id, $('#dw-msg'));
+    if (su != null) { var r = AG.sd.props[+su], p2 = cur().prod; r = Object.assign({}, r, { id: 'lab:mio' + Date.now().toString(36) }); LIB.settings.lab = (LIB.settings.lab || []).concat([r]); SoundLab.install(r); p2.inst = Object.assign({}, p2.inst || {}); p2.inst.melodia = r.id; coachRec('change', coachCtx(), { role: 'melodia', from: null, to: r.id }); refreshInstSelects(); $('#dw-msg').textContent = '"' + r.nome + '" ora suona la melodia (salvato tra i tuoi strumenti).'; dwChanged(false); }
+    if (ss != null) { var r2 = Object.assign({}, AG.sd.props[+ss], { id: 'lab:mio' + Date.now().toString(36) }); LIB.settings.lab = (LIB.settings.lab || []).concat([r2]); SoundLab.install(r2); persist(); refreshInstSelects(); $('#dw-msg').textContent = '"' + r2.nome + '" salvato: lo trovi nel Laboratorio e nei menu degli strumenti.'; }
+    if (cf != null) { $('#dw-msg').textContent = coachFix(AG.co.lessons[+cf]); dwChanged(false); agentsRun(true); }
+  });
+
+  // ---------- comandi ----------
+  $('#dw-play').addEventListener('click', function () { if (DW.playing) { dwStop(true); } else dwPlay(DW.from || 0); });
+  $('#dw-stop').addEventListener('click', function () { dwStop(); stopPlay(); DW.from = 0; dwPos(0); });
+  $('#dw-rec').addEventListener('click', dwRecord);
+  $('#dw-new').addEventListener('click', function () { var p = cur().prod; if (SESSION.lastPlay && performance.now() - SESSION.lastPlay.t < 10000) coachRec('skip', SESSION.lastPlay.ctx); p.seed++; dwStop(); dwChanged(true); setTimeout(function () { dwPlay(0); }, 300); });
+  $('#dw-name').addEventListener('input', function () { cur().title = this.value.trim() || 'Senza titolo'; $('#top-song').textContent = cur().title; persist(); });
+  $('#dw-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.bpm = Arranger.STYLES[this.value].bpm; p.tune = null; $('#dw-bpm').value = p.bpm; dwStop(); fillBase(); dwChanged(true); });
+  $('#dw-bpm').addEventListener('change', function () { cur().prod.bpm = Math.max(60, Math.min(180, +this.value || 100)); this.value = cur().prod.bpm; dwStop(); fillBase(); dwChanged(true); dwLyInfo(); });
+  $('#dw-key').addEventListener('change', function () { var v = this.value.split(':'), p = cur().prod; p.tonic = +v[0]; p.mode = v[1]; dwStop(); fillBase(); dwChanged(true); });
+  $('#dw-master').addEventListener('change', function () { cur().prod.master = this.value; persist(); fillBase(); });
+  $('#dw-off').addEventListener('input', function () { $('#dw-offv').textContent = this.value; var o = $('#v-off'); if (o) o.value = this.value; var t = voiceTake(); if (t) { DW.bufKey = ''; } });
+  $('#dw-lyrics').addEventListener('input', function () { var s = cur(); s.lyrics = this.value; var st = $('#st-lyrics'); if (st) st.value = this.value; persist(); dwLyInfo(); dwSteps(); clearTimeout(DW.lt); DW.lt = setTimeout(function () { dwStop(); dwChanged(true); }, 900); });
+  $('#dw-fromtext').addEventListener('click', function () { var s = cur(), a = analysisOf(s); if (!a) { $('#dw-tmsg').textContent = 'Scrivi prima il testo.'; return; } $('#st-suggest').click(); $('#dw-tmsg').textContent = $('#st-msg').textContent; dwFill(); dwStop(); dwChanged(true); });
+  $('#dw-scroll').addEventListener('click', function (e) {
+    var b = SESSION.base; if (!b || e.target.closest('button')) return;
+    var r = $('#dw-canvas').getBoundingClientRect(), x = e.clientX - r.left, t = x / DW.px * 240 / b.bpm;
+    DW.from = Math.max(0, t); if (DW.playing) dwPlay(DW.from); else dwPos(DW.from);
+  });
+  $('#dw-heads').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var m = b.getAttribute('data-m'), so = b.getAttribute('data-s'), ins = b.getAttribute('data-inst');
+    if (m) { DW.mute[m] = !DW.mute[m]; b.classList.toggle('on', DW.mute[m]); dwGains(); }
+    if (so) { DW.solo[so] = !DW.solo[so]; b.classList.toggle('on', DW.solo[so]); dwGains(); }
+    if (ins) {
+      var L = LANES.filter(function (x) { return x.id === ins; })[0], p = cur().prod;
+      if (L.role) sheetOpen(L.role);
+      else if (L.id === 'drums') { p.sounds = p.sounds === 'sint' ? 'campioni' : 'sint'; fillBase(); dwStop(); dwChanged(true); }
+      else if (L.id === 'bass') { p.bassStyle = p.bassStyle === '808' ? null : '808'; dwStop(); dwChanged(true); }
+      else if (L.voice) { location.hash = '#voce'; }
+    }
+  });
+  $('#dw-heads').addEventListener('input', function (e) {
+    var id = e.target.getAttribute('data-lv'); if (!id) return;
+    var L = LANES.filter(function (x) { return x.id === id; })[0]; cur().prod.levels[L.level] = +e.target.value / 100; persist(); dwGains();
+  });
+  async function dwExport(withVoice) {
+    var el = $('#dw-xmsg'); el.textContent = 'Preparo il file…'; await tick();
+    try {
+      await dwBase();
+      var g = $('#v-gain'); if (g) g.value = Math.round(lvl('voce') * 100);
+      var mx = buildMix({ voice: withVoice && !!voiceTake() });
+      await saveAudio(mx.samples, mx.sr, (cur().title || 'canzone').replace(/\W+/g, '-') + (withVoice ? '' : '-base'), el);
+      SESSION.dwExported = true; dwSteps(); coachRec('save', coachCtx());
+    } catch (e) { el.textContent = 'Esportazione non riuscita.'; }
+  }
+  $('#dw-export').addEventListener('click', function () { dwExport(true); });
+  $('#dw-export-base').addEventListener('click', function () { dwExport(false); });
+  document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
+  SHOW.daw = function () { dwFill(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {
@@ -1381,11 +1736,12 @@
   /* ================= Impostazioni ================= */
   function applyTheme() {
     var t = LIB.settings.theme, r = document.documentElement;
-    if (t === 'notte') r.setAttribute('data-theme', 'dark'); else if (t === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', 'light');
+    r.classList.toggle('studio', t === 'studio');
+    if (t === 'studio') r.setAttribute('data-theme', 'dark'); else if (t === 'notte') r.setAttribute('data-theme', 'dark'); else if (t === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', 'light');
   }
   function renderSettings() {
     var t = LIB.settings.theme;
-    $('#x-theme').innerHTML = [['notte', 'Cosmo (notte)'], ['chiaro', 'Chiaro'], ['auto', 'Automatico']].map(function (x) { return '<button class="chip ' + (t === x[0] ? 'on' : '') + '" data-theme-set="' + x[0] + '">' + x[1] + '</button>'; }).join('');
+    $('#x-theme').innerHTML = [['studio', 'Studio (elegante)'], ['notte', 'Cosmo (notte)'], ['chiaro', 'Chiaro'], ['auto', 'Automatico']].map(function (x) { return '<button class="chip ' + (t === x[0] ? 'on' : '') + '" data-theme-set="' + x[0] + '">' + x[1] + '</button>'; }).join('');
     $('#x-artist').value = LIB.settings.artist || '';
     $('#x-store').textContent = store.kind === 'account' ? 'I tuoi testi e piani sono salvati sul tuo account e ti seguono da un dispositivo all\'altro.' : 'Salvataggio solo su questo browser: se cancelli i dati del sito li perdi. Esporta un backup ogni tanto.';
     $('#x-int').innerHTML = [

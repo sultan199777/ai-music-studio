@@ -125,7 +125,7 @@ test('mix per sezione: spegnere hi-hat nel ritornello azzera solo lì', () => {
   const b = A.generate({ sampleRate: 16000, genre: 'trap', bars: 32, seed: 1 });
   const rit = b.sections.filter((s) => s.name === 'ritornello')[0], str = b.sections.filter((s) => s.name === 'strofa')[0];
   const e = (x, s) => { let v = 0; const a = Math.round((s.startSec + 0.5) * 16000), z = Math.round((s.endSec - 0.5) * 16000); for (let i = a; i < z; i++) v += x[i] * x[i]; return v; };
-  const only = (g) => B.mix(b, { kick: 0, snare: 0, bass: 0, chords: 0, pad: 0, fx: 0, lead: 0, hat: 1 }, g);
+  const only = (g) => B.mix(b, { kick: 0, snare: 0, bass: 0, chords: 0, pad: 0, fx: 0, lead: 0, arp: 0, hat: 1 }, g);
   const full = only(null), cut = only({ ritornello: { hat: 0 } });
   assert.ok(e(cut, rit) < e(full, rit) * 0.001, 'ritornello muto');
   const out = b.sections.filter((x) => x.name === 'outro')[0];

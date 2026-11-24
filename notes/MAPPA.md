@@ -6,12 +6,12 @@ Leggi questo file PRIMA di aprire i sorgenti: dice dove sta ogni cosa.
 
 | File | Righe | Scopo | Esporta |
 |---|---|---|---|
-| app.body.html | 349 |  |  |
-| app.css | 197 |  |  |
-| app.js | 1420 | ================= Dati e salvataggio ================= |  |
-| app.shell.html | 43 |  |  |
+| app.body.html | 413 |  |  |
+| app.css | 300 |  |  |
+| app.js | 1776 | ================= Dati e salvataggio ================= |  |
+| app.shell.html | 44 |  |  |
 | app.template.html | 1169 |  |  |
-| arranger.js | 580 | Arrangiatore: costruisce basi ORIGINALI con una struttura vera (intro, strofa, pre, ritornello, bridge, outro) e direzioni di stile diverse. Tutto è sintetizzato dal programma (nessun campione, nessun brano altrui). | generate: generate, planStructure: planStructure, STYLES: STYLES, SECTIONS: SEC |
+| arranger.js | 610 | Arrangiatore: costruisce basi ORIGINALI con una struttura vera (intro, strofa, pre, ritornello, bridge, outro) e direzioni di stile diverse. Tutto è sintetizzato dal programma (nessun campione, nessun brano altrui). | generate: generate, planStructure: planStructure, STYLES: STYLES, SECTIONS: SEC, ARP: ARP, ARP_STYLE: ARP_STYLE |
 | audio-analysis.js | 223 | Analisi audio della voce (Modulo 1, solo parte MISURABILE con calcolo diretto). Misura: livello, picco, clipping, dinamica, altezza delle note (pitch), estensione e scostamento dall'intonazione "temperata" (La = 440 Hz). | analyze: analyze, detectPitch: detectPitch, synthExample: synthExample, freqToMidi: freqToMidi, midiToFreq: midiToFreq, midiToName: midiToName |
 | autotune.js | 407 | Autotune (correzione dell'intonazione) con la tecnica PSOLA. 1. Si misura l'altezza della voce nel tempo (AudioAnalysis). 2. Per ogni istante si sceglie la nota "giusta" più vicina nella scala scelta. | correct: correct, scaleMask: scaleMask, quantizeMidi: quantizeMidi, stepUp: stepUp, track: track, measure: measure, detectKey: detectKey |
 | backing.js | 291 | Generatore di basi musicali ORIGINALI (batteria, basso, accordi, pad, melodia). Tutto è sintetizzato dal programma con onde semplici: non usa registrazioni, campioni o brani di altri. Il risultato è una bozza utile per c | generate: generate, mix: mix, withVoice: withVoice, resampleLinear: resampleLinear, GENRES: GENRES, chordName: chordName, NAMES: NAMES |
@@ -45,6 +45,7 @@ Leggi questo file PRIMA di aprire i sorgenti: dice dove sta ogni cosa.
 | promo-plan.js | 125 | Piano di promozione di una canzone (30 giorni), costruito dai dati del brano. Non usa servizi esterni e non pubblica nulla: produce un calendario di contenuti con piattaforma, formato, data, orario suggerito, didascalia  | generate: generate, toCsv: toCsv, TEMPLATE: TEMPLATE |
 | realtime-tune.js | 120 | Autotune LEGGERO in tempo reale (SPERIMENTALE) per il monitor in cuffia. Funziona così: misura l'altezza della voce con la stessa idea di McLeod (autocorrelazione normalizzata, finestra ~37 ms su audio ridotto a ~12 kHz) | createCore: createCore, workletSource: workletSource |
 | samples-data.js | 2 | campioni batteria CC0 codificati | dati |
+| song-map.js | 85 | Mappa della canzone: il TESTO decide la struttura della base. - I titoli tra parentesi quadre ([Strofa], [Ritornello], [Bridge], [Pre], [Intro], [Outro])   diventano sezioni della base; senza titoli tutto il testo è una  | build: build, at: at, tagOf: tagOf, RATE: RATE |
 | sound-lab.js | 181 | Laboratorio suoni: crea strumenti NUOVI partendo dai suoni grezzi. Un suono del laboratorio è una "ricetta":   strati  : 1-3 sorgenti (strumenti veri o sintesi), ognuno con ottava, volume, scordatura | KNOBS: KNOBS, SYNTHS: SYNTHS, ORIGINALS: ORIGINALS, GENRES: GENRES, render: render, install: install, invent: invent, deps: deps, rangeOf: rangeOf |
 | style-card.js | 114 | Scheda di stile: misura caratteristiche GENERICHE di una canzone di riferimento (tempo, peso del basso, luminosità, densità ritmica, crescita di energia) e le trasforma in parametri per l'arrangiatore. Si possono mescola | measure: measure, blend: blend, toParams: toParams, normBpm: normBpm |
 | video-ideas.js | 87 | Idee per il videoclip, costruite sul brano: concetto visivo, struttura a battute (con i secondi calcolati dal tempo), inquadrature da girare con l'iPhone, montaggio e cose da evitare. | generate: generate, MOODS: MOODS |
@@ -55,36 +56,41 @@ Leggi questo file PRIMA di aprire i sorgenti: dice dove sta ogni cosa.
 ## src/app.js: sezioni (riga: titolo)
 
 - 17: Dati e salvataggio
-- 90: Audio
-- 181: Claude (facoltativo)
-- 199: Navigazione
-- 229: Atmosfera: i colori seguono l'emozione del testo
-- 239: Home
-- 271: Canzoni
-- 324: Studio: testo
-- 380: Guida alla voce: canta / parla / allunga
-- 411: Studio: base
-- 511: Strumenti veri
-- 683: Coach
-- 821: AI Producer
-- 880: Vocal Studio
-- 913: Registrazione con il microfono vero (solo nella versione app; dentro Claude il microfono è bloccato)
-- 1205: VOICE LAB (cablaggio): il codice sta in src/voice-chain.js, src/voice-lab.js, src/realtime-tune.js
-- 1209: fine VOICE LAB
-- 1211: Video
-- 1301: Marketing e Social
-- 1366: Libreria
-- 1381: Impostazioni
-- 1412: Avvio
+- 91: Audio
+- 182: Claude (facoltativo)
+- 200: Navigazione
+- 230: Atmosfera: i colori seguono l'emozione del testo
+- 240: Home
+- 272: Canzoni
+- 325: Studio: testo
+- 381: Guida alla voce: canta / parla / allunga
+- 412: Studio: base
+- 520: Strumenti veri
+- 702: Coach
+- 788: Studio (DAW): tracce, trasporto, testo, agenti
+- 934: registrazione nello Studio
+- 973: scelta strumento (foglio)
+- 1002: agenti
+- 1071: comandi
+- 1176: AI Producer
+- 1235: Vocal Studio
+- 1268: Registrazione con il microfono vero (solo nella versione app; dentro Claude il microfono è bloccato)
+- 1560: VOICE LAB (cablaggio): il codice sta in src/voice-chain.js, src/voice-lab.js, src/realtime-tune.js
+- 1564: fine VOICE LAB
+- 1566: Video
+- 1656: Marketing e Social
+- 1721: Libreria
+- 1736: Impostazioni
+- 1768: Avvio
 
 ## Funzioni principali di app.js (riga: nome)
 
-esc:5, fmt:6, cap:7, tick:8, sleep:9, tag:13, today:14, uid:15, defaultProd:23, newSong:26, cur:29, persist:38, flush:44, sanitize:52, load:63, getCtx:92, makeBuffer:97, stopPlay:102, playBuf:109, getDl:126, saveFile:127, wavBlob:139, saveAudio:147, toMono:164, decode:170, initSample:183, ask:187, songContext:191, route:209, applyMood:232, lyricLines:267, analysisOf:268, topMood:269, songCard:272, inFolder:278, renderAnalysis:326, meter:354, renderGuide:382, followBars:413, fillBase:418, syncKar:430, getBase:450, activeTake:455, buildMix:457, karaokeTick:476, makeAndPlay:488, instName:513, noteNm:514, labRec:515, loadInst:516, ensureInst:523, instOptions:529, refreshInstSelects:542, instInfo:545, fillInst:550, applyRecipe:558, previewInst:569, labOptions:581, labCurrent:586, labSet:592, renderKnobs:598, labPlayRec:604, renderLab:609, coachState:684, coachCtx:685, coachRec:689, coachName:690, coachCands:698, coachMeasure:720, coachCheck:738, renderCoach:760, renderRefs:788, chatPush:823, renderChat:824, renderHist:828, snapshot:832, producerGo:833, localAdvice:856, setAT:885, addTake:893, micOk:915, tdb:916, dbTake:927, restoreTakes:937, recUi:949, finishRec:982, renderTakes:1013, selectTake:1027, renderTakeAnalysis:1039, cssv:1057, drawPitch:1058, noteName:1114, geom:1115, drawNotes:1122, renderNotes:1149, playTone:1159, noteAtX:1165, ptr:1166, endDrag:1177, rescale:1190, filterPhoto:1213, soon:1228, wrap:1231, drawClip:1232, clipMix:1255, renderIdeas:1281, copyText:1303, post:1308, findItem:1315, postEvents:1316, genPlan:1324, renderPlan:1334, refreshSocial:1347, applyTheme:1382, renderSettings:1386, start:1413
+esc:5, fmt:6, cap:7, tick:8, sleep:9, tag:13, today:14, uid:15, defaultProd:23, newSong:26, cur:29, persist:38, flush:44, sanitize:52, load:64, getCtx:93, makeBuffer:98, stopPlay:103, playBuf:110, getDl:127, saveFile:128, wavBlob:140, saveAudio:148, toMono:165, decode:171, initSample:184, ask:188, songContext:192, route:210, applyMood:233, lyricLines:268, analysisOf:269, topMood:270, songCard:273, inFolder:279, renderAnalysis:327, meter:355, renderGuide:383, followBars:414, fillBase:419, syncKar:431, songMap:452, getBase:457, activeTake:462, buildMix:464, karaokeTick:483, makeAndPlay:497, instName:522, noteNm:523, labRec:524, loadInst:525, ensureInst:532, instOptions:538, refreshInstSelects:551, instInfo:554, fillInst:559, applyRecipe:567, previewInst:578, labOptions:590, labCurrent:595, labSet:601, renderKnobs:607, labPlayRec:613, renderLab:618, lyricHtml:693, coachState:703, coachCtx:704, coachRec:708, coachName:709, coachCands:717, coachMeasure:739, coachCheck:757, coachFix:772, renderCoach:782, lvl:800, dwFill:801, dwLyInfo:815, dwSteps:819, dwBase:824, voiceTake:828, dwBuffers:829, gainFor:845, dwGains:851, dwStop:852, dwPlay:859, dwPos:887, dwDraw:895, dwRefresh:930, dwChanged:932, dwRecord:935, dwRecStop:952, sheetOpen:975, sheetRender:976, agentsRender:1004, coachSummary:1014, wait:1015, agentsRun:1016, dwExport:1106, renderRefs:1143, chatPush:1178, renderChat:1179, renderHist:1183, snapshot:1187, producerGo:1188, localAdvice:1211, setAT:1240, addTake:1248, micOk:1270, tdb:1271, dbTake:1282, restoreTakes:1292, recUi:1304, finishRec:1337, renderTakes:1368, selectTake:1382, renderTakeAnalysis:1394, cssv:1412, drawPitch:1413, noteName:1469, geom:1470, drawNotes:1477, renderNotes:1504, playTone:1514, noteAtX:1520, ptr:1521, endDrag:1532, rescale:1545, filterPhoto:1568, soon:1583, wrap:1586, drawClip:1587, clipMix:1610, renderIdeas:1636, copyText:1658, post:1663, findItem:1670, postEvents:1671, genPlan:1679, renderPlan:1689, refreshSocial:1702, applyTheme:1737, renderSettings:1742, start:1769
 
 ## tests/
 
 - _voice-synth.js: 0 test
-- arranger.test.js: 16 test
+- arranger.test.js: 17 test
 - audio-analysis.test.js: 8 test
 - autotune-key.test.js: 13 test
 - autotune-voice.test.js: 10 test
@@ -104,6 +110,7 @@ esc:5, fmt:6, cap:7, tick:8, sleep:9, tag:13, today:14, uid:15, defaultProd:23, 
 - polish.test.js: 8 test
 - producer-promo.test.js: 16 test
 - realtime-tune.test.js: 4 test
+- song-map.test.js: 4 test
 - sound-lab.test.js: 6 test
 - style-card.test.js: 8 test
 - voice-chain.test.js: 15 test
