@@ -14,10 +14,10 @@
   'use strict';
 
   // valori di un canale (tutti in unità comprensibili)
-  var CH = { low: 0, mid: 0, midHz: 1200, high: 0, comp: 0, sat: 0, pan: 0, rev: 0, dly: 0, duck: 0 };
-  var LIMITS = { low: [-12, 12], mid: [-12, 12], midHz: [200, 5000], high: [-12, 12], comp: [0, 1], sat: [0, 1], pan: [-1, 1], rev: [0, 1], dly: [0, 1], duck: [0, 1] };
+  var CH = { hp: 20, low: 0, mid: 0, midHz: 1200, high: 0, comp: 0, sat: 0, pan: 0, rev: 0, dly: 0, duck: 0 };
+  var LIMITS = { hp: [20, 400], low: [-12, 12], mid: [-12, 12], midHz: [200, 5000], high: [-12, 12], comp: [0, 1], sat: [0, 1], pan: [-1, 1], rev: [0, 1], dly: [0, 1], duck: [0, 1] };
   var LABELS = {
-    low: ['Bassi', 'dB', 'Sotto 120 Hz: peso e corpo.'], mid: ['Medi', 'dB', 'Presenza; togli per fare spazio alla voce.'], midHz: ['Frequenza dei medi', 'Hz', 'Dove agisce la manopola Medi.'],
+    hp: ['Taglio dei bassi', 'Hz', 'Toglie il rimbombo sotto questa frequenza: le tracce non-basso diventano pulite.'], low: ['Bassi', 'dB', 'Sotto 120 Hz: peso e corpo.'], mid: ['Medi', 'dB', 'Presenza; togli per fare spazio alla voce.'], midHz: ['Frequenza dei medi', 'Hz', 'Dove agisce la manopola Medi.'],
     high: ['Alti', 'dB', 'Sopra 8 kHz: aria e brillantezza.'], comp: ['Compressione', '%', 'Volume più costante e più davanti.'], sat: ['Calore / distorsione', '%', 'Armoniche in più: suona più grosso e sporco.'],
     pan: ['Panoramica', '', 'Sinistra o destra.'], rev: ['Riverbero', '%', 'Spazio attorno al suono.'], dly: ['Eco', '%', 'Ripetizioni a tempo (1/8 puntato).'], duck: ['Sidechain dalla cassa', '%', 'Si abbassa quando batte la cassa: 808 e cassa non si pestano.']
   };
@@ -25,13 +25,13 @@
   // punti di partenza per stile (Analisi: regole di mix comuni, da regolare a orecchio)
   var PRESETS = {
     base: {
-      drums: { comp: 0.3, sat: 0.15, high: 1 }, bass: { sat: 0.35, duck: 0.45, low: 2 }, chords: { low: -4, rev: 0.25, pan: -0.15 },
-      arp: { low: -6, rev: 0.2, dly: 0.25, pan: 0.25 }, lead: { low: -5, rev: 0.25, dly: 0.2 }, pad: { low: -6, rev: 0.5, high: -2 },
-      voice: { low: -3, mid: -1.5, midHz: 400, high: 3, comp: 0.55, rev: 0.18, dly: 0.12 }
+      drums: { hp: 25, comp: 0.25, sat: 0.05, high: 1 }, bass: { hp: 28, sat: 0.12, duck: 0.4, low: 1 }, chords: { hp: 170, mid: -1.5, midHz: 350, rev: 0.22, pan: -0.2 },
+      arp: { hp: 220, rev: 0.18, dly: 0.22, pan: 0.3 }, lead: { hp: 180, mid: -1, midHz: 400, high: 1.5, rev: 0.2, dly: 0.18 }, pad: { hp: 200, rev: 0.45, high: -2 },
+      voice: { hp: 90, low: -2, mid: -1.5, midHz: 400, high: 3, comp: 0.55, rev: 0.16, dly: 0.1 }
     },
-    trap: { bass: { sat: 0.55, duck: 0.5 }, drums: { comp: 0.35, sat: 0.2 }, lead: { dly: 0.3 } },
-    brooklyn: { bass: { sat: 0.7, duck: 0.45, low: 3 }, drums: { comp: 0.4, sat: 0.2 }, pad: { rev: 0.55, low: -6 }, lead: { rev: 0.35 }, voice: { comp: 0.65, rev: 0.12, dly: 0.08, high: 3 } },
-    drill: { bass: { sat: 0.6, duck: 0.4 }, pad: { rev: 0.6 }, lead: { rev: 0.35 } },
+    trap: { bass: { sat: 0.2, duck: 0.45 }, drums: { comp: 0.3, sat: 0.08 }, lead: { dly: 0.28 } },
+    brooklyn: { bass: { sat: 0.28, duck: 0.45, low: 2 }, drums: { comp: 0.35, sat: 0.08 }, pad: { rev: 0.5 }, lead: { rev: 0.35 }, voice: { comp: 0.65, rev: 0.12, dly: 0.08, high: 3 } },
+    drill: { bass: { sat: 0.25, duck: 0.4 }, pad: { rev: 0.55 }, lead: { rev: 0.3 } },
     melodico: { bass: { sat: 0.15, duck: 0.3 }, chords: { rev: 0.35 }, voice: { rev: 0.28, dly: 0.18 } },
     epico: { pad: { rev: 0.7 }, chords: { rev: 0.45 }, drums: { comp: 0.45 } },
     estate: { drums: { comp: 0.25, high: 2 }, bass: { duck: 0.2, sat: 0.1 } }
@@ -93,8 +93,9 @@
       c.duck = ctx.createGain();
       c.pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
       c.out = ctx.createGain(); c.rev = ctx.createGain(); c.dly = ctx.createGain();
+      c.hpf = ctx.createBiquadFilter(); c.hpf.type = 'highpass'; c.hpf.Q.value = 0.7;
       c.autoF = ctx.createBiquadFilter(); c.autoF.type = 'lowpass'; c.autoF.frequency.value = 20000; c.autoF.Q.value = 0.8; c.autoG = ctx.createGain();
-      c.fader.connect(c.autoF); c.autoF.connect(c.autoG); c.autoG.connect(c.low); c.low.connect(c.mid); c.mid.connect(c.high); c.high.connect(c.comp); c.comp.connect(c.makeup); c.makeup.connect(c.sat); c.sat.connect(c.duck);
+      c.fader.connect(c.hpf); c.hpf.connect(c.autoF); c.autoF.connect(c.autoG); c.autoG.connect(c.low); c.low.connect(c.mid); c.mid.connect(c.high); c.high.connect(c.comp); c.comp.connect(c.makeup); c.makeup.connect(c.sat); c.sat.connect(c.duck);
       if (c.pan) { c.duck.connect(c.pan); c.pan.connect(c.out); } else c.duck.connect(c.out);
       c.out.connect(dest); c.out.connect(c.rev); c.out.connect(c.dly); c.rev.connect(revIn); c.dly.connect(dlyIn);
       M.ch[id] = c;
@@ -115,7 +116,7 @@
     function apply(id, k, v, now) {
       var c = M.ch[id]; if (!c) return; v = clamp(v, k); M.settings[id][k] = v;
       var t = ctx.currentTime, set = function (param, val) { if (now) param.value = val; else param.setTargetAtTime(val, t, 0.03); };
-      if (k === 'low') set(c.low.gain, v); else if (k === 'mid') set(c.mid.gain, v); else if (k === 'midHz') set(c.mid.frequency, v); else if (k === 'high') set(c.high.gain, v);
+      if (k === 'hp') set(c.hpf.frequency, v); else if (k === 'low') set(c.low.gain, v); else if (k === 'mid') set(c.mid.gain, v); else if (k === 'midHz') set(c.mid.frequency, v); else if (k === 'high') set(c.high.gain, v);
       else if (k === 'comp') { set(c.comp.threshold, -2 - 30 * v); set(c.comp.ratio, 1 + 7 * v); set(c.makeup.gain, Math.pow(10, (8 * v) / 20)); }
       else if (k === 'sat') { c.sat.curve = satCurve(v); set(c.out.gain, 1 / (1 + v * 0.6)); }
       else if (k === 'pan') { if (c.pan) set(c.pan.pan, v); }

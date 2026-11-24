@@ -548,7 +548,14 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   <section class="dw-panel" id="dw-p-sing" data-ws="voce">
     <details open><summary><b>Guida al canto</b> <span class="small muted">quando entrare, quanto tenere, dove respirare</span></summary><div id="dwx-sg" style="margin-top:8px"></div></details>
   </section>
-<section class="dw-panel" id="dw-p-talk" data-ws="testo base">
+<section class="dw-panel" id="dw-p-var" data-ws="base">
+    <div class="dw-ph"><h3>Varianti</h3><span class="tag m">Sempre nuove</span></div>
+    <div class="row"><button class="btn pri" id="dw-var-same">8 varianti di questo stile</button><button class="btn" id="dw-var-other">8 stili diversi</button></div>
+    <div id="dw-var-list"></div>
+    <div class="status" id="dw-var-msg"></div>
+  </section>
+
+  <section class="dw-panel" id="dw-p-talk" data-ws="testo base">
     <div class="dw-ph"><h3>Agenti</h3><span class="tag m">Modifica davvero</span></div>
     <p class="small muted">Scrivi cosa vuoi cambiare: mixer, 808, melodia, effetti, voce, master, velocità, tonalità, stile. La modifica si sente subito; se non ti piace premi Annulla.</p>
     <div class="row"><select id="dw-ai-engine"><option value="regole">Regole (subito)</option><option value="significato">IA che capisce (gratis, anche iPhone)</option><option value="browser">IA che scrive nel browser (computer)</option><option value="ollama">IA Ollama sul Mac (gratis)</option></select><select id="dw-ai-model"></select><button class="btn sm" id="dw-ai-test">Prova collegamento</button></div>
@@ -674,7 +681,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 21:03</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 21:16</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -4139,6 +4146,17 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
       spiega: '808 che scivola, hi-hat a terzine, campane e pizzicati cupi. Poche note, molto peso.' },
     clubtrap: { nome: 'Club (dembow trap)', melodia: ['pro:mallet', 'kalimba', 'marimba', 'pro:lead'], accordi: ['pro:supersaw', 'nylon', 'clavi', 'piano'], pad: ['pro:pad', 'organ'], arpeggio: ['pro:pluck', 'marimba'], kit: 'club',
       spiega: 'Ritmo dembow ballabile con 808: il rullante in levare fa muovere i fianchi, melodie corte e orecchiabili.' },
+    plugg: { nome: 'Plugg', melodia: ['pro:glassbell', 'pro:bell', 'glock', 'kalimba'], accordi: ['pro:pluck', 'pro:epfm'], pad: ['pro:pad'], arpeggio: ['pro:pluck', 'pro:glassbell'], kit: 'trap', spiega: 'Suoni leggeri e luccicanti, campane e pluck in alto, 808 morbido.' },
+    rage: { nome: 'Rage', melodia: ['pro:supersaw', 'pro:lead'], accordi: ['pro:supersaw', 'pro:stab'], pad: ['pro:pad'], arpeggio: ['pro:pluck'], kit: 'club', spiega: 'Synth enormi e aggressivi, 808 distorto, hi-hat a raffica.' },
+    jersey: { nome: 'Jersey club', melodia: ['pro:lead', 'pro:mallet'], accordi: ['pro:stab', 'pro:supersaw'], pad: ['pro:pad'], arpeggio: ['pro:pluck'], kit: 'club', spiega: 'Cassa a rimbalzo veloce, battimani, energia da ballo.' },
+    afrotrap: { nome: 'Afro trap', melodia: ['marimba', 'kalimba', 'pro:mallet'], accordi: ['nylon', 'pro:keys'], pad: ['pro:pad'], arpeggio: ['marimba'], kit: 'club', spiega: 'Groove afro con shaker, legni e chitarra, basso rotondo.' },
+    reggaeton: { nome: 'Reggaeton', melodia: ['pro:lead', 'marimba'], accordi: ['pro:pluck', 'nylon'], pad: ['pro:pad'], arpeggio: ['pro:pluck'], kit: 'club', spiega: 'Ritmo dembow, accordi corti, sub basso.' },
+    phonk: { nome: 'Phonk', melodia: ['pro:mallet', 'bells', 'pro:bell'], accordi: ['pro:stab', 'organ'], pad: ['pro:darkpad'], arpeggio: ['pro:mallet'], kit: 'trap', spiega: 'Campanaccio melodico, 808 sporco, atmosfera notturna.' },
+    emorap: { nome: 'Emo rap', melodia: ['guitar', 'pro:pluck', 'piano'], accordi: ['guitar', 'nylon', 'pro:epfm'], pad: ['pro:pad', 'violins'], arpeggio: ['guitar', 'pro:pluck'], kit: 'trap', spiega: 'Chitarre tristi, accordi aperti, 808 profondo.' },
+    rnb: { nome: 'R&B / rap lento', melodia: ['pro:epfm', 'pro:keys', 'piano'], accordi: ['pro:epfm', 'pro:keys', 'epiano'], pad: ['pro:pad'], arpeggio: ['pro:keys'], kit: 'lofi', spiega: 'Piano elettrico, accordi morbidi, groove lento e caldo.' },
+    cloud: { nome: 'Cloud rap', melodia: ['pro:glassbell', 'pro:choir'], accordi: ['pro:pad', 'pro:epfm'], pad: ['pro:pad', 'pro:choir'], arpeggio: ['pro:glassbell'], kit: 'lofi', spiega: 'Atmosfere sognanti, pad larghi, molto spazio.' },
+    detroit: { nome: 'Detroit', melodia: ['piano', 'pro:keys'], accordi: ['piano', 'pro:stab'], pad: ['pro:darkpad'], arpeggio: ['pizz'], kit: 'drill', spiega: 'Basso che rimbalza, piano scuro, rap veloce.' },
+    lofi: { nome: 'Lo-fi hip hop', melodia: ['pro:keys', 'epiano', 'vibes'], accordi: ['pro:epfm', 'epiano', 'piano'], pad: ['pro:pad'], arpeggio: ['vibes'], kit: 'lofi', spiega: 'Polveroso e rilassato, swing, piano elettrico.' },
     estate: { nome: 'Estate / latino / afro', melodia: ['marimba', 'pro:mallet', 'nylon', 'kalimba'], accordi: ['nylon', 'clavi', 'pro:keys', 'marimba'], pad: ['pro:pad', 'organ'], arpeggio: ['marimba', 'pro:pluck'], kit: 'club',
       spiega: 'Ritmo in levare, legni e chitarra classica, colori allegri. Il basso è rotondo e segue la cassa.' }
   };
@@ -5487,6 +5505,28 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
       kickPats: [[[0, 4, 8, 12], [0, 4, 8, 12]]],
       chord: 'pluck', chordPat: [0, 6, 10], arp: false, pad: 'warm', lead: 'bell', duck: 0.28
     },
+    plugg: { label: 'Plugg (leggero e brillante)', bpm: 150, swing: 0, kick: [0], kickExtra: [7, 11, 14], snare: [8], clap: true, hat: 'trap', bass: '808', slide: 0.25, glide: 0.06, drive: 1.4, rolls: 0.35,
+      kickPats: [[[0, 11], [0, 7]], [[0, 10], [0, 3, 11]]], chord: 'pluck', chordPat: [0, 4, 8, 12], arp: true, pad: 'bright', lead: 'bell', duck: 0.3 },
+    rage: { label: 'Rage (synth aggressivi)', bpm: 158, swing: 0, kick: [0], kickExtra: [3, 6, 10, 13], snare: [8], clap: true, hat: 'trap', bass: '808', slide: 0.5, glide: 0.09, drive: 2.6, rolls: 0.8,
+      kickPats: [[[0, 6, 10], [0, 3, 10, 13]], [[0, 10], [0, 6, 11, 14]]], chord: 'ostinato', chordPat: [0, 2, 4, 6, 8, 10, 12, 14], arp: true, pad: 'bright', lead: 'synth', duck: 0.45 },
+    jersey: { label: 'Jersey club', bpm: 145, swing: 0, kick: [0, 6, 10, 12, 14], kickExtra: [], snare: [4, 12], clap: true, hat: 'offbeat', bass: 'sub', slide: 0, rolls: 0.1,
+      kickPats: [[[0, 6, 10, 12, 14], [0, 6, 10, 12, 14]]], chord: 'pluck', chordPat: [0, 8], arp: false, pad: 'bright', lead: 'synth', duck: 0.4 },
+    afrotrap: { label: 'Afro trap', bpm: 105, swing: 0.1, kick: [0], kickExtra: [], snare: [8, 14], clap: false, hat: 'shaker', bass: 'round', slide: 0.1, rolls: 0,
+      kickPats: [[[0, 7, 10], [0, 8, 11]], [[0, 6, 10], [0, 8, 13]]], chord: 'pluck', chordPat: [2, 6, 10, 14], arp: false, pad: 'warm', lead: 'marimba', duck: 0.2 },
+    reggaeton: { label: 'Reggaeton (dembow)', bpm: 95, swing: 0, kick: [0, 4, 8, 12], kickExtra: [], snare: [3, 6, 11, 14], clap: false, hat: 'offbeat', bass: 'sub', slide: 0, rolls: 0,
+      kickPats: [[[0, 4, 8, 12], [0, 4, 8, 12]]], chord: 'pluck', chordPat: [0, 6, 10], arp: false, pad: 'bright', lead: 'synth', duck: 0.25 },
+    phonk: { label: 'Phonk', bpm: 130, swing: 0, kick: [0], kickExtra: [3, 10], snare: [8], clap: true, hat: 'trap', bass: '808', slide: 0.3, glide: 0.08, drive: 2.6, rolls: 0.3,
+      kickPats: [[[0, 10], [0, 3, 10]], [[0, 7, 10], [0, 10]]], chord: 'ostinato', chordPat: [0, 3, 6, 8, 11, 14], arp: true, pad: 'dark', lead: 'bell', duck: 0.4 },
+    emorap: { label: 'Emo rap (chitarre tristi)', bpm: 144, swing: 0, kick: [0], kickExtra: [7, 10, 14], snare: [8], clap: true, hat: 'trap', bass: '808', slide: 0.3, glide: 0.07, drive: 1.6, rolls: 0.4,
+      kickPats: [[[0, 10], [0, 7, 10]], [[0, 11], [0, 6, 10]]], chord: 'pluck', chordPat: [0, 3, 6, 8, 11], arp: true, pad: 'warm', lead: 'pluck', duck: 0.3 },
+    rnb: { label: 'R&B / rap lento', bpm: 78, swing: 0.12, kick: [0], kickExtra: [7, 10], snare: [8], clap: true, hat: 'soft', bass: 'round', slide: 0.15, rolls: 0.2,
+      kickPats: [[[0, 10], [0, 7, 11]], [[0, 9], [0, 6, 10]]], chord: 'pluck', chordPat: [0, 6, 10], arp: false, pad: 'warm', lead: 'keys', duck: 0.2 },
+    cloud: { label: 'Cloud rap (sognante)', bpm: 70, swing: 0.05, kick: [0], kickExtra: [10], snare: [8], clap: true, hat: 'soft', bass: '808', slide: 0.2, glide: 0.1, drive: 1.2, rolls: 0.25,
+      kickPats: [[[0, 10], [0]], [[0, 6], [0, 11]]], chord: 'pluck', chordPat: [0, 8], arp: true, pad: 'bright', lead: 'bell', duck: 0.25 },
+    detroit: { label: 'Detroit (rimbalzante)', bpm: 98, swing: 0, kick: [0], kickExtra: [3, 6, 11], snare: [4, 12], clap: true, hat: 'trap', bass: '808', slide: 0.2, glide: 0.05, drive: 2, rolls: 0.2,
+      kickPats: [[[0, 3, 6, 10], [0, 3, 8, 11]]], chord: 'pluck', chordPat: [2, 6, 10, 14], arp: false, pad: 'dark', lead: 'keys', duck: 0.35 },
+    lofi: { label: 'Lo-fi hip hop', bpm: 82, swing: 0.16, kick: [0], kickExtra: [7, 10], snare: [4, 12], clap: false, hat: 'soft', bass: 'round', slide: 0, rolls: 0,
+      kickPats: [[[0, 10], [0, 8, 10]], [[0, 7], [0, 10, 11]]], chord: 'pluck', chordPat: [0, 6, 10], arp: false, pad: 'warm', lead: 'keys', duck: 0.2 },
     estate: {
       label: 'Estate (ritmo latino)', bpm: 100, swing: 0, kick: [0, 4, 8, 12], kickExtra: [], snare: [3, 6, 11, 14], clap: false,
       hat: 'offbeat', bass: 'round', slide: 0, rolls: 0,
@@ -6817,10 +6857,10 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   'use strict';
 
   // valori di un canale (tutti in unità comprensibili)
-  var CH = { low: 0, mid: 0, midHz: 1200, high: 0, comp: 0, sat: 0, pan: 0, rev: 0, dly: 0, duck: 0 };
-  var LIMITS = { low: [-12, 12], mid: [-12, 12], midHz: [200, 5000], high: [-12, 12], comp: [0, 1], sat: [0, 1], pan: [-1, 1], rev: [0, 1], dly: [0, 1], duck: [0, 1] };
+  var CH = { hp: 20, low: 0, mid: 0, midHz: 1200, high: 0, comp: 0, sat: 0, pan: 0, rev: 0, dly: 0, duck: 0 };
+  var LIMITS = { hp: [20, 400], low: [-12, 12], mid: [-12, 12], midHz: [200, 5000], high: [-12, 12], comp: [0, 1], sat: [0, 1], pan: [-1, 1], rev: [0, 1], dly: [0, 1], duck: [0, 1] };
   var LABELS = {
-    low: ['Bassi', 'dB', 'Sotto 120 Hz: peso e corpo.'], mid: ['Medi', 'dB', 'Presenza; togli per fare spazio alla voce.'], midHz: ['Frequenza dei medi', 'Hz', 'Dove agisce la manopola Medi.'],
+    hp: ['Taglio dei bassi', 'Hz', 'Toglie il rimbombo sotto questa frequenza: le tracce non-basso diventano pulite.'], low: ['Bassi', 'dB', 'Sotto 120 Hz: peso e corpo.'], mid: ['Medi', 'dB', 'Presenza; togli per fare spazio alla voce.'], midHz: ['Frequenza dei medi', 'Hz', 'Dove agisce la manopola Medi.'],
     high: ['Alti', 'dB', 'Sopra 8 kHz: aria e brillantezza.'], comp: ['Compressione', '%', 'Volume più costante e più davanti.'], sat: ['Calore / distorsione', '%', 'Armoniche in più: suona più grosso e sporco.'],
     pan: ['Panoramica', '', 'Sinistra o destra.'], rev: ['Riverbero', '%', 'Spazio attorno al suono.'], dly: ['Eco', '%', 'Ripetizioni a tempo (1/8 puntato).'], duck: ['Sidechain dalla cassa', '%', 'Si abbassa quando batte la cassa: 808 e cassa non si pestano.']
   };
@@ -6828,13 +6868,13 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   // punti di partenza per stile (Analisi: regole di mix comuni, da regolare a orecchio)
   var PRESETS = {
     base: {
-      drums: { comp: 0.3, sat: 0.15, high: 1 }, bass: { sat: 0.35, duck: 0.45, low: 2 }, chords: { low: -4, rev: 0.25, pan: -0.15 },
-      arp: { low: -6, rev: 0.2, dly: 0.25, pan: 0.25 }, lead: { low: -5, rev: 0.25, dly: 0.2 }, pad: { low: -6, rev: 0.5, high: -2 },
-      voice: { low: -3, mid: -1.5, midHz: 400, high: 3, comp: 0.55, rev: 0.18, dly: 0.12 }
+      drums: { hp: 25, comp: 0.25, sat: 0.05, high: 1 }, bass: { hp: 28, sat: 0.12, duck: 0.4, low: 1 }, chords: { hp: 170, mid: -1.5, midHz: 350, rev: 0.22, pan: -0.2 },
+      arp: { hp: 220, rev: 0.18, dly: 0.22, pan: 0.3 }, lead: { hp: 180, mid: -1, midHz: 400, high: 1.5, rev: 0.2, dly: 0.18 }, pad: { hp: 200, rev: 0.45, high: -2 },
+      voice: { hp: 90, low: -2, mid: -1.5, midHz: 400, high: 3, comp: 0.55, rev: 0.16, dly: 0.1 }
     },
-    trap: { bass: { sat: 0.55, duck: 0.5 }, drums: { comp: 0.35, sat: 0.2 }, lead: { dly: 0.3 } },
-    brooklyn: { bass: { sat: 0.7, duck: 0.45, low: 3 }, drums: { comp: 0.4, sat: 0.2 }, pad: { rev: 0.55, low: -6 }, lead: { rev: 0.35 }, voice: { comp: 0.65, rev: 0.12, dly: 0.08, high: 3 } },
-    drill: { bass: { sat: 0.6, duck: 0.4 }, pad: { rev: 0.6 }, lead: { rev: 0.35 } },
+    trap: { bass: { sat: 0.2, duck: 0.45 }, drums: { comp: 0.3, sat: 0.08 }, lead: { dly: 0.28 } },
+    brooklyn: { bass: { sat: 0.28, duck: 0.45, low: 2 }, drums: { comp: 0.35, sat: 0.08 }, pad: { rev: 0.5 }, lead: { rev: 0.35 }, voice: { comp: 0.65, rev: 0.12, dly: 0.08, high: 3 } },
+    drill: { bass: { sat: 0.25, duck: 0.4 }, pad: { rev: 0.55 }, lead: { rev: 0.3 } },
     melodico: { bass: { sat: 0.15, duck: 0.3 }, chords: { rev: 0.35 }, voice: { rev: 0.28, dly: 0.18 } },
     epico: { pad: { rev: 0.7 }, chords: { rev: 0.45 }, drums: { comp: 0.45 } },
     estate: { drums: { comp: 0.25, high: 2 }, bass: { duck: 0.2, sat: 0.1 } }
@@ -6896,8 +6936,9 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
       c.duck = ctx.createGain();
       c.pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
       c.out = ctx.createGain(); c.rev = ctx.createGain(); c.dly = ctx.createGain();
+      c.hpf = ctx.createBiquadFilter(); c.hpf.type = 'highpass'; c.hpf.Q.value = 0.7;
       c.autoF = ctx.createBiquadFilter(); c.autoF.type = 'lowpass'; c.autoF.frequency.value = 20000; c.autoF.Q.value = 0.8; c.autoG = ctx.createGain();
-      c.fader.connect(c.autoF); c.autoF.connect(c.autoG); c.autoG.connect(c.low); c.low.connect(c.mid); c.mid.connect(c.high); c.high.connect(c.comp); c.comp.connect(c.makeup); c.makeup.connect(c.sat); c.sat.connect(c.duck);
+      c.fader.connect(c.hpf); c.hpf.connect(c.autoF); c.autoF.connect(c.autoG); c.autoG.connect(c.low); c.low.connect(c.mid); c.mid.connect(c.high); c.high.connect(c.comp); c.comp.connect(c.makeup); c.makeup.connect(c.sat); c.sat.connect(c.duck);
       if (c.pan) { c.duck.connect(c.pan); c.pan.connect(c.out); } else c.duck.connect(c.out);
       c.out.connect(dest); c.out.connect(c.rev); c.out.connect(c.dly); c.rev.connect(revIn); c.dly.connect(dlyIn);
       M.ch[id] = c;
@@ -6918,7 +6959,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     function apply(id, k, v, now) {
       var c = M.ch[id]; if (!c) return; v = clamp(v, k); M.settings[id][k] = v;
       var t = ctx.currentTime, set = function (param, val) { if (now) param.value = val; else param.setTargetAtTime(val, t, 0.03); };
-      if (k === 'low') set(c.low.gain, v); else if (k === 'mid') set(c.mid.gain, v); else if (k === 'midHz') set(c.mid.frequency, v); else if (k === 'high') set(c.high.gain, v);
+      if (k === 'hp') set(c.hpf.frequency, v); else if (k === 'low') set(c.low.gain, v); else if (k === 'mid') set(c.mid.gain, v); else if (k === 'midHz') set(c.mid.frequency, v); else if (k === 'high') set(c.high.gain, v);
       else if (k === 'comp') { set(c.comp.threshold, -2 - 30 * v); set(c.comp.ratio, 1 + 7 * v); set(c.makeup.gain, Math.pow(10, (8 * v) / 20)); }
       else if (k === 'sat') { c.sat.curve = satCurve(v); set(c.out.gain, 1 / (1 + v * 0.6)); }
       else if (k === 'pan') { if (c.pan) set(c.pan.pan, v); }
@@ -11583,6 +11624,10 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
       if (L.voice) return;
       var x = new Float32Array(N);
       L.tracks.forEach(function (tr) { var a = b.tracks[tr]; if (a) for (i = 0; i < N; i++) x[i] += a[i]; });
+      // bilanciamento automatico (come un fonico): ogni traccia al suo livello di riferimento (RMS dei punti attivi)
+      var tgt = { drums: -18, bass: -17.5, chords: -18, lead: -16.5, arp: -21, pad: -20 }[L.id], ss = 0, nn = 0;
+      for (i = 0; i < N; i += 4) { var av = x[i] < 0 ? -x[i] : x[i]; if (av > 1e-4) { ss += x[i] * x[i]; nn++; } }
+      if (tgt != null && nn > N / 400) { var rdb = 10 * Math.log10(ss / nn), gk = Math.pow(10, Math.max(-24, Math.min(26, tgt - rdb)) / 20); for (i = 0; i < N; i++) x[i] *= gk; }
       for (i = 0; i < N; i++) sum[i] += x[i];
       bufs[L.id] = { x: x, sr: b.sampleRate, start: 0 };
     });
@@ -12263,7 +12308,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   var MIX_LANES = ['drums', 'bass', 'chords', 'arp', 'lead', 'pad', 'voice'];
   function mixSet() {
     var p = cur().prod;
-    if (!p.mix || typeof p.mix !== 'object') p.mix = Mixer.preset(p.genre, MIX_LANES);
+    if (!p.mix || typeof p.mix !== 'object' || p.mixV !== 2) { p.mix = Mixer.preset(p.genre, MIX_LANES); p.mixV = 2; } // v2: mix pulito (tagli dei bassi, meno distorsione)
     MIX_LANES.forEach(function (id) { p.mix[id] = Mixer.channel(p.mix[id]); });
     return p.mix;
   }
@@ -12286,14 +12331,14 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   function mixRender() {
     var m = mixSet(), id = MIXUI.lane, c = m[id];
     $('#dw-mx-lanes').innerHTML = LANES.map(function (L) { return '<button class="chip' + (L.id === id ? ' on' : '') + '" data-mxl="' + L.id + '" style="border-color:' + L.c + '">' + esc(L.nome) + '</button>'; }).join('');
-    var keys = ['low', 'mid', 'midHz', 'high', 'comp', 'sat', 'pan', 'rev', 'dly'].concat(id === 'drums' || id === 'voice' ? [] : ['duck']);
+    var keys = ['hp', 'low', 'mid', 'midHz', 'high', 'comp', 'sat', 'pan', 'rev', 'dly'].concat(id === 'drums' || id === 'voice' ? [] : ['duck']);
     $('#dw-mx-knobs').innerHTML = keys.map(function (k) {
-      var L = Mixer.LIMITS[k], lab = Mixer.LABELS[k], v = c[k], step = k === 'midHz' ? 10 : (L[1] - L[0] > 3 ? 0.5 : 0.01);
+      var L = Mixer.LIMITS[k], lab = Mixer.LABELS[k], v = c[k], step = k === 'midHz' || k === 'hp' ? 5 : (L[1] - L[0] > 3 ? 0.5 : 0.01);
       return '<label class="f"><span>' + esc(lab[0]) + ' <b>' + mixFmt(k, v) + '</b></span><input type="range" min="' + L[0] + '" max="' + L[1] + '" step="' + step + '" value="' + v + '" data-mxk="' + k + '"><small class="muted">' + esc(lab[2]) + '</small></label>';
     }).join('');
     autoRender();
   }
-  function mixFmt(k, v) { var u = Mixer.LABELS[k][1]; if (u === '%') return Math.round(v * 100) + '%'; if (k === 'pan') return v === 0 ? 'centro' : (v < 0 ? 'sin ' : 'des ') + Math.round(Math.abs(v) * 100); return (k === 'midHz' ? Math.round(v) : (v > 0 ? '+' : '') + (+v).toFixed(1)) + ' ' + u; }
+  function mixFmt(k, v) { var u = Mixer.LABELS[k][1]; if (u === '%') return Math.round(v * 100) + '%'; if (k === 'pan') return v === 0 ? 'centro' : (v < 0 ? 'sin ' : 'des ') + Math.round(Math.abs(v) * 100); return (k === 'midHz' || k === 'hp' ? Math.round(v) : (v > 0 ? '+' : '') + (+v).toFixed(1)) + ' ' + u; }
   $('#dw-p-mixer').addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b) return;
     if (b.getAttribute('data-mxl')) { MIXUI.lane = b.getAttribute('data-mxl'); mixRender(); }
@@ -12601,6 +12646,48 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     mv('ai-card', '#dwx-ai'); mv('rh-card', '#dwx-rh'); mv('sg-card', '#dwx-sg');
   })();
   $('#tabs').addEventListener('click', function (e) { var a = e.target.closest('[data-ws]'); if (!a) return; if (location.hash === '#daw') { e.preventDefault(); dwWs(a.getAttribute('data-ws')); window.scrollTo(0, 0); } else LIB.settings.ws = a.getAttribute('data-ws'); });
+  // ---------- Varianti: 8 basi diverse alla volta, da ascoltare e scegliere (senza limite: premi ancora) ----------
+  var VAR = { list: [], busy: false };
+  function rnd(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function varSpec(g, same) {
+    var R = Instruments.RECIPES[g] || Instruments.RECIPES.melodico, st = Arranger.STYLES[g], kits = Object.keys(SynthDesign.KITS);
+    return { genre: g, bpm: same ? cur().prod.bpm : st.bpm + Math.round((Math.random() - 0.5) * 6), seed: 1 + Math.floor(Math.random() * 99999),
+      inst: { melodia: rnd(R.melodia), accordi: rnd(R.accordi), pad: rnd(R.pad), arpeggio: R.arpeggio ? rnd(R.arpeggio) : undefined },
+      kit: Math.random() < 0.75 && R.kit ? R.kit : rnd(kits), arpPattern: rnd(Object.keys(Arranger.ARP)), mode: cur().prod.mode };
+  }
+  async function varMake(mode) {
+    if (VAR.busy) return; VAR.busy = true; var el = $('#dw-var-msg'), p = cur().prod, map = songMap(), specs = [];
+    if (mode === 'stili') { var keys = Object.keys(Arranger.STYLES).filter(function (g) { return g !== p.genre; }).sort(function () { return Math.random() - 0.5; }).slice(0, 8); keys.forEach(function (g) { specs.push(varSpec(g, false)); }); }
+    else for (var i = 0; i < 8; i++) specs.push(varSpec(p.genre, true));
+    VAR.list = []; varRender();
+    for (var k = 0; k < specs.length; k++) {
+      var sp = specs[k]; el.textContent = 'Compongo la variante ' + (k + 1) + ' di 8…'; await tick();
+      for (var r in sp.inst) if (sp.inst[r]) await loadInst(sp.inst[r]);
+      try {
+        var bb = Arranger.generate({ sampleRate: 22050, bpm: sp.bpm, tonic: p.tonic, mode: sp.mode, bars: p.bars, genre: sp.genre, seed: sp.seed, inst: sp.inst, plan: map ? map.plan : undefined, arpPattern: sp.arpPattern, sounds: 'campioni', drumRender: function (part, o, s2) { return SynthDesign.kitRender(sp.kit, part, o, s2); } });
+        sp.mix = Backing.mix(bb, p.levels, p.sec); sp.sr = bb.sampleRate; VAR.list.push(sp); varRender();
+      } catch (e) {}
+    }
+    el.textContent = VAR.list.length + ' varianti pronte: ascoltale, scegli con Usa. Premi ancora per altre 8 nuove.'; VAR.busy = false;
+  }
+  function varName(sp) { return (Arranger.STYLES[sp.genre] ? Arranger.STYLES[sp.genre].label : sp.genre) + ' · ' + sp.bpm + ' BPM'; }
+  function varRender() {
+    $('#dw-var-list').innerHTML = VAR.list.map(function (sp, i) {
+      return '<div class="dw-prop"><div><b>' + (i + 1) + '. ' + esc(varName(sp)) + '</b><small>' + ['melodia', 'accordi', 'pad'].map(function (r) { return sp.inst[r] ? instName(sp.inst[r]) : ''; }).filter(Boolean).join(' · ') + ' · kit ' + esc(SynthDesign.KITS[sp.kit].nome) + '</small></div><button class="btn sm" data-vp="' + i + '">▶</button><button class="btn sm pri" data-vu="' + i + '">Usa</button></div>';
+    }).join('');
+  }
+  $('#dw-p-var').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.id === 'dw-var-same') varMake('stile'); else if (b.id === 'dw-var-other') varMake('stili');
+    var vp = b.getAttribute('data-vp'), vu = b.getAttribute('data-vu');
+    if (vp != null) { var s1 = VAR.list[+vp]; dwStop(true); playBuf(s1.mix, s1.sr); $('#dw-var-msg').textContent = 'Ascolti: ' + varName(s1); }
+    if (vu != null) {
+      var s2 = VAR.list[+vu], p = cur().prod, changed = p.genre !== s2.genre; stopPlay();
+      p.genre = s2.genre; p.bpm = s2.bpm; p.seed = s2.seed; p.inst = Object.assign({}, s2.inst); p.kit = s2.kit; p.arpPattern = s2.arpPattern; if (changed) { p.mix = null; p.groove = null; p.prog = null; p.tune = null; }
+      coachRec('like', { genre: s2.genre, mode: p.mode, bpm: s2.bpm, inst: s2.inst }); fillInst(); fillBase(); dwFill(); dwChanged(true); projLine();
+      $('#dw-var-msg').textContent = 'Usata: ' + varName(s2) + '. Ora la puoi modificare traccia per traccia.';
+    }
+  });
   // ---------- Ispettore della traccia: un tocco sulla traccia → Suono · Note · Canale ----------
   var INSP = { lane: null, tab: 'suono' };
   var LANE_NOTES = { lead: 'lead', bass: 'bass', drums: 'drums', chords: 'chords', arp: 'chords', pad: 'chords' };

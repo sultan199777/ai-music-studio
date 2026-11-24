@@ -96,7 +96,14 @@
   <section class="dw-panel" id="dw-p-sing" data-ws="voce">
     <details open><summary><b>Guida al canto</b> <span class="small muted">quando entrare, quanto tenere, dove respirare</span></summary><div id="dwx-sg" style="margin-top:8px"></div></details>
   </section>
-<section class="dw-panel" id="dw-p-talk" data-ws="testo base">
+<section class="dw-panel" id="dw-p-var" data-ws="base">
+    <div class="dw-ph"><h3>Varianti</h3><span class="tag m">Sempre nuove</span></div>
+    <div class="row"><button class="btn pri" id="dw-var-same">8 varianti di questo stile</button><button class="btn" id="dw-var-other">8 stili diversi</button></div>
+    <div id="dw-var-list"></div>
+    <div class="status" id="dw-var-msg"></div>
+  </section>
+
+  <section class="dw-panel" id="dw-p-talk" data-ws="testo base">
     <div class="dw-ph"><h3>Agenti</h3><span class="tag m">Modifica davvero</span></div>
     <p class="small muted">Scrivi cosa vuoi cambiare: mixer, 808, melodia, effetti, voce, master, velocità, tonalità, stile. La modifica si sente subito; se non ti piace premi Annulla.</p>
     <div class="row"><select id="dw-ai-engine"><option value="regole">Regole (subito)</option><option value="significato">IA che capisce (gratis, anche iPhone)</option><option value="browser">IA che scrive nel browser (computer)</option><option value="ollama">IA Ollama sul Mac (gratis)</option></select><select id="dw-ai-model"></select><button class="btn sm" id="dw-ai-test">Prova collegamento</button></div>

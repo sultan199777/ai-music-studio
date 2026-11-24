@@ -7,7 +7,7 @@ test('channel: limiti e valori di partenza', () => {
 });
 test('preset: lo stile cambia la base (trap: 808 più distorto e sidechain)', () => {
   const p = Mixer.preset('trap', ['bass', 'voice', 'x']);
-  assert.strictEqual(p.bass.sat, 0.55); assert.strictEqual(p.bass.duck, 0.5);
+  assert.strictEqual(p.bass.sat, 0.2); assert.strictEqual(p.bass.duck, 0.45); assert.ok(p.voice.hp >= 80);
   assert.ok(p.voice.comp > 0 && p.voice.high > 0);
   assert.deepStrictEqual(p.x, Mixer.channel({}));
 });

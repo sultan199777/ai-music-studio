@@ -1053,6 +1053,10 @@
       if (L.voice) return;
       var x = new Float32Array(N);
       L.tracks.forEach(function (tr) { var a = b.tracks[tr]; if (a) for (i = 0; i < N; i++) x[i] += a[i]; });
+      // bilanciamento automatico (come un fonico): ogni traccia al suo livello di riferimento (RMS dei punti attivi)
+      var tgt = { drums: -18, bass: -17.5, chords: -18, lead: -16.5, arp: -21, pad: -20 }[L.id], ss = 0, nn = 0;
+      for (i = 0; i < N; i += 4) { var av = x[i] < 0 ? -x[i] : x[i]; if (av > 1e-4) { ss += x[i] * x[i]; nn++; } }
+      if (tgt != null && nn > N / 400) { var rdb = 10 * Math.log10(ss / nn), gk = Math.pow(10, Math.max(-24, Math.min(26, tgt - rdb)) / 20); for (i = 0; i < N; i++) x[i] *= gk; }
       for (i = 0; i < N; i++) sum[i] += x[i];
       bufs[L.id] = { x: x, sr: b.sampleRate, start: 0 };
     });
@@ -1733,7 +1737,7 @@
   var MIX_LANES = ['drums', 'bass', 'chords', 'arp', 'lead', 'pad', 'voice'];
   function mixSet() {
     var p = cur().prod;
-    if (!p.mix || typeof p.mix !== 'object') p.mix = Mixer.preset(p.genre, MIX_LANES);
+    if (!p.mix || typeof p.mix !== 'object' || p.mixV !== 2) { p.mix = Mixer.preset(p.genre, MIX_LANES); p.mixV = 2; } // v2: mix pulito (tagli dei bassi, meno distorsione)
     MIX_LANES.forEach(function (id) { p.mix[id] = Mixer.channel(p.mix[id]); });
     return p.mix;
   }
@@ -1756,14 +1760,14 @@
   function mixRender() {
     var m = mixSet(), id = MIXUI.lane, c = m[id];
     $('#dw-mx-lanes').innerHTML = LANES.map(function (L) { return '<button class="chip' + (L.id === id ? ' on' : '') + '" data-mxl="' + L.id + '" style="border-color:' + L.c + '">' + esc(L.nome) + '</button>'; }).join('');
-    var keys = ['low', 'mid', 'midHz', 'high', 'comp', 'sat', 'pan', 'rev', 'dly'].concat(id === 'drums' || id === 'voice' ? [] : ['duck']);
+    var keys = ['hp', 'low', 'mid', 'midHz', 'high', 'comp', 'sat', 'pan', 'rev', 'dly'].concat(id === 'drums' || id === 'voice' ? [] : ['duck']);
     $('#dw-mx-knobs').innerHTML = keys.map(function (k) {
-      var L = Mixer.LIMITS[k], lab = Mixer.LABELS[k], v = c[k], step = k === 'midHz' ? 10 : (L[1] - L[0] > 3 ? 0.5 : 0.01);
+      var L = Mixer.LIMITS[k], lab = Mixer.LABELS[k], v = c[k], step = k === 'midHz' || k === 'hp' ? 5 : (L[1] - L[0] > 3 ? 0.5 : 0.01);
       return '<label class="f"><span>' + esc(lab[0]) + ' <b>' + mixFmt(k, v) + '</b></span><input type="range" min="' + L[0] + '" max="' + L[1] + '" step="' + step + '" value="' + v + '" data-mxk="' + k + '"><small class="muted">' + esc(lab[2]) + '</small></label>';
     }).join('');
     autoRender();
   }
-  function mixFmt(k, v) { var u = Mixer.LABELS[k][1]; if (u === '%') return Math.round(v * 100) + '%'; if (k === 'pan') return v === 0 ? 'centro' : (v < 0 ? 'sin ' : 'des ') + Math.round(Math.abs(v) * 100); return (k === 'midHz' ? Math.round(v) : (v > 0 ? '+' : '') + (+v).toFixed(1)) + ' ' + u; }
+  function mixFmt(k, v) { var u = Mixer.LABELS[k][1]; if (u === '%') return Math.round(v * 100) + '%'; if (k === 'pan') return v === 0 ? 'centro' : (v < 0 ? 'sin ' : 'des ') + Math.round(Math.abs(v) * 100); return (k === 'midHz' || k === 'hp' ? Math.round(v) : (v > 0 ? '+' : '') + (+v).toFixed(1)) + ' ' + u; }
   $('#dw-p-mixer').addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b) return;
     if (b.getAttribute('data-mxl')) { MIXUI.lane = b.getAttribute('data-mxl'); mixRender(); }
@@ -2071,6 +2075,48 @@
     mv('ai-card', '#dwx-ai'); mv('rh-card', '#dwx-rh'); mv('sg-card', '#dwx-sg');
   })();
   $('#tabs').addEventListener('click', function (e) { var a = e.target.closest('[data-ws]'); if (!a) return; if (location.hash === '#daw') { e.preventDefault(); dwWs(a.getAttribute('data-ws')); window.scrollTo(0, 0); } else LIB.settings.ws = a.getAttribute('data-ws'); });
+  // ---------- Varianti: 8 basi diverse alla volta, da ascoltare e scegliere (senza limite: premi ancora) ----------
+  var VAR = { list: [], busy: false };
+  function rnd(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function varSpec(g, same) {
+    var R = Instruments.RECIPES[g] || Instruments.RECIPES.melodico, st = Arranger.STYLES[g], kits = Object.keys(SynthDesign.KITS);
+    return { genre: g, bpm: same ? cur().prod.bpm : st.bpm + Math.round((Math.random() - 0.5) * 6), seed: 1 + Math.floor(Math.random() * 99999),
+      inst: { melodia: rnd(R.melodia), accordi: rnd(R.accordi), pad: rnd(R.pad), arpeggio: R.arpeggio ? rnd(R.arpeggio) : undefined },
+      kit: Math.random() < 0.75 && R.kit ? R.kit : rnd(kits), arpPattern: rnd(Object.keys(Arranger.ARP)), mode: cur().prod.mode };
+  }
+  async function varMake(mode) {
+    if (VAR.busy) return; VAR.busy = true; var el = $('#dw-var-msg'), p = cur().prod, map = songMap(), specs = [];
+    if (mode === 'stili') { var keys = Object.keys(Arranger.STYLES).filter(function (g) { return g !== p.genre; }).sort(function () { return Math.random() - 0.5; }).slice(0, 8); keys.forEach(function (g) { specs.push(varSpec(g, false)); }); }
+    else for (var i = 0; i < 8; i++) specs.push(varSpec(p.genre, true));
+    VAR.list = []; varRender();
+    for (var k = 0; k < specs.length; k++) {
+      var sp = specs[k]; el.textContent = 'Compongo la variante ' + (k + 1) + ' di 8…'; await tick();
+      for (var r in sp.inst) if (sp.inst[r]) await loadInst(sp.inst[r]);
+      try {
+        var bb = Arranger.generate({ sampleRate: 22050, bpm: sp.bpm, tonic: p.tonic, mode: sp.mode, bars: p.bars, genre: sp.genre, seed: sp.seed, inst: sp.inst, plan: map ? map.plan : undefined, arpPattern: sp.arpPattern, sounds: 'campioni', drumRender: function (part, o, s2) { return SynthDesign.kitRender(sp.kit, part, o, s2); } });
+        sp.mix = Backing.mix(bb, p.levels, p.sec); sp.sr = bb.sampleRate; VAR.list.push(sp); varRender();
+      } catch (e) {}
+    }
+    el.textContent = VAR.list.length + ' varianti pronte: ascoltale, scegli con Usa. Premi ancora per altre 8 nuove.'; VAR.busy = false;
+  }
+  function varName(sp) { return (Arranger.STYLES[sp.genre] ? Arranger.STYLES[sp.genre].label : sp.genre) + ' · ' + sp.bpm + ' BPM'; }
+  function varRender() {
+    $('#dw-var-list').innerHTML = VAR.list.map(function (sp, i) {
+      return '<div class="dw-prop"><div><b>' + (i + 1) + '. ' + esc(varName(sp)) + '</b><small>' + ['melodia', 'accordi', 'pad'].map(function (r) { return sp.inst[r] ? instName(sp.inst[r]) : ''; }).filter(Boolean).join(' · ') + ' · kit ' + esc(SynthDesign.KITS[sp.kit].nome) + '</small></div><button class="btn sm" data-vp="' + i + '">▶</button><button class="btn sm pri" data-vu="' + i + '">Usa</button></div>';
+    }).join('');
+  }
+  $('#dw-p-var').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.id === 'dw-var-same') varMake('stile'); else if (b.id === 'dw-var-other') varMake('stili');
+    var vp = b.getAttribute('data-vp'), vu = b.getAttribute('data-vu');
+    if (vp != null) { var s1 = VAR.list[+vp]; dwStop(true); playBuf(s1.mix, s1.sr); $('#dw-var-msg').textContent = 'Ascolti: ' + varName(s1); }
+    if (vu != null) {
+      var s2 = VAR.list[+vu], p = cur().prod, changed = p.genre !== s2.genre; stopPlay();
+      p.genre = s2.genre; p.bpm = s2.bpm; p.seed = s2.seed; p.inst = Object.assign({}, s2.inst); p.kit = s2.kit; p.arpPattern = s2.arpPattern; if (changed) { p.mix = null; p.groove = null; p.prog = null; p.tune = null; }
+      coachRec('like', { genre: s2.genre, mode: p.mode, bpm: s2.bpm, inst: s2.inst }); fillInst(); fillBase(); dwFill(); dwChanged(true); projLine();
+      $('#dw-var-msg').textContent = 'Usata: ' + varName(s2) + '. Ora la puoi modificare traccia per traccia.';
+    }
+  });
   // ---------- Ispettore della traccia: un tocco sulla traccia → Suono · Note · Canale ----------
   var INSP = { lane: null, tab: 'suono' };
   var LANE_NOTES = { lead: 'lead', bass: 'bass', drums: 'drums', chords: 'chords', arp: 'chords', pad: 'chords' };

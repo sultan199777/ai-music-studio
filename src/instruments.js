@@ -153,6 +153,17 @@
       spiega: '808 che scivola, hi-hat a terzine, campane e pizzicati cupi. Poche note, molto peso.' },
     clubtrap: { nome: 'Club (dembow trap)', melodia: ['pro:mallet', 'kalimba', 'marimba', 'pro:lead'], accordi: ['pro:supersaw', 'nylon', 'clavi', 'piano'], pad: ['pro:pad', 'organ'], arpeggio: ['pro:pluck', 'marimba'], kit: 'club',
       spiega: 'Ritmo dembow ballabile con 808: il rullante in levare fa muovere i fianchi, melodie corte e orecchiabili.' },
+    plugg: { nome: 'Plugg', melodia: ['pro:glassbell', 'pro:bell', 'glock', 'kalimba'], accordi: ['pro:pluck', 'pro:epfm'], pad: ['pro:pad'], arpeggio: ['pro:pluck', 'pro:glassbell'], kit: 'trap', spiega: 'Suoni leggeri e luccicanti, campane e pluck in alto, 808 morbido.' },
+    rage: { nome: 'Rage', melodia: ['pro:supersaw', 'pro:lead'], accordi: ['pro:supersaw', 'pro:stab'], pad: ['pro:pad'], arpeggio: ['pro:pluck'], kit: 'club', spiega: 'Synth enormi e aggressivi, 808 distorto, hi-hat a raffica.' },
+    jersey: { nome: 'Jersey club', melodia: ['pro:lead', 'pro:mallet'], accordi: ['pro:stab', 'pro:supersaw'], pad: ['pro:pad'], arpeggio: ['pro:pluck'], kit: 'club', spiega: 'Cassa a rimbalzo veloce, battimani, energia da ballo.' },
+    afrotrap: { nome: 'Afro trap', melodia: ['marimba', 'kalimba', 'pro:mallet'], accordi: ['nylon', 'pro:keys'], pad: ['pro:pad'], arpeggio: ['marimba'], kit: 'club', spiega: 'Groove afro con shaker, legni e chitarra, basso rotondo.' },
+    reggaeton: { nome: 'Reggaeton', melodia: ['pro:lead', 'marimba'], accordi: ['pro:pluck', 'nylon'], pad: ['pro:pad'], arpeggio: ['pro:pluck'], kit: 'club', spiega: 'Ritmo dembow, accordi corti, sub basso.' },
+    phonk: { nome: 'Phonk', melodia: ['pro:mallet', 'bells', 'pro:bell'], accordi: ['pro:stab', 'organ'], pad: ['pro:darkpad'], arpeggio: ['pro:mallet'], kit: 'trap', spiega: 'Campanaccio melodico, 808 sporco, atmosfera notturna.' },
+    emorap: { nome: 'Emo rap', melodia: ['guitar', 'pro:pluck', 'piano'], accordi: ['guitar', 'nylon', 'pro:epfm'], pad: ['pro:pad', 'violins'], arpeggio: ['guitar', 'pro:pluck'], kit: 'trap', spiega: 'Chitarre tristi, accordi aperti, 808 profondo.' },
+    rnb: { nome: 'R&B / rap lento', melodia: ['pro:epfm', 'pro:keys', 'piano'], accordi: ['pro:epfm', 'pro:keys', 'epiano'], pad: ['pro:pad'], arpeggio: ['pro:keys'], kit: 'lofi', spiega: 'Piano elettrico, accordi morbidi, groove lento e caldo.' },
+    cloud: { nome: 'Cloud rap', melodia: ['pro:glassbell', 'pro:choir'], accordi: ['pro:pad', 'pro:epfm'], pad: ['pro:pad', 'pro:choir'], arpeggio: ['pro:glassbell'], kit: 'lofi', spiega: 'Atmosfere sognanti, pad larghi, molto spazio.' },
+    detroit: { nome: 'Detroit', melodia: ['piano', 'pro:keys'], accordi: ['piano', 'pro:stab'], pad: ['pro:darkpad'], arpeggio: ['pizz'], kit: 'drill', spiega: 'Basso che rimbalza, piano scuro, rap veloce.' },
+    lofi: { nome: 'Lo-fi hip hop', melodia: ['pro:keys', 'epiano', 'vibes'], accordi: ['pro:epfm', 'epiano', 'piano'], pad: ['pro:pad'], arpeggio: ['vibes'], kit: 'lofi', spiega: 'Polveroso e rilassato, swing, piano elettrico.' },
     estate: { nome: 'Estate / latino / afro', melodia: ['marimba', 'pro:mallet', 'nylon', 'kalimba'], accordi: ['nylon', 'clavi', 'pro:keys', 'marimba'], pad: ['pro:pad', 'organ'], arpeggio: ['marimba', 'pro:pluck'], kit: 'club',
       spiega: 'Ritmo in levare, legni e chitarra classica, colori allegri. Il basso è rotondo e segue la cassa.' }
   };

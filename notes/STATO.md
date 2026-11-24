@@ -194,3 +194,8 @@ Ancora da fare: piano roll accordi/arpeggio, trascinare note voce (stile Melodyn
 - `synth-design.js`: motore FM (campane, piano elettrico, keys, mallet, vetro) + banca PRO di 12 strumenti (campana FM, piano elettrico FM, pluck, supersaw, pad largo, pad scuro, coro synth, lead vocale, keys, stab ottoni, vetro digitale, mallet) registrati come strumenti (famiglia "Synth pro" nella scelta suono).
 - 5 kit di batteria sintetizzati (Trap pesante, Drill, Boom bap polveroso, Club duro, Lo-fi morbido) → `p.kit` → `drumRender` nell'arrangiatore; scelta nell'ispettore della Batteria.
 - RECIPES degli stili ora usano anche Synth Pro, arpeggio e kit; cambiare stile nello Studio applica strumenti e kit dello stile (prima restavano sempre gli stessi).
+
+## Suono pulito (misurato) + 21 stili + varianti
+- Misure su WAV esportati (scratchpad/qa.py): prima batteria e 808 25 dB sopra melodia/accordi (base "impastata"); ora bilanciamento automatico per traccia in `dwBuffers` (RMS di riferimento) → melodia circa 9 dB sotto la batteria; filtro passa-alto per traccia (`hp`, accordi/arpeggio/melodia/pad 170-220 Hz, voce 90 Hz); saturazione dei preset ridotta; `mixV=2` riapplica il preset pulito ai progetti vecchi. Nessun clipping, crest 11-13 dB.
+- 11 stili nuovi nell'arrangiatore (Plugg, Rage, Jersey club, Afro trap, Reggaeton, Phonk, Emo rap, R&B lento, Cloud rap, Detroit, Lo-fi) con ricette e kit: 21 stili in totale.
+- Pannello Varianti (Base): 8 varianti dello stile o 8 stili diversi in ~3 s, ▶ e Usa, infinite (si rigenerano).
