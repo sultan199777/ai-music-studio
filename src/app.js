@@ -626,6 +626,9 @@
     var res = Coach.suggest(coachState(), coachCands(p.genre), { emotion: pl.scene, seed: pl.seed }), R = Instruments.RECIPES[p.genre] || {};
     ['melodia', 'accordi', 'pad'].forEach(function (role) { if (BANNED_INST[res.inst[role]]) res.inst[role] = (R[role] || ['piano'])[0]; });
     if (res.inst.accordi === res.inst.melodia) { var alt = (R.accordi || []).concat(R.melodia || []).filter(function (id) { return id !== res.inst.melodia && !BANNED_INST[id]; }); if (alt.length) res.inst.accordi = alt[(pl.seed >>> 3) % Math.min(alt.length, 3)]; }
+    if (['trap', 'trapdark', 'drill', 'street', 'boombap', 'clubtrap'].indexOf(p.genre) >= 0) { /* rap: strofe parlate a ritmo, ritornelli cantati (solo righe senza modo scelto da te) */
+      s.modes = s.modes || {}; var sm0 = SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: {} });
+      sm0.lines.forEach(function (ln) { if (!s.modes[ln.text]) s.modes[ln.text] = (ln.section === 'ritornello' || ln.section === 'bridge') ? 'canta' : 'parla'; }); }
     p.inst = res.inst; persist(); fillBase();
     m.innerHTML = '<b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + pl.mode + '<br>' + pl.why.map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Strumenti: ' + ['melodia', 'accordi', 'pad'].map(function (r) { return r + ' ' + esc(instName(p.inst[r])); }).join(', ') + '. Se non ti piace premi "Altra versione dal testo".';
     await makeAndPlay(false);
@@ -816,13 +819,30 @@
   });
 
   /** Testo da mostrare al tempo t con la mappa (anche nello Studio). */
+  /* Guida al canto: istruzioni riga per riga (entrata, tenuta, respiro) dal testo e dalla base */
+  function sgGuide(map) { if (!map) return null; if (!map.__guide) map.__guide = SingGuide.build(map); return map.__guide; }
+  function sgCue(map, i) { var g = sgGuide(map), l = g && g.lines[i]; return l && l.cue ? '<small class="sgcue"><b>' + esc(l.cue) + '</b></small>' : ''; }
+  function sgRender(checkRes) {
+    var map = songMap(), g = sgGuide(map), box = $('#sg-out'); if (!box) return;
+    if (!g) { box.innerHTML = '<p class="small">Scrivi prima il testo: la guida nasce da quello e dalla base.</p>'; return; }
+    var ST = { ok: 'Ok', vuota: 'Non cantata', sfora: 'Sfora sulla riga dopo', tardi: 'Entri tardi' };
+    box.innerHTML = '<p class="small"><span class="tag m">Misurato</span> ' + g.lines.length + ' righe · ' + Math.round(map.barSec * 10) / 10 + ' s a battuta. Soglie di velocità e respiro: <span class="tag i">Ipotesi</span>.</p><ol class="clean small sg-list">' + g.lines.map(function (l) {
+      var c = checkRes && checkRes.lines[l.index];
+      return '<li><b>' + esc(l.text) + '</b><br>Entra a battuta ' + l.entryBar + ' (' + l.entrySec + ' s) · ' + l.mode + ' · ' + l.syllables + ' sillabe in ' + l.singSec + ' s' + (l.cue ? '<br>' + esc(l.cue) : '') + (l.warn ? '<br><span class="tag soon">Attenzione</span> ' + esc(l.warn) : '') +
+        (c ? '<br><span class="tag ' + (c.status === 'ok' ? 'm' : 'soon') + '">' + ST[c.status] + '</span> hai cantato ' + c.voicedSec + ' s su ' + c.plannedSec + ' previsti' + (c.spillSec ? ', sfori di ' + c.spillSec + ' s' : '') : '') + '</li>';
+    }).join('') + '</ol>' + (checkRes ? '<p class="small">' + (checkRes.bad ? checkRes.bad + ' righe da rifare.' : 'Tutte le righe sono dentro la guida.') + '</p>' : '');
+  }
+  document.addEventListener('click', function (e) {
+    var id = e.target && e.target.id; if (id === 'sg-go') sgRender(null);
+    if (id === 'sg-check') { var t = activeTake(), map = songMap(), g = sgGuide(map); if (!t) { $('#sg-out').innerHTML = '<p class="small">Registra prima una ripresa (parte insieme alla base).</p>'; return; } sgRender(SingGuide.check(t.mono, t.sr, g, map)); }
+  });
   function lyricHtml(map, t) {
     var a = SongMap.at(map, t);
     if (a.state === 'vuoto') return { key: 'v', html: '<div><b>Scrivi un testo per vederlo qui</b></div>' };
     if (a.state === 'prima') return { key: 'p' + a.bars, html: '<div><span class="mode">intro</span><br><b>Si parte tra ' + a.bars + (a.bars > 1 ? ' battute' : ' battuta') + '</b><small>Prima riga: ' + esc(a.next.text) + '</small></div>' };
     if (a.state === 'fine') return { key: 'f', html: '<div><b>Fine del testo</b><small>La base chiude con l\'outro</small></div>' };
     var words = a.line.words.map(function (w, k) { return k === a.word ? '<mark>' + esc(w.w) + '</mark>' : (k < a.word ? '<span class="sung">' + esc(w.w) + '</span>' : esc(w.w)); }).join(' ');
-    return { key: a.index + ':' + a.word + ':' + a.bar, html: '<div><span class="mode">' + a.line.section + ' · ' + a.line.mode + ' · ' + a.line.bars + (a.line.bars > 1 ? ' battute' : ' battuta') + '</span><br><b class="kw">' + words + '</b><small>Battuta ' + (a.bar + 1) + '/' + a.line.bars + (a.next ? ' · poi: ' + esc(a.next.text) : ' · ultima riga') + '</small></div>' };
+    return { key: a.index + ':' + a.word + ':' + a.bar, html: '<div><span class="mode">' + a.line.section + ' · ' + a.line.mode + ' · ' + a.line.bars + (a.line.bars > 1 ? ' battute' : ' battuta') + '</span><br><b class="kw">' + words + '</b><small>Battuta ' + (a.bar + 1) + '/' + a.line.bars + (a.next ? ' · poi: ' + esc(a.next.text) : ' · ultima riga') + '</small>' + sgCue(map, a.index) + '</div>' };
   }
 
   /* ================= Coach ================= */
