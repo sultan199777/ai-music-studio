@@ -20,3 +20,6 @@ Non fatto: strumenti melodici e 808 da campioni veri, mix per traccia, piano rol
 
 ## Prossimo passo concordato
 Strumenti melodici con campioni CC0 (piano/keys, pluck, archi). Poi mix per traccia, piano roll/MIDI, Voice Lab. Chiedere conferma "vai" solo se cambia la direzione.
+
+## Piano tecnico dello studio professionale (nuovo, 24/11/2026)
+Documento con ricerca, fonti, licenze, architettura e fasi: https://claude.ai/artifact/QH4k4tg4uf8kRHfPYMpvD2 (leggerlo con Artifact read, solo se serve). Due studi distinti: Beat Studio e Voice Studio. Fase 0 = progetto in dati + motore Tone.js + mixer per traccia + export WAV. Il codice NON è ancora stato cambiato per questo piano (fatti solo 808/hi-hat/groove nell'arrangiatore attuale); l'utente deve confermare da quale fase partire.
