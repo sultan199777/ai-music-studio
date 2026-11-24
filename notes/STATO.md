@@ -50,3 +50,7 @@ Regola della persona: andare avanti un passo alla volta, senza rianalizzare tutt
 
 ## 24/11 - Pubblicazione
 - L'app compilata sta in `docs/` (GitHub Pages serve /docs). Le note stanno in `notes/`. Per attivarla: repo pubblico, Settings > Pages > ramo main, cartella /docs. Richiede HTTPS: il microfono lo esige.
+
+## 2026-11-24 Suoni veri (campioni CC0)
+- Cassa/rullante/clap/hi-hat ora da campioni registrati (11 suoni, 263 KB), selettore "Suoni batteria" nella sezione base; il basso 808, accordi, pad, melodia restano sintetizzati.
+- Test: 117/117. NON ascoltato da me: va giudicato a orecchio.

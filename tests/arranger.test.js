@@ -128,3 +128,14 @@ test('prestazioni: 32 battute a 32 kHz in tempi ragionevoli', () => {
   assert.ok(b.duration > 50);
   assert.ok(ms < 15000, 'troppo lento: ' + ms + ' ms');
 });
+
+test('suoni veri: stessa struttura, batteria diversa dai sintetici, valori finiti', () => {
+  const a = A.generate({ sampleRate: SR, genre: 'trap', bars: 16, seed: 3, sounds: 'campioni' });
+  const b = A.generate({ sampleRate: SR, genre: 'trap', bars: 16, seed: 3, sounds: 'sint' });
+  assert.equal(a.length, b.length);
+  assert.deepEqual(a.events.lead.map((e) => e.midi), b.events.lead.map((e) => e.midi));
+  for (const n of ['kick', 'snare', 'hat']) {
+    let e = 0, d = 0; for (let i = 0; i < a.length; i++) { assert.ok(Number.isFinite(a.tracks[n][i])); e += a.tracks[n][i] ** 2; d += Math.abs(a.tracks[n][i] - b.tracks[n][i]); }
+    assert.ok(e > 0 && d > 1, n);
+  }
+});

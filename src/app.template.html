@@ -1,0 +1,1168 @@
+<title>AI Music Intelligence Studio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: console da studio. Intestazione con stato, canali (schede) in fila, risultati come strisce di misura.
+   Colore: grigio-blu freddo, ambra per i valori MISURATI, verde-acqua per le ANALISI. */
+:root {
+  --bg: #E9ECF1; --surface: #F7F8FA; --well: #DFE3EA;
+  --ink: #141922; --muted: #586274; --line: #CBD1DA;
+  --accent: #B45309; --on-accent: #FFFFFF;
+  --teal: #0B6E66; --on-teal: #FFFFFF;
+  --display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161C; --surface: #1A2028; --well: #232B35;
+    --ink: #E7EBF1; --muted: #9BA6B5; --line: #2D3743;
+    --accent: #F2A93B; --on-accent: #1B1204;
+    --teal: #4FD1C0; --on-teal: #0A1F1C;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161C; --surface: #1A2028; --well: #232B35;
+  --ink: #E7EBF1; --muted: #9BA6B5; --line: #2D3743;
+  --accent: #F2A93B; --on-accent: #1B1204;
+  --teal: #4FD1C0; --on-teal: #0A1F1C;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.55 var(--sans);
+  padding-block: 16px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 980px; margin: 0 auto; }
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 700; line-height: 1.2; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(1.4rem, 5vw, 2rem); letter-spacing: -0.01em; }
+h2 { font-size: 1.3rem; margin-bottom: 6px; }
+h3 { font-size: 1.05rem; }
+h4 { font-size: 0.95rem; }
+p { margin: 0 0 10px; max-width: 68ch; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--mono); }
+.small { font-size: 13px; }
+a { color: var(--teal); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Intestazione */
+header.top { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; padding-bottom: 14px; }
+.phase { font: 500 12px/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+
+/* Schede */
+.tabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--line); margin-bottom: 18px; scrollbar-width: thin; }
+.tabs a {
+  flex: 0 0 auto; padding: 10px 14px; text-decoration: none; color: var(--muted);
+  font: 500 14px/1 var(--sans); border-bottom: 3px solid transparent; margin-bottom: -1px;
+}
+.tabs a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tabs a:hover { color: var(--ink); }
+
+/* Etichette di affidabilità */
+.tag {
+  display: inline-flex; align-items: center; white-space: nowrap;
+  font: 500 11px/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 4px 7px; border-radius: 4px; border: 1px solid;
+}
+.tag.misurato { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.tag.analisi { color: var(--teal); border-color: var(--teal); }
+.tag.ipotesi { color: var(--muted); border-color: var(--muted); border-style: dashed; }
+.tag.s-ok { background: var(--teal); color: var(--on-teal); border-color: var(--teal); }
+.tag.s-part { color: var(--accent); border-color: var(--accent); }
+.tag.s-no { color: var(--muted); border-color: var(--line); }
+
+/* Pannelli */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 14px; }
+.panel > :last-child { margin-bottom: 0; }
+.panel.well { background: var(--well); border-style: dashed; }
+.panel-head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.grid2 > * { min-width: 0; }
+
+/* Strisce di misura */
+.meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 10px; margin-bottom: 14px; }
+.meter { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+.meter .k { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.meter .v { font: 500 1.55rem/1.1 var(--mono); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.meter .v small { font-size: 0.8rem; color: var(--muted); font-weight: 400; }
+.meter .n { margin: 6px 0 0; font-size: 12.5px; color: var(--muted); }
+
+/* Pulsanti e campi */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px;
+  font: 600 14px/1 var(--sans); border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer;
+}
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn:hover { border-color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+input[type="file"]:focus-visible + label.btn { outline: 2px solid var(--accent); outline-offset: 2px; }
+textarea {
+  width: 100%; min-width: 0; min-height: 260px; resize: vertical; padding: 12px; font: 15px/1.6 var(--sans);
+  color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+}
+#status { min-height: 1.4em; margin: 0 0 12px; font-size: 14px; }
+#status.err { color: var(--accent); font-weight: 600; }
+
+/* Tabelle */
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font: 500 11px/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--line); }
+td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.rh { font-family: var(--mono); text-align: center; width: 3.5em; }
+.dim { color: var(--muted); font-size: 12px; }
+.stanza + .stanza { margin-top: 18px; }
+.stanza-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; margin-bottom: 6px; }
+
+/* Grafici */
+.chart { width: 100%; }
+.chart svg { display: block; width: 100%; height: auto; }
+.chart .gl { stroke: var(--line); stroke-width: 1; }
+.chart .tx { fill: var(--muted); font: 11px var(--mono); }
+.chart .trace { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.chart .area { fill: var(--teal); fill-opacity: 0.22; }
+.chart .edge { fill: none; stroke: var(--teal); stroke-width: 1.5; }
+
+/* Barre */
+.bars { display: grid; gap: 8px; }
+.bar { display: grid; grid-template-columns: minmax(78px, 110px) 1fr 3.2em; gap: 10px; align-items: center; font-size: 14px; }
+.bar .track { height: 10px; background: var(--well); border-radius: 3px; overflow: hidden; }
+.bar .fill { height: 100%; background: var(--teal); }
+.bar .pct { font: 12px var(--mono); text-align: right; color: var(--muted); }
+
+/* Liste */
+ul.plain { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+ul.plain > li { min-width: 0; }
+.sug { padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.sug p { margin: 6px 0 0; }
+.sug .why { font-size: 13px; color: var(--muted); }
+.item { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; }
+.item > div { min-width: 0; }
+.item .tag { margin-top: 2px; }
+.rule { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
+.empty { color: var(--muted); padding: 8px 0; }
+
+/* Architettura a livelli */
+.layers { display: grid; gap: 8px; }
+.layer { display: grid; grid-template-columns: minmax(90px, 150px) 1fr; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.layer b { font: 500 12px/1.4 var(--mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--teal); }
+.layer span { min-width: 0; }
+.layer.ext { border-style: dashed; }
+@media (max-width: 520px) { .layer { grid-template-columns: 1fr; gap: 2px; } }
+
+/* Roadmap */
+ol.road { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; counter-reset: fase; }
+ol.road li { display: grid; grid-template-columns: 2.2em 1fr auto; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+ol.road li::before { counter-increment: fase; content: counter(fase); font: 500 13px var(--mono); color: var(--muted); }
+ol.road li > span { min-width: 0; }
+
+details { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); margin-bottom: 10px; }
+summary { cursor: pointer; padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; font-weight: 600; list-style-position: inside; }
+details > div { padding: 0 14px 14px; }
+dl { margin: 0; display: grid; gap: 8px; }
+dt { font: 500 11px/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+dd { margin: 0; }
+
+.field { display: grid; gap: 6px; margin-bottom: 12px; font-size: 14px; min-width: 0; }
+select, input[type="number"] {
+  width: 100%; min-height: 44px; padding: 0 10px; font: 15px var(--sans); color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+}
+input[type="range"] { width: 100%; accent-color: var(--accent); min-height: 32px; }
+label > input[type="checkbox"] { width: 20px; height: 20px; vertical-align: -4px; margin-right: 6px; accent-color: var(--accent); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+[hidden] { display: none !important; }
+footer { margin-top: 24px; font-size: 12.5px; color: var(--muted); }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>AI Music Intelligence Studio</h1>
+    <span class="phase">Prototipo 2 · funziona sul telefono · __BUILD_DATE__</span>
+  </header>
+
+  <nav class="tabs" aria-label="Sezioni">
+    <a href="#voce">Voce</a>
+    <a href="#basi">Basi</a>
+    <a href="#manga">Manga</a>
+    <a href="#testi">Testi</a>
+    <a href="#emozioni">Emozioni</a>
+    <a href="#panoramica">Stato</a>
+    <a href="#moduli">Altro</a>
+  </nav>
+
+  <!-- PANORAMICA -->
+  <main>
+  <section id="v-panoramica" hidden>
+    <h2>Cosa c'è oggi</h2>
+    <p>Funziona tutto sul tuo dispositivo: nessun file viene caricato su server, non esistono account e non viene speso nulla. Autotune, riconoscimento della tonalità, basi, analisi dei testi e filtro manga fanno un lavoro reale. Il resto è ancora da costruire.</p>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Come leggere i risultati</h3></div>
+      <ul class="plain">
+        <li class="item"><div><b>Misurato</b><br><span class="muted small">Numero calcolato direttamente da un file audio che hai caricato.</span></div><span class="tag misurato">Misurato</span></li>
+        <li class="item"><div><b>Analisi</b><br><span class="muted small">Calcolo diretto sul testo con regole precise (sillabe, rime, ripetizioni).</span></div><span class="tag analisi">Analisi</span></li>
+        <li class="item"><div><b>Ipotesi</b><br><span class="muted small">Interpretazione basata su regole semplici. Va giudicata da una persona.</span></div><span class="tag ipotesi">Ipotesi</span></li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Stato dei moduli</h3><span class="muted small">__TEST_SUMMARY__</span></div>
+      <ul class="plain">
+        <li class="item"><div><b>1 · Voce AI</b><br><span class="muted small">Funziona: analisi di un tuo vocale, tonalità stimata, autotune regolabile (intensità e velocità), ascolto prima e dopo. Non c'è ancora: registrazione dal microfono, armonizzazioni, effetti, modello della tua voce per cantare, timbro, pronuncia e accento.</span></div><span class="tag s-part">Parziale</span></li>
+        <li class="item"><div><b>2 · Produzione musicale</b><br><span class="muted small">Funziona: basi originali in 4 generi (batteria, basso, accordi, pad, melodia) nella tonalità scelta, con voce sopra. I suoni sono sintetici, da bozza. Non c'è ancora: strumenti realistici, separazione delle tracce, esportazione in WAV.</span></div><span class="tag s-part">Parziale</span></li>
+        <li class="item"><div><b>3 · Testi</b><br><span class="muted small">Funziona: sillabe, rime, strofe, ripetizioni, ritornello, tono emotivo e suggerimenti motivati. Non c'è ancora: apprendimento di uno stile di scrittura e generazione di testi originali.</span></div><span class="tag s-ok">Funziona</span></li>
+        <li class="item"><div><b>4 · Psicologia musicale</b><br><span class="muted small">Funziona solo in parte: 5 dei suoi 8 aspetti hanno almeno un dato, 3 no. Vedi la scheda Emozioni.</span></div><span class="tag s-part">Parziale</span></li>
+        <li class="item"><div><b>5 · Video AI</b><br><span class="muted small">Funziona solo un filtro fumetto/manga per le foto (non è AI). Non ci sono video, animazioni, 3D o personaggi creati dall'AI.</span></div><span class="tag s-part">Minimo</span></li>
+        <li class="item"><div><b>6 · Social AI</b><br><span class="muted small">Non c'è ancora nulla.</span></div><span class="tag s-no">Da fare</span></li>
+        <li class="item"><div><b>7 · Prodotto commerciale</b><br><span class="muted small">Non c'è ancora nulla: niente account, pagamenti o pannello amministratore.</span></div><span class="tag s-no">Da fare</span></li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Architettura prevista</h3></div>
+      <div class="layers">
+        <div class="layer"><b>App</b><span>Un'unica app web installabile (funziona su computer e telefono). Per App Store e Google Play la stessa app viene impacchettata in un secondo momento.</span></div>
+        <div class="layer"><b>Servizio centrale</b><span>Account, progetti, crediti, permessi e pannello amministratore. Le chiavi dei servizi esterni stanno solo qui, mai nell'app.</span></div>
+        <div class="layer"><b>Lavoratori audio</b><span>Processi che eseguono i lavori pesanti (analisi, separazione tracce, sintesi, video) uno alla volta, con limiti di costo per utente.</span></div>
+        <div class="layer"><b>Dati</b><span>Database, archivio dei file audio cifrato, registro dei consensi sulle voci e cancellazione su richiesta.</span></div>
+        <div class="layer ext"><b>Servizi esterni</b><span>Voce, musica, video, pagamenti, social. Ognuno entra solo dopo la verifica di disponibilità, diritti commerciali e costo, e con la tua approvazione.</span></div>
+      </div>
+      <p class="muted small" style="margin-top:10px">La descrizione completa e le motivazioni sono nel file docs/ARCHITETTURA.md del progetto.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Le 10 fasi</h3></div>
+      <ol class="road">
+        <li><span>Architettura e interfaccia</span><span class="tag s-ok">Prototipo pronto</span></li>
+        <li><span>Account e libreria musicale</span><span class="tag s-no">Da fare</span></li>
+        <li><span>Registrazione, analisi e modifica della voce</span><span class="tag s-part">Autotune fatto</span></li>
+        <li><span>Modello vocale personale</span><span class="tag s-no">Da fare</span></li>
+        <li><span>Produzione musicale AI</span><span class="tag s-part">Basi semplici</span></li>
+        <li><span>Analisi dei testi e psicologia musicale</span><span class="tag s-part">Testi fatti</span></li>
+        <li><span>Video AI</span><span class="tag s-no">Da fare</span></li>
+        <li><span>Social AI</span><span class="tag s-no">Da fare</span></li>
+        <li><span>Abbonamenti e amministrazione</span><span class="tag s-no">Da fare</span></li>
+        <li><span>Test, sicurezza e pubblicazione</span><span class="tag s-no">Da fare</span></li>
+      </ol>
+    </div>
+
+    <div class="panel well">
+      <h3 style="margin-bottom:8px">Decisioni che servono da te</h3>
+      <ul class="plain small">
+        <li>Prima di toccare le fasi 2 e successive: scegliere dove ospitare l'app e l'archivio dei file. Non ho attivato né acquistato nulla.</li>
+        <li>Per la voce: decidere se usare un servizio esterno a pagamento o rimandare. Ne parlo nella scheda Altri moduli.</li>
+        <li>Per vendere: serve un'attività registrata (partita IVA o forma adatta al tuo caso) e le condizioni d'uso. Chiedi a un commercialista prima di aprire gli abbonamenti.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- VOCE -->
+  <section id="v-voce" hidden>
+    <h2>La tua voce</h2>
+    <p>Scegli un tuo vocale di sola voce (WAV, MP3 o M4A). Il file resta sul tuo telefono e non viene caricato da nessuna parte. Vengono usati al massimo i primi 120 secondi.</p>
+    <p class="small muted">Da iPhone: in Memo Vocali tocca il vocale, poi Condividi e Salva su File. Qui tocca "Scegli un file audio" e prendilo da File.</p>
+
+    <div class="row">
+      <input type="file" id="file" accept="audio/*">
+      <label for="file" class="btn primary">Scegli un file audio</label>
+      <button type="button" class="btn" id="demo">Prova con il segnale di esempio</button>
+    </div>
+    <p id="status" role="status" aria-live="polite"></p>
+
+    <div id="voce-out"></div>
+
+    <div id="voce-tools" hidden>
+      <div class="panel">
+        <div class="panel-head"><h3>Tonalità</h3><span class="tag ipotesi">Ipotesi</span></div>
+        <p id="key-text"></p>
+        <div class="row">
+          <label class="field" style="margin:0">Nota
+            <select id="tonic">
+              <option value="0">Do</option><option value="1">Do#</option><option value="2">Re</option><option value="3">Re#</option>
+              <option value="4">Mi</option><option value="5">Fa</option><option value="6">Fa#</option><option value="7">Sol</option>
+              <option value="8">Sol#</option><option value="9">La</option><option value="10">La#</option><option value="11">Si</option>
+            </select>
+          </label>
+          <label class="field" style="margin:0">Scala
+            <select id="mode"><option value="maggiore">maggiore</option><option value="minore">minore</option><option value="cromatica">tutte le note (cromatica)</option></select>
+          </label>
+        </div>
+        <p class="small muted" style="margin-top:10px">Puoi cambiare nota e scala: l'autotune porterà la voce sulle note di quella scala.</p>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>Autotune</h3></div>
+        <label class="field">Intensità <b id="v-strength" class="mono">100%</b>
+          <input type="range" id="strength" min="0" max="100" value="100">
+        </label>
+        <label class="field">Velocità di correzione <b id="v-retune" class="mono">Rapida</b>
+          <input type="range" id="retune" min="0" max="250" value="30">
+        </label>
+        <p class="small muted">A sinistra l'effetto robot, a destra una correzione più naturale.</p>
+        <div class="row"><button type="button" class="btn primary" id="apply">Applica autotune</button></div>
+        <div id="at-result"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>Ascolta</h3></div>
+        <div class="row">
+          <button type="button" class="btn" id="play-orig">Originale</button>
+          <button type="button" class="btn" id="play-fix" disabled>Corretta</button>
+          <button type="button" class="btn" id="stop">Stop</button>
+        </div>
+        <div class="row">
+          <button type="button" class="btn" id="save-fix" disabled>Salva la voce corretta</button>
+        </div>
+        <p class="small muted">Se non senti nulla, controlla il tasto del silenzioso e il volume. Il salvataggio registra l'audio mentre suona, quindi dura quanto il brano.</p>
+        <p id="save-status" class="small" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <div class="panel well">
+      <h3 style="margin-bottom:8px">Cosa non posso misurare in questa versione</h3>
+      <p class="small">Timbro, pronuncia, accento e caratteristiche della voce richiedono modelli di intelligenza artificiale dedicati. Non li ho inclusi e non ne stimo i valori. La registrazione diretta dal microfono non è disponibile in questa anteprima: nell'app vera si aggiunge con il permesso del dispositivo.</p>
+    </div>
+  </section>
+
+  <!-- BASI -->
+  <section id="v-basi" hidden>
+    <h2>Basi musicali</h2>
+    <p>Il programma compone una base originale con batteria, basso, accordi, pad e melodia, nella tonalità che scegli. Ogni variante è diversa. I suoni sono sintetici: servono come bozza per cantarci sopra, non hanno il suono di strumenti registrati.</p>
+
+    <div class="panel">
+      <div class="grid2">
+        <label class="field">Genere
+          <select id="genre"><option value="pop">Pop</option><option value="hiphop">Hip-hop</option><option value="lofi">Lo-fi</option><option value="dance">Dance</option></select>
+        </label>
+        <label class="field">Velocità (battiti al minuto)
+          <input type="number" id="bpm" min="60" max="180" value="100">
+        </label>
+        <label class="field">Nota di partenza
+          <select id="b-tonic">
+            <option value="0">Do</option><option value="1">Do#</option><option value="2">Re</option><option value="3">Re#</option>
+            <option value="4">Mi</option><option value="5">Fa</option><option value="6">Fa#</option><option value="7">Sol</option>
+            <option value="8">Sol#</option><option value="9">La</option><option value="10">La#</option><option value="11">Si</option>
+          </select>
+        </label>
+        <label class="field">Scala
+          <select id="b-mode"><option value="maggiore">maggiore (più luminosa)</option><option value="minore">minore (più malinconica)</option></select>
+        </label>
+        <label class="field">Lunghezza
+          <select id="bars"><option value="4">4 battute</option><option value="8" selected>8 battute</option><option value="16">16 battute</option></select>
+        </label>
+      </div>
+      <div class="row"><button type="button" class="btn" id="b-usekey" hidden>Usa la tonalità della mia voce</button></div>
+      <p class="small muted" style="margin-bottom:6px">Strumenti</p>
+      <div class="row" style="gap:14px">
+        <label><input type="checkbox" id="g-batteria" checked> Batteria</label>
+        <label><input type="checkbox" id="g-basso" checked> Basso</label>
+        <label><input type="checkbox" id="g-accordi" checked> Accordi</label>
+        <label><input type="checkbox" id="g-pad" checked> Pad</label>
+        <label><input type="checkbox" id="g-melodia" checked> Melodia</label>
+      </div>
+      <div class="row">
+        <label><input type="checkbox" id="g-voce"> Metti la mia voce sopra la base</label>
+      </div>
+      <label class="field" id="voce-gain-box" hidden>Volume della voce <b id="v-vg" class="mono">100%</b>
+        <input type="range" id="voice-gain" min="20" max="150" value="100">
+      </label>
+      <div class="row">
+        <button type="button" class="btn primary" id="b-play">Crea e ascolta</button>
+        <button type="button" class="btn" id="b-new">Nuova variante</button>
+        <button type="button" class="btn" id="b-stop">Stop</button>
+      </div>
+      <div class="row"><button type="button" class="btn" id="b-save">Salva la base</button></div>
+      <p id="b-status" class="small" role="status" aria-live="polite"></p>
+    </div>
+    <div id="b-out"></div>
+  </section>
+
+  <!-- MANGA -->
+  <section id="v-manga" hidden>
+    <h2>Foto in stile fumetto</h2>
+    <p>Scegli una tua foto e la trasformo in un disegno con linee d'inchiostro e retini da manga, in bianco e nero o a colori. La foto resta sul tuo telefono.</p>
+    <div class="panel well"><p class="small"><b>Cosa è e cosa non è.</b> È un filtro grafico, non un'intelligenza artificiale: non ridisegna il viso, non crea un personaggio 3D e non anima nulla. Per un vero personaggio manga animato in alta definizione serve un servizio esterno, da verificare per costi e diritti (scheda Altro).</p></div>
+    <div class="row">
+      <input type="file" id="img" accept="image/*">
+      <label for="img" class="btn primary">Scegli una foto</label>
+    </div>
+    <div class="grid2">
+      <label class="field">Stile
+        <select id="m-mode"><option value="bn">Bianco e nero con retino</option><option value="colore">Colori con linee nere</option></select>
+      </label>
+      <label class="field">Quantità di linee <b id="v-detail" class="mono">50%</b>
+        <input type="range" id="m-detail" min="0" max="100" value="50">
+      </label>
+    </div>
+    <p id="m-status" class="small muted" role="status" aria-live="polite"></p>
+    <div class="panel" id="m-panel" hidden>
+      <canvas id="m-canvas" style="max-width:100%;height:auto;display:block;margin:0 auto;border-radius:4px"></canvas>
+      <div class="row" style="margin-top:12px"><button type="button" class="btn" id="m-save">Salva l'immagine</button></div>
+    </div>
+  </section>
+
+  <!-- TESTI -->
+  <section id="v-testi" hidden>
+    <h2>Analisi del testo</h2>
+    <p>Scrivi o incolla un testo. Separa le strofe con una riga vuota e, se vuoi, dai un nome alle parti con [Strofa] o [Ritornello]. Il testo qui sotto è un esempio scritto per la prova.</p>
+    <textarea id="lyrics" spellcheck="false" aria-label="Testo della canzone">[Strofa]
+Cammino da solo sotto la luna
+Il vento mi parla di te
+Ricordo la sera, la prima fortuna
+E il cielo era grande con me
+
+[Ritornello]
+Torna domani, torna con il sole
+Torna domani, canta il mio cuore
+Torna domani, senza più parole
+Torna domani, torna amore
+
+[Strofa]
+Le strade sono vuote e il tempo passa
+Ma dentro ho ancora un sogno da seguire
+
+[Ritornello]
+Torna domani, torna con il sole
+Torna domani, canta il mio cuore
+Torna domani, senza più parole
+Torna domani, torna amore</textarea>
+    <div class="row" style="margin-top:10px">
+      <button type="button" class="btn" id="lyrics-clear">Svuota</button>
+    </div>
+    <div id="testi-out"></div>
+  </section>
+
+  <!-- EMOZIONI -->
+  <section id="v-emozioni" hidden>
+    <h2>Psicologia ed emozioni musicali</h2>
+    <p>Gli otto aspetti richiesti, con quello che posso dire oggi. Si aggiornano da soli quando analizzi un testo o un audio.</p>
+    <div id="emo-out"></div>
+    <div class="panel well">
+      <p class="small"><b>Limiti.</b> Questi dati non predicono il successo di una canzone e non dicono nulla di certo su cosa prova chi ascolta. Un punteggio è un indizio da verificare ascoltando e, quando possibile, facendo ascoltare il brano a persone vere.</p>
+    </div>
+  </section>
+
+  <!-- ALTRI MODULI -->
+  <section id="v-moduli" hidden>
+    <h2>Quello che non c'è ancora</h2>
+    <p>Per ogni parte futura: cosa serve, quali autorizzazioni, quanto può costare. Non ho verificato oggi disponibilità, diritti commerciali e prezzi dei servizi esterni, perché non ne ho integrato nessuno. Lo faccio prima di ogni fase e ti presento le opzioni. Gli esempi sono candidati da valutare, non scelte.</p>
+
+    <details open>
+      <summary><span>Voce di altri artisti e testi di altri artisti</span><span class="tag s-no">Non lo faccio</span></summary>
+      <div><dl>
+        <div><dt>Perché</dt><dd>Imitare la voce di una persona reale richiede il suo consenso, e i testi e le musiche di altri sono protetti da diritto d'autore. Pubblicare un brano costruito così può causare rimozioni, cause e blocco degli account.</dd></div>
+        <div><dt>Cosa posso fare invece</dt><dd>Basi e testi originali con lo stesso genere, velocità e atmosfera che ti piacciono, e la tua voce migliorata. Posso anche descrivere in termini generali cosa rende riconoscibile uno stile (struttura, ritmo, tipo di accordi) senza copiare nulla.</dd></div>
+      </dl></div>
+    </details>
+
+    <details>
+      <summary><span>Video animati in stile manga, 3D, alta definizione</span><span class="tag s-no">Fase 7</span></summary>
+      <div><dl>
+        <div><dt>Cosa serve</dt><dd>Un servizio esterno di generazione di immagini e video con AI. Non posso crearlo io dentro questa pagina. Quelli a pagamento dipendono da licenza commerciale e da quanto video generi.</dd></div>
+        <div><dt>Autorizzazioni</dt><dd>Il consenso sull'uso della tua immagine da parte del servizio, e le condizioni per l'uso commerciale dei video prodotti.</dd></div>
+        <div><dt>Costo</dt><dd>Da verificare sui listini. Non ho attivato nulla.</dd></div>
+        <div><dt>Intanto</dt><dd>Il filtro fumetto della scheda Manga funziona già sulle foto.</dd></div>
+      </dl></div>
+    </details>
+
+    <details>
+      <summary><span>Cantare con un modello della tua voce (non una voce AI generica)</span><span class="tag s-no">Fasi 3 e 4</span></summary>
+      <div><dl>
+        <div><dt>Cosa serve</dt><dd>Un servizio di sintesi vocale che permetta di creare una voce personale e di usarla commercialmente. Candidati da valutare: fornitori di voce clonata con verifica del consenso (per esempio ElevenLabs). Il canto è più difficile del parlato e va provato con test d'ascolto prima di dire che la fedeltà è buona.</dd></div>
+        <div><dt>Autorizzazioni</dt><dd>Registrazione di una frase di consenso letta dalla persona stessa, conservata come prova. Termini del fornitore sull'uso commerciale. Nessuna voce di terzi, mai.</dd></div>
+        <div><dt>Costo</dt><dd>Da verificare sul listino ufficiale. Di solito dipende dai minuti generati.</dd></div>
+      </dl></div>
+    </details>
+
+    <details>
+      <summary><span>Correzione dell'intonazione, tonalità, velocità, effetti</span><span class="tag s-no">Fase 3</span></summary>
+      <div><dl>
+        <div><dt>Cosa serve</dt><dd>Elaborazione del segnale fatta in proprio, senza servizi a pagamento. È lavoro di sviluppo: parte dall'analisi dell'altezza che c'è già.</dd></div>
+        <div><dt>Autorizzazioni</dt><dd>Nessuna.</dd></div>
+        <div><dt>Costo</dt><dd>Nessun costo di servizio. Solo il calcolo sul server.</dd></div>
+      </dl></div>
+    </details>
+
+    <details>
+      <summary><span>Produzione musicale: basi, melodie, arrangiamenti</span><span class="tag s-no">Fase 5</span></summary>
+      <div><dl>
+        <div><dt>Cosa serve</dt><dd>Due strade. A) Un'API di generazione musicale esterna, solo se esiste una con diritti commerciali chiari: non l'ho verificato. B) Generazione di accordi, melodie e basi in formato MIDI con regole musicali, fatta in proprio, con strumenti virtuali con licenza libera.</dd></div>
+        <div><dt>Autorizzazioni</dt><dd>Per A: licenza commerciale scritta del fornitore. Per B: licenze degli strumenti virtuali.</dd></div>
+        <div><dt>Costo</dt><dd>Da verificare per A. Per B costo di sviluppo e di calcolo.</dd></div>
+      </dl></div>
+    </details>
+
+    <details>
+      <summary><span>Separazione delle tracce</span><span class="tag s-no">Fase 5</span></summary>
+      <div><dl>
+        <div><dt>Cosa serve</dt><dd>Un modello di separazione (per esempio Demucs, open source) su un server con scheda grafica. Da verificare: licenza del modello e dei pesi per uso commerciale.</dd></div>
+        <div><dt>Autorizzazioni</dt><dd>Solo audio di cui l'utente ha i diritti.</dd></div>
+        <div><dt>Costo</dt><dd>Da verificare: dipende dal noleggio del server con scheda grafica.</dd></div>
+      </dl></div>
+    </details>
+
+    <details>
+      <summary><span>Video e clip per i social</span><span class="tag s-no">Fase 7</span></summary>
+      <div><dl>
+        <div><dt>Cosa serve</dt><dd>Visual che reagiscono alla musica e tagli in formato verticale e orizzontale si possono produrre in proprio con strumenti di montaggio liberi. Video generati da AI richiedono un servizio esterno, da verificare.</dd></div>
+        <div><dt>Autorizzazioni</dt><dd>Diritti su immagini e musica usate.</dd></div>
+        <div><dt>Costo</dt><dd>In proprio: calcolo sul server. Servizio esterno: da verificare.</dd></div>
+      </dl></div>
+    </details>
+
+    <details>
+      <summary><span>Collegamento e pubblicazione sui social</span><span class="tag s-no">Fase 8</span></summary>
+      <div><dl>
+        <div><dt>Cosa serve</dt><dd>Le API ufficiali di ogni piattaforma (per esempio YouTube, Instagram e Facebook, TikTok). Ognuna richiede di registrare un'app e spesso di superare una revisione prima di pubblicare per conto di altri.</dd></div>
+        <div><dt>Autorizzazioni</dt><dd>Consenso dell'utente a ogni collegamento. Pubblicazione solo dopo la tua approvazione e quella dell'utente.</dd></div>
+        <div><dt>Costo</dt><dd>Da verificare piattaforma per piattaforma.</dd></div>
+      </dl></div>
+    </details>
+
+    <details>
+      <summary><span>Account, abbonamenti e pagamenti</span><span class="tag s-no">Fasi 2 e 9</span></summary>
+      <div><dl>
+        <div><dt>Cosa serve</dt><dd>Un servizio di accesso sicuro già pronto (per non gestire le password in proprio) e un servizio di pagamenti per abbonamenti (per esempio Stripe).</dd></div>
+        <div><dt>Autorizzazioni</dt><dd>Account aziendale verificato presso il servizio di pagamento. Informativa privacy e condizioni d'uso. Gestione dell'IVA.</dd></div>
+        <div><dt>Costo</dt><dd>Di solito una commissione sugli incassi. Da verificare sui listini.</dd></div>
+      </dl></div>
+    </details>
+
+    <details>
+      <summary><span>Hosting, database e archivio dei file</span><span class="tag s-no">Fase 2</span></summary>
+      <div><dl>
+        <div><dt>Cosa serve</dt><dd>Un servizio per ospitare l'app, un database e un archivio cifrato per i file audio. Preferisco un fornitore con sede dei dati in Europa per il GDPR.</dd></div>
+        <div><dt>Autorizzazioni</dt><dd>Un account a tuo nome. Non lo creo io.</dd></div>
+        <div><dt>Costo</dt><dd>Da verificare. Quasi sempre c'è un livello gratuito per iniziare, con limiti.</dd></div>
+      </dl></div>
+    </details>
+  </section>
+  </main>
+
+  <footer>Prototipo locale. I dati restano nel browser e spariscono quando chiudi la pagina.</footer>
+</div>
+
+<script>
+/*__LYRICS_ENGINE__*/
+</script>
+<script>
+/*__AUDIO_ANALYSIS__*/
+</script>
+<script>
+/*__KEY_DETECT__*/
+</script>
+<script>
+/*__AUTOTUNE__*/
+</script>
+<script>
+/*__BACKING__*/
+</script>
+<script>
+/*__MANGA__*/
+</script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var state = { lyrics: null, audio: null };
+  var VIEWS = ['voce', 'basi', 'manga', 'testi', 'emozioni', 'panoramica', 'moduli'];
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function fmt(v, d) { return Number(v).toFixed(d || 0).replace('.', ','); }
+  function fmtTime(s) { s = Math.round(s); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function tag(kind, label) { return '<span class="tag ' + kind + '">' + label + '</span>'; }
+  var TAGS = { misurato: 'Misurato', analisi: 'Analisi', ipotesi: 'Ipotesi' };
+
+  /* ---------- Schede ---------- */
+  function route() {
+    var id = (location.hash || '').replace('#', '');
+    if (VIEWS.indexOf(id) === -1) id = 'voce';
+    VIEWS.forEach(function (v) { $('#v-' + v).hidden = v !== id; });
+    document.querySelectorAll('.tabs a').forEach(function (a) {
+      if (a.getAttribute('href') === '#' + id) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+    if (id === 'voce') drawCharts();
+    if (id === 'emozioni') renderEmotions();
+  }
+  window.addEventListener('hashchange', route);
+
+  /* ---------- Voce ---------- */
+  function setStatus(msg, isErr) {
+    var el = $('#status');
+    el.textContent = msg || '';
+    el.className = isErr ? 'err' : 'muted';
+  }
+
+  function meter(label, kind, value, unit, note) {
+    return '<div class="meter"><div class="k"><span>' + label + '</span>' + tag(kind, TAGS[kind]) + '</div>' +
+      '<div class="v">' + value + (unit ? ' <small>' + unit + '</small>' : '') + '</div>' +
+      (note ? '<p class="n">' + note + '</p>' : '') + '</div>';
+  }
+
+  function centsVerdict(c) {
+    if (c <= 12) return 'Le note sono vicine a quelle temperate.';
+    if (c <= 25) return 'Oscillazioni moderate attorno alle note.';
+    return 'Scostamenti ampi dalle note. Vibrato e scivolamenti contano come scostamento.';
+  }
+
+  function renderVoice(res, sourceName, isExample) {
+    var out = $('#voce-out');
+    var html = '';
+    if (isExample) {
+      html += '<div class="panel well"><p class="small"><b>Segnale di esempio.</b> È un suono sintetico (quattro note con vibrato, la seconda leggermente calante), non una voce reale. Serve a mostrare cosa misura l\'analisi.</p></div>';
+    }
+    html += '<div class="panel-head"><h3>' + esc(sourceName) + '</h3></div>';
+    html += '<div class="meters">';
+    html += meter('Durata analizzata', 'misurato', fmtTime(res.analyzedDuration), '',
+      res.truncated ? 'Il file dura ' + fmtTime(res.totalDuration) + ': analizzati solo i primi ' + fmtTime(res.analyzedDuration) + '.' : 'Intero file.');
+    html += meter('Tempo con nota chiara', 'misurato', fmt(res.voicedShare * 100), '%', 'Parte del tempo in cui ho riconosciuto un\'altezza stabile.');
+    if (res.pitch) {
+      var p = res.pitch;
+      html += meter('Nota centrale', 'misurato', esc(p.medianNote), fmt(p.medianHz) + ' Hz', 'Mediana delle note cantate.');
+      html += meter('Estensione', 'misurato', esc(p.lowNote) + '–' + esc(p.highNote), '', 'Circa ' + fmt(p.spanSemitones, 1) + ' semitoni (dal 5° al 95° percentile).');
+      html += meter('Scostamento dalle note', 'misurato', fmt(p.meanAbsCentsFromNote, 0), 'centesimi',
+        centsVerdict(p.meanAbsCentsFromNote) + ' Riferimento La = 440 Hz. Un semitono sono 100 centesimi.');
+    }
+    var lv = res.levels;
+    html += meter('Livello di picco', 'misurato', fmt(lv.peakDb, 1), 'dBFS',
+      lv.clippingShare > 0.001 ? 'Possibile distorsione: ' + fmt(lv.clippingShare * 100, 1) + '% dei campioni al massimo.' : 'Nessun segno di distorsione da saturazione.');
+    html += meter('Livello medio', 'misurato', fmt(lv.rmsDb, 1), 'dBFS', 'Volume medio dell\'intero segnale.');
+    if (res.dynamics) {
+      html += meter('Dinamica', 'misurato', fmt(res.dynamics.rangeDb, 1), 'dB', 'Differenza tra le parti più deboli e quelle più forti.');
+    }
+    html += '</div>';
+
+    if (!res.pitch) {
+      html += '<div class="panel"><p><b>Non ho trovato abbastanza note chiare.</b> Può essere una voce troppo debole, rumore di fondo o musica sotto la voce. Prova con una registrazione di sola voce.</p></div>';
+    } else {
+      html += '<div class="panel"><div class="panel-head"><h3>Altezza delle note nel tempo</h3>' + tag('misurato', 'Misurato') + '</div>' +
+        '<div class="chart" id="chart-pitch"></div>' +
+        '<p class="small muted" style="margin-top:8px">Il rilevamento può sbagliare di un\'ottava su suoni molto ricchi o rumorosi.</p></div>';
+    }
+    html += '<div class="panel"><div class="panel-head"><h3>Volume nel tempo</h3>' + tag('misurato', 'Misurato') + '</div><div class="chart" id="chart-energy"></div></div>';
+    out.innerHTML = html;
+    drawCharts();
+  }
+
+  function drawPitch(el, res) {
+    if (!el || !res.pitch) return;
+    var W = Math.max(280, el.clientWidth || 320), H = 220, m = { l: 46, r: 10, t: 10, b: 22 };
+    var p = res.pitch;
+    var lo = Math.floor(p.lowMidi) - 2, hi = Math.ceil(p.highMidi) + 2;
+    var T = res.frames.length ? res.frames[res.frames.length - 1].t : res.duration;
+    function x(t) { return m.l + (t / Math.max(T, 0.001)) * (W - m.l - m.r); }
+    function y(v) { return m.t + (1 - (v - lo) / (hi - lo)) * (H - m.t - m.b); }
+    var span = hi - lo, g = '';
+    for (var n = lo; n <= hi; n++) {
+      var name = AudioAnalysis.midiToName(n);
+      var natural = name.indexOf('#') === -1;
+      var label = span <= 24 ? natural : (name.indexOf('Do') === 0 && natural);
+      if (label) {
+        g += '<line class="gl" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y(n).toFixed(1) + '" y2="' + y(n).toFixed(1) + '"/>';
+        g += '<text class="tx" x="' + (m.l - 6) + '" y="' + (y(n) + 3.5).toFixed(1) + '" text-anchor="end">' + name + '</text>';
+      }
+    }
+    var d = '', open = false;
+    res.frames.forEach(function (f) {
+      if (f.voiced) {
+        var v = Math.max(lo, Math.min(hi, AudioAnalysis.freqToMidi(f.f0)));
+        var px = x(f.t).toFixed(1), py = y(v).toFixed(1);
+        if (!open) { d += 'M' + px + ' ' + py + 'l0.01 0 '; open = true; }
+        else d += 'L' + px + ' ' + py + ' ';
+      } else open = false;
+    });
+    g += '<text class="tx" x="' + m.l + '" y="' + (H - 5) + '">0 s</text>';
+    g += '<text class="tx" x="' + (W - m.r) + '" y="' + (H - 5) + '" text-anchor="end">' + fmt(T, 1) + ' s</text>';
+    el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Altezza delle note nel tempo">' + g + '<path class="trace" d="' + d + '"/></svg>';
+  }
+
+  function drawEnergy(el, res) {
+    if (!el) return;
+    var W = Math.max(280, el.clientWidth || 320), H = 110, m = { l: 46, r: 10, t: 8, b: 22 };
+    var floor = -70;
+    var T = res.frames.length ? res.frames[res.frames.length - 1].t : res.duration;
+    function x(t) { return m.l + (t / Math.max(T, 0.001)) * (W - m.l - m.r); }
+    function y(db) { var c = Math.max(floor, Math.min(0, db)); return m.t + (1 - (c - floor) / (0 - floor)) * (H - m.t - m.b); }
+    var step = Math.max(1, Math.floor(res.frames.length / ((W - m.l - m.r) / 2)));
+    var line = '', area = '', first = null, last = null;
+    for (var i = 0; i < res.frames.length; i += step) {
+      var f = res.frames[i];
+      var px = x(f.t).toFixed(1), py = y(f.db).toFixed(1);
+      line += (line ? 'L' : 'M') + px + ' ' + py + ' ';
+      if (first === null) first = px;
+      last = px;
+    }
+    var base = y(floor).toFixed(1);
+    if (line) area = line + 'L' + last + ' ' + base + ' L' + first + ' ' + base + ' Z';
+    var g = '';
+    [0, -35, -70].forEach(function (v) {
+      g += '<line class="gl" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y(v).toFixed(1) + '" y2="' + y(v).toFixed(1) + '"/>';
+      g += '<text class="tx" x="' + (m.l - 6) + '" y="' + (y(v) + 3.5).toFixed(1) + '" text-anchor="end">' + v + '</text>';
+    });
+    g += '<text class="tx" x="' + m.l + '" y="' + (H - 5) + '">0 s</text>';
+    g += '<text class="tx" x="' + (W - m.r) + '" y="' + (H - 5) + '" text-anchor="end">' + fmt(T, 1) + ' s · dBFS</text>';
+    el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Volume nel tempo">' + g + '<path class="area" d="' + area + '"/><path class="edge" d="' + line + '"/></svg>';
+  }
+
+  function drawCharts() {
+    if (!state.audio) return;
+    drawPitch($('#chart-pitch'), state.audio.res);
+    drawEnergy($('#chart-energy'), state.audio.res);
+  }
+
+  function toMono(channels) {
+    if (channels.length === 1) return channels[0];
+    var out = new Float32Array(channels[0].length);
+    for (var c = 0; c < channels.length; c++) for (var i = 0; i < out.length; i++) out[i] += channels[c][i] / channels.length;
+    return out;
+  }
+
+  function finishAudio(res, name, isExample, mono, sr) {
+    state.audio = { res: res, name: name, example: isExample, mono: mono, sr: sr };
+    renderVoice(res, name, isExample);
+    setStatus('Analisi completata.');
+    renderEmotions();
+    afterAudio();
+  }
+
+  async function analyzeFile(file) {
+    setStatus('Lettura del file…');
+    $('#voce-out').innerHTML = '';
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) { setStatus('Questo browser non riesce a leggere file audio.', true); return; }
+    var ctx = new Ctx();
+    var audio;
+    try {
+      var buf = await file.arrayBuffer();
+      audio = await ctx.decodeAudioData(buf);
+    } catch (e) {
+      setStatus('Non riesco a leggere questo file. Prova con un WAV, MP3 o M4A.', true);
+      if (ctx.close) ctx.close();
+      return;
+    }
+    if (ctx.close) ctx.close();
+    var channels = [];
+    for (var c = 0; c < audio.numberOfChannels; c++) channels.push(audio.getChannelData(c));
+    setStatus('Analisi in corso…');
+    await new Promise(function (r) { setTimeout(r, 30); });
+    try {
+      var mono = toMono(channels);
+      if (mono.length > 120 * audio.sampleRate) mono = mono.slice(0, 120 * audio.sampleRate);
+      var res = AudioAnalysis.analyze(mono, audio.sampleRate, { maxSeconds: 120 });
+      finishAudio(res, file.name, false, mono, audio.sampleRate);
+    } catch (e) {
+      setStatus('Qualcosa è andato storto durante l\'analisi. Riprova con un file più corto.', true);
+    }
+  }
+
+  $('#file').addEventListener('change', function (ev) {
+    var f = ev.target.files && ev.target.files[0];
+    if (f) analyzeFile(f);
+  });
+  $('#demo').addEventListener('click', function () {
+    var sr = 22050, mono = AudioAnalysis.synthExample(sr);
+    var res = AudioAnalysis.analyze(mono, sr, { maxSeconds: 120 });
+    finishAudio(res, 'Segnale di esempio', true, mono, sr);
+  });
+
+  /* ---------- Testi ---------- */
+  function renderLyrics() {
+    var text = $('#lyrics').value;
+    var out = $('#testi-out');
+    if (!text.trim()) {
+      state.lyrics = null;
+      out.innerHTML = '<p class="empty">Scrivi o incolla un testo per vedere l\'analisi.</p>';
+      renderEmotions();
+      return;
+    }
+    var r = LyricsEngine.analyze(text);
+    state.lyrics = r;
+    var rhymed = r.stanzas.reduce(function (a, s) { return a + s.rhymedLines; }, 0);
+    var h = '<div class="meters" style="margin-top:14px">';
+    h += meter('Strofe e righe', 'analisi', r.counts.stanzas + ' · ' + r.counts.lines, '', r.counts.words + ' parole.');
+    h += meter('Sillabe per riga', 'analisi', fmt(r.syllables.average, 1), '', 'Da ' + r.syllables.min + ' a ' + r.syllables.max + ', scarto ' + fmt(r.syllables.spread, 1) + '. Conteggio approssimato, può sbagliare di una sillaba su parole particolari.');
+    h += meter('Righe in rima', 'analisi', r.counts.lines ? fmt(rhymed / r.counts.lines * 100) : '0', '%', 'Rime perfette dentro la stessa strofa.');
+    h += meter('Finali aperti', 'analisi', fmt(r.singability.openEndingShare * 100), '%', 'Righe che finiscono con una vocale, più facili da tenere con una nota lunga.');
+    h += '</div>';
+
+    r.stanzas.forEach(function (s) {
+      var counts = {};
+      s.lines.forEach(function (l) { counts[l.rhyme] = (counts[l.rhyme] || 0) + 1; });
+      h += '<div class="panel stanza"><div class="stanza-head"><h4>' + esc(s.label) + '</h4><span class="mono small muted">Schema ' + esc(s.scheme) + '</span></div>' +
+        '<div class="tablewrap"><table><thead><tr><th>Riga</th><th class="num">Sillabe</th><th style="text-align:center">Rima</th></tr></thead><tbody>';
+      s.lines.forEach(function (l) {
+        h += '<tr><td>' + esc(l.text) + '</td><td class="num">' + l.metric + (l.metric !== l.syllables ? ' <span class="dim">(' + l.syllables + ')</span>' : '') + '</td><td class="rh">' + (counts[l.rhyme] > 1 ? esc(l.rhyme) : '–') + '</td></tr>';
+      });
+      h += '</tbody></table></div></div>';
+    });
+    h += '<p class="small muted">Sillabe cantate, con la fusione tra vocale finale e vocale iniziale. Tra parentesi il conteggio senza fusione.</p>';
+
+    if (r.repeatedLines.length) {
+      h += '<div class="panel"><div class="panel-head"><h3>Righe ripetute</h3>' + tag('analisi', 'Analisi') + '</div><ul class="plain small">';
+      r.repeatedLines.slice(0, 5).forEach(function (x) { h += '<li>' + esc(x.text) + ' <span class="mono muted">× ' + x.count + '</span></li>'; });
+      h += '</ul></div>';
+    }
+
+    if (r.chorus) {
+      var c = r.chorus;
+      h += '<div class="panel"><div class="panel-head"><h3>' + (/^ritornello$/i.test(c.label) ? 'Ritornello' : 'Ritornello: ' + esc(c.label)) + '</h3>' + tag('ipotesi', 'Ipotesi') + '</div>' +
+        '<p>Memorabilità stimata <b class="mono">' + c.score + '/100</b>. È un punteggio costruito su cinque criteri semplici, non una previsione.</p><div class="bars">';
+      c.components.forEach(function (k) {
+        h += '<div class="bar"><span>' + esc(k.name) + '</span><span class="track"><span class="fill" style="display:block;width:' + (k.points / k.max * 100) + '%"></span></span><span class="pct">' + k.points + '/' + k.max + '</span></div>' +
+          '<div class="dim" style="margin:-4px 0 4px">' + esc(k.detail) + '</div>';
+      });
+      h += '</div></div>';
+    }
+
+    var e = r.emotions;
+    h += '<div class="panel"><div class="panel-head"><h3>Tono emotivo del testo</h3>' + tag('ipotesi', 'Ipotesi') + '</div>';
+    if (e.sufficient) {
+      h += '<p>Riconosciute ' + e.matchedWords + ' parole su ' + e.totalWords + '. Tono complessivo: <b>' + e.valence + '</b>.</p><div class="bars">';
+      e.items.filter(function (i) { return i.count > 0; }).forEach(function (i) {
+        h += '<div class="bar"><span>' + cap(i.name) + '</span><span class="track"><span class="fill" style="display:block;width:' + Math.round(i.share * 100) + '%"></span></span><span class="pct">' + Math.round(i.share * 100) + '%</span></div>';
+      });
+      h += '</div><p class="small muted" style="margin-top:8px">Si basa su un piccolo dizionario di parole. Non capisce ironia, negazioni o metafore.</p>';
+    } else {
+      h += '<p>Ho riconosciuto troppe poche parole (' + e.matchedWords + ') per dire qualcosa sul tono.</p>';
+    }
+    h += '</div>';
+
+    h += '<div class="panel"><div class="panel-head"><h3>Suggerimenti</h3></div>';
+    if (r.suggestions.length) {
+      h += '<ul class="plain">';
+      r.suggestions.forEach(function (s) {
+        h += '<li class="sug"><div class="item"><div><b>' + esc(s.text) + '</b></div>' + tag(s.kind, TAGS[s.kind]) + '</div><p class="why">Perché: ' + esc(s.reason) + '</p></li>';
+      });
+      h += '</ul>';
+    } else {
+      h += '<p class="muted">Nessun punto critico trovato con i controlli disponibili. Questo non significa che il testo sia perfetto.</p>';
+    }
+    h += '</div>';
+    out.innerHTML = h;
+    renderEmotions();
+  }
+
+  var typing = null;
+  $('#lyrics').addEventListener('input', function () { clearTimeout(typing); typing = setTimeout(renderLyrics, 250); });
+  $('#lyrics-clear').addEventListener('click', function () { $('#lyrics').value = ''; renderLyrics(); $('#lyrics').focus(); });
+
+  /* ---------- Emozioni ---------- */
+  function renderEmotions() {
+    var el = $('#emo-out');
+    if (!el) return;
+    var L = state.lyrics, A = state.audio && state.audio.res;
+    var rows = [];
+    function add(name, status, kind, text) { rows.push({ name: name, status: status, kind: kind, text: text }); }
+
+    if (L && L.emotions.sufficient) {
+      var top = L.emotions.items[0];
+      add('Coinvolgimento emotivo', 'ipotesi', 'ipotesi', 'Dal testo: prevale ' + top.name + ', tono ' + L.emotions.valence + '. Non considera melodia né interpretazione.');
+    } else add('Coinvolgimento emotivo', 'serve il testo', 'ipotesi', L ? 'Nel testo ci sono troppo poche parole riconoscibili.' : 'Analizza un testo nella scheda Testi.');
+
+    if (A) add('Energia e intensità', 'misurato', 'misurato', 'Livello medio ' + fmt(A.levels.rmsDb, 1) + ' dBFS, picco ' + fmt(A.levels.peakDb, 1) + ' dBFS' + (A.dynamics ? ', dinamica ' + fmt(A.dynamics.rangeDb, 1) + ' dB' : '') + '.');
+    else add('Energia e intensità', 'serve l\'audio', 'ipotesi', 'Carica un audio nella scheda Voce.');
+
+    add('Tensione e rilascio', 'non ancora', 'ipotesi', 'Servono l\'analisi dell\'armonia e dell\'arrangiamento. Non sono incluse.');
+    add('Sorpresa musicale', 'non ancora', 'ipotesi', 'Serve un modello di quanto una melodia è attesa o inattesa. Non incluso.');
+
+    if (L) add('Ripetizione e familiarità', 'analisi', 'analisi', fmt(L.repetitionShare * 100) + '% delle righe è ripetuto' + (L.repeatedLines.length ? ', la più frequente compare ' + L.repeatedLines[0].count + ' volte' : '') + '.');
+    else add('Ripetizione e familiarità', 'serve il testo', 'ipotesi', 'Analizza un testo nella scheda Testi. Per la melodia non è disponibile.');
+
+    if (L && L.chorus) add('Memorabilità del ritornello', 'ipotesi', 'ipotesi', 'Punteggio ' + L.chorus.score + '/100 sui criteri del testo. Non considera la melodia.');
+    else add('Memorabilità del ritornello', L ? 'non trovato' : 'serve il testo', 'ipotesi', L ? 'Nessun ritornello riconosciuto nel testo.' : 'Analizza un testo nella scheda Testi.');
+
+    if (A && A.dynamics) add('Dinamica, ritmo e progressione', 'parziale', 'misurato', 'Dinamica misurata: ' + fmt(A.dynamics.rangeDb, 1) + ' dB tra parti deboli e forti. Ritmo e progressione non sono inclusi.');
+    else add('Dinamica, ritmo e progressione', 'non ancora', 'ipotesi', 'Ritmo e progressione non sono inclusi. La dinamica richiede un audio nella scheda Voce.');
+
+    add('Coerenza testo, melodia e arrangiamento', 'non ancora', 'ipotesi', 'Richiede tutti e tre gli elementi analizzati insieme. Oggi non sono disponibili melodia e arrangiamento.');
+
+    var h = '<div class="panel"><ul class="plain">';
+    rows.forEach(function (r) {
+      var kind = r.status === 'misurato' || r.status === 'analisi' || r.status === 'ipotesi' ? r.status : (r.status === 'parziale' ? 's-part' : 's-no');
+      var label = TAGS[r.status] || cap(r.status);
+      h += '<li class="item"><div><b>' + r.name + '</b><br><span class="muted small">' + esc(r.text) + '</span></div>' + tag(kind, label) + '</li>';
+    });
+    h += '</ul></div>';
+    el.innerHTML = h;
+  }
+
+  /* ---------- Riproduzione e salvataggio ---------- */
+  var player = { ctx: null, src: null };
+  function getCtx() {
+    if (!player.ctx) {
+      var C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      player.ctx = new C();
+    }
+    if (player.ctx.state === 'suspended' && player.ctx.resume) player.ctx.resume();
+    return player.ctx;
+  }
+  function stopPlay() { if (player.src) { try { player.src.stop(); } catch (e) {} player.src = null; } }
+  function makeBuffer(ctx, samples, sr) {
+    var buf = ctx.createBuffer(1, samples.length, sr);
+    if (buf.copyToChannel) buf.copyToChannel(samples, 0); else buf.getChannelData(0).set(samples);
+    return buf;
+  }
+  function play(samples, sr) {
+    var ctx = getCtx();
+    if (!ctx) return false;
+    stopPlay();
+    var src = ctx.createBufferSource();
+    src.buffer = makeBuffer(ctx, samples, sr);
+    src.connect(ctx.destination);
+    src.onended = function () { if (player.src === src) player.src = null; };
+    src.start();
+    player.src = src;
+    return true;
+  }
+  function tick() { return new Promise(function (r) { setTimeout(r, 40); }); }
+
+  // Salva registrando l'audio mentre suona: il formato consentito per l'audio è mp4 o webm.
+  async function saveAudio(samples, sr, baseName, statusEl) {
+    var dl = null;
+    try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { dl = null; }
+    var ctx = getCtx();
+    var types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'];
+    var mime = window.MediaRecorder ? types.filter(function (t) { return MediaRecorder.isTypeSupported(t); })[0] : null;
+    if (!dl || !ctx || !ctx.createMediaStreamDestination || !mime) {
+      statusEl.textContent = 'Il salvataggio dell\'audio non è disponibile qui. Puoi comunque ascoltare e rigenerare quando vuoi.';
+      return;
+    }
+    stopPlay();
+    var dest = ctx.createMediaStreamDestination();
+    var src = ctx.createBufferSource();
+    src.buffer = makeBuffer(ctx, samples, sr);
+    src.connect(dest);
+    var rec = new MediaRecorder(dest.stream, { mimeType: mime });
+    var chunks = [];
+    rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+    var stopped = new Promise(function (res) { rec.onstop = res; });
+    var ended = new Promise(function (res) { src.onended = res; });
+    rec.start();
+    src.start();
+    statusEl.textContent = 'Preparo il file: ci vogliono circa ' + Math.ceil(samples.length / sr) + ' secondi. Resta su questa pagina.';
+    await ended;
+    await new Promise(function (r) { setTimeout(r, 250); });
+    rec.stop();
+    await stopped;
+    var ext = mime.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
+    try {
+      await dl.save({ filename: baseName + '.' + ext, data: new Blob(chunks, { type: mime }) });
+      statusEl.textContent = 'File pronto.';
+    } catch (e) {
+      statusEl.textContent = e && e.code === 'declined' ? 'Salvataggio annullato.' : 'Non sono riuscito a salvare il file.';
+    }
+  }
+
+  /* ---------- Tonalità e autotune ---------- */
+  function setSel(sel, v) { $(sel).value = String(v); }
+  function afterAudio() {
+    var a = state.audio, k = KeyDetect.detect(a.res.frames);
+    state.key = k;
+    state.fixed = null;
+    $('#voce-tools').hidden = false;
+    $('#at-result').innerHTML = '';
+    $('#play-fix').disabled = true;
+    $('#save-fix').disabled = true;
+    var t = $('#key-text');
+    if (!k) {
+      t.textContent = 'Non ho abbastanza note chiare per stimare la tonalità. Scegli tu nota e scala qui sotto.';
+      setSel('#tonic', 0); setSel('#mode', 'cromatica');
+    } else if (k.confidence === 'bassa') {
+      t.innerHTML = 'Stima poco sicura: <b>' + esc(k.name) + '</b>, oppure ' + esc(k.alternative.name) +
+        '. Per non rischiare correzioni sbagliate ho lasciato "tutte le note". Se conosci la tonalità, sceglila qui sotto.';
+      setSel('#tonic', k.tonic); setSel('#mode', 'cromatica');
+    } else {
+      t.innerHTML = 'Stimata: <b>' + esc(k.name) + '</b> (affidabilità ' + k.confidence + '). Seconda ipotesi: ' + esc(k.alternative.name) +
+        '. Maggiore e minore relativa si confondono spesso: se non ti torna, cambiala qui sotto.';
+      setSel('#tonic', k.tonic); setSel('#mode', k.mode);
+    }
+    syncBase();
+  }
+
+  function retuneLabel(v) { return v <= 5 ? 'Robot' : v <= 50 ? 'Rapida' : v <= 120 ? 'Media' : 'Naturale'; }
+  $('#strength').addEventListener('input', function () { $('#v-strength').textContent = this.value + '%'; });
+  $('#retune').addEventListener('input', function () { $('#v-retune').textContent = retuneLabel(+this.value); });
+
+  function renderAutotune(before, after, stats) {
+    var h = '';
+    if (!before.pitch || !after.pitch) {
+      h = '<p>Non ho trovato abbastanza note chiare da correggere. Prova con una registrazione di sola voce, senza musica sotto.</p>';
+    } else {
+      h = '<div class="meters" style="margin-top:12px">' +
+        meter('Scostamento dalle note', 'misurato', fmt(before.pitch.meanAbsCentsFromNote, 0) + ' → ' + fmt(after.pitch.meanAbsCentsFromNote, 0), 'centesimi', 'Prima e dopo, misurati sul file. Più è basso, più le note sono centrate.') +
+        meter('Parti corrette', 'misurato', fmt(stats.correctedSeconds, 1), 's', 'Spostamento medio ' + fmt(stats.meanShiftCents, 0) + ' centesimi, massimo ' + fmt(stats.maxShiftCents, 0) + '.') +
+        '</div><p class="small muted">Ascolta con "Originale" e "Corretta". Con intensità alta e velocità robot si sente l\'effetto autotune; se la voce suona metallica, abbassa l\'intensità o rallenta la velocità.</p>';
+    }
+    $('#at-result').innerHTML = h;
+  }
+
+  $('#apply').addEventListener('click', async function () {
+    var a = state.audio;
+    if (!a) return;
+    var btn = this;
+    btn.disabled = true;
+    $('#at-result').innerHTML = '<p class="muted">Sto correggendo la voce…</p>';
+    await tick();
+    try {
+      var r = Autotune.correct(a.mono, a.sr, {
+        tonic: +$('#tonic').value, mode: $('#mode').value,
+        strength: +$('#strength').value / 100, retuneMs: +$('#retune').value,
+        analysis: a.res, maxSeconds: 120
+      });
+      state.fixed = r.samples;
+      var after = AudioAnalysis.analyze(r.samples, a.sr, { maxSeconds: 120 });
+      renderAutotune(a.res, after, r.stats);
+      $('#play-fix').disabled = false;
+      $('#save-fix').disabled = false;
+      play(r.samples, a.sr);
+    } catch (e) {
+      $('#at-result').innerHTML = '<p>Qualcosa è andato storto durante la correzione. Prova con un file più corto.</p>';
+    }
+    btn.disabled = false;
+  });
+  $('#play-orig').addEventListener('click', function () { if (state.audio) play(state.audio.mono, state.audio.sr); });
+  $('#play-fix').addEventListener('click', function () { if (state.fixed) play(state.fixed, state.audio.sr); });
+  $('#stop').addEventListener('click', stopPlay);
+  $('#save-fix').addEventListener('click', function () {
+    if (state.fixed) saveAudio(state.fixed, state.audio.sr, 'voce-corretta', $('#save-status'));
+  });
+
+  /* ---------- Basi ---------- */
+  var baseState = { seed: 1, base: null, key: '' };
+  function syncBase() {
+    var has = !!state.audio;
+    $('#g-voce').disabled = !has;
+    if (!has) $('#g-voce').checked = false;
+    $('#voce-gain-box').hidden = !$('#g-voce').checked;
+    $('#b-usekey').hidden = !state.key;
+  }
+  $('#g-voce').addEventListener('change', syncBase);
+  $('#voice-gain').addEventListener('input', function () { $('#v-vg').textContent = this.value + '%'; });
+  $('#genre').addEventListener('change', function () { $('#bpm').value = Backing.GENRES[this.value].bpm; });
+  $('#b-usekey').addEventListener('click', function () {
+    if (!state.key) return;
+    setSel('#b-tonic', state.key.tonic); setSel('#b-mode', state.key.mode);
+  });
+
+  function baseParams() {
+    var bpm = Math.max(60, Math.min(180, +$('#bpm').value || 100));
+    return { sampleRate: 32000, bpm: bpm, tonic: +$('#b-tonic').value, mode: $('#b-mode').value, bars: +$('#bars').value, genre: $('#genre').value, seed: baseState.seed };
+  }
+  function getBase() {
+    var p = baseParams(), key = JSON.stringify(p);
+    if (baseState.key !== key || !baseState.base) { baseState.base = Backing.generate(p); baseState.key = key; }
+    return baseState.base;
+  }
+  function currentMix(b) {
+    var g = {
+      batteria: $('#g-batteria').checked ? 1 : 0, basso: $('#g-basso').checked ? 1 : 0, accordi: $('#g-accordi').checked ? 1 : 0,
+      pad: $('#g-pad').checked ? 1 : 0, melodia: $('#g-melodia').checked ? 1 : 0
+    };
+    var m = Backing.mix(b, g);
+    if ($('#g-voce').checked && state.audio) {
+      var v = state.fixed || state.audio.mono;
+      return { samples: Backing.withVoice(m, b.sampleRate, v, state.audio.sr, +$('#voice-gain').value / 100), sr: b.sampleRate, voice: state.fixed ? 'corretta' : 'originale' };
+    }
+    return { samples: m, sr: b.sampleRate, voice: null };
+  }
+  async function makeBase(newVariant, thenPlay) {
+    var st = $('#b-status');
+    if (newVariant) baseState.seed++;
+    st.textContent = 'Sto componendo la base…';
+    await tick();
+    try {
+      var b = getBase(), mx = currentMix(b);
+      if (thenPlay) { if (!play(mx.samples, mx.sr)) { st.textContent = 'Questo browser non riesce a riprodurre audio.'; return null; } }
+      st.textContent = thenPlay ? '' : 'Pronta.';
+      var tonicName = Backing.NAMES[b.tonic];
+      $('#b-out').innerHTML = '<div class="panel"><div class="panel-head"><h3>Base ' + baseState.seed + '</h3>' + tag('s-ok', 'Generata') + '</div>' +
+        '<p><b>' + esc(Backing.GENRES[b.genre].label) + '</b> in ' + esc(tonicName) + ' ' + b.mode + ', ' + b.bpm + ' battiti al minuto, ' + b.bars + ' battute, ' + fmt(b.duration, 0) + ' secondi.</p>' +
+        '<p>Accordi: <b class="mono">' + b.progression.map(esc).join(' · ') + '</b> (si ripetono)</p>' +
+        (mx.voice ? '<p class="small muted">Con la tua voce ' + mx.voice + (mx.voice === 'originale' ? '. Applica prima l\'autotune nella scheda Voce per usare quella corretta.' : '.') + '</p>' : '') +
+        '<p class="small muted">Suoni sintetici creati dal programma, da bozza. Premi "Nuova variante" per una melodia diversa.</p></div>';
+      return mx;
+    } catch (e) {
+      st.textContent = 'Non sono riuscito a creare la base. Riprova con meno battute.';
+      return null;
+    }
+  }
+  $('#b-play').addEventListener('click', function () { makeBase(false, true); });
+  $('#b-new').addEventListener('click', function () { makeBase(true, true); });
+  $('#b-stop').addEventListener('click', stopPlay);
+  $('#b-save').addEventListener('click', async function () {
+    var mx = await makeBase(false, false);
+    if (mx) saveAudio(mx.samples, mx.sr, 'base-' + $('#genre').value, $('#b-status'));
+  });
+
+  /* ---------- Manga ---------- */
+  var mg = { img: null };
+  function renderManga() {
+    if (!mg.img) return;
+    var W0 = mg.img.naturalWidth || mg.img.width, H0 = mg.img.naturalHeight || mg.img.height;
+    var s = Math.min(1, 900 / Math.max(W0, H0));
+    var w = Math.max(2, Math.round(W0 * s)), h = Math.max(2, Math.round(H0 * s));
+    var c = $('#m-canvas');
+    c.width = w; c.height = h;
+    var ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(mg.img, 0, 0, w, h);
+    var d = ctx.getImageData(0, 0, w, h);
+    MangaFilter.apply(d, { mode: $('#m-mode').value, detail: +$('#m-detail').value / 100 });
+    ctx.putImageData(d, 0, 0);
+    $('#m-panel').hidden = false;
+    $('#m-status').textContent = '';
+  }
+  $('#img').addEventListener('change', function (ev) {
+    var f = ev.target.files && ev.target.files[0];
+    if (!f) return;
+    $('#m-status').textContent = 'Carico la foto…';
+    var url = URL.createObjectURL(f), im = new Image();
+    im.onload = function () { mg.img = im; URL.revokeObjectURL(url); renderManga(); };
+    im.onerror = function () { $('#m-status').textContent = 'Non riesco ad aprire questa immagine. Prova con una foto JPG o PNG.'; };
+    im.src = url;
+  });
+  var mgTimer = null;
+  function mgSoon() { clearTimeout(mgTimer); mgTimer = setTimeout(renderManga, 150); }
+  $('#m-mode').addEventListener('change', mgSoon);
+  $('#m-detail').addEventListener('input', function () { $('#v-detail').textContent = this.value + '%'; mgSoon(); });
+  $('#m-save').addEventListener('click', async function () {
+    var st = $('#m-status');
+    var dl = null;
+    try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { dl = null; }
+    if (!dl) { st.textContent = 'Il salvataggio non è disponibile qui. Tieni premuta l\'immagine per salvarla dal telefono.'; return; }
+    $('#m-canvas').toBlob(async function (blob) {
+      if (!blob) { st.textContent = 'Non sono riuscito a preparare l\'immagine.'; return; }
+      try { await dl.save({ filename: 'manga.png', data: blob }); st.textContent = 'Immagine pronta.'; }
+      catch (e) { st.textContent = e && e.code === 'declined' ? 'Salvataggio annullato.' : 'Non sono riuscito a salvare.'; }
+    }, 'image/png');
+  });
+
+  /* ---------- Avvio ---------- */
+  if (window.ResizeObserver) {
+    var last = 0;
+    new ResizeObserver(function () {
+      var w = document.body.clientWidth;
+      if (w !== last) { last = w; drawCharts(); }
+    }).observe(document.body);
+  }
+  renderLyrics();
+  route();
+})();
+</script>

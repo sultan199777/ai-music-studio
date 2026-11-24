@@ -407,7 +407,7 @@
   function fillBase() {
     var p = cur().prod;
     $('#b-genre').value = p.genre; $('#b-bpm').value = p.bpm; $('#b-tonic').value = p.tonic; $('#b-mode').value = p.mode;
-    $('#b-master').value = p.master || 'standard'; $('#b-bars').value = p.bars; $('#b-barsv').textContent = p.bars; $('#b-follow').checked = !!p.follow;
+    $('#b-master').value = p.master || 'standard'; $('#b-sounds').value = p.sounds || 'campioni'; $('#b-bars').value = p.bars; $('#b-barsv').textContent = p.bars; $('#b-follow').checked = !!p.follow;
     $('#b-levels').innerHTML = Object.keys(LEVEL_NAMES).map(function (k) {
       return '<label class="f"><span>' + LEVEL_NAMES[k] + '<b data-lv="' + k + '">' + Math.round(p.levels[k] * 100) + '%</b></span><input type="range" min="0" max="180" value="' + Math.round(p.levels[k] * 100) + '" data-level="' + k + '"></label>';
     }).join('');
@@ -415,6 +415,7 @@
   $('#b-genre').innerHTML = Object.keys(ALLG).map(function (g) { return '<option value="' + g + '">' + ALLG[g].label + '</option>'; }).join('');
   $('#b-tonic').innerHTML = NOTES.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
   $('#b-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.tune = null; p.bpm = ALLG[this.value].bpm; if (['trap', 'drill', 'epico'].indexOf(this.value) >= 0) { p.mode = 'minore'; $('#b-mode').value = 'minore'; } else if (this.value === 'estate') { p.mode = 'maggiore'; $('#b-mode').value = 'maggiore'; } if (Arranger.STYLES[this.value] && p.bars < 16) { p.bars = 32; $('#b-bars').value = 32; $('#b-barsv').textContent = 32; } $('#b-bpm').value = p.bpm; persist(); });
+  $('#b-sounds').addEventListener('change', function () { cur().prod.sounds = this.value; persist(); });
   $('#b-master').addEventListener('change', function () { cur().prod.master = this.value; persist(); });
   $('#b-bpm').addEventListener('change', function () { cur().prod.bpm = Math.max(60, Math.min(180, +this.value || 100)); this.value = cur().prod.bpm; persist(); });
   $('#b-tonic').addEventListener('change', function () { cur().prod.tonic = +this.value; persist(); });
@@ -434,8 +435,8 @@
     else $('#b-status').textContent = 'Continua a battere il ritmo (almeno 3 colpi).';
   });
   function getBase() {
-    var p = cur().prod, key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.bassStyle, p.tune]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined }); SESSION.baseKey = key; }
+    var p = cur().prod, key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.bassStyle, p.tune, p.sounds]);
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }

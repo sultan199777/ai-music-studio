@@ -10,9 +10,9 @@
  * mixa con Backing.mix.
  */
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.Arranger = factory();
-})(typeof self !== 'undefined' ? self : this, function () {
+  if (typeof module === 'object' && module.exports) { var sd = null; try { sd = require('./samples-data.js'); } catch (e) {} module.exports = factory(sd); }
+  else root.Arranger = factory(root.SampleData || null);
+})(typeof self !== 'undefined' ? self : this, function (SampleData) {
   'use strict';
 
   var NAMES = ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'];
@@ -133,8 +133,29 @@
     function memo(k, fn) { return cache[k] || (cache[k] = fn()); }
     function noise() { return rand() * 2 - 1; }
 
+    // ---------- suoni veri (campioni CC0) ----------
+    var useSamples = p.sounds === 'campioni' && !!SampleData;
+    var sampCache = {};
+    function samp(kind, idx) {
+      var arr = SampleData.data[kind], k = kind + (idx % arr.length);
+      if (sampCache[k]) return sampCache[k];
+      var bin = typeof atob === 'function' ? atob(arr[idx % arr.length]) : Buffer.from(arr[idx % arr.length], 'base64').toString('binary');
+      var n = bin.length >> 1, src = new Float32Array(n), i;
+      for (i = 0; i < n; i++) { var v = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8); if (v > 32767) v -= 65536; src[i] = v / 32768; }
+      var ratio = SampleData.sr / sr, len = Math.floor(n / ratio), out = new Float32Array(len);
+      for (i = 0; i < len; i++) { var x = i * ratio, j = Math.floor(x), fr = x - j; out[i] = src[j] * (1 - fr) + (src[j + 1] || 0) * fr; }
+      return (sampCache[k] = out);
+    }
+    var vKick = (p.seed || 1) % 3, vSnare = (p.seed || 1) % 3, vClap = ((p.seed || 1) + 1) % 3;
+    function cut(buf, sec, fade) {
+      var n = Math.min(buf.length, Math.round(sec * sr)), o = buf.slice(0, n), f = Math.min(n, Math.round(fade * sr));
+      for (var i = 0; i < f; i++) o[n - 1 - i] *= i / f;
+      return o;
+    }
+
     // ---------- strumenti ----------
     function kickBuf(big) {
+      if (useSamples) return memo('sk' + big, function () { return cut(samp('kick', vKick), big ? 0.5 : 0.34, 0.03); });
       return memo('k' + big, function () {
         var len = Math.round((big ? 0.5 : 0.34) * sr), b = new Float32Array(len), ph = 0;
         for (var i = 0; i < len; i++) {
@@ -157,6 +178,7 @@
       });
     }
     function snareBuf() {
+      if (useSamples) return memo('ss', function () { return cut(samp('snare', vSnare), 0.3, 0.03); });
       var len = Math.round(0.24 * sr), b = new Float32Array(len);
       for (var i = 0; i < len; i++) {
         var t = i / sr;
@@ -165,6 +187,7 @@
       return b;
     }
     function clapBuf() {
+      if (useSamples) return memo('sc', function () { return cut(samp('clap', vClap), 0.3, 0.03); });
       var len = Math.round(0.3 * sr), b = new Float32Array(len), offs = [0, 0.011, 0.022, 0.034];
       for (var i = 0; i < len; i++) {
         var t = i / sr, v = 0;
@@ -174,6 +197,7 @@
       return biquad(b, 'bp', 1500, 0.8, sr);
     }
     function hatBuf(open, vel) {
+      if (useSamples) return memo('sh' + open + vel, function () { var b = cut(samp('hat', open ? 1 : 0), open ? 0.2 : 0.05, open ? 0.05 : 0.02); for (var i = 0; i < b.length; i++) b[i] *= vel; return b; });
       var len = Math.round((open ? 0.2 : 0.05) * sr), b = new Float32Array(len), prev = 0;
       for (var i = 0; i < len; i++) {
         var t = i / sr, n = noise();
