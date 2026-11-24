@@ -2056,6 +2056,8 @@ details.card[open]>summary{margin-bottom:8px}
     var bassKind = p.bassStyle === '808' ? '808' : (style.bass);
     var T = { kick: new Float32Array(N), snare: new Float32Array(N), hat: new Float32Array(N), bass: new Float32Array(N), chords: new Float32Array(N), pad: new Float32Array(N), lead: new Float32Array(N), fx: new Float32Array(N) };
     var events = { bass: [], chords: [], lead: [] }, kickStarts = [];
+    var LEADS = { trap: ['synth', 'keys', 'bell'], drill: ['dark', 'keys', 'bell'], epico: ['strings', 'synth', 'keys'], melodico: ['keys', 'synth', 'pluck'], estate: ['marimba', 'keys', 'synth'] };
+    var leadKind = p.lead || (LEADS[genreKey] ? LEADS[genreKey][((p.seed || 1) % 3 + 3) % 3] : style.lead);
 
     function at(bar, step) {
       var sw = (Math.abs(step - Math.round(step)) < 1e-6 && Math.round(step) % 2 === 1) ? style.swing * stepLen : 0;
@@ -2219,7 +2221,30 @@ details.card[open]>summary{margin-bottom:8px}
         return y;
       });
     }
+    function keysBuf(m, dur) {
+      return memo('ky' + m + '_' + dur.toFixed(2), function () {
+        var len = Math.round(dur * sr), b = new Float32Array(len), f = mtof(m);
+        for (var i = 0; i < len; i++) {
+          var t = i / sr, idx = 1.6 * Math.exp(-t * 5) + 0.25;
+          var tine = Math.sin(2 * Math.PI * f * t + idx * Math.sin(2 * Math.PI * f * t));
+          var body = 0.35 * Math.sin(2 * Math.PI * f * 2 * t) * Math.exp(-t * 7) + 0.18 * Math.sin(2 * Math.PI * f * 0.5 * t) * Math.exp(-t * 3);
+          b[i] = (tine * Math.exp(-t * 2.2) + body) * 0.8 * Math.min(1, i / 40) * Math.min(1, (len - i) / 800) * (1 + 0.06 * Math.sin(2 * Math.PI * 5.2 * t));
+        }
+        return biquad(b, 'lp', 3800, 0.7, sr);
+      });
+    }
+    function synthLeadBuf(m, dur, dark) {
+      return memo('sl' + m + '_' + dur.toFixed(2) + dark, function () {
+        var lo = sawStack([m], dur, [-14, -5, 5, 14], dark ? 500 : 650, 0.004, 0.06, false), hi = sawStack([m], dur, [-14, -5, 5, 14], dark ? 1800 : 4200, 0.004, 0.06, false);
+        var sub = new Float32Array(lo.length), ph = 0, f = mtof(m - 12);
+        for (var i = 0; i < lo.length; i++) { var t = i / sr, w = Math.exp(-t * 9); sub[i] = lo[i] + (hi[i] - lo[i]) * w * 1.1 + 0.25 * Math.sin(ph) * Math.min(1, i / 60) * Math.min(1, (lo.length - i) / 600); ph += 2 * Math.PI * f / sr; }
+        return sub;
+      });
+    }
     function leadBuf(kind, m, dur) {
+      if (kind === 'keys') return keysBuf(m, dur);
+      if (kind === 'synth') return synthLeadBuf(m, dur, false);
+      if (kind === 'dark') return synthLeadBuf(m, dur, true);
       if (kind === 'bell') return bellBuf(m, dur);
       if (kind === 'marimba') return marimbaBuf(m, dur);
       if (kind === 'strings') return sawStack([m], dur, [-9, 0, 8], 2400, 0.12, 0.2, false);
@@ -2386,7 +2411,7 @@ details.card[open]>summary{margin-bottom:8px}
           var src = sec.name === 'bridge' ? bridgeLine : hook;
           src[k % 4].forEach(function (n) {
             var d3 = n.len * stepSec * 0.95, m3 = n.midi;
-            add('lead', at(bar, n.step), leadBuf(style.lead, m3, d3), (style.lead === 'strings' ? 0.32 : 0.36) * cfg.lead);
+            add('lead', at(bar, n.step), leadBuf(leadKind, m3, d3), (leadKind === 'strings' ? 0.32 : 0.36) * cfg.lead);
             events.lead.push({ start: at(bar, n.step) / sr, midi: m3, dur: d3 });
           });
         }
