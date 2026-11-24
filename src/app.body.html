@@ -106,14 +106,6 @@
     <p class="small muted">Metti le cuffie, registra con Memo Vocali mentre la base suona (da un altro dispositivo o da questa pagina), poi importa la registrazione in Voce.</p>
   </div>
 
-  <div class="card"><div class="card-head"><h3>Registra con il microfono</h3></div>
-    <div class="orbwrap"><div class="orb" id="orb"></div><div class="orb-cap" id="orb-cap">Emozione del testo: <b>neutra</b></div></div>
-    <div class="karaoke" id="rec-kar"><div><b>Premi Registra: parte la base e vedi la riga</b><small>Usa le cuffie</small></div></div>
-    <div class="meter-bar" id="rec-meter" hidden><i></i></div>
-    <div class="row"><button class="btn pri" id="rec-go">Registra con la base</button><button class="btn" id="rec-stop" hidden>Fine registrazione</button></div>
-    <div class="status" id="rec-msg"></div>
-    <p class="small muted">La voce finisce tra le prove in Voce, dove applichi autotune e mix. Le prove restano salvate sul telefono (nella versione app).</p>
-  </div>
 
   <div class="card"><div class="card-head"><h3>Importa una base tua</h3></div>
     <p class="small muted">Se hai già una base (file audio), il programma stima velocità e tonalità e la usa al posto di quella sintetica.</p>
@@ -150,6 +142,15 @@
 <!-- VOCE -->
 <main class="view" id="v-voce" hidden>
   <div class="head"><div class="eyebrow">Vocal Studio</div><h1>La tua voce</h1></div>
+  <div class="card"><div class="card-head"><h3>Registra con il microfono</h3></div>
+    <div class="orbwrap"><div class="orb" id="orb"></div><div class="orb-cap" id="orb-cap">Emozione del testo: <b>neutra</b></div></div>
+    <div class="karaoke" id="rec-kar"><div><b>Premi Registra: parte la base e vedi la riga</b><small>Usa le cuffie</small></div></div>
+    <div class="meter-bar" id="rec-meter" hidden><i></i></div>
+    <div class="row"><button class="btn pri" id="rec-go">Registra con la base</button><button class="btn" id="rec-stop" hidden>Fine registrazione</button></div>
+    <div class="status" id="rec-msg"></div>
+    <p class="small muted">La voce finisce tra le prove in Voce, dove applichi autotune e mix. Le prove restano salvate sul telefono (nella versione app).</p>
+  </div>
+
   <div class="card"><div class="card-head"><h3>1. Importa le registrazioni</h3></div>
     <p class="small muted">Registra con <b>Memo Vocali</b> → Salva su File → qui. Puoi importare più prove (take) e confrontarle.</p>
     <div class="row"><label class="btn pri" for="v-file">Scegli la registrazione</label><input type="file" id="v-file" accept="audio/*" multiple><button class="btn" id="v-demo">Prova con un esempio</button></div>

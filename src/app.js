@@ -246,7 +246,7 @@
       ['ok', 'Analisi del testo: sillabe, rime, ritornello, tono emotivo'], ['ok', 'Base musicale generata dal testo (suoni sintetici, bozza)'],
       ['ok', 'Voce: analisi, tonalità, autotune, armonia, riduzione rumore, EQ/compressore/riverbero'], ['ok', 'Voce sopra la base, ascolto e salvataggio'],
       ['ok', 'Clip con foto in stile cartone/manga a tempo di musica'], ['ok', 'Piano di promozione 30 giorni con approvazione manuale'],
-      ['soon', 'Registrare dentro l\'app (non permesso dalla pagina): usa Memo Vocali'], ['soon', 'Correzione del tempo (timing) e separazione delle tracce'],
+      ['ok', 'Registrare con il microfono: nella pagina Voce, aperta da Safari (dentro Claude non funziona)'], ['soon', 'Correzione del tempo (timing) e separazione delle tracce'],
       ['soon', 'Voce clonata che canta il testo: serve un servizio esterno, da provare'], ['soon', 'Personaggio manga animato 3D: serve un servizio esterno'],
       ['soon', 'Pubblicazione automatica su Instagram, TikTok, YouTube: non collegata']
     ];
