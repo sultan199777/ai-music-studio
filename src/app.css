@@ -319,3 +319,4 @@ details.card[open]>summary{margin-bottom:8px}
 .dw-ph{gap:6px}.dw-ph .tag{margin-left:auto}
 .dw-panel{margin-bottom:12px}
 .dw-lyrsug{display:block;margin:6px 0;padding:6px 8px;border-left:2px solid #e3c48f;color:var(--text)!important;font-style:italic}
+.dw-chgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}.dw-chcell{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:10px;padding:6px}.dw-chcell.own{border-color:#e3c48f}.dw-chcell small{color:var(--muted);font-size:.68rem}.dw-chcell select{width:100%}

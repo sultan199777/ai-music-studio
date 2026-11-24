@@ -222,3 +222,11 @@ test('batteria a passi: cassa, rullante e hi-hat scritti a mano', () => {
   const kb = g.events.kick.filter(e => e.bar === 1).map(e => e.step); assert.deepStrictEqual(kb, [0, 7]);
   const hb = g.events.hat.filter(e => e.bar === 1); assert.ok(hb.every(e => !e.roll)); assert.ok(hb.every(e => [0, 4, 8, 12].includes(e.step)));
 });
+
+test('accordi per battuta scelti a mano: la battuta cambia accordo e il basso lo segue', () => {
+  const base = { sampleRate: 8000, bpm: 120, genre: 'melodico', tonic: 0, mode: 'minore', bars: 4, seed: 2, sounds: 'sint', plan: [['strofa', 4]] };
+  const g = A.generate(Object.assign({}, base, { chordBars: { 1: 3 } }));
+  const c1 = g.events.chords.find(c => c.bar === 1); assert.strictEqual(c1.midis[0] % 12, 5, 'Fa minore (IV grado di Do minore)');
+  const b1 = g.events.bass.filter(e => Math.floor(e.start / 2) === 1)[0]; assert.strictEqual(b1.midi % 12, 5, 'basso sulla radice');
+  const h = A.generate(Object.assign({}, base, { arp: false })); assert.strictEqual(h.events.arp.length, 0);
+});

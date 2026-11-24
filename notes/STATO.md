@@ -176,3 +176,10 @@ Ancora da fare (non fatti): automazioni nel tempo, chorus/flanger/phaser, gate, 
 - Whisper (transformers.js 4.3.2 dalla CDN jsdelivr, versione fissa: NON nel repo perché il push protection di GitHub vede una falsa chiave Mistral nel file; wasm ORT 1.31-dev in assets/tf) → metodo del testo (sillabe/s, rime, ripetizioni) + misura autotune dell'artista + medie per cartella.
 - Batteria a passi (cassa, rullante, hi-hat, rullate on/off) nel piano roll → `p.drumPat`.
 Ancora da fare: piano roll accordi/arpeggio, trascinare note voce (stile Melodyne), autotune dal vivo di qualità, conversazione libera (modello locale su Mac o Claude a pagamento).
+
+## Interfaccia nuova + agenti con IA locale + accordi/arpeggio (fatto, testato)
+- Studio con 5 spazi di lavoro nella barra in basso (Impara, Base, Testo, Voce, Mix); impostazioni progetto (stile, BPM, tonalità, variante) nel pannello con l'ingranaggio; spiegazioni dietro "?"; menu delle altre funzioni in alto a destra.
+- Agenti (`studio-ai.js`, globale StudioAI — NON `LocalAI`, che è l'assistente testi WebLLM dell'altra chat): motori Regole · "IA che capisce" (embedding multilingue MiniLM 118 MB, anche iPhone: frasi libere → comandi veri) · IA che scrive nel browser (Qwen 1.5B: provato, segue male il formato → solo computer, ripiego sulle regole) · Ollama sul Mac (qwen2.5:7b, provato con un finto server: comandi + righe di testo "Aggiungi al testo").
+- Piano roll: "Accordi e arpeggio" (accordo per battuta `p.chordBars`, schema arpeggio o spento `p.arp=false`).
+- Collegamento basi → cervello: `beatProfile()` (solo numeri dalle basi che ti piacciono) entra in `arModel()` come `styleScore` per SultanBrain.plan.
+- Rispettata la divisione in notes/DIVISIONE-CHAT.md: da ora non tocco autotune/voce/cervello (chat A).

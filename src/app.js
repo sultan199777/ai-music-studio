@@ -454,8 +454,8 @@
     return SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {} });
   }
   function getBase() {
-    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
+    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -569,8 +569,18 @@
   function arStore() { LIB.settings.artists = LIB.settings.artists || {}; return LIB.settings.artists; }
   function arModel() {
     var st = arStore(), names = Object.keys(st).filter(function (n) { return st[n].on; });
-    if (!names.length) return null;
-    return ArtistLab.blend(names.map(function (n) { return ArtistLab.finalize(st[n].acc); }), names);
+    var a = names.length ? ArtistLab.blend(names.map(function (n) { return ArtistLab.finalize(st[n].acc); }), names) : null, bp = beatProfile();
+    if (!a) return bp; if (!bp) return a;
+    var sc = Object.assign({}, a.styleScore || {}); Object.keys(bp.styleScore).forEach(function (g) { sc[g] = (sc[g] || 0) + 0.7 * bp.styleScore[g]; });
+    return Object.assign({}, a, { styleScore: sc, names: (a.names || '') + ' + ' + bp.names });
+  }
+  // basi imparate (solo numeri) → profilo per il cervello: quanto ogni stile pesa nelle canzoni che ti piacciono
+  function beatProfile() {
+    var L = (LIB.settings.learned || []).filter(function (r) { return r.vote > 0 && r.prof; }); if (!L.length) return null;
+    var map = { trap: 'trap', drill: 'drill', melodico: 'melodico', estate: 'estate', epico: 'epico' }, sc = {};
+    L.forEach(function (r) { var g = map[r.prof.style] || 'trap'; if (r.prof.style === 'trap' && r.prof.sub > 0.55) g = 'trapdark'; sc[g] = (sc[g] || 0) + 1 / L.length; });
+    var arts = []; L.forEach(function (r) { if (r.artist && arts.indexOf(r.artist) < 0) arts.push(r.artist); });
+    return { styleScore: sc, names: 'basi imparate' + (arts.length ? ' (' + arts.slice(0, 3).join(', ') + ')' : ''), mood: 'ritmo vicino alle ' + L.length + ' basi che ti piacciono' };
   }
   function arBars(P) { return P.top.slice(0, 5).map(function (t) { return '<div class="small">' + esc(ArtistLab.SCENE_IT[t.scene]) + ' <b>' + Math.round(t.share * 100) + '%</b><div style="height:6px;border-radius:3px;background:var(--line,#333);overflow:hidden"><i style="display:block;height:100%;width:' + Math.round(t.share * 100) + '%;background:var(--acc,#8b5cf6)"></i></div></div>'; }).join(''); }
   function arRender() {
@@ -1541,6 +1551,26 @@
   function prNotes() { var p = cur().prod; return p.notes && Array.isArray(p.notes[PR.tr]) ? p.notes[PR.tr] : null; }
   function prGenerated() { var b = SESSION.base; if (!b || !b.events) return []; return (b.events[PR.tr] || []).filter(function (n) { return n.bar != null; }).map(function (n) { return { bar: n.bar, step: n.step, len: Math.max(1, Math.round(n.len || 2)), midi: Math.round(n.midi), slide: !!n.slide }; }); }
   function inScale(m) { var p = cur().prod; return (SCALE_ST[p.mode] || SCALE_ST.minore).indexOf(((m - p.tonic) % 12 + 12) % 12) >= 0; }
+  var DEG_NAMES = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+  function chordsDraw() {
+    var b = SESSION.base, p = cur().prod; if (!b || !b.events) return;
+    var steps = p.mode === 'maggiore' ? [0, 2, 4, 5, 7, 9, 11] : [0, 2, 3, 5, 7, 8, 10], qual = p.mode === 'maggiore' ? ['', 'm', 'm', '', '', 'm', '°'] : ['m', '°', '', 'm', 'm', '', ''];
+    var opts = DEG_NAMES.map(function (d, i) { return '<option value="' + i + '">' + NOTES[(p.tonic + steps[i]) % 12] + qual[i] + ' (' + d + ')</option>'; }).join('');
+    var bySec = {}; (b.sections || []).forEach(function (s) { for (var k = 0; k < s.bars; k++) bySec[s.startBar + k] = s.name; });
+    var cur0 = {}; b.events.chords.forEach(function (c) { cur0[c.bar] = steps.indexOf(((c.midis[0] - p.tonic) % 12 + 12) % 12); });
+    var arps = Object.keys(Arranger.ARP);
+    $('#dw-pr-chords').innerHTML = '<p class="small muted" style="margin:0 0 6px">Accordo di ogni battuta: basso, accordi, arpeggio e atmosfera lo seguono.</p><div class="dw-chgrid">' + Array.from({ length: b.bars }, function (_, bar) {
+      var v = p.chordBars && p.chordBars[bar] != null ? p.chordBars[bar] : cur0[bar];
+      return '<label class="dw-chcell' + (p.chordBars && p.chordBars[bar] != null ? ' own' : '') + '"><small>' + (bar + 1) + ' · ' + esc(bySec[bar] || '') + '</small><select data-chb="' + bar + '">' + opts.replace('value="' + v + '"', 'value="' + v + '" selected') + '</select></label>';
+    }).join('') + '</div><div class="row"><button class="btn sm" id="dw-ch-reset">Torna agli accordi dello stile</button></div>' +
+      '<p class="small muted" style="margin:10px 0 4px">Arpeggio:</p><div class="chips">' + ['spento'].concat(arps).map(function (k) { var on = k === 'spento' ? p.arp === false : (p.arp !== false && p.arpPattern === k); return '<button class="chip' + (on ? ' on' : '') + '" data-arpk="' + k + '">' + k + '</button>'; }).join('') + '</div>';
+  }
+  $('#dw-pr-chords').addEventListener('change', function (e) { var bar = e.target.getAttribute('data-chb'); if (bar == null) return; var p = cur().prod; p.chordBars = Object.assign({}, p.chordBars || {}); p.chordBars[bar] = +e.target.value; prSave('Accordo della battuta ' + (+bar + 1) + ' cambiato.'); });
+  $('#dw-pr-chords').addEventListener('click', function (e) {
+    e.stopPropagation(); var b = e.target.closest('button'); if (!b) return; var p = cur().prod;
+    if (b.id === 'dw-ch-reset') { delete p.chordBars; prSave('Accordi dello stile.'); return; }
+    var k = b.getAttribute('data-arpk'); if (k) { if (k === 'spento') p.arp = false; else { delete p.arp; p.arpPattern = k; } prSave(k === 'spento' ? 'Arpeggio spento.' : 'Arpeggio: ' + k + '.'); }
+  });
   function drumDefault() {
     var b = SESSION.base, ev = b && b.events, st = b && (b.sections || []).filter(function (x) { return x.name === 'strofa' || x.name === 'ritornello'; })[0], bar = st ? st.startBar : 0;
     var kick = ev ? ev.kick.filter(function (e) { return e.bar === bar; }).map(function (e) { return e.step; }) : [0, 10];
@@ -1554,7 +1584,8 @@
     }).join('') + '<div class="row"><label class="sw small"><input type="checkbox" id="dw-pr-rolls"' + (dp.rolls !== false ? ' checked' : '') + '> Rullate di hi-hat automatiche</label><button class="btn sm" id="dw-pr-dreset">Torna alla batteria dello stile</button></div><p class="small muted">' + (own ? 'Batteria TUA: vale in ogni battuta dove suona la batteria.' : 'Questa è la batteria dello stile: tocca un passo per renderla tua.') + '</p>';
   }
   function prDraw() {
-    var isDrum = PR.tr === 'drums'; $('#dw-pr-drum').hidden = !isDrum; $('#dw-pr-snap').parentElement.hidden = isDrum; $('.dw-pr-wrap').hidden = isDrum; $('#dw-pr-edit').hidden = isDrum; $('#dw-pr-reset').hidden = isDrum;
+    var isCh = PR.tr === 'chords'; $('#dw-pr-chords').hidden = !isCh; if (isCh) { $('#dw-pr-drum').hidden = true; $('.dw-pr-wrap').hidden = true; $('#dw-pr-edit').hidden = true; $('#dw-pr-reset').hidden = true; $('#dw-pr-snap').parentElement.hidden = true; $('#dw-pr-tools').hidden = true; $('#dw-pr-info').textContent = ''; $$('#dw-pr-tr .chip').forEach(function (c) { c.classList.toggle('on', c.getAttribute('data-prt') === PR.tr); }); chordsDraw(); return; }
+    var isDrum = PR.tr === 'drums'; $('#dw-pr-drum').hidden = !isDrum; $('#dw-pr-chords').hidden = true; $('#dw-pr-snap').parentElement.hidden = isDrum; $('.dw-pr-wrap').hidden = isDrum; $('#dw-pr-edit').hidden = isDrum; $('#dw-pr-reset').hidden = isDrum;
     if (isDrum) { $$('#dw-pr-tr .chip').forEach(function (c) { c.classList.toggle('on', c.getAttribute('data-prt') === PR.tr); }); $('#dw-pr-tools').hidden = true; $('#dw-pr-info').textContent = ''; drumDraw(); return; }
     var b = SESSION.base, cv = $('#dw-pr-cv'); if (!b || !cv) return;
     var own = prNotes(), notes = own || prGenerated(), r = PR_RANGE[PR.tr], rows = r[1] - r[0] + 1, W = b.bars * 16 * PR.cw, H = rows * PR.rh, dpr = window.devicePixelRatio || 1;

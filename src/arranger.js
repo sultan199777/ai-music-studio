@@ -516,6 +516,7 @@
       cfg.hat = Math.min(1, cfg.hat * tHat);
       for (var k = 0; k < sec.bars; k++) {
         var bar = sec.startBar + k, deg = prog[k % 4], barLen = stepLen * 16;
+        if (p.chordBars && p.chordBars[bar] != null && p.chordBars[bar] >= 0 && p.chordBars[bar] < 7) deg = +p.chordBars[bar]; // accordo scelto a mano per questa battuta
         var lastBar = k === sec.bars - 1, firstBar = k === 0;
         var ch = [0, 2, 4].map(function (o) { return scaleNote(tonic, mode, deg + o, 48); });
         events.chords.push({ bar: bar, name: chordName(tonic, mode, deg), midis: ch, section: sec.name });

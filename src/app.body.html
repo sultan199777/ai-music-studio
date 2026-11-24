@@ -110,10 +110,11 @@
 
   <section class="dw-panel" id="dw-p-roll" data-ws="base">
     <div class="dw-ph"><h3>Piano roll</h3><span class="tag m">Nota per nota</span></div>
-    <div class="chips" id="dw-pr-tr"><button class="chip on" data-prt="lead">Melodia</button><button class="chip" data-prt="bass">Basso 808</button><button class="chip" data-prt="drums">Batteria</button></div>
+    <div class="chips" id="dw-pr-tr"><button class="chip on" data-prt="lead">Melodia</button><button class="chip" data-prt="bass">Basso 808</button><button class="chip" data-prt="drums">Batteria</button><button class="chip" data-prt="chords">Accordi e arpeggio</button></div>
     <div class="row"><button class="btn sm pri" id="dw-pr-edit">Modifica le note</button><button class="btn sm" id="dw-pr-reset">Torna alle note generate</button><label class="sw small"><input type="checkbox" id="dw-pr-snap" checked> Solo note della scala</label></div>
     <div class="dw-pr-wrap"><canvas id="dw-pr-cv"></canvas></div>
     <div id="dw-pr-drum" hidden></div>
+    <div id="dw-pr-chords" hidden></div>
     <p class="small muted" id="dw-pr-info"></p>
     <div class="row" id="dw-pr-tools" hidden><button class="btn sm" data-pra="up">▲</button><button class="btn sm" data-pra="down">▼</button><button class="btn sm" data-pra="left">◀</button><button class="btn sm" data-pra="right">▶</button><button class="btn sm" data-pra="short">Più corta</button><button class="btn sm" data-pra="long">Più lunga</button><button class="btn sm" data-pra="oct">Ottava</button><button class="btn sm" data-pra="glide" id="dw-pr-glide">Glide 808</button><button class="btn sm" data-pra="del">Elimina</button></div>
     <div class="status" id="dw-pr-msg"></div>
