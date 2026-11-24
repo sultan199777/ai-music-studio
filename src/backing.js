@@ -232,7 +232,7 @@
   }
 
   /** Somma le tracce con i volumi dati (0-1) e normalizza il picco. */
-  function mix(base, gains) {
+  function mix(base, gains, sec) {
     gains = gains || {};
     var N = base.length, out = new Float32Array(N), names = Object.keys(base.tracks);
     var groups = { batteria: ['kick', 'snare', 'hat'], basso: ['bass'], accordi: ['chords'], pad: ['pad', 'fx'], melodia: ['lead'] };
@@ -243,8 +243,18 @@
         g = gains[grp] == null ? 1 : gains[grp];
       }
       if (!g) return;
-      var t = base.tracks[n];
-      for (var i = 0; i < N; i++) out[i] += t[i] * g;
+      var t = base.tracks[n], i;
+      var env = null;
+      if (sec && base.sections) {
+        base.sections.forEach(function (sc) {
+          var m = sec[sc.name] && sec[sc.name][n]; if (m == null || m === 1) return;
+          if (!env) { env = new Float32Array(N); for (var q = 0; q < N; q++) env[q] = 1; }
+          var a = Math.round(sc.startSec * base.sampleRate), z = Math.min(N, Math.round(sc.endSec * base.sampleRate));
+          for (var j = a; j < z; j++) env[j] = m;
+        });
+      }
+      if (env) { var sm = 0, k2 = 1 - Math.exp(-1 / (0.006 * base.sampleRate)); for (i = 0; i < N; i++) { sm += (env[i] - sm) * k2; out[i] += t[i] * g * sm; } }
+      else for (i = 0; i < N; i++) out[i] += t[i] * g;
     });
     var peak = 0, i2;
     for (i2 = 0; i2 < N; i2++) { var a = Math.abs(out[i2]); if (a > peak) peak = a; }

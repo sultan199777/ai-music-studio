@@ -105,3 +105,29 @@ test('promozione: CSV con virgolette e virgole nelle didascalie', () => {
   assert.equal(lines[0], 'data,ora,piattaforma,formato,titolo,didascalia,hashtag,stato');
   assert.ok(lines[1].includes('"A, B"') && lines[1].includes('"Dice ""ciao"""'));
 });
+
+test('producer: comandi per strumento, parte, BPM, tonalità, stile', () => {
+  const PA = require('../src/producer-actions.js');
+  const st = { bpm: 100, mode: 'minore', tonic: 9, genre: 'pop', levels: {} };
+  let r = PA.interpret('a 140 bpm', st); assert.equal(r.state.bpm, 140);
+  r = PA.interpret('in Sol# minore', st); assert.equal(r.state.tonic, 8); assert.equal(r.state.mode, 'minore');
+  r = PA.interpret('stile drill', st); assert.equal(r.state.genre, 'drill'); assert.equal(r.state.bpm, 142);
+  r = PA.interpret('togli l\'808 nella strofa', st); assert.equal(r.state.sec.strofa.bass, 0);
+  r = PA.interpret('senza hi-hat nel ritornello', st); assert.equal(r.state.sec.ritornello.hat, 0);
+  r = PA.interpret('alza gli accordi', st); assert.ok(r.state.levels.chords > 1);
+  r = PA.interpret('solo il basso e la cassa', st); assert.equal(r.state.levels.bass, 1); assert.equal(r.state.levels.hat, 0);
+  r = PA.interpret('bpm 300', st); assert.equal(r.understood, false);
+  assert.equal(st.bpm, 100, 'lo stato originale non cambia');
+});
+
+test('mix per sezione: spegnere hi-hat nel ritornello azzera solo lì', () => {
+  const A = require('../src/arranger.js'), B = require('../src/backing.js');
+  const b = A.generate({ sampleRate: 16000, genre: 'trap', bars: 32, seed: 1 });
+  const rit = b.sections.filter((s) => s.name === 'ritornello')[0], str = b.sections.filter((s) => s.name === 'strofa')[0];
+  const e = (x, s) => { let v = 0; const a = Math.round((s.startSec + 0.5) * 16000), z = Math.round((s.endSec - 0.5) * 16000); for (let i = a; i < z; i++) v += x[i] * x[i]; return v; };
+  const only = (g) => B.mix(b, { kick: 0, snare: 0, bass: 0, chords: 0, pad: 0, fx: 0, lead: 0, hat: 1 }, g);
+  const full = only(null), cut = only({ ritornello: { hat: 0 } });
+  assert.ok(e(cut, rit) < e(full, rit) * 0.001, 'ritornello muto');
+  const out = b.sections.filter((x) => x.name === 'outro')[0];
+  assert.ok(Math.abs(e(cut, str) / e(cut, out) - e(full, str) / e(full, out)) / (e(full, str) / e(full, out)) < 1e-6, 'strofa invariata rispetto alle altre parti');
+});

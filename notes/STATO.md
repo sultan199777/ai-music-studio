@@ -54,3 +54,7 @@ Regola della persona: andare avanti un passo alla volta, senza rianalizzare tutt
 ## 2026-11-24 Suoni veri (campioni CC0)
 - Cassa/rullante/clap/hi-hat ora da campioni registrati (11 suoni, 263 KB), selettore "Suoni batteria" nella sezione base; il basso 808, accordi, pad, melodia restano sintetizzati.
 - Test: 117/117. NON ascoltato da me: va giudicato a orecchio.
+
+## 2026-11-24 Producer: comandi per strumento e per parte
+- Nuovi comandi: BPM esatti, tonalità, stile (trap/drill/epico/melodico/estate), alza/abbassa/togli/rimetti per strumento, "solo X", per sezione (strofa, ritornello…), hi-hat più fitti/radi. Mix per sezione in Backing.mix. Test 119/119.
+- Limite: un comando con due richieste diverse ne esegue una sola (es. stile + togli 808).

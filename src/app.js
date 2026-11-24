@@ -447,7 +447,7 @@
     if (imp) { samples = imp.mono; sr = imp.sr; bpm = imp.bpm || p.bpm; }
     else {
       var b = getBase(); sr = b.sampleRate; bpm = p.bpm;
-      samples = Backing.mix(b, p.levels);
+      samples = Backing.mix(b, p.levels, p.sec);
       if (p.reverb > 0) samples = Polish.reverb(samples, sr, { mix: Math.min(0.5, p.reverb), roomSize: 1 });
     }
     var t = opts.voice ? activeTake() : null, used = null;
@@ -562,7 +562,7 @@
     var r = ProducerActions.interpret(text, p);
     if (r.understood) {
       HIST.push({ text: text, before: snapshot(p) });
-      ['bpm', 'mode', 'bassStyle', 'reverb', 'levels'].forEach(function (k) { p[k] = r.state[k]; });
+      ['bpm', 'mode', 'bassStyle', 'reverb', 'levels', 'sec', 'tonic', 'genre', 'tune'].forEach(function (k) { p[k] = r.state[k]; });
       if (r.variants) p.seed = 11;
       persist(); SESSION.baseKey = '';
       chatPush('ai', r.notes.join(' ') + (r.unsupported ? '\n' + r.unsupported : '') + '\nOra la ascolti.');
@@ -591,7 +591,7 @@
   $('#p-chips').addEventListener('click', function (e) { var c = e.target.getAttribute('data-chip'); if (c) producerGo(c); });
   $('#p-undo').addEventListener('click', function () {
     var h = HIST.pop(); if (!h) return; var p = cur().prod, b = h.before;
-    ['bpm', 'mode', 'bassStyle', 'reverb', 'levels', 'seed'].forEach(function (k) { p[k] = b[k]; }); SESSION.baseKey = ''; persist();
+    ['bpm', 'mode', 'bassStyle', 'reverb', 'levels', 'sec', 'tonic', 'genre', 'tune'].concat(['seed']).forEach(function (k) { p[k] = b[k]; }); SESSION.baseKey = ''; persist();
     chatPush('ai', 'Annullato: "' + h.text + '".'); renderHist();
   });
   $('#p-var').innerHTML = ['A', 'B', 'C'].map(function (l, i) { return '<button class="btn" data-var="' + (21 + i) + '">Variante ' + l + '</button>'; }).join('');
