@@ -39,3 +39,7 @@ Regola della persona: andare avanti un passo alla volta, senza rianalizzare tutt
 - Repo GitHub privato sultan199777/ai-music-studio, ramo claude/app-con-microfono (clone di lavoro: /home/claude/ams-repo).
 - NON verificato: microfono su iPhone reale (Safari), latenza reale, installazione sulla Home. Test fatti con microfono finto in Chromium.
 - Da decidere: dove pubblicare (GitHub Pages richiede repo pubblico o piano a pagamento).
+
+## Aggiornamento 24/11 - Catena di master (fatto, testato)
+- `src/master.js`: highpass, EQ leggero, compressore "colla", saturazione, volume medio al bersaglio (Morbido -17, Standard -14, Forte -11 dBFS RMS), limitatore con anticipo (tetto -1 dBFS). Applicata a base e mix con voce; selettore in Studio.
+- 116 test passano; verificato in Chromium iPhone emulato. Valori misurati; il giudizio sul suono resta all'orecchio dell'utente.

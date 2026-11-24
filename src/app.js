@@ -21,7 +21,7 @@
   var store = { kind: 'locale', doc: null, busy: false, again: false, ok: false };
 
   function defaultProd() {
-    return { genre: 'pop', bpm: 100, tonic: 0, mode: 'maggiore', bars: 8, bassStyle: null, reverb: 0, seed: 1, follow: false, levels: { batteria: 1, basso: 1, accordi: 1, pad: 1, melodia: 1 } };
+    return { master: 'standard', genre: 'pop', bpm: 100, tonic: 0, mode: 'maggiore', bars: 8, bassStyle: null, reverb: 0, seed: 1, follow: false, levels: { batteria: 1, basso: 1, accordi: 1, pad: 1, melodia: 1 } };
   }
   function newSong(title) {
     return { id: uid(), title: title || 'Senza titolo', lyrics: '', versions: [], status: 'idea', folder: 'lavorazione', modes: {}, mood: '', key: '', release: '', links: '', notes: '', prod: defaultProd(), plan: null, created: today() };
@@ -406,7 +406,7 @@
   function fillBase() {
     var p = cur().prod;
     $('#b-genre').value = p.genre; $('#b-bpm').value = p.bpm; $('#b-tonic').value = p.tonic; $('#b-mode').value = p.mode;
-    $('#b-bars').value = p.bars; $('#b-barsv').textContent = p.bars; $('#b-follow').checked = !!p.follow;
+    $('#b-master').value = p.master || 'standard'; $('#b-bars').value = p.bars; $('#b-barsv').textContent = p.bars; $('#b-follow').checked = !!p.follow;
     $('#b-levels').innerHTML = Object.keys(LEVEL_NAMES).map(function (k) {
       return '<label class="f"><span>' + LEVEL_NAMES[k] + '<b data-lv="' + k + '">' + Math.round(p.levels[k] * 100) + '%</b></span><input type="range" min="0" max="180" value="' + Math.round(p.levels[k] * 100) + '" data-level="' + k + '"></label>';
     }).join('');
@@ -414,6 +414,7 @@
   $('#b-genre').innerHTML = Object.keys(ALLG).map(function (g) { return '<option value="' + g + '">' + ALLG[g].label + '</option>'; }).join('');
   $('#b-tonic').innerHTML = NOTES.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
   $('#b-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.tune = null; p.bpm = ALLG[this.value].bpm; if (['trap', 'drill', 'epico'].indexOf(this.value) >= 0) { p.mode = 'minore'; $('#b-mode').value = 'minore'; } else if (this.value === 'estate') { p.mode = 'maggiore'; $('#b-mode').value = 'maggiore'; } if (Arranger.STYLES[this.value] && p.bars < 16) { p.bars = 32; $('#b-bars').value = 32; $('#b-barsv').textContent = 32; } $('#b-bpm').value = p.bpm; persist(); });
+  $('#b-master').addEventListener('change', function () { cur().prod.master = this.value; persist(); });
   $('#b-bpm').addEventListener('change', function () { cur().prod.bpm = Math.max(60, Math.min(180, +this.value || 100)); this.value = cur().prod.bpm; persist(); });
   $('#b-tonic').addEventListener('change', function () { cur().prod.tonic = +this.value; persist(); });
   $('#b-mode').addEventListener('change', function () { cur().prod.mode = this.value; persist(); });
@@ -452,7 +453,9 @@
       var vgain = +$('#v-gain').value / 100, off = (+$('#v-bar').value || 0) * 4 * 60 / bpm + (+$('#v-off').value || 0) / 1000 - (t.lat || 0);
       samples = Backing.withVoice(samples, sr, t.final || t.mono, t.sr, vgain, off); used = t.final ? 'elaborata' : 'originale';
     }
-    return { samples: samples, sr: sr, bpm: bpm, voice: used };
+    var mp = cur().prod.master || 'standard', mrep = null;
+    if (mp !== 'off' && Master.PRESETS[mp]) { var mr = Master.process(samples, sr, mp); samples = mr.samples; mrep = mr.report; }
+    return { samples: samples, sr: sr, bpm: bpm, voice: used, master: mrep };
   }
   function karaokeTick(bpm, sel) {
     sel = sel || '#kar';
