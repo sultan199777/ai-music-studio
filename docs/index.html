@@ -1,4 +1,4 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#07070F"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Music Studio"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><style>:root{color-scheme:light}html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Music Studio AI</title>
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#07070F"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Music Studio"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><style>:root{color-scheme:light}html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Sultan Sound</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
 <style>
@@ -426,7 +426,7 @@ details.card[open]>summary{margin-bottom:8px}
 
 <div id="app">
 <header class="top">
-  <a class="brand" href="#home"><span class="logo"><svg><use href="#i-note"/></svg></span>Music Studio AI</a>
+  <a class="brand" href="#home"><span class="logo"><svg><use href="#i-note"/></svg></span>Sultan Sound</a>
   <a class="chip-song" id="top-song" href="#canzoni">Nessuna canzone</a>
 </header>
 
@@ -533,6 +533,11 @@ details.card[open]>summary{margin-bottom:8px}
     <p id="h-sub">Scrivi il testo, crea la base, importa la tua voce e fai il clip.</p>
     <div class="row" style="margin-top:12px"><a class="btn" href="#studio">Continua a lavorare</a></div>
   </div>
+  <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
+    <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
+    <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 16:12</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+  </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
   <details class="card" open><summary>Come si usa dall'iPhone <svg width="18" height="18"><use href="#i-chev"/></svg></summary>
@@ -566,7 +571,7 @@ details.card[open]>summary{margin-bottom:8px}
 
 <!-- STUDIO -->
 <main class="view" id="v-studio" hidden>
-  <div class="head"><div class="eyebrow">Music Studio</div><h1>Testo e base</h1></div>
+  <div class="head"><div class="eyebrow">Sultan Sound</div><h1>Testo e base</h1></div>
   <div class="card"><div class="card-head"><h3>Il testo</h3><span class="tag info" id="st-count">0 righe</span></div>
     <label class="f"><span>Titolo</span><input type="text" id="st-title" placeholder="Titolo della canzone" autocomplete="off"></label>
     <label class="f" style="margin-top:10px"><span>Testo (scrivi o incolla il tuo)</span><textarea id="st-lyrics" rows="8" placeholder="[Strofa]&#10;Cammino da solo sotto la luna&#10;&#10;[Ritornello]&#10;Torna domani..."></textarea></label>
@@ -604,11 +609,14 @@ details.card[open]>summary{margin-bottom:8px}
     <h3 style="margin-top:12px">Strumenti</h3>
     <div id="b-levels"></div>
     <div class="row" style="margin-top:10px">
+      <button class="btn pri" id="sb-make">Cervello Sultan · crea dal testo</button>
+      <button class="btn" id="sb-again">Altra versione dal testo</button>
       <button class="btn pri" id="b-play"><svg><use href="#i-play"/></svg>Crea e ascolta</button>
       <button class="btn" id="b-new">Nuova variante</button>
       <button class="btn" id="b-stop"><svg><use href="#i-stop"/></svg>Stop</button>
       <button class="btn" id="b-save">Salva la base</button>
     </div>
+    <div class="status" id="sb-msg"></div>
     <div class="status" id="b-status"></div>
     <div id="b-out"></div>
   </div>
@@ -843,7 +851,7 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">221 test automatici superati su 221 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">227 test automatici superati su 227 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -3883,6 +3891,14 @@ details.card[open]>summary{margin-bottom:8px}
       spiega: 'Orchestra: archi in sezione, corni, campane, tamburi grandi. Le dinamiche crescono verso il ritornello.' },
     melodico: { nome: 'Melodico / pop', melodia: ['piano', 'guitar', 'kalimba'], accordi: ['piano', 'guitar', 'epiano'], pad: ['violins', 'organ'],
       spiega: 'Accordi chiari e caldi, melodia semplice e cantabile, pochi strumenti ben scelti.' },
+    boombap: { nome: 'Boom bap pesante', melodia: ['piano', 'epiano', 'vibes', 'upright'], accordi: ['piano', 'epiano', 'organ', 'clavi'], pad: ['cellos', 'organ', 'violas'],
+      spiega: 'Batteria polverosa e larga, piano o piano elettrico che ripete un giro, basso rotondo. Come nel rap italiano classico: pesante ma senza fretta.' },
+    street: { nome: 'Street pesante', melodia: ['piano', 'horn', 'pizz', 'bells'], accordi: ['piano', 'organ', 'cellos'], pad: ['cellos', 'violins'],
+      spiega: 'Colpi di piano e archi scuri, rullante forte sul 2 e 4, 808 grosso. Atmosfera da strada e da sfida, tempo medio.' },
+    trapdark: { nome: 'Trap scura pesante', melodia: ['bells', 'pizz', 'piano', 'glass'], accordi: ['pizz', 'piano', 'organ'], pad: ['cellos', 'organ', 'violas'],
+      spiega: '808 che scivola, hi-hat a terzine, campane e pizzicati cupi. Poche note, molto peso.' },
+    clubtrap: { nome: 'Club (dembow trap)', melodia: ['kalimba', 'marimba', 'bells', 'piano'], accordi: ['nylon', 'clavi', 'piano'], pad: ['organ'],
+      spiega: 'Ritmo dembow ballabile con 808: il rullante in levare fa muovere i fianchi, melodie corte e orecchiabili.' },
     estate: { nome: 'Estate / latino / afro', melodia: ['marimba', 'nylon', 'kalimba'], accordi: ['nylon', 'clavi', 'marimba'], pad: ['organ'],
       spiega: 'Ritmo in levare, legni e chitarra classica, colori allegri. Il basso è rotondo e segue la cassa.' }
   };
@@ -4021,6 +4037,110 @@ details.card[open]>summary{margin-bottom:8px}
     registerCustom: registerCustom, customIds: function () { return Object.keys(custom); }, renderRaw: function (id, midi, dur, sr, opt) { return render(id, midi, dur, sr, opt); },
     loaded: function () { return Object.keys(bank).concat(synthIds); }
   };
+});
+
+/*
+ * Cervello Sultan: legge il TESTO e decide da solo come deve suonare la base.
+ *
+ * Non è un modello di linguaggio: è un sistema di regole misurabili, tutto sul telefono, tutto spiegabile.
+ * 1. SCENE: conta nel testo parole di mondi diversi (strada, soldi, rabbia, dolore, amore, festa, nostalgia, epico).
+ * 2. FORMA: sillabe medie per riga (spazio per le parole), ripetizioni (ritornello da cantare), lunghezza.
+ * 3. SCELTA: ogni scena "vota" gli stili pesanti (boom bap, street, trap pesante, drill, club...). Vince il
+ *    punteggio più alto; a parità decide l'impronta del testo (hash), quindi due testi diversi non danno la
+ *    stessa base. Anche tonalità, velocità, seme e tipo di basso dipendono dal testo.
+ * 4. IMPARA: la scelta degli strumenti passa dal Coach (che conosce i tuoi mi piace / non mi piace).
+ * Sono IPOTESI di mestiere: il giudizio finale è del tuo orecchio. Lo stile degli artisti è solo
+ * descritto con caratteristiche misurabili (velocità, densità, pesantezza), mai copiato.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.SultanBrain = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var LEX = {
+    strada: 'strada strade quartiere quartieri fra frate bro gang piazza zona blocco polizia sbirri sbirro galera carcere droga fumo erba giro cella ghetto periferia palazzi marciapiede vicolo ragazzi banda clan zone strada'.split(' '),
+    soldi: 'soldi euro oro rolex lusso gucci prada macchina macchine diamanti collana collane cash banca fama top classifica platino dollari milioni tasca tasche portafoglio ferrari lambo orologio catena catene'.split(' '),
+    rabbia: 'guerra sangue odio nemici nemico falsi falso tradito tradimento pistola lama morte rabbia fuoco bruciare ammazzo uccidere vendetta cattivo lotta combatto nemmeno'.split(' '),
+    dolore: 'solo sola buio lacrime vuoto perso persa dolore pianto ricordi manca mancare addio piango male ferite ferita cicatrici ombra ombre spento silenzio notti'.split(' '),
+    amore: 'amore bacio baci cuore occhi baby labbra insieme tesoro stringo abbraccio ti amo mia mio passione pelle'.split(' '),
+    festa: 'festa estate mare ballare ballo sera club drink ragazze sole vacanza discoteca shot balliamo salto musica notte luci tutti'.split(' '),
+    nostalgia: 'ricordo ricordi infanzia vecchio vecchia anni tempo ieri casa mamma papà nonno nonna ragazzino bambino passato scuola'.split(' '),
+    epico: 'dio cielo sogno sogni destino re impero leggenda vittoria vinco corona trono eterno immortale storia mondo futuro luce'.split(' ')
+  };
+  // quanto ogni scena "vota" ogni stile (0-3)
+  var VOTE = {
+    strada: { boombap: 2, street: 2.5, trapdark: 2, drill: 1.5, trap: 1 },
+    soldi: { street: 2.5, trapdark: 1.5, clubtrap: 2, trap: 1.5 },
+    rabbia: { drill: 3, trapdark: 2.5, street: 1.5 },
+    dolore: { trap: 2.5, boombap: 2, melodico: 1.5, trapdark: 1 },
+    amore: { melodico: 2.5, clubtrap: 1.5, trap: 1 },
+    festa: { clubtrap: 3, estate: 2.5, melodico: 0.5 },
+    nostalgia: { boombap: 3, melodico: 2, trap: 0.5 },
+    epico: { epico: 3, street: 1.5, trapdark: 1 }
+  };
+  var GENRES = ['boombap', 'street', 'trapdark', 'drill', 'trap', 'clubtrap', 'melodico', 'estate', 'epico'];
+  var BASE_BPM = { boombap: 90, street: 96, trapdark: 144, drill: 142, trap: 138, clubtrap: 98, melodico: 94, estate: 100, epico: 84 };
+  var MAJOR_OK = { melodico: 1, estate: 1, clubtrap: 1 };
+  var NAMES = { boombap: 'Boom bap pesante', street: 'Street 50 Cent', trapdark: 'Trap scura pesante', drill: 'Drill', trap: 'Trap', clubtrap: 'Club (dembow trap)', melodico: 'Melodico', estate: 'Estate latina', epico: 'Epico' };
+
+  function hash(s) { var h = 2166136261 >>> 0; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; }
+  function words(text) { return (String(text || '').toLowerCase().replace(/\[[^\]]*\]/g, ' ').match(/[a-zàèéìíòóùú']+/g) || []); }
+  function round(v) { return Math.round(v * 100) / 100; }
+
+  /**
+   * @param {string} text  il testo grezzo
+   * @param {object} [an]  risultato di LyricsEngine.analyze (opzionale: sillabe e ripetizioni)
+   * @param {{variant?:number}} [opt] variant: numero di "nuova versione" (cambia seme e dettagli)
+   */
+  function plan(text, an, opt) {
+    opt = opt || {};
+    var ws = words(text), n = ws.length, variant = opt.variant || 0;
+    var h = hash(ws.join(' ') || 'vuoto'), why = [];
+    var scenes = {}, total = 0;
+    Object.keys(LEX).forEach(function (k) {
+      var set = {}; LEX[k].forEach(function (w) { set[w] = 1; });
+      var c = 0; ws.forEach(function (w) { if (set[w]) c++; });
+      scenes[k] = c; total += c;
+    });
+    var score = {}; GENRES.forEach(function (g) { score[g] = 0; });
+    Object.keys(scenes).forEach(function (k) {
+      if (!scenes[k]) return;
+      var share = scenes[k] / Math.max(1, total);
+      Object.keys(VOTE[k]).forEach(function (g) { score[g] += share * VOTE[k][g] * Math.min(3, 1 + scenes[k] / 4); });
+    });
+    var top = Object.keys(scenes).filter(function (k) { return scenes[k] > 0; }).sort(function (a, b) { return scenes[b] - scenes[a]; });
+    var scene = top[0] || null;
+    if (top.length) why.push('Nel testo pesano le scene: ' + top.slice(0, 3).map(function (k) { return k + ' (' + scenes[k] + ')'; }).join(', ') + '.');
+    else why.push('Poche parole riconosciute: lascio decidere l\'impronta del testo e la forma delle righe.');
+
+    // forma del testo
+    var avg = an && an.syllables ? an.syllables.average : (n && text ? n / Math.max(1, (String(text).split('\n').filter(function (l) { return l.trim() && !/^\[/.test(l.trim()); }).length)) * 1.8 : 9);
+    var rep = an ? an.repetitionShare || 0 : 0;
+    if (avg >= 12) { score.boombap += 1.2; score.street += 0.8; why.push('Righe lunghe (' + round(avg) + ' sillabe): servono battute larghe e tempo più basso, come nel boom bap.'); }
+    else if (avg <= 8 && avg > 0) { score.drill += 0.6; score.clubtrap += 0.8; score.trap += 0.5; why.push('Righe corte (' + round(avg) + ' sillabe): ritmo più veloce e secco.'); }
+    if (rep >= 0.25) { score.clubtrap += 1; score.trap += 0.5; why.push('Molte ripetizioni: ritornello da cantare tutti insieme.'); }
+
+    // impronta del testo: piccolo spostamento deterministico, così testi diversi non danno lo stesso stile
+    GENRES.forEach(function (g, i) { score[g] += ((((h >>> (i * 3)) & 7) / 7) * 0.9) + ((((variant * 2654435761) >>> (i * 2)) & 3) / 3) * (variant ? 0.5 : 0); });
+    var order = GENRES.slice().sort(function (a, b) { return score[b] - score[a]; });
+    var genre = order[0];
+    why.push('Stile scelto: ' + NAMES[genre] + (order[1] ? ' (secondo: ' + NAMES[order[1]] + ')' : '') + '.');
+
+    // velocità, scala, tonalità, seme
+    var bpm = BASE_BPM[genre] + (avg >= 12 ? -6 : (avg > 0 && avg <= 8 ? 5 : 0)) + (((h >>> 5) % 9) - 4) + (variant ? ((variant * 3) % 5) - 2 : 0);
+    var lo = { boombap: 80, street: 86 }[genre] || 78;
+    bpm = Math.max(lo, Math.min(150, Math.round(bpm)));
+    var bright = scenes.festa + scenes.amore + scenes.epico > scenes.dolore + scenes.rabbia + scenes.strada;
+    var mode = MAJOR_OK[genre] && bright ? 'maggiore' : 'minore';
+    var tonic = (h >>> 9) % 12; if (variant) tonic = (tonic + variant * 5) % 12;
+    var seed = ((h >>> 1) % 90000) + 1 + variant * 17;
+    var bassStyle = /boombap|melodico|estate/.test(genre) ? null : '808';
+    why.push('Velocità ' + bpm + ' BPM, ' + mode + ', tonalità ' + ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'][tonic] + ': nascono dall\'impronta di questo testo, un altro testo darà un\'altra base.');
+    return { genre: genre, label: NAMES[genre], bpm: bpm, mode: mode, tonic: tonic, seed: seed, bassStyle: bassStyle, sounds: 'campioni', scene: scene, scenes: scenes, scores: score, why: why, second: order[1] };
+  }
+
+  return { plan: plan, hash: hash, NAMES: NAMES, GENRES: GENRES, LEX: LEX };
 });
 
 /*
@@ -4505,6 +4625,30 @@ details.card[open]>summary{margin-bottom:8px}
       kickPats: [[[0, 8], [0, 6, 10]], [[0, 7, 10], [0, 8, 11]], [[0, 10], [0, 6, 8]]],
       chord: 'pluck', chordPat: [0, 3, 6, 10, 12], arp: false, pad: 'warm', lead: 'pluck', duck: 0.25
     },
+    boombap: {
+      label: 'Boom bap pesante', bpm: 90, swing: 0.16, kick: [0], kickExtra: [7, 10, 11], snare: [4, 12], clap: false,
+      hat: 'soft', bass: 'round', slide: 0.08, rolls: 0.05,
+      kickPats: [[[0, 10], [0, 7, 10]], [[0, 7], [0, 7, 11]], [[0, 10, 11], [0, 6, 10]]],
+      chord: 'pluck', chordPat: [0, 6, 10], arp: false, pad: 'dark', lead: 'pluck', duck: 0.3
+    },
+    street: {
+      label: 'Street (stile 50 Cent)', bpm: 96, swing: 0.06, kick: [0], kickExtra: [6, 10, 14], snare: [4, 12], clap: true,
+      hat: 'soft', bass: '808', slide: 0.2, glide: 0.06, drive: 1.7, rolls: 0.1,
+      kickPats: [[[0, 10], [0, 6, 10]], [[0, 7, 10], [0, 3, 10, 14]], [[0, 11], [0, 6, 14]]],
+      chord: 'pluck', chordPat: [0, 3, 8, 11], arp: false, pad: 'dark', lead: 'bell', duck: 0.35
+    },
+    trapdark: {
+      label: 'Trap scura pesante', bpm: 144, swing: 0, kick: [0], kickExtra: [3, 7, 10, 13], snare: [8], clap: true,
+      hat: 'drill', bass: '808', slide: 0.6, glide: 0.12, drive: 2.7, rolls: 0.6,
+      kickPats: [[[0, 10], [0, 7, 13]], [[0, 6, 11], [0, 3, 10]], [[0, 7, 10], [0, 13]]],
+      chord: 'pluck', chordPat: [0, 8], arp: true, pad: 'dark', lead: 'bell', duck: 0.32
+    },
+    clubtrap: {
+      label: 'Club (dembow trap)', bpm: 98, swing: 0, kick: [0, 4, 8, 12], kickExtra: [], snare: [3, 6, 11, 14], clap: true,
+      hat: 'offbeat', bass: '808', slide: 0.15, glide: 0.05, drive: 1.8, rolls: 0.2,
+      kickPats: [[[0, 4, 8, 12], [0, 4, 8, 12]]],
+      chord: 'pluck', chordPat: [0, 6, 10], arp: false, pad: 'warm', lead: 'bell', duck: 0.28
+    },
     estate: {
       label: 'Estate (ritmo latino)', bpm: 100, swing: 0, kick: [0, 4, 8, 12], kickExtra: [], snare: [3, 6, 11, 14], clap: false,
       hat: 'offbeat', bass: 'round', slide: 0, rolls: 0,
@@ -4523,7 +4667,7 @@ details.card[open]>summary{margin-bottom:8px}
     levare: { per: 8, seq: [-1, 2, -1, 3, -1, 2, -1, 4] },
     lento: { per: 4, seq: [0, 2, 3, 4] }
   };
-  var ARP_STYLE = { trap: ['lento', 'terzine'], drill: ['ottavi', 'terzine'], epico: ['ottavi', 'sedicesimi'], melodico: ['lento', 'spezzato'], estate: ['levare', 'spezzato'] };
+  var ARP_STYLE = { trap: ['lento', 'terzine'], drill: ['ottavi', 'terzine'], epico: ['ottavi', 'sedicesimi'], melodico: ['lento', 'spezzato'], estate: ['levare', 'spezzato'], boombap: ['lento', 'spezzato'], street: ['lento', 'spezzato'], trapdark: ['ottavi', 'terzine'], clubtrap: ['levare', 'ottavi'] };
 
   // Come suona ogni sezione (livelli 0-1). riserEnd = riser nell'ultima battuta; gap = respiro prima del drop.
   var SEC = {
@@ -4610,7 +4754,7 @@ details.card[open]>summary{margin-bottom:8px}
     var bassKind = p.bassStyle === '808' ? '808' : (style.bass);
     var T = { arp: new Float32Array(N), kick: new Float32Array(N), snare: new Float32Array(N), hat: new Float32Array(N), bass: new Float32Array(N), chords: new Float32Array(N), pad: new Float32Array(N), lead: new Float32Array(N), fx: new Float32Array(N) };
     var events = { bass: [], chords: [], lead: [], kick: [], hat: [], arp: [] }, kickStarts = [];
-    var LEADS = { trap: ['synth', 'keys', 'bell'], drill: ['dark', 'keys', 'bell'], epico: ['strings', 'synth', 'keys'], melodico: ['keys', 'synth', 'pluck'], estate: ['marimba', 'keys', 'synth'] };
+    var LEADS = { trap: ['synth', 'keys', 'bell'], drill: ['dark', 'keys', 'bell'], epico: ['strings', 'synth', 'keys'], melodico: ['keys', 'synth', 'pluck'], boombap: ['keys', 'pluck', 'bell'], street: ['keys', 'bell', 'synth'], trapdark: ['dark', 'bell', 'keys'], clubtrap: ['bell', 'synth', 'marimba'], estate: ['marimba', 'keys', 'synth'] };
     // Strumenti veri scelti per ruolo (p.inst = {melodia, accordi, pad}); se non caricati si usa la sintesi.
     var pin = p.inst || {};
     function pickInst(role) { var id = pin[role]; return id && Inst && Inst.has(id) ? id : null; }
@@ -6361,7 +6505,7 @@ details.card[open]>summary{margin-bottom:8px}
   ];
   var SECS = [['intro', /\bintro\b/i], ['strofa', /\bstrof[ae]\b/i], ['pre', /\bpre[\s-]?(ritornello|chorus)?\b/i], ['ritornello', /\britornell[oi]\b/i], ['bridge', /\bbridge\b/i], ['outro', /\b(outro|finale|chiusura)\b/i]];
   var NOTES = { 'do': 0, 're': 2, 'mi': 4, 'fa': 5, 'sol': 7, 'la': 9, 'si': 11 };
-  var STYLE_BPM = { trap: 140, drill: 142, epico: 84, melodico: 96, estate: 100 };
+  var STYLE_BPM = { trap: 140, drill: 142, epico: 84, melodico: 96, estate: 100, boombap: 90, street: 96, trapdark: 144, clubtrap: 98 };
 
   function trackIn(t) { for (var i = 0; i < TRACKS.length; i++) if (TRACKS[i][1].test(t)) return TRACKS[i]; return null; }
   function secsIn(t) { var out = []; SECS.forEach(function (x) { if (x[1].test(t)) out.push(x[0]); }); if (out.indexOf('pre') >= 0 && /pre[\s-]?ritornello|pre[\s-]?chorus/i.test(t) === false && out.indexOf('ritornello') >= 0) out.splice(out.indexOf('pre'), 1); return out; }
@@ -6386,9 +6530,9 @@ details.card[open]>summary{margin-bottom:8px}
       var ton = (NOTES[m[1].toLowerCase()] + (m[3] ? 1 : 0)) % 12; s.tonic = ton; var out = ['Tonalità: ' + m[1].toUpperCase().slice(0, 1) + m[1].toLowerCase().slice(1) + (m[3] ? '#' : '')];
       if (m[4]) { s.mode = m[4].toLowerCase(); out[0] += ' ' + s.mode; } out[0] += '.'; return { notes: out };
     } },
-    { id: 'style', re: /\b(stile|genere|tipo)?\s*(trap|drill|epico|melodico|estate)\b/i, run: function (s, t) {
-      var g = t.match(/\b(trap|drill|epico|melodico|estate)\b/i)[1].toLowerCase(); s.genre = g; s.bpm = STYLE_BPM[g]; s.tune = null;
-      if (g === 'trap' || g === 'drill' || g === 'epico') s.mode = 'minore'; if (g === 'estate') s.mode = 'maggiore';
+    { id: 'style', re: /\b(stile|genere|tipo)?\s*(trap|drill|epico|melodico|estate|boombap|street|trapdark|clubtrap)\b/i, run: function (s, t) {
+      var g = t.match(/\b(trap|drill|epico|melodico|estate|boombap|street|trapdark|clubtrap)\b/i)[1].toLowerCase(); s.genre = g; s.bpm = STYLE_BPM[g]; s.tune = null;
+      if (['trap', 'drill', 'epico', 'boombap', 'street', 'trapdark', 'clubtrap'].indexOf(g) >= 0) s.mode = 'minore'; if (g === 'estate') s.mode = 'maggiore';
       return { notes: ['Cambio stile in ' + g + ' (' + s.bpm + ' BPM). Rifaccio la base da capo con struttura e suoni di quello stile.'] };
     } },
     { id: 'solo', re: /\bsolo\s+(il |la |lo |l'|gli )?(.+)/i, run: function (s, t) {
@@ -8826,7 +8970,7 @@ details.card[open]>summary{margin-bottom:8px}
   var VIEWS = ['daw', 'home', 'menu', 'canzoni', 'studio', 'strumenti', 'producer', 'voce', 'video', 'marketing', 'social', 'libreria', 'impostazioni', 'beatlab' /* Beat Lab */];
   var MENU = [
     ['home', 'Home e Dashboard', 'Il tuo percorso', 'i-home'], ['canzoni', 'Le mie canzoni', 'Schede e versioni', 'i-disc'],
-    ['studio', 'Music Studio', 'Testo, base, cantare', 'i-sliders'], ['strumenti', 'Strumentario', '29 strumenti veri e guida', 'i-sliders'], ['beatlab', 'Beat Lab', 'Fai le tue basi', 'i-note'] /* Beat Lab */, ['producer', 'AI Producer', 'Comandi a parole', 'i-spark'],
+    ['studio', 'Testo e Base', 'Scrivi, crea la base, canta', 'i-sliders'], ['strumenti', 'Strumentario', '29 strumenti veri e guida', 'i-sliders'], ['beatlab', 'Beat Lab', 'Fai le tue basi', 'i-note'] /* Beat Lab */, ['producer', 'AI Producer', 'Comandi a parole', 'i-spark'],
     ['voce', 'Vocal Studio', 'Voce e autotune', 'i-mic'], ['video', 'AI Video Studio', 'Clip a tempo', 'i-film'],
     ['marketing', 'Marketing AI', 'Piano a 30 giorni', 'i-mega'], ['social', 'Social Media Manager', 'Calendario', 'i-cal'],
     ['libreria', 'Libreria contenuti', 'Materiali', 'i-folder'], ['impostazioni', 'Impostazioni', 'Aspetto e dati', 'i-gear']
@@ -9051,7 +9195,7 @@ details.card[open]>summary{margin-bottom:8px}
   }
   $('#b-genre').innerHTML = Object.keys(ALLG).map(function (g) { return '<option value="' + g + '">' + ALLG[g].label + '</option>'; }).join('');
   $('#b-tonic').innerHTML = NOTES.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
-  $('#b-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.tune = null; p.bpm = ALLG[this.value].bpm; if (['trap', 'drill', 'epico'].indexOf(this.value) >= 0) { p.mode = 'minore'; $('#b-mode').value = 'minore'; } else if (this.value === 'estate') { p.mode = 'maggiore'; $('#b-mode').value = 'maggiore'; } if (Arranger.STYLES[this.value] && p.bars < 16) { p.bars = 32; $('#b-bars').value = 32; $('#b-barsv').textContent = 32; } $('#b-bpm').value = p.bpm; persist(); });
+  $('#b-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.tune = null; p.bpm = ALLG[this.value].bpm; if (['trap', 'drill', 'epico', 'boombap', 'street', 'trapdark', 'clubtrap'].indexOf(this.value) >= 0) { p.mode = 'minore'; $('#b-mode').value = 'minore'; } else if (this.value === 'estate') { p.mode = 'maggiore'; $('#b-mode').value = 'maggiore'; } if (Arranger.STYLES[this.value] && p.bars < 16) { p.bars = 32; $('#b-bars').value = 32; $('#b-barsv').textContent = 32; } $('#b-bpm').value = p.bpm; persist(); });
   ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.addEventListener('change', function () { cur().prod.karBars = this.value === 'auto' ? 'auto' : +this.value; persist(); syncKar(); }); });
   function syncKar() { var v = String(cur().prod.karBars || 'auto'); ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.value = v; }); }
   $('#b-sounds').addEventListener('change', function () { cur().prod.sounds = this.value; persist(); });
@@ -9137,6 +9281,23 @@ details.card[open]>summary{margin-bottom:8px}
       return mx;
     } catch (e) { st.textContent = 'Non sono riuscito a creare la base. Prova con meno battute.'; return null; }
   }
+  /* ===== Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti) ===== */
+  var BANNED_INST = { flute: 1, ocarina: 1, harmonica: 1, clarinet: 1, kalimba: 0 };
+  async function runBrain(again) {
+    var s = cur(), p = s.prod, m = $('#sb-msg');
+    if (!s.lyrics.trim()) { m.textContent = 'Scrivi o incolla prima il testo (in alto): il cervello parte da quello.'; return; }
+    s.brainV = again ? (s.brainV || 0) + 1 : 0;
+    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV });
+    p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
+    var res = Coach.suggest(coachState(), coachCands(p.genre), { emotion: pl.scene, seed: pl.seed }), R = Instruments.RECIPES[p.genre] || {};
+    ['melodia', 'accordi', 'pad'].forEach(function (role) { if (BANNED_INST[res.inst[role]]) res.inst[role] = (R[role] || ['piano'])[0]; });
+    if (res.inst.accordi === res.inst.melodia) { var alt = (R.accordi || []).concat(R.melodia || []).filter(function (id) { return id !== res.inst.melodia && !BANNED_INST[id]; }); if (alt.length) res.inst.accordi = alt[(pl.seed >>> 3) % Math.min(alt.length, 3)]; }
+    p.inst = res.inst; persist(); fillBase();
+    m.innerHTML = '<b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + pl.mode + '<br>' + pl.why.map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Strumenti: ' + ['melodia', 'accordi', 'pad'].map(function (r) { return r + ' ' + esc(instName(p.inst[r])); }).join(', ') + '. Se non ti piace premi "Altra versione dal testo".';
+    await makeAndPlay(false);
+  }
+  $('#sb-make').addEventListener('click', function () { runBrain(false); });
+  $('#sb-again').addEventListener('click', function () { runBrain(true); });
   $('#b-play').addEventListener('click', function () { makeAndPlay(false); });
   $('#b-new').addEventListener('click', function () { makeAndPlay(true); });
   $('#b-stop').addEventListener('click', stopPlay);
@@ -9279,7 +9440,7 @@ details.card[open]>summary{margin-bottom:8px}
     if (pv) labPlayRec(labRec(pv), $('#lab-msg'));
     if (ed) { var r = labRec(ed); labSet(r); $('#lab-name').value = (LIB.settings.lab || []).indexOf(r) >= 0 ? r.nome : r.nome + ' (mia versione)'; $('#lab-msg').textContent = 'Modifica i cursori, premi Ascolta, poi Salva.'; $('#lab-a').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
     if (dl) { LIB.settings.lab = (LIB.settings.lab || []).filter(function (x) { return x.id !== dl; }); persist(); renderLab(); refreshInstSelects(); }
-    if (gi != null) { var g = SoundLab.GENRES[+gi], p = cur().prod; p.genre = g.base; p.bpm = g.bpm || ALLG[g.base].bpm; p.tune = null; if (['trap', 'drill', 'epico'].indexOf(g.base) >= 0) p.mode = 'minore'; p.inst = Object.assign({}, g.inst); persist(); fillBase(); ensureInst(); $('#lab-msg').textContent = '"' + g.nome + '" impostato. Vai in Studio e premi "Crea e ascolta".'; }
+    if (gi != null) { var g = SoundLab.GENRES[+gi], p = cur().prod; p.genre = g.base; p.bpm = g.bpm || ALLG[g.base].bpm; p.tune = null; if (['trap', 'drill', 'epico', 'boombap', 'street', 'trapdark', 'clubtrap'].indexOf(g.base) >= 0) p.mode = 'minore'; p.inst = Object.assign({}, g.inst); persist(); fillBase(); ensureInst(); $('#lab-msg').textContent = '"' + g.nome + '" impostato. Vai in Studio e premi "Crea e ascolta".'; }
   });
   var stFam = 'tutte';
   SHOW.strumenti = function () {
@@ -9311,7 +9472,7 @@ details.card[open]>summary{margin-bottom:8px}
     if (t.getAttribute('data-fam')) { stFam = t.getAttribute('data-fam'); SHOW.strumenti(); return; }
     if (t.getAttribute('data-prev')) { previewInst(t.getAttribute('data-prev'), $('#st-msg')); return; }
     var g = t.getAttribute('data-recipe');
-    if (g) { var p = cur().prod; if (ALLG[g]) { p.genre = g; p.bpm = ALLG[g].bpm; p.tune = null; if (['trap', 'drill', 'epico'].indexOf(g) >= 0) p.mode = 'minore'; } applyRecipe(g); persist(); fillBase(); $('#st-msg').textContent = 'Ricetta applicata. Vai in Studio e premi "Crea e ascolta".'; ensureInst(); }
+    if (g) { var p = cur().prod; if (ALLG[g]) { p.genre = g; p.bpm = ALLG[g].bpm; p.tune = null; if (['trap', 'drill', 'epico', 'boombap', 'street', 'trapdark', 'clubtrap'].indexOf(g) >= 0) p.mode = 'minore'; } applyRecipe(g); persist(); fillBase(); $('#st-msg').textContent = 'Ricetta applicata. Vai in Studio e premi "Crea e ascolta".'; ensureInst(); }
   });
 
   /** Testo da mostrare al tempo t con la mappa (anche nello Studio). */
@@ -10170,6 +10331,8 @@ details.card[open]>summary{margin-bottom:8px}
     if (!ok) { finishRec(); return; }
     msg.textContent = live && R.live ? 'Registro con autotune dal vivo (' + (R.live.mode === 'worklet' ? 'AudioWorklet' : 'modo di riserva') + ', ritardo di calcolo circa ' + Math.round(R.live.latencyMs) + ' ms). Cuffie con filo!' : 'Registro. Usa le cuffie, altrimenti la base entra nel microfono.';
   }
+  $('#h-mic1').addEventListener('click', function () { location.hash = '#voce'; startRec(false); });
+  $('#h-mic2').addEventListener('click', function () { location.hash = '#voce'; startRec(true); });
   $('#rec-stop').addEventListener('click', stopPlay);
   async function finishRec() {
     var R = REC; if (!R) return; REC = null;

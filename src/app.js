@@ -201,7 +201,7 @@
   var VIEWS = ['daw', 'home', 'menu', 'canzoni', 'studio', 'strumenti', 'producer', 'voce', 'video', 'marketing', 'social', 'libreria', 'impostazioni', 'beatlab' /* Beat Lab */];
   var MENU = [
     ['home', 'Home e Dashboard', 'Il tuo percorso', 'i-home'], ['canzoni', 'Le mie canzoni', 'Schede e versioni', 'i-disc'],
-    ['studio', 'Music Studio', 'Testo, base, cantare', 'i-sliders'], ['strumenti', 'Strumentario', '29 strumenti veri e guida', 'i-sliders'], ['beatlab', 'Beat Lab', 'Fai le tue basi', 'i-note'] /* Beat Lab */, ['producer', 'AI Producer', 'Comandi a parole', 'i-spark'],
+    ['studio', 'Testo e Base', 'Scrivi, crea la base, canta', 'i-sliders'], ['strumenti', 'Strumentario', '29 strumenti veri e guida', 'i-sliders'], ['beatlab', 'Beat Lab', 'Fai le tue basi', 'i-note'] /* Beat Lab */, ['producer', 'AI Producer', 'Comandi a parole', 'i-spark'],
     ['voce', 'Vocal Studio', 'Voce e autotune', 'i-mic'], ['video', 'AI Video Studio', 'Clip a tempo', 'i-film'],
     ['marketing', 'Marketing AI', 'Piano a 30 giorni', 'i-mega'], ['social', 'Social Media Manager', 'Calendario', 'i-cal'],
     ['libreria', 'Libreria contenuti', 'Materiali', 'i-folder'], ['impostazioni', 'Impostazioni', 'Aspetto e dati', 'i-gear']
@@ -426,7 +426,7 @@
   }
   $('#b-genre').innerHTML = Object.keys(ALLG).map(function (g) { return '<option value="' + g + '">' + ALLG[g].label + '</option>'; }).join('');
   $('#b-tonic').innerHTML = NOTES.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
-  $('#b-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.tune = null; p.bpm = ALLG[this.value].bpm; if (['trap', 'drill', 'epico'].indexOf(this.value) >= 0) { p.mode = 'minore'; $('#b-mode').value = 'minore'; } else if (this.value === 'estate') { p.mode = 'maggiore'; $('#b-mode').value = 'maggiore'; } if (Arranger.STYLES[this.value] && p.bars < 16) { p.bars = 32; $('#b-bars').value = 32; $('#b-barsv').textContent = 32; } $('#b-bpm').value = p.bpm; persist(); });
+  $('#b-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.tune = null; p.bpm = ALLG[this.value].bpm; if (['trap', 'drill', 'epico', 'boombap', 'street', 'trapdark', 'clubtrap'].indexOf(this.value) >= 0) { p.mode = 'minore'; $('#b-mode').value = 'minore'; } else if (this.value === 'estate') { p.mode = 'maggiore'; $('#b-mode').value = 'maggiore'; } if (Arranger.STYLES[this.value] && p.bars < 16) { p.bars = 32; $('#b-bars').value = 32; $('#b-barsv').textContent = 32; } $('#b-bpm').value = p.bpm; persist(); });
   ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.addEventListener('change', function () { cur().prod.karBars = this.value === 'auto' ? 'auto' : +this.value; persist(); syncKar(); }); });
   function syncKar() { var v = String(cur().prod.karBars || 'auto'); ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.value = v; }); }
   $('#b-sounds').addEventListener('change', function () { cur().prod.sounds = this.value; persist(); });
@@ -512,6 +512,23 @@
       return mx;
     } catch (e) { st.textContent = 'Non sono riuscito a creare la base. Prova con meno battute.'; return null; }
   }
+  /* ===== Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti) ===== */
+  var BANNED_INST = { flute: 1, ocarina: 1, harmonica: 1, clarinet: 1, kalimba: 0 };
+  async function runBrain(again) {
+    var s = cur(), p = s.prod, m = $('#sb-msg');
+    if (!s.lyrics.trim()) { m.textContent = 'Scrivi o incolla prima il testo (in alto): il cervello parte da quello.'; return; }
+    s.brainV = again ? (s.brainV || 0) + 1 : 0;
+    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV });
+    p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
+    var res = Coach.suggest(coachState(), coachCands(p.genre), { emotion: pl.scene, seed: pl.seed }), R = Instruments.RECIPES[p.genre] || {};
+    ['melodia', 'accordi', 'pad'].forEach(function (role) { if (BANNED_INST[res.inst[role]]) res.inst[role] = (R[role] || ['piano'])[0]; });
+    if (res.inst.accordi === res.inst.melodia) { var alt = (R.accordi || []).concat(R.melodia || []).filter(function (id) { return id !== res.inst.melodia && !BANNED_INST[id]; }); if (alt.length) res.inst.accordi = alt[(pl.seed >>> 3) % Math.min(alt.length, 3)]; }
+    p.inst = res.inst; persist(); fillBase();
+    m.innerHTML = '<b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + pl.mode + '<br>' + pl.why.map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Strumenti: ' + ['melodia', 'accordi', 'pad'].map(function (r) { return r + ' ' + esc(instName(p.inst[r])); }).join(', ') + '. Se non ti piace premi "Altra versione dal testo".';
+    await makeAndPlay(false);
+  }
+  $('#sb-make').addEventListener('click', function () { runBrain(false); });
+  $('#sb-again').addEventListener('click', function () { runBrain(true); });
   $('#b-play').addEventListener('click', function () { makeAndPlay(false); });
   $('#b-new').addEventListener('click', function () { makeAndPlay(true); });
   $('#b-stop').addEventListener('click', stopPlay);
@@ -654,7 +671,7 @@
     if (pv) labPlayRec(labRec(pv), $('#lab-msg'));
     if (ed) { var r = labRec(ed); labSet(r); $('#lab-name').value = (LIB.settings.lab || []).indexOf(r) >= 0 ? r.nome : r.nome + ' (mia versione)'; $('#lab-msg').textContent = 'Modifica i cursori, premi Ascolta, poi Salva.'; $('#lab-a').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
     if (dl) { LIB.settings.lab = (LIB.settings.lab || []).filter(function (x) { return x.id !== dl; }); persist(); renderLab(); refreshInstSelects(); }
-    if (gi != null) { var g = SoundLab.GENRES[+gi], p = cur().prod; p.genre = g.base; p.bpm = g.bpm || ALLG[g.base].bpm; p.tune = null; if (['trap', 'drill', 'epico'].indexOf(g.base) >= 0) p.mode = 'minore'; p.inst = Object.assign({}, g.inst); persist(); fillBase(); ensureInst(); $('#lab-msg').textContent = '"' + g.nome + '" impostato. Vai in Studio e premi "Crea e ascolta".'; }
+    if (gi != null) { var g = SoundLab.GENRES[+gi], p = cur().prod; p.genre = g.base; p.bpm = g.bpm || ALLG[g.base].bpm; p.tune = null; if (['trap', 'drill', 'epico', 'boombap', 'street', 'trapdark', 'clubtrap'].indexOf(g.base) >= 0) p.mode = 'minore'; p.inst = Object.assign({}, g.inst); persist(); fillBase(); ensureInst(); $('#lab-msg').textContent = '"' + g.nome + '" impostato. Vai in Studio e premi "Crea e ascolta".'; }
   });
   var stFam = 'tutte';
   SHOW.strumenti = function () {
@@ -686,7 +703,7 @@
     if (t.getAttribute('data-fam')) { stFam = t.getAttribute('data-fam'); SHOW.strumenti(); return; }
     if (t.getAttribute('data-prev')) { previewInst(t.getAttribute('data-prev'), $('#st-msg')); return; }
     var g = t.getAttribute('data-recipe');
-    if (g) { var p = cur().prod; if (ALLG[g]) { p.genre = g; p.bpm = ALLG[g].bpm; p.tune = null; if (['trap', 'drill', 'epico'].indexOf(g) >= 0) p.mode = 'minore'; } applyRecipe(g); persist(); fillBase(); $('#st-msg').textContent = 'Ricetta applicata. Vai in Studio e premi "Crea e ascolta".'; ensureInst(); }
+    if (g) { var p = cur().prod; if (ALLG[g]) { p.genre = g; p.bpm = ALLG[g].bpm; p.tune = null; if (['trap', 'drill', 'epico', 'boombap', 'street', 'trapdark', 'clubtrap'].indexOf(g) >= 0) p.mode = 'minore'; } applyRecipe(g); persist(); fillBase(); $('#st-msg').textContent = 'Ricetta applicata. Vai in Studio e premi "Crea e ascolta".'; ensureInst(); }
   });
 
   /** Testo da mostrare al tempo t con la mappa (anche nello Studio). */
@@ -1545,6 +1562,8 @@
     if (!ok) { finishRec(); return; }
     msg.textContent = live && R.live ? 'Registro con autotune dal vivo (' + (R.live.mode === 'worklet' ? 'AudioWorklet' : 'modo di riserva') + ', ritardo di calcolo circa ' + Math.round(R.live.latencyMs) + ' ms). Cuffie con filo!' : 'Registro. Usa le cuffie, altrimenti la base entra nel microfono.';
   }
+  $('#h-mic1').addEventListener('click', function () { location.hash = '#voce'; startRec(false); });
+  $('#h-mic2').addEventListener('click', function () { location.hash = '#voce'; startRec(true); });
   $('#rec-stop').addEventListener('click', stopPlay);
   async function finishRec() {
     var R = REC; if (!R) return; REC = null;

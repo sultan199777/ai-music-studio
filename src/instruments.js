@@ -143,6 +143,14 @@
       spiega: 'Orchestra: archi in sezione, corni, campane, tamburi grandi. Le dinamiche crescono verso il ritornello.' },
     melodico: { nome: 'Melodico / pop', melodia: ['piano', 'guitar', 'kalimba'], accordi: ['piano', 'guitar', 'epiano'], pad: ['violins', 'organ'],
       spiega: 'Accordi chiari e caldi, melodia semplice e cantabile, pochi strumenti ben scelti.' },
+    boombap: { nome: 'Boom bap pesante', melodia: ['piano', 'epiano', 'vibes', 'upright'], accordi: ['piano', 'epiano', 'organ', 'clavi'], pad: ['cellos', 'organ', 'violas'],
+      spiega: 'Batteria polverosa e larga, piano o piano elettrico che ripete un giro, basso rotondo. Come nel rap italiano classico: pesante ma senza fretta.' },
+    street: { nome: 'Street pesante', melodia: ['piano', 'horn', 'pizz', 'bells'], accordi: ['piano', 'organ', 'cellos'], pad: ['cellos', 'violins'],
+      spiega: 'Colpi di piano e archi scuri, rullante forte sul 2 e 4, 808 grosso. Atmosfera da strada e da sfida, tempo medio.' },
+    trapdark: { nome: 'Trap scura pesante', melodia: ['bells', 'pizz', 'piano', 'glass'], accordi: ['pizz', 'piano', 'organ'], pad: ['cellos', 'organ', 'violas'],
+      spiega: '808 che scivola, hi-hat a terzine, campane e pizzicati cupi. Poche note, molto peso.' },
+    clubtrap: { nome: 'Club (dembow trap)', melodia: ['kalimba', 'marimba', 'bells', 'piano'], accordi: ['nylon', 'clavi', 'piano'], pad: ['organ'],
+      spiega: 'Ritmo dembow ballabile con 808: il rullante in levare fa muovere i fianchi, melodie corte e orecchiabili.' },
     estate: { nome: 'Estate / latino / afro', melodia: ['marimba', 'nylon', 'kalimba'], accordi: ['nylon', 'clavi', 'marimba'], pad: ['organ'],
       spiega: 'Ritmo in levare, legni e chitarra classica, colori allegri. Il basso è rotondo e segue la cassa.' }
   };

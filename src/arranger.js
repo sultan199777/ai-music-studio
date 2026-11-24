@@ -48,6 +48,30 @@
       kickPats: [[[0, 8], [0, 6, 10]], [[0, 7, 10], [0, 8, 11]], [[0, 10], [0, 6, 8]]],
       chord: 'pluck', chordPat: [0, 3, 6, 10, 12], arp: false, pad: 'warm', lead: 'pluck', duck: 0.25
     },
+    boombap: {
+      label: 'Boom bap pesante', bpm: 90, swing: 0.16, kick: [0], kickExtra: [7, 10, 11], snare: [4, 12], clap: false,
+      hat: 'soft', bass: 'round', slide: 0.08, rolls: 0.05,
+      kickPats: [[[0, 10], [0, 7, 10]], [[0, 7], [0, 7, 11]], [[0, 10, 11], [0, 6, 10]]],
+      chord: 'pluck', chordPat: [0, 6, 10], arp: false, pad: 'dark', lead: 'pluck', duck: 0.3
+    },
+    street: {
+      label: 'Street (stile 50 Cent)', bpm: 96, swing: 0.06, kick: [0], kickExtra: [6, 10, 14], snare: [4, 12], clap: true,
+      hat: 'soft', bass: '808', slide: 0.2, glide: 0.06, drive: 1.7, rolls: 0.1,
+      kickPats: [[[0, 10], [0, 6, 10]], [[0, 7, 10], [0, 3, 10, 14]], [[0, 11], [0, 6, 14]]],
+      chord: 'pluck', chordPat: [0, 3, 8, 11], arp: false, pad: 'dark', lead: 'bell', duck: 0.35
+    },
+    trapdark: {
+      label: 'Trap scura pesante', bpm: 144, swing: 0, kick: [0], kickExtra: [3, 7, 10, 13], snare: [8], clap: true,
+      hat: 'drill', bass: '808', slide: 0.6, glide: 0.12, drive: 2.7, rolls: 0.6,
+      kickPats: [[[0, 10], [0, 7, 13]], [[0, 6, 11], [0, 3, 10]], [[0, 7, 10], [0, 13]]],
+      chord: 'pluck', chordPat: [0, 8], arp: true, pad: 'dark', lead: 'bell', duck: 0.32
+    },
+    clubtrap: {
+      label: 'Club (dembow trap)', bpm: 98, swing: 0, kick: [0, 4, 8, 12], kickExtra: [], snare: [3, 6, 11, 14], clap: true,
+      hat: 'offbeat', bass: '808', slide: 0.15, glide: 0.05, drive: 1.8, rolls: 0.2,
+      kickPats: [[[0, 4, 8, 12], [0, 4, 8, 12]]],
+      chord: 'pluck', chordPat: [0, 6, 10], arp: false, pad: 'warm', lead: 'bell', duck: 0.28
+    },
     estate: {
       label: 'Estate (ritmo latino)', bpm: 100, swing: 0, kick: [0, 4, 8, 12], kickExtra: [], snare: [3, 6, 11, 14], clap: false,
       hat: 'offbeat', bass: 'round', slide: 0, rolls: 0,
@@ -66,7 +90,7 @@
     levare: { per: 8, seq: [-1, 2, -1, 3, -1, 2, -1, 4] },
     lento: { per: 4, seq: [0, 2, 3, 4] }
   };
-  var ARP_STYLE = { trap: ['lento', 'terzine'], drill: ['ottavi', 'terzine'], epico: ['ottavi', 'sedicesimi'], melodico: ['lento', 'spezzato'], estate: ['levare', 'spezzato'] };
+  var ARP_STYLE = { trap: ['lento', 'terzine'], drill: ['ottavi', 'terzine'], epico: ['ottavi', 'sedicesimi'], melodico: ['lento', 'spezzato'], estate: ['levare', 'spezzato'], boombap: ['lento', 'spezzato'], street: ['lento', 'spezzato'], trapdark: ['ottavi', 'terzine'], clubtrap: ['levare', 'ottavi'] };
 
   // Come suona ogni sezione (livelli 0-1). riserEnd = riser nell'ultima battuta; gap = respiro prima del drop.
   var SEC = {
@@ -153,7 +177,7 @@
     var bassKind = p.bassStyle === '808' ? '808' : (style.bass);
     var T = { arp: new Float32Array(N), kick: new Float32Array(N), snare: new Float32Array(N), hat: new Float32Array(N), bass: new Float32Array(N), chords: new Float32Array(N), pad: new Float32Array(N), lead: new Float32Array(N), fx: new Float32Array(N) };
     var events = { bass: [], chords: [], lead: [], kick: [], hat: [], arp: [] }, kickStarts = [];
-    var LEADS = { trap: ['synth', 'keys', 'bell'], drill: ['dark', 'keys', 'bell'], epico: ['strings', 'synth', 'keys'], melodico: ['keys', 'synth', 'pluck'], estate: ['marimba', 'keys', 'synth'] };
+    var LEADS = { trap: ['synth', 'keys', 'bell'], drill: ['dark', 'keys', 'bell'], epico: ['strings', 'synth', 'keys'], melodico: ['keys', 'synth', 'pluck'], boombap: ['keys', 'pluck', 'bell'], street: ['keys', 'bell', 'synth'], trapdark: ['dark', 'bell', 'keys'], clubtrap: ['bell', 'synth', 'marimba'], estate: ['marimba', 'keys', 'synth'] };
     // Strumenti veri scelti per ruolo (p.inst = {melodia, accordi, pad}); se non caricati si usa la sintesi.
     var pin = p.inst || {};
     function pickInst(role) { var id = pin[role]; return id && Inst && Inst.has(id) ? id : null; }
