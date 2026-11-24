@@ -19,7 +19,7 @@
 
 <div id="app">
 <header class="top">
-  <a class="brand" href="#home"><span class="logo"><svg><use href="#i-note"/></svg></span>Music Studio AI</a>
+  <a class="brand" href="#home"><span class="logo"><svg><use href="#i-note"/></svg></span>Sultan Sound</a>
   <a class="chip-song" id="top-song" href="#canzoni">Nessuna canzone</a>
 </header>
 
@@ -30,6 +30,11 @@
     <h2 id="h-title">Nuova canzone</h2>
     <p id="h-sub">Scrivi il testo, crea la base, importa la tua voce e fai il clip.</p>
     <div class="row" style="margin-top:12px"><a class="btn" href="#studio">Continua a lavorare</a></div>
+  </div>
+  <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
+    <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
+    <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>__BUILD__</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -64,7 +69,7 @@
 
 <!-- STUDIO -->
 <main class="view" id="v-studio" hidden>
-  <div class="head"><div class="eyebrow">Music Studio</div><h1>Testo e base</h1></div>
+  <div class="head"><div class="eyebrow">Sultan Sound</div><h1>Testo e base</h1></div>
   <div class="card"><div class="card-head"><h3>Il testo</h3><span class="tag info" id="st-count">0 righe</span></div>
     <label class="f"><span>Titolo</span><input type="text" id="st-title" placeholder="Titolo della canzone" autocomplete="off"></label>
     <label class="f" style="margin-top:10px"><span>Testo (scrivi o incolla il tuo)</span><textarea id="st-lyrics" rows="8" placeholder="[Strofa]&#10;Cammino da solo sotto la luna&#10;&#10;[Ritornello]&#10;Torna domani..."></textarea></label>

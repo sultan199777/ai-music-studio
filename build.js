@@ -56,8 +56,9 @@ console.log(`OK: dist/index.html (${Math.round(html.length / 1024)} KB), test ${
 const pwa = path.join(root, 'docs'); // GitHub Pages serve la cartella /docs
 fs.mkdirSync(pwa, { recursive: true });
 const shell = `<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#07070F"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Music Studio"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><style>:root{color-scheme:light}html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body>${html}<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}</script></body></html>`;
-fs.writeFileSync(path.join(pwa, 'index.html'), shell);
-fs.writeFileSync(path.join(pwa, 'manifest.webmanifest'), JSON.stringify({ name: 'Music Studio', short_name: 'Studio', start_url: './', scope: './', display: 'standalone', background_color: '#07070F', theme_color: '#07070F', lang: 'it', icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }, { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }] }, null, 1));
+const stamp = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+fs.writeFileSync(path.join(pwa, 'index.html'), shell.split('__BUILD__').join(stamp));
+fs.writeFileSync(path.join(pwa, 'manifest.webmanifest'), JSON.stringify({ name: 'Sultan Sound', short_name: 'Sultan', start_url: './', scope: './', display: 'standalone', background_color: '#07070F', theme_color: '#07070F', lang: 'it', icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }, { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }] }, null, 1));
 const ver = Date.now().toString(36);
 fs.writeFileSync(path.join(pwa, 'sw.js'), `const V='studio-${ver}';const F=['./','index.html','manifest.webmanifest','icon-192.png','icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(F)).then(()=>self.skipWaiting()))});
@@ -71,3 +72,6 @@ fs.mkdirSync(instDst, { recursive: true });
 let nInst = 0;
 for (const f of fs.readdirSync(instSrc)) { fs.copyFileSync(path.join(instSrc, f), path.join(instDst, f)); nInst++; }
 console.log('OK: docs/ (index.html, manifest, sw.js, _headers, ' + nInst + ' strumenti in inst/)');
+
+// il numero di versione appare anche nella copia per l'artifact
+{ const dp = path.join(root, 'dist', 'index.html'); fs.writeFileSync(dp, fs.readFileSync(dp, 'utf8').split('__BUILD__').join(stamp)); }

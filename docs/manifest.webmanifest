@@ -1,6 +1,6 @@
 {
- "name": "Music Studio",
- "short_name": "Studio",
+ "name": "Sultan Sound",
+ "short_name": "Sultan",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",

@@ -1,4 +1,4 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#07070F"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Music Studio"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><style>:root{color-scheme:light}html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Music Studio AI</title>
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#07070F"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Music Studio"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><style>:root{color-scheme:light}html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Sultan Sound</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
 <style>
@@ -316,7 +316,7 @@ details.card[open]>summary{margin-bottom:8px}
 
 <div id="app">
 <header class="top">
-  <a class="brand" href="#home"><span class="logo"><svg><use href="#i-note"/></svg></span>Music Studio AI</a>
+  <a class="brand" href="#home"><span class="logo"><svg><use href="#i-note"/></svg></span>Sultan Sound</a>
   <a class="chip-song" id="top-song" href="#canzoni">Nessuna canzone</a>
 </header>
 
@@ -327,6 +327,11 @@ details.card[open]>summary{margin-bottom:8px}
     <h2 id="h-title">Nuova canzone</h2>
     <p id="h-sub">Scrivi il testo, crea la base, importa la tua voce e fai il clip.</p>
     <div class="row" style="margin-top:12px"><a class="btn" href="#studio">Continua a lavorare</a></div>
+  </div>
+  <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
+    <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
+    <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 15:51</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -361,7 +366,7 @@ details.card[open]>summary{margin-bottom:8px}
 
 <!-- STUDIO -->
 <main class="view" id="v-studio" hidden>
-  <div class="head"><div class="eyebrow">Music Studio</div><h1>Testo e base</h1></div>
+  <div class="head"><div class="eyebrow">Sultan Sound</div><h1>Testo e base</h1></div>
   <div class="card"><div class="card-head"><h3>Il testo</h3><span class="tag info" id="st-count">0 righe</span></div>
     <label class="f"><span>Titolo</span><input type="text" id="st-title" placeholder="Titolo della canzone" autocomplete="off"></label>
     <label class="f" style="margin-top:10px"><span>Testo (scrivi o incolla il tuo)</span><textarea id="st-lyrics" rows="8" placeholder="[Strofa]&#10;Cammino da solo sotto la luna&#10;&#10;[Ritornello]&#10;Torna domani..."></textarea></label>
@@ -8118,7 +8123,7 @@ details.card[open]>summary{margin-bottom:8px}
   var VIEWS = ['home', 'menu', 'canzoni', 'studio', 'strumenti', 'producer', 'voce', 'video', 'marketing', 'social', 'libreria', 'impostazioni', 'beatlab' /* Beat Lab */];
   var MENU = [
     ['home', 'Home e Dashboard', 'Il tuo percorso', 'i-home'], ['canzoni', 'Le mie canzoni', 'Schede e versioni', 'i-disc'],
-    ['studio', 'Music Studio', 'Testo, base, cantare', 'i-sliders'], ['strumenti', 'Strumentario', '29 strumenti veri e guida', 'i-sliders'], ['beatlab', 'Beat Lab', 'Fai le tue basi', 'i-note'] /* Beat Lab */, ['producer', 'AI Producer', 'Comandi a parole', 'i-spark'],
+    ['studio', 'Testo e Base', 'Scrivi, crea la base, canta', 'i-sliders'], ['strumenti', 'Strumentario', '29 strumenti veri e guida', 'i-sliders'], ['beatlab', 'Beat Lab', 'Fai le tue basi', 'i-note'] /* Beat Lab */, ['producer', 'AI Producer', 'Comandi a parole', 'i-spark'],
     ['voce', 'Vocal Studio', 'Voce e autotune', 'i-mic'], ['video', 'AI Video Studio', 'Clip a tempo', 'i-film'],
     ['marketing', 'Marketing AI', 'Piano a 30 giorni', 'i-mega'], ['social', 'Social Media Manager', 'Calendario', 'i-cal'],
     ['libreria', 'Libreria contenuti', 'Materiali', 'i-folder'], ['impostazioni', 'Impostazioni', 'Aspetto e dati', 'i-gear']
@@ -8910,6 +8915,8 @@ details.card[open]>summary{margin-bottom:8px}
     if (!ok) { finishRec(); return; }
     msg.textContent = live && R.live ? 'Registro con autotune dal vivo (' + (R.live.mode === 'worklet' ? 'AudioWorklet' : 'modo di riserva') + ', ritardo di calcolo circa ' + Math.round(R.live.latencyMs) + ' ms). Cuffie con filo!' : 'Registro. Usa le cuffie, altrimenti la base entra nel microfono.';
   }
+  $('#h-mic1').addEventListener('click', function () { location.hash = '#voce'; startRec(false); });
+  $('#h-mic2').addEventListener('click', function () { location.hash = '#voce'; startRec(true); });
   $('#rec-stop').addEventListener('click', stopPlay);
   async function finishRec() {
     var R = REC; if (!R) return; REC = null;
