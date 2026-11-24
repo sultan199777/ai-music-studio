@@ -66,7 +66,7 @@ test('arrangiatore con strumenti veri: stessa melodia, suono diverso, valori fin
   loadAll();
   const base = { sampleRate: 16000, genre: 'trap', bars: 16, seed: 3 };
   const a = A.generate(base), b = A.generate(Object.assign({ inst: { melodia: 'piano', accordi: 'harp', pad: 'violins' } }, base));
-  assert.deepEqual(b.inst, { melodia: 'piano', accordi: 'harp', pad: 'violins' });
+  assert.deepEqual(b.inst, { melodia: 'piano', accordi: 'harp', pad: 'violins', arpeggio: null });
   assert.deepEqual(a.events.lead.map((e) => e.midi), b.events.lead.map((e) => e.midi));
   for (const tr of ['lead', 'chords', 'pad']) {
     let d = 0, e = 0; for (let i = 0; i < b.length; i++) { assert.ok(Number.isFinite(b.tracks[tr][i])); d += Math.abs(a.tracks[tr][i] - b.tracks[tr][i]); e += b.tracks[tr][i] ** 2; }

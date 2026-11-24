@@ -235,7 +235,7 @@
   function mix(base, gains, sec) {
     gains = gains || {};
     var N = base.length, out = new Float32Array(N), names = Object.keys(base.tracks);
-    var groups = { batteria: ['kick', 'snare', 'hat'], basso: ['bass'], accordi: ['chords'], pad: ['pad', 'fx'], melodia: ['lead'] };
+    var groups = { batteria: ['kick', 'snare', 'hat'], basso: ['bass'], accordi: ['chords'], arpeggio: ['arp'], pad: ['pad', 'fx'], melodia: ['lead'] };
     names.forEach(function (n) {
       var g = gains[n];
       if (g == null) {

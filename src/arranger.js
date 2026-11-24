@@ -56,14 +56,26 @@
     }
   };
 
+  // Arpeggi: schemi (passo, indice nell'accordo esteso [fondamentale, terza, quinta, ottava, terza alta, quinta alta]).
+  // Ogni stile ha uno schema per la strofa (più leggero) e uno per il ritornello (più fitto).
+  var ARP = {
+    ottavi: { per: 8, seq: [0, 1, 2, 3, 2, 1, 2, 3] },
+    spezzato: { per: 8, seq: [0, 2, 1, 3, 2, 4, 3, 2] },
+    sedicesimi: { per: 16, seq: [0, 1, 2, 3, 4, 3, 2, 1, 0, 1, 2, 3, 4, 5, 4, 3] },
+    terzine: { per: 12, seq: [0, 1, 2, 3, 2, 1, 0, 1, 2, 4, 3, 2] },
+    levare: { per: 8, seq: [-1, 2, -1, 3, -1, 2, -1, 4] },
+    lento: { per: 4, seq: [0, 2, 3, 4] }
+  };
+  var ARP_STYLE = { trap: ['lento', 'terzine'], drill: ['ottavi', 'terzine'], epico: ['ottavi', 'sedicesimi'], melodico: ['lento', 'spezzato'], estate: ['levare', 'spezzato'] };
+
   // Come suona ogni sezione (livelli 0-1). riserEnd = riser nell'ultima battuta; gap = respiro prima del drop.
   var SEC = {
-    intro: { kick: 0, snare: 0, hat: 0.25, bass: 0, chords: 0.7, pad: 0.8, lead: 0.6, riserEnd: true },
-    strofa: { kick: 1, snare: 1, hat: 0.6, bass: 1, chords: 0.45, pad: 0.4, lead: 0, riserEnd: false },
-    pre: { kick: 0.7, snare: 0.8, hat: 1, bass: 0.7, chords: 0.6, pad: 0.7, lead: 0, riserEnd: true, gap: true, roll: true },
-    ritornello: { kick: 1, snare: 1, hat: 1, bass: 1, chords: 1, pad: 1, lead: 1, impact: true },
-    bridge: { kick: 0, snare: 0, hat: 0.3, bass: 0.5, chords: 0.8, pad: 1, lead: 0.9, riserEnd: true, gap: true },
-    outro: { kick: 0, snare: 0, hat: 0.2, bass: 0.3, chords: 0.5, pad: 0.8, lead: 0.4 }
+    intro: { kick: 0, snare: 0, hat: 0.25, bass: 0, chords: 0.7, pad: 0.8, lead: 0.6, arp: 0.5, riserEnd: true },
+    strofa: { kick: 1, snare: 1, hat: 0.6, bass: 1, chords: 0.45, pad: 0.4, lead: 0, arp: 0.55, riserEnd: false },
+    pre: { kick: 0.7, snare: 0.8, hat: 1, bass: 0.7, chords: 0.6, pad: 0.7, lead: 0, arp: 0.8, riserEnd: true, gap: true, roll: true },
+    ritornello: { kick: 1, snare: 1, hat: 1, bass: 1, chords: 1, pad: 1, lead: 1, arp: 1, impact: true },
+    bridge: { kick: 0, snare: 0, hat: 0.3, bass: 0.5, chords: 0.8, pad: 1, lead: 0.9, arp: 0.9, riserEnd: true, gap: true },
+    outro: { kick: 0, snare: 0, hat: 0.2, bass: 0.3, chords: 0.5, pad: 0.8, lead: 0.4, arp: 0.4 }
   };
 
   function rng(seed) {
@@ -120,20 +132,32 @@
   function generate(p) {
     p = p || {};
     var style = STYLES[p.genre] || STYLES.trap, genreKey = STYLES[p.genre] ? p.genre : 'trap';
+    // Groove imparato da una base caricata (BeatLearn): solo numeri misurati, mai l'audio altrui.
+    if (p.groove && typeof p.groove === 'object') {
+      var gv = p.groove, st2 = {}, kk; for (kk in style) st2[kk] = style[kk];
+      var okPat = function (a) { return Array.isArray(a) && a.length && a.every(function (x) { return x >= 0 && x < 16; }); };
+      if (Array.isArray(gv.kickPats) && gv.kickPats.length && gv.kickPats.every(function (pp) { return Array.isArray(pp) && pp.length === 2 && okPat(pp[0]) && okPat(pp[1]); })) st2.kickPats = gv.kickPats;
+      if (typeof gv.rolls === 'number') st2.rolls = Math.max(0, Math.min(1, gv.rolls));
+      if (typeof gv.swing === 'number') st2.swing = Math.max(0, Math.min(0.3, gv.swing));
+      if (okPat(gv.snare)) st2.snare = gv.snare;
+      style = st2;
+    }
     var tune = p.tune || {}, tHat = tune.hat == null ? 1 : tune.hat, tBass = tune.bass == null ? 1 : tune.bass, tLift = tune.lift == null ? 1 : tune.lift, tKick = tune.kickVar == null ? 1 : tune.kickVar;
     var sr = p.sampleRate || 32000, bpm = p.bpm || style.bpm;
     var tonic = ((p.tonic || 0) % 12 + 12) % 12, mode = p.mode === 'maggiore' ? 'maggiore' : 'minore';
-    var bars = Math.max(1, Math.min(64, p.bars || 32));
+    // Struttura dal testo (SongMap): p.plan = [[sezione, battute], ...]
+    var givenPlan = Array.isArray(p.plan) && p.plan.length ? p.plan.filter(function (x) { return SEC[x[0]] && x[1] > 0; }).map(function (x) { return [x[0], Math.round(x[1])]; }) : null;
+    var bars = givenPlan ? Math.min(160, givenPlan.reduce(function (a, x) { return a + x[1]; }, 0)) : Math.max(1, Math.min(64, p.bars || 32));
     var rand = rng(p.seed || 1);
     var stepSec = 60 / bpm / 4, stepLen = Math.round(stepSec * sr), N = stepLen * 16 * bars;
     var bassKind = p.bassStyle === '808' ? '808' : (style.bass);
-    var T = { kick: new Float32Array(N), snare: new Float32Array(N), hat: new Float32Array(N), bass: new Float32Array(N), chords: new Float32Array(N), pad: new Float32Array(N), lead: new Float32Array(N), fx: new Float32Array(N) };
-    var events = { bass: [], chords: [], lead: [], kick: [], hat: [] }, kickStarts = [];
+    var T = { arp: new Float32Array(N), kick: new Float32Array(N), snare: new Float32Array(N), hat: new Float32Array(N), bass: new Float32Array(N), chords: new Float32Array(N), pad: new Float32Array(N), lead: new Float32Array(N), fx: new Float32Array(N) };
+    var events = { bass: [], chords: [], lead: [], kick: [], hat: [], arp: [] }, kickStarts = [];
     var LEADS = { trap: ['synth', 'keys', 'bell'], drill: ['dark', 'keys', 'bell'], epico: ['strings', 'synth', 'keys'], melodico: ['keys', 'synth', 'pluck'], estate: ['marimba', 'keys', 'synth'] };
     // Strumenti veri scelti per ruolo (p.inst = {melodia, accordi, pad}); se non caricati si usa la sintesi.
     var pin = p.inst || {};
     function pickInst(role) { var id = pin[role]; return id && Inst && Inst.has(id) ? id : null; }
-    var LI = pickInst('melodia'), CI = pickInst('accordi'), PI = pickInst('pad');
+    var LI = pickInst('melodia'), CI = pickInst('accordi'), PI = pickInst('pad'), AI = pickInst('arpeggio');
     function fit(m, id) { var r = (Inst.info(id) || {}).range || [36, 96]; while (m < r[0]) m += 12; while (m > r[1]) m -= 12; return m; }
     var leadKind = p.lead || (LEADS[genreKey] ? LEADS[genreKey][((p.seed || 1) % 3 + 3) % 3] : style.lead);
 
@@ -363,7 +387,7 @@
     }
 
     // ---------- piano della canzone ----------
-    var plan = planStructure(bars), sections = [], cursor = 0;
+    var plan = givenPlan || planStructure(bars), sections = [], cursor = 0;
     plan.forEach(function (s) { sections.push({ name: s[0], startBar: cursor, bars: s[1], startSec: cursor * stepLen * 16 / sr, endSec: (cursor + s[1]) * stepLen * 16 / sr }); cursor += s[1]; });
     var progs = PROGS[mode], pick = [];
     var pa = Math.floor(rand() * progs.length), pb = (pa + 1 + Math.floor(rand() * (progs.length - 1))) % progs.length, pc = (pb + 1) % progs.length;
@@ -528,6 +552,22 @@
           });
         }
 
+        // arpeggio: le note dell'accordo una dopo l'altra (schema diverso tra strofa e ritornello)
+        if (cfg.arp && p.arp !== false) {
+          var apn = ARP[(ARP_STYLE[genreKey] || ARP_STYLE.trap)[sec.name === 'ritornello' || sec.name === 'bridge' ? 1 : 0]];
+          if (p.arpPattern && ARP[p.arpPattern]) apn = ARP[p.arpPattern];
+          var ext = [0, 2, 4, 7, 9, 11].map(function (o) { return scaleNote(tonic, mode, deg + o, 60); });
+          var stepA = 16 / apn.per, durA = Math.min(0.9, stepSec * stepA * 1.6);
+          for (var ai = 0; ai < apn.per; ai++) {
+            var ix = apn.seq[ai % apn.seq.length]; if (ix < 0) continue;
+            if (cfg.gap && lastBar && ai * stepA >= 14) break;
+            var am = ext[ix], vel = ai % (apn.per / 4) === 0 ? 1 : 0.7;
+            var abuf = AI ? Inst.render(AI, fit(am, AI), durA, sr, { vel: vel }) : pluckBuf(am, durA, true);
+            add('arp', at(bar, ai * stepA), abuf, (AI ? 0.2 : 0.16) * cfg.arp * vel);
+            events.arp.push({ start: at(bar, ai * stepA) / sr, midi: am });
+          }
+        }
+
         // pad / archi / coro: una nota lunga per battuta, legata alla battuta dopo
         if (cfg.pad && PI) {
           var tipoP = (Inst.info(PI) || {}).tipo, durP = barLen / sr * 1.04;
@@ -569,11 +609,11 @@
         for (var i = 0; i < span && s0 + i < N; i++) a[s0 + i] *= 1 - depth * Math.exp(-i / rel);
       });
     }
-    duck('pad', style.duck); duck('chords', style.duck * 0.6);
+    duck('pad', style.duck); duck('chords', style.duck * 0.6); duck('arp', style.duck * 0.5);
 
     return { sampleRate: sr, bpm: bpm, tonic: tonic, mode: mode, bars: bars, genre: genreKey, length: N, duration: N / sr, tracks: T, events: events,
-      inst: { melodia: LI, accordi: CI, pad: PI }, sections: sections, progression: events.chords.slice(0, 4).map(function (c) { return c.name; }), arranger: true };
+      inst: { melodia: LI, accordi: CI, pad: PI, arpeggio: AI }, sections: sections, progression: events.chords.slice(0, 4).map(function (c) { return c.name; }), arranger: true };
   }
 
-  return { generate: generate, planStructure: planStructure, STYLES: STYLES, SECTIONS: SEC };
+  return { generate: generate, planStructure: planStructure, STYLES: STYLES, SECTIONS: SEC, ARP: ARP, ARP_STYLE: ARP_STYLE };
 });

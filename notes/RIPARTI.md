@@ -17,6 +17,7 @@ Progetto: studio musicale personale (italiano), PWA per iPhone. Sito: https://su
 
 ## Stato (dettagli in notes/STATO.md)
 Fatto (provato con test e nel browser, NON ascoltato: il suono lo giudica l'utente):
+- **Studio (#daw, prima pagina)**: tracce con forme d'onda, muto/solo/volume, testo a tempo dalla mappa del testo (`src/song-map.js`), arpeggi, registrazione, export, agenti (Arrangiatore, Sound designer, Coach). Tema Studio elegante.
 - Basi: arrangiatore 5 stili (808 glide, hi-hat rullate, groove per stile); **Strumentario** (#strumenti: 29 strumenti CC0 + 3 chitarre, guida, ricette); **Laboratorio suoni** (12 strumenti originali, 5 generi da inventare, editor con strati/morph/11 caratteri, Sorprendimi, strumenti dell'utente salvati); testo→base dalle emozioni con strumenti veri (niente flauto automatico).
 - **Beat Lab** (#beatlab, da altra chat): motore in tempo reale, batteria a step, 20 strumenti CC0 in docs/samples, piano roll, mixer con effetti, export WAV/MIDI.
 - **Voice Lab** (pagina Voce, da altra chat): autotune con retune speed/humanize/flex-tune/formanti, catena vocale, 13 caratteri.
