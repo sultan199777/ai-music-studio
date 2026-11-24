@@ -16,3 +16,9 @@ test('metallico e radio: cambiano il suono e restano della stessa durata e livel
   for (const f of ['metallico', 'radio']) { const y = FX.apply(f, x, sr, {}); assert.strictEqual(y.length, x.length); let d = 0, p = 0; for (let i = 0; i < x.length; i++) { d += (y[i] - x[i]) ** 2; p = Math.max(p, Math.abs(y[i])); } assert.ok(d > 1, f + ' cambia'); assert.ok(p < 1.01, f + ' non satura'); }
   assert.strictEqual(FX.apply('niente', x, sr), x);
 });
+test('chorus, flanger, phaser, exciter cambiano il suono; gate toglie il rumore tra le frasi', () => {
+  const x = voice(1);
+  for (const f of ['chorus', 'flanger', 'phaser', 'exciter']) { const y = FX.apply(f, x, sr, {}); let d = 0, p = 0; for (let i = 0; i < x.length; i++) { d += (y[i] - x[i]) ** 2; p = Math.max(p, Math.abs(y[i])); } assert.ok(d > (f === 'exciter' ? 0.01 : 0.5), f + ' cambia ' + d); assert.ok(p < 1.05, f); }
+  const n = sr * 2, z = new Float32Array(n); for (let i = 0; i < n; i++) z[i] = i < sr ? x[i] : 0.002 * Math.sin(i * 0.3); // voce poi fruscio
+  const g = FX.gate(z, sr, { belowDb: 30 }); let e = 0; for (let i = sr + 4000; i < n; i++) e += g[i] * g[i]; let e0 = 0; for (let i = sr + 4000; i < n; i++) e0 += z[i] * z[i]; assert.ok(e < e0 / 1000, 'fruscio chiuso ' + e + ' su ' + e0);
+});

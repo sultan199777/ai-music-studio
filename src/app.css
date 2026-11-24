@@ -306,3 +306,4 @@ details.card[open]>summary{margin-bottom:8px}
 .dw-prop{flex-wrap:wrap}.dw-prop div{flex-basis:100%}.dw-prop .btn{flex:1}
 .dw-compl{display:grid;grid-template-columns:1fr 120px;gap:8px;align-items:center}.dw-compl span{font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dw-pr-wrap{overflow:auto;max-height:300px;border:1px solid var(--line);border-radius:10px;margin:8px 0;-webkit-overflow-scrolling:touch}.dw-pr-wrap canvas{display:block}
+.dw-autor{display:grid;grid-template-columns:80px 1fr 1fr;gap:8px;align-items:center;font-size:.78rem;margin:4px 0}.dw-autor label{display:flex;flex-direction:column}.dw-autor i{font-style:normal;color:var(--muted)}@media(max-width:560px){.dw-autor{grid-template-columns:1fr 1fr}.dw-autor b{grid-column:1/-1}}

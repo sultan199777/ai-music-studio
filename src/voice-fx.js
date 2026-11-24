@@ -56,7 +56,32 @@
     for (var i = 0; i < y.length; i++) y[i] = Math.tanh(2.5 * y[i] / p) * p;
     return blend(x, y, opt.mix == null ? 0.9 : opt.mix);
   }
-  var FX = { vocoder: { nome: 'Vocoder sugli accordi', fn: vocoder }, metallico: { nome: 'Metallico / robot', fn: metallic }, radio: { nome: 'Radio / telefono', fn: radio } };
+  // modulazioni (ritardo che si muove): chorus = voce allargata, flanger = "aereo", phaser = filtri che girano
+  function modDelay(x, sr, baseMs, depthMs, rate, fb, mix) {
+    var n = x.length, y = new Float32Array(n), buf = new Float32Array(n), mx = Math.ceil((baseMs + depthMs + 2) * sr / 1000);
+    for (var i = 0; i < n; i++) {
+      var d = (baseMs + depthMs * (0.5 + 0.5 * Math.sin(2 * Math.PI * rate * i / sr))) * sr / 1000, p = i - d, k = Math.floor(p), f = p - k;
+      var v = k >= 1 && k + 1 < i ? buf[k] * (1 - f) + buf[k + 1] * f : 0; buf[i] = x[i] + fb * v; y[i] = x[i] * (1 - mix * 0.5) + v * mix;
+    }
+    return y;
+  }
+  function chorus(x, sr, o) { o = o || {}; var a = modDelay(x, sr, 18, 6, 0.8, 0, o.mix == null ? 0.6 : o.mix), b = modDelay(x, sr, 25, 8, 0.55, 0, o.mix == null ? 0.6 : o.mix), y = new Float32Array(x.length); for (var i = 0; i < y.length; i++) y[i] = (a[i] + b[i]) / 2; return blend(x, y, 1); }
+  function flanger(x, sr, o) { o = o || {}; return blend(x, modDelay(x, sr, 1, 4, 0.25, 0.6, 0.7), o.mix == null ? 0.7 : o.mix); }
+  function phaser(x, sr, o) {
+    o = o || {}; var n = x.length, y = new Float32Array(n), st = [0, 0, 0, 0, 0, 0, 0, 0], fb = 0;
+    for (var i = 0; i < n; i++) { var f = 300 + 1600 * (0.5 + 0.5 * Math.sin(2 * Math.PI * 0.4 * i / sr)), t = Math.tan(Math.PI * f / sr), a = (t - 1) / (t + 1), v = x[i] + 0.5 * fb;
+      for (var k = 0; k < 4; k++) { var out = a * v + st[k]; st[k] = v - a * out; v = out; } fb = v; y[i] = (x[i] + v) / 2; }
+    return blend(x, y, o.mix == null ? 0.8 : o.mix);
+  }
+  /** Gate: sotto la soglia (dB sotto il picco) la voce si chiude: via respiri e rumori tra le frasi. */
+  function gate(x, sr, o) {
+    o = o || {}; var thr = Math.pow(10, -(o.belowDb || 35) / 20) * (peak(x) || 1), at = Math.exp(-1 / (sr * 0.002)), rl = Math.exp(-1 / (sr * 0.08)), hold = Math.round(sr * 0.06), e = 0, g = 0, h = 0, y = new Float32Array(x.length);
+    for (var i = 0; i < x.length; i++) { var a = x[i] < 0 ? -x[i] : x[i]; e = Math.max(a, e * 0.999); if (a > thr) h = hold; var tgt = h-- > 0 ? 1 : 0; g = tgt > g ? at * g + (1 - at) * tgt : rl * g + (1 - rl) * tgt; y[i] = x[i] * g; }
+    return y;
+  }
+  /** Exciter: armoniche nuove solo sugli alti (presenza e aria senza alzare il fruscio dei bassi). */
+  function exciter(x, sr, o) { o = o || {}; var hp = run(x, biquad('hp', 3500, 0.7, sr)), y = new Float32Array(x.length), k = 4; for (var i = 0; i < y.length; i++) y[i] = x[i] + (Math.tanh(k * hp[i]) / k) * (o.mix == null ? 0.8 : o.mix) * 1.5; return blend(x, y, 1); }
+  var FX = { vocoder: { nome: 'Vocoder sugli accordi', fn: vocoder }, metallico: { nome: 'Metallico / robot', fn: metallic }, radio: { nome: 'Radio / telefono', fn: radio }, chorus: { nome: 'Chorus (voce larga)', fn: chorus }, flanger: { nome: 'Flanger', fn: flanger }, phaser: { nome: 'Phaser', fn: phaser }, gate: { nome: 'Gate (via respiri e rumori)', fn: gate }, exciter: { nome: 'Exciter (presenza e aria)', fn: exciter } };
   function apply(id, x, sr, opt) { return FX[id] ? FX[id].fn(x, sr, opt) : x; }
-  return { FX: FX, apply: apply, vocoder: vocoder, metallic: metallic, radio: radio, carrier: carrier };
+  return { FX: FX, apply: apply, chorus: chorus, flanger: flanger, phaser: phaser, gate: gate, exciter: exciter, vocoder: vocoder, metallic: metallic, radio: radio, carrier: carrier };
 });

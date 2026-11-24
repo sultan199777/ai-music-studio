@@ -92,13 +92,25 @@
       c.duck = ctx.createGain();
       c.pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
       c.out = ctx.createGain(); c.rev = ctx.createGain(); c.dly = ctx.createGain();
-      c.fader.connect(c.low); c.low.connect(c.mid); c.mid.connect(c.high); c.high.connect(c.comp); c.comp.connect(c.makeup); c.makeup.connect(c.sat); c.sat.connect(c.duck);
+      c.autoF = ctx.createBiquadFilter(); c.autoF.type = 'lowpass'; c.autoF.frequency.value = 20000; c.autoF.Q.value = 0.8; c.autoG = ctx.createGain();
+      c.fader.connect(c.autoF); c.autoF.connect(c.autoG); c.autoG.connect(c.low); c.low.connect(c.mid); c.mid.connect(c.high); c.high.connect(c.comp); c.comp.connect(c.makeup); c.makeup.connect(c.sat); c.sat.connect(c.duck);
       if (c.pan) { c.duck.connect(c.pan); c.pan.connect(c.out); } else c.duck.connect(c.out);
       c.out.connect(dest); c.out.connect(c.rev); c.out.connect(c.dly); c.rev.connect(revIn); c.dly.connect(dlyIn);
       M.ch[id] = c;
       var st = channel((opt.settings || {})[id]); M.settings[id] = st;
       for (var k in st) apply(id, k, st[k], true);
+      // automazione: punti {t (s nella canzone), vol (0-1.5), cut (0-1, 1 = filtro aperto)} con rampe morbide
+      var pts = opt.auto && opt.auto[id]; if (pts && pts.length) schedAuto(c, pts);
     });
+    function cutHz(v) { return 200 * Math.pow(100, Math.max(0, Math.min(1, v))); }
+    function schedAuto(c, pts) {
+      var from = opt.from || 0, t0 = opt.t0 || 0, ramp = 0.35, cur = pts[0];
+      for (var i = 0; i < pts.length; i++) if (pts[i].t <= from) cur = pts[i];
+      c.autoG.gain.setValueAtTime(cur.vol, t0); c.autoF.frequency.setValueAtTime(cutHz(cur.cut), t0);
+      pts.forEach(function (q) { if (q.t <= from) return; var at = t0 + q.t - from;
+        c.autoG.gain.setValueAtTime(c.autoG.gain.value, Math.max(t0, at - ramp)); c.autoG.gain.linearRampToValueAtTime(q.vol, at);
+        if (q.sweep) c.autoF.frequency.exponentialRampToValueAtTime(cutHz(q.cut), at + q.sweep); else { c.autoF.frequency.setValueAtTime(c.autoF.frequency.value, Math.max(t0, at - ramp)); c.autoF.frequency.exponentialRampToValueAtTime(cutHz(q.cut), at); } });
+    }
     function apply(id, k, v, now) {
       var c = M.ch[id]; if (!c) return; v = clamp(v, k); M.settings[id][k] = v;
       var t = ctx.currentTime, set = function (param, val) { if (now) param.value = val; else param.setTargetAtTime(val, t, 0.03); };
@@ -124,5 +136,7 @@
     };
   }
 
-  return { CH: CH, LIMITS: LIMITS, LABELS: LABELS, PRESETS: PRESETS, channel: channel, preset: preset, satCurve: satCurve, duckCurve: duckCurve, impulse: impulse, build: build };
+  /** Punti di automazione dalle sezioni: auto = {sezione: {vol, cut}}; sections = [{name, startSec}]. */
+  function autoPoints(auto, sections) { if (!auto) return null; var pts = []; sections.forEach(function (s) { var a = auto[s.name] || {}; pts.push({ t: s.startSec, vol: a.vol == null ? 1 : a.vol, cut: a.cut == null ? 1 : a.cut }); }); return pts.length ? pts : null; }
+  return { autoPoints: autoPoints, CH: CH, LIMITS: LIMITS, LABELS: LABELS, PRESETS: PRESETS, channel: channel, preset: preset, satCurve: satCurve, duckCurve: duckCurve, impulse: impulse, build: build };
 });
