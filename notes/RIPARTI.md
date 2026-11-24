@@ -20,3 +20,6 @@ Non fatto: 808 e strumenti melodici con suoni veri, hi-hat con rullate, mix per 
 
 ## Prossimo passo concordato
 Qualità delle basi: 808 vero con glide, strumenti melodici con campioni CC0, hi-hat con rullate, pattern per stile. Poi mix per traccia, piano roll/MIDI, Voice Lab. Chiedere conferma "vai" solo se cambia la direzione.
+
+## Piano tecnico dello studio professionale (nuovo, 24/11/2026)
+Documento con ricerca, fonti, licenze, architettura e fasi: https://claude.ai/artifact/QH4k4tg4uf8kRHfPYMpvD2 (leggerlo con Artifact read, solo se serve). Due studi distinti: Beat Studio e Voice Studio. Fase 0 = progetto in dati + motore Tone.js + mixer per traccia + export WAV. Il codice NON è ancora stato cambiato per questo piano; l'utente deve confermare da quale fase partire.
