@@ -44,7 +44,7 @@
   <nav class="dw-steps" id="dw-steps">
     <a href="#dw-p-testo" data-step="testo"><i>1</i><span>Testo</span></a>
     <a href="#dw-p-arr" data-step="base"><i>2</i><span>Base</span></a>
-    <a href="#dw-p-arr" data-step="voce"><i>3</i><span>Voce</span></a>
+    <a href="#dw-p-mic" data-step="voce"><i>3</i><span>Voce</span></a>
     <a href="#dw-p-mix" data-step="mix"><i>4</i><span>Mix ed export</span></a>
   </nav>
 
@@ -60,10 +60,36 @@
     <div class="status" id="dw-msg"></div>
   </section>
 
+  <section class="dw-panel" id="dw-p-mic">
+    <div class="dw-ph"><h3>Microfono</h3><span class="tag m" id="dw-mic-state">Mic pulito</span></div>
+    <div class="dw-modes">
+      <button class="dw-mode on" data-mic="pulito"><b>Mic pulito</b><small>La tua voce vera, solo ripulita: rumore, EQ, compressore, spazio.</small></button>
+      <button class="dw-mode" data-mic="autotune"><b>Mic autotune</b><small>Intonata sulla tonalità della base. Ogni manopola si cambia.</small></button>
+    </div>
+    <p class="small muted" style="margin:10px 0 4px">Carattere della voce (puoi sceglierne fino a 3 insieme):</p>
+    <div class="chips" id="dw-mic-chars"></div>
+    <div class="dw-knobs" id="dw-mic-knobs"></div>
+    <div class="row" style="margin-top:10px"><button class="btn pri" id="dw-mic-apply">Applica alla voce</button><button class="btn" id="dw-mic-ab">Senti la voce originale</button><a class="btn" href="#voce">Tutte le regolazioni</a></div>
+    <p class="small muted">Si regola sempre sull'ultima voce registrata con ●. L'originale non si perde mai: puoi cambiare idea quante volte vuoi.</p>
+    <div class="status" id="dw-mic-msg"></div>
+  </section>
+
   <section class="dw-panel" id="dw-p-agents">
     <div class="dw-ph"><h3>Agenti al lavoro</h3><span class="tag a">Imparano da te</span></div>
-    <p class="small muted">Tre assistenti lavorano da soli mentre l'app è aperta, sul telefono, gratis. Preparano proposte, inventano suoni e controllano il tuo lavoro. Ogni tua scelta li fa migliorare.</p>
+    <p class="small muted">Cinque assistenti lavorano da soli mentre l'app è aperta, sul telefono, gratis. Preparano proposte, inventano suoni e controllano il tuo lavoro. Ogni tua scelta li fa migliorare.</p>
     <div class="dw-agents" id="dw-agents"></div>
+  </section>
+
+  <section class="dw-panel" id="dw-p-learn">
+    <div class="dw-ph"><h3>Impara da una base</h3><span class="tag a">Solo misure, niente copie</span></div>
+    <p class="small muted">Carica una canzone che ti piace (un file dal telefono). La divido in <b>voce</b> e <b>base</b>, le ripulisco e misuro il ritmo: velocità, cassa, rullante, hi-hat, bassi. Dimmi se ti piace o no. Tengo solo i numeri, mai l'audio, e la base nuova è tua e originale.</p>
+    <div class="row"><label class="btn pri" for="dw-learn-file">Carica una canzone</label><input type="file" id="dw-learn-file" accept="audio/*" hidden></div>
+    <div class="dw-prog" id="dw-learn-bar" hidden><i></i></div>
+    <div id="dw-learn-cur"></div>
+    <h4 style="margin:14px 0 6px">I tuoi gusti</h4>
+    <div id="dw-learn-list"></div>
+    <div class="row" style="margin-top:8px"><button class="btn pri" id="dw-learn-make">Crea una base nuova dai miei gusti</button></div>
+    <div class="status" id="dw-learn-msg"></div>
   </section>
 
   <section class="dw-panel" id="dw-p-testo">

@@ -127,3 +127,10 @@ Cablaggio minimo: blocchi "VOICE LAB" in app.js (4 righe + init), app.body.html 
 - Agenti (gratis, sul telefono, mentre l'app è aperta): Arrangiatore (3 varianti calcolate davvero, una esperimento; Ascolta/Usa/✕ = voto), Sound designer (2 strumenti inventati dai tuoi preferiti; Usa/Salva), Coach (lezioni con Correggi).
 - Tema "Studio" elegante (grafite, oro, viola) predefinito; barra in basso: Studio, Testo, Voce, Suoni, Menu.
 - Test 214/214.
+
+## Studio: Microfono, Impara da una base, 2 agenti nuovi
+- **Microfono nello Studio** (pannello sotto l'arrangiamento): Mic pulito / Mic autotune, caratteri (fino a 3), manopole (VoiceChain.MACROS). Dopo ogni registrazione con ● il microfono si applica da solo; l'autotune usa la tonalità della base. "Senti la voce originale" = A/B, l'originale non si perde.
+- **Impara da una base** (`src/beat-learn.js`): separazione voce/base (STFT, maschere: centro stereo + armonico/percussivo + banda voce), pulizia (sottrazione spettrale + normalizza -1 dB), profilo misurato (BPM con scelta metà/doppio dagli hi-hat, cassa sui 16 passi, rullante metà tempo o 2-4, densità hi-hat, terzine, swing, sub, brillantezza). Si salvano SOLO i numeri (LIB.settings.learned). `blend` unisce i profili che piacciono ed evita quelli che non piacciono → `p.groove` (Arranger accetta `groove`: kickPats, snare, swing, rolls).
+- **Agenti nuovi**: Ascoltatore (base dai tuoi gusti, pronta da ascoltare) e Tecnico voce (misura rumore, saturazione, intonazione, sibilanti e consiglia il microfono).
+- Limiti (Ipotesi): la separazione non è una rete neurale; pad al centro finiscono un po' nella voce. Su iPhone ~3 s di calcolo per minuto sul PC di prova, probabilmente 2-3 volte di più sul telefono.
+- Prossimo: "strumento dalla tua voce" (canti una nota → diventa strumento), autotune che segue gli accordi battuta per battuta.

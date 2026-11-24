@@ -455,8 +455,8 @@
     return SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {} });
   }
   function getBase() {
-    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, map && map.plan, Instruments.loaded().length]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
+    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, map && map.plan, Instruments.loaded().length]);
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -827,7 +827,7 @@
   }
   function voiceTake() { var t = activeTake(); return t && !t.example ? t : null; }
   function dwBuffers(b) {
-    var t = voiceTake(), key = SESSION.baseKey + '|' + (t ? t.id + (t.final ? 'f' : '') : '');
+    var t = voiceTake(), key = SESSION.baseKey + '|' + (t ? t.id + (t.final && !DW.raw ? 'f' + (t.finalV || 0) : '') : '');
     if (DW.bufKey === key && DW.bufs) return DW.bufs;
     var bufs = {}, N = b.length, sum = new Float32Array(N), i;
     LANES.forEach(function (L) {
@@ -839,7 +839,7 @@
     });
     var pk = 0; for (i = 0; i < N; i++) { var v = sum[i] < 0 ? -sum[i] : sum[i]; if (v > pk) pk = v; }
     DW.k = pk > 0 ? 0.8 / pk : 1;
-    if (t) bufs.voice = { x: t.final || t.mono, sr: t.sr, start: -(t.lat || 0) };
+    if (t) bufs.voice = { x: (!DW.raw && t.final) || t.mono, sr: t.sr, start: -(t.lat || 0) };
     DW.bufs = bufs; DW.bufKey = key; return bufs;
   }
   function gainFor(L) {
@@ -964,8 +964,10 @@
       t.lat = R.lat || 0; t.at = Date.now();
       dbTake('put', { id: t.id, name: t.name, mono: t.mono, sr: t.sr, lat: t.lat, at: t.at }).then(function (ok) { t.saved = !!ok; });
       SESSION.takeId = t.id; try { selectTake(t.id); } catch (e) {}
-      coachRec('record', coachCtx()); DW.bufKey = '';
-      $('#dw-msg').textContent = 'Voce registrata. Premi Play per riascoltarla con la base. Il Coach la sta controllando.';
+      coachRec('record', coachCtx()); DW.bufKey = ''; DW.raw = false;
+      $('#dw-msg').textContent = 'Voce registrata. Applico il microfono (' + (micSet().mode === 'autotune' ? 'autotune' : 'pulito') + ')…';
+      await micApply(true);
+      $('#dw-msg').textContent = 'Voce registrata e regolata. Premi Play per riascoltarla con la base. Il Coach la sta controllando.';
       await dwRefresh(); agentsRun(true);
     } catch (e) { $('#dw-msg').textContent = 'Non riesco a leggere la registrazione. Riprova.'; }
   }
@@ -1000,7 +1002,7 @@
   });
 
   // ---------- agenti ----------
-  var AG = { arr: { st: 'fermo', props: [] }, sd: { st: 'fermo', props: [] }, co: { st: 'fermo', lessons: [] }, busy: false, again: false, key: '' };
+  var AG = { arr: { st: 'fermo', props: [] }, sd: { st: 'fermo', props: [] }, co: { st: 'fermo', lessons: [] }, li: { st: 'fermo', prop: null }, tv: { st: 'fermo', tips: [], rec: null }, busy: false, again: false, key: '' };
   function agentsRender() {
     var dot = function (st) { return '<span class="dw-dot ' + (st === 'al lavoro' ? 'work' : (st === 'pronto' ? 'ok' : '')) + '"></span>'; };
     var h = '<div class="dw-agent"><header>' + dot(AG.arr.st) + '<b>Arrangiatore</b><span class="st">' + AG.arr.st + '</span></header><p class="small muted">Prepara 3 varianti della tua base partendo da quello che ti è piaciuto. Una è sempre un esperimento.</p>' +
@@ -1009,7 +1011,40 @@
       AG.sd.props.map(function (r, i) { return '<div class="dw-prop"><div><b>' + esc(r.nome) + '</b><small>' + esc(r.descr) + '</small></div><button class="btn sm" data-sp2="' + i + '">Ascolta</button><button class="btn sm pri" data-su2="' + i + '">Usa</button><button class="btn sm" data-ss2="' + i + '">Salva</button></div>'; }).join('') + '</div>';
     h += '<div class="dw-agent"><header>' + dot(AG.co.st) + '<b>Coach</b><span class="st">' + AG.co.st + '</span></header><p class="small muted">Controlla testo, base e voce con misure vere. ' + esc(coachSummary()) + '</p>' +
       (AG.co.lessons.length ? AG.co.lessons.slice(0, 4).map(function (l, i) { return '<div class="dw-prop"><div><b>' + esc(l.title) + '</b><small>' + esc(l.what) + ' ' + esc(l.how) + '</small></div>' + (l.fix ? '<button class="btn sm pri" data-cf="' + i + '">Correggi</button>' : '') + '</div>'; }).join('') : '<div class="dw-prop"><div><small>Niente da correggere per ora.</small></div></div>') + '</div>';
+    // Ascoltatore: impara dalle canzoni che carichi e propone una base con il groove dei tuoi gusti
+    var nl = learnList().length, lk = learnList().filter(function (r) { return r.vote > 0; }).length;
+    h += '<div class="dw-agent"><header>' + dot(AG.li.st) + '<b>Ascoltatore</b><span class="st">' + AG.li.st + '</span></header><p class="small muted">Ha studiato ' + nl + ' canzoni tue (' + lk + ' ti piacciono). Unisce i ritmi che ami ed evita quelli che non ami. <a href="#dw-p-learn">Fagli ascoltare una canzone</a>.</p>' +
+      (AG.li.prop ? '<div class="dw-prop"><div><b>Base dai tuoi gusti</b><small>' + esc(AG.li.prop.desc) + '</small></div><button class="btn sm" data-lip="1">Ascolta</button><button class="btn sm pri" data-liu="1">Usa</button></div>' : '<div class="dw-prop"><div><small>' + (lk ? 'Preparo una proposta…' : 'Serve almeno una canzone che ti piace.') + '</small></div></div>') + '</div>';
+    // Tecnico voce: misura la tua registrazione e regola il microfono
+    h += '<div class="dw-agent"><header>' + dot(AG.tv.st) + '<b>Tecnico voce</b><span class="st">' + AG.tv.st + '</span></header><p class="small muted">Misura la tua voce registrata (rumore, intonazione, volume) e ti dice come regolare il microfono.</p>' +
+      (AG.tv.tips.length ? AG.tv.tips.map(function (t) { return '<div class="dw-prop"><div><small>' + esc(t) + '</small></div></div>'; }).join('') + (AG.tv.rec ? '<div class="dw-prop"><div><b>Consiglio: ' + esc(AG.tv.rec.label) + '</b></div><button class="btn sm pri" data-tva="1">Applica</button></div>' : '') : '<div class="dw-prop"><div><small>Registra la voce con ● e la controllo.</small></div></div>') + '</div>';
     $('#dw-agents').innerHTML = h;
+  }
+  async function agentTecnico() {
+    var t = voiceTake(); AG.tv.tips = []; AG.tv.rec = null;
+    if (!t) { AG.tv.st = 'fermo'; return; }
+    AG.tv.st = 'al lavoro'; agentsRender(); await wait(30);
+    if (!t.vlInfo) t.vlInfo = VoiceChain.analyzeVoice(t.mono, t.sr);
+    var i = t.vlInfo, tips = [], err = Math.abs(i.chromaticErrCents);
+    tips.push('Distanza voce-rumore: ' + Math.round(i.snrDb) + ' dB ' + (i.snrDb >= 30 ? '(ottima).' : i.snrDb >= 20 ? '(buona).' : '(c\'è fruscio: avvicinati al microfono o cambia stanza).'));
+    if (i.clippedShare > 0.001) tips.push('La voce satura in alcuni punti: allontana il telefono di una spanna o canta un po\' più piano.');
+    else if (i.peakDb < -18) tips.push('Volume basso (picco ' + Math.round(i.peakDb) + ' dB): avvicinati un po\'.');
+    if (isFinite(err)) tips.push('Intonazione media: ' + Math.round(err) + ' centesimi dalla nota più vicina ' + (err < 15 ? '(molto intonata).' : err < 30 ? '(buona, l\'autotune leggero basta).' : '(l\'autotune aiuta molto qui).'));
+    if (i.sibilanceDb > -12) tips.push('Le "s" sono forti: il de-esser del microfono le ammorbidisce.');
+    var m = micSet();
+    if (isFinite(err) && err >= 30 && m.mode !== 'autotune') AG.tv.rec = { mode: 'autotune', ids: ['melodico'], label: 'passa a Mic autotune (Melodico)' };
+    else if (isFinite(err) && err < 15 && m.mode === 'autotune' && m.ids.indexOf('robotico') < 0) AG.tv.rec = { mode: 'autotune', ids: ['naturale'], label: 'autotune più leggero (Naturale): sei già intonato' };
+    else if (i.snrDb < 20) AG.tv.rec = { mode: m.mode, ids: m.ids.slice(), label: 'riapplica il microfono: toglie il fruscio misurato' };
+    AG.tv.tips = tips; AG.tv.st = 'pronto';
+  }
+  async function agentAscoltatore() {
+    var pl = learnPlan(); AG.li.prop = null;
+    if (!pl) { AG.li.st = 'fermo'; return; }
+    AG.li.st = 'al lavoro'; agentsRender(); await wait(30);
+    var p = cur().prod, map = songMap(), g = Arranger.STYLES[pl.genre] ? pl.genre : p.genre;
+    var bb = Arranger.generate({ sampleRate: 22050, bpm: pl.bpm, tonic: p.tonic, mode: pl.mode, bars: p.bars, genre: g, seed: p.seed + 7, inst: p.inst, plan: map ? map.plan : undefined, groove: pl.groove, tune: pl.tune, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' });
+    AG.li.prop = { plan: pl, mix: Backing.mix(bb, p.levels, p.sec), sr: bb.sampleRate, desc: (Arranger.STYLES[g] ? Arranger.STYLES[g].label : g) + ' · ' + pl.bpm + ' BPM · ' + pl.mode + ' · cassa ' + pl.groove.kickPats[0][0].map(function (x) { return x + 1; }).join('-') + ' · da ' + pl.from + ' canzoni' };
+    AG.li.st = 'pronto';
   }
   function coachSummary() { var pg = Coach.progress(coachState()), pf = Coach.profile(coachState(), coachName); return 'Livello: ' + pg.livello + ' (' + pg.imparate + '/' + pg.totale + ' abilità).' + (pf.piace.length ? ' Ti piace: ' + pf.piace.slice(0, 3).join(', ') + '.' : ''); }
   function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -1019,7 +1054,9 @@
     try {
       AG.co.st = 'al lavoro'; agentsRender(); await wait(30);
       AG.co.lessons = Coach.lessons(coachMeasure()).lessons; AG.co.st = 'pronto'; agentsRender();
+      try { await agentTecnico(); } catch (e) { AG.tv.st = 'errore'; } agentsRender();
       if (coachOnly) return;
+      try { await agentAscoltatore(); } catch (e) { AG.li.st = 'errore'; } agentsRender();
       var p = cur().prod, map = songMap(), ctx = coachCtx(), st = coachState();
       // Arrangiatore: 3 varianti calcolate davvero (base completa a 22 kHz)
       AG.arr.st = 'al lavoro'; AG.arr.props = []; agentsRender();
@@ -1058,6 +1095,9 @@
   }
   $('#dw-agents').addEventListener('click', async function (e) {
     var b = e.target.closest('button'); if (!b) return;
+    if (b.hasAttribute('data-lip') && AG.li.prop) { dwStop(); playBuf(AG.li.prop.mix, AG.li.prop.sr); $('#dw-msg').textContent = 'Ascolti la base dai tuoi gusti. Premi Usa se ti piace.'; return; }
+    if (b.hasAttribute('data-liu') && AG.li.prop) { stopPlay(); learnUse(AG.li.prop.plan); coachRec('like', coachCtx()); $('#dw-msg').textContent = 'Base dai tuoi gusti applicata: ' + AG.li.prop.desc + '.'; return; }
+    if (b.hasAttribute('data-tva') && AG.tv.rec) { var mm = micSet(); mm.mode = AG.tv.rec.mode; mm.ids = AG.tv.rec.ids; mm.macros = {}; persist(); micRender(); $('#dw-msg').textContent = 'Applico il consiglio del Tecnico voce…'; await micApply(false); agentsRun(true); return; }
     var ap = b.getAttribute('data-ap'), au = b.getAttribute('data-au'), an = b.getAttribute('data-an'), sp = b.getAttribute('data-sp2'), su = b.getAttribute('data-su2'), ss = b.getAttribute('data-ss2'), cf = b.getAttribute('data-cf');
     if (ap != null) { var pr = AG.arr.props[+ap]; dwStop(); playBuf(pr.mix, pr.sr); $('#dw-msg').textContent = 'Ascolti la variante ' + (+ap + 1) + '. Premi Usa se ti piace.'; }
     if (au != null) { var pu = AG.arr.props[+au], p = cur().prod; stopPlay(); p.inst = Object.assign({}, pu.inst); p.arpPattern = pu.arpPattern; p.seed = pu.seed; coachRec('like', pu.ctx); fillInst(); $('#dw-msg').textContent = 'Variante applicata: ' + pu.desc; dwChanged(true); }
@@ -1074,7 +1114,7 @@
   $('#dw-rec').addEventListener('click', dwRecord);
   $('#dw-new').addEventListener('click', function () { var p = cur().prod; if (SESSION.lastPlay && performance.now() - SESSION.lastPlay.t < 10000) coachRec('skip', SESSION.lastPlay.ctx); p.seed++; dwStop(); dwChanged(true); setTimeout(function () { dwPlay(0); }, 300); });
   $('#dw-name').addEventListener('input', function () { cur().title = this.value.trim() || 'Senza titolo'; $('#top-song').textContent = cur().title; persist(); });
-  $('#dw-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.bpm = Arranger.STYLES[this.value].bpm; p.tune = null; $('#dw-bpm').value = p.bpm; dwStop(); fillBase(); dwChanged(true); });
+  $('#dw-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.bpm = Arranger.STYLES[this.value].bpm; p.tune = null; p.groove = null; $('#dw-bpm').value = p.bpm; dwStop(); fillBase(); dwChanged(true); });
   $('#dw-bpm').addEventListener('change', function () { cur().prod.bpm = Math.max(60, Math.min(180, +this.value || 100)); this.value = cur().prod.bpm; dwStop(); fillBase(); dwChanged(true); dwLyInfo(); });
   $('#dw-key').addEventListener('change', function () { var v = this.value.split(':'), p = cur().prod; p.tonic = +v[0]; p.mode = v[1]; dwStop(); fillBase(); dwChanged(true); });
   $('#dw-master').addEventListener('change', function () { cur().prod.master = this.value; persist(); fillBase(); });
@@ -1115,8 +1155,129 @@
   }
   $('#dw-export').addEventListener('click', function () { dwExport(true); });
   $('#dw-export-base').addEventListener('click', function () { dwExport(false); });
+  // ---------- Microfono nello Studio: pulito o autotune, tutto modificabile ----------
+  function micSet() {
+    var m = LIB.settings.mic;
+    if (!m || typeof m !== 'object') m = LIB.settings.mic = { mode: 'pulito', ids: ['naturale'], macros: {} };
+    if (!Array.isArray(m.ids) || !m.ids.length) m.ids = [m.mode === 'autotune' ? 'melodico' : 'naturale'];
+    m.macros = m.macros || {};
+    return m;
+  }
+  function micRender() {
+    var m = micSet(), auto = m.mode === 'autotune';
+    $$('#dw-p-mic .dw-mode').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-mic') === m.mode); });
+    $('#dw-mic-state').textContent = auto ? 'Mic autotune' : 'Mic pulito';
+    var chars = VoiceChain.CHARACTERS.filter(function (c) { return auto || ['naturale', 'scuro', 'brillante', 'morbido', 'potente', 'doppie', 'ruvido'].indexOf(c.id) >= 0; });
+    $('#dw-mic-chars').innerHTML = chars.map(function (c) { return '<button class="chip' + (m.ids.indexOf(c.id) >= 0 ? ' on' : '') + '" data-mc="' + c.id + '" title="' + esc(c.desc) + '">' + esc(c.label) + '</button>'; }).join('');
+    var base = VoiceChain.combineMacros(m.ids.filter(function (id) { return VoiceChain.CHARACTERS.some(function (c) { return c.id === id; }); }));
+    $('#dw-mic-knobs').innerHTML = VoiceChain.MACROS.filter(function (k) { return auto || (k.id !== 'robotic' && k.id !== 'natural'); }).map(function (k) {
+      var v = typeof m.macros[k.id] === 'number' ? m.macros[k.id] : Math.round(base[k.id]);
+      var label = !auto && k.id === 'intensity' ? 'Quanto lavoro sulla voce' : k.label;
+      return '<label class="f"><span>' + esc(label) + ' <b>' + v + '</b></span><input type="range" min="0" max="100" value="' + v + '" data-mk="' + k.id + '"><small class="muted">' + esc(k.hint) + '</small></label>';
+    }).join('');
+    $('#dw-mic-ab').textContent = DW.raw ? 'Senti la voce regolata' : 'Senti la voce originale';
+  }
+  async function micApply(quiet) {
+    var t = voiceTake(), el = $('#dw-mic-msg');
+    if (!t) { if (!quiet) el.textContent = 'Prima registra la voce con ● (in alto) mentre suona la base.'; return false; }
+    var m = micSet(), p = cur().prod, auto = m.mode === 'autotune';
+    el.textContent = 'Regolo la voce…'; await tick();
+    try {
+      if (!t.vlInfo) t.vlInfo = VoiceChain.analyzeVoice(t.mono, t.sr);
+      var info = t.vlInfo, as = VoiceChain.autoSettings(info), adv = auto ? {} : { tune: { on: false } };
+      var built = VoiceChain.buildParams({ ids: m.ids, macros: m.macros, auto: as, advanced: adv, keyOverride: { tonic: p.tonic, mode: p.mode } });
+      var res = await VoiceChain.renderAsync(t.mono, t.sr, built.params, { bpm: p.bpm }, function (label) { el.textContent = label + '…'; });
+      t.final = res.samples; t.finalV = (t.finalV || 0) + 1; t.finalRes = null; DW.raw = false; DW.bufKey = '';
+      var names = m.ids.map(function (id) { var c = VoiceChain.CHARACTERS.filter(function (x) { return x.id === id; })[0]; return c ? c.label : id; }).join(' + ');
+      el.textContent = (auto ? 'Autotune in ' + NOTES[p.tonic] + ' ' + p.mode + ' (la tonalità della base)' : 'Voce pulita, senza autotune') + ' · ' + names + '. ' + (function () { var nn = (as.notes || []).filter(function (x) { return !/onalit/.test(x); }); return nn.length ? 'Ho misurato: ' + nn.slice(0, 2).join(' ') : ''; })() + ' Premi Play.';
+      coachRec('change', coachCtx(), { role: 'mic', from: null, to: m.mode + ':' + m.ids.join('+') });
+      micRender(); if (!quiet) { dwStop(true); await dwRefresh(); }
+      return true;
+    } catch (e) { el.textContent = 'Non riesco a regolare la voce (' + (e && e.message || 'errore') + ').'; return false; }
+  }
+  $('#dw-p-mic').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var m = micSet(), md = b.getAttribute('data-mic'), mc = b.getAttribute('data-mc');
+    if (md) { m.mode = md; m.ids = [md === 'autotune' ? 'melodico' : 'naturale']; m.macros = {}; persist(); micRender(); if (voiceTake()) micApply(); }
+    if (mc) { var i = m.ids.indexOf(mc); if (i >= 0) { if (m.ids.length > 1) m.ids.splice(i, 1); } else { m.ids.push(mc); if (m.ids.length > 3) m.ids.shift(); } m.macros = {}; persist(); micRender(); }
+  });
+  $('#dw-mic-knobs').addEventListener('input', function (e) { var k = e.target.getAttribute('data-mk'); if (!k) return; micSet().macros[k] = +e.target.value; e.target.previousElementSibling.querySelector('b').textContent = e.target.value; persist(); });
+  $('#dw-mic-apply').addEventListener('click', function () { micApply(false); });
+  $('#dw-mic-ab').addEventListener('click', async function () { if (!voiceTake()) { $('#dw-mic-msg').textContent = 'Nessuna voce registrata.'; return; } DW.raw = !DW.raw; DW.bufKey = ''; micRender(); var was = DW.playing, at = DW.playing ? (getCtx().currentTime - DW.t0) : (DW.from || 0); dwStop(true); await dwRefresh(); if (was) dwPlay(Math.max(0, at)); $('#dw-mic-msg').textContent = DW.raw ? 'Ora senti la voce ORIGINALE (come è uscita dal microfono).' : 'Ora senti la voce REGOLATA.'; });
+
+  // ---------- Impara da una base ----------
+  var LEARN = { cur: null };
+  function learnList() { if (!Array.isArray(LIB.settings.learned)) LIB.settings.learned = []; return LIB.settings.learned; }
+  async function decodeStereo(file, rate) {
+    var buf = await file.arrayBuffer(), OC = window.OfflineAudioContext || window.webkitOfflineAudioContext, a = null;
+    if (OC) { try { var oc = new OC(2, 1, rate); a = await new Promise(function (res, rej) { var pr = oc.decodeAudioData(buf.slice(0), res, rej); if (pr && pr.then) pr.then(res, rej); }); } catch (e) { a = null; } }
+    if (!a) { var C = window.AudioContext || window.webkitAudioContext, ctx = new C(); try { a = await ctx.decodeAudioData(buf); } finally { if (ctx.close) ctx.close(); } }
+    var L = a.getChannelData(0), R = a.numberOfChannels > 1 ? a.getChannelData(1) : null, max = Math.round(a.sampleRate * 240);
+    if (L.length > max) { L = L.slice(0, max); if (R) R = R.slice(0, max); }
+    return { L: L, R: R, sr: a.sampleRate };
+  }
+  function learnBar(f) { var b = $('#dw-learn-bar'); b.hidden = f == null; if (f != null) b.firstElementChild.style.width = Math.round(f * 100) + '%'; }
+  $('#dw-learn-file').addEventListener('change', async function () {
+    var f = this.files && this.files[0], el = $('#dw-learn-msg'); this.value = ''; if (!f) return;
+    el.textContent = 'Apro "' + f.name + '"…'; learnBar(0.02); await tick();
+    try {
+      var d = await decodeStereo(f, 32000), sr = d.sr;
+      el.textContent = 'Divido voce e base (' + Math.round(d.L.length / sr) + ' s di audio, ci vuole un po\')…';
+      var sep = await BeatLearn.separateAsync(d.L, d.R, sr, {}, function (p) { learnBar(0.05 + p * 0.6); });
+      el.textContent = 'Ripulisco e amplifico…'; learnBar(0.7); await tick();
+      var bm = new Float32Array(sep.baseL.length); for (var i = 0; i < bm.length; i++) bm[i] = (sep.baseL[i] + sep.baseR[i]) / 2;
+      var voice = BeatLearn.clean(sep.voice, sr, { denoise: 0.6 }).x; learnBar(0.8); await tick();
+      var base = BeatLearn.clean(bm, sr, { denoise: 0.3 }).x; learnBar(0.88); await tick();
+      el.textContent = 'Misuro il ritmo…'; await tick();
+      var mono = new Float32Array(d.L.length); for (i = 0; i < mono.length; i++) mono[i] = d.R ? (d.L[i] + d.R[i]) / 2 : d.L[i];
+      var prof = BeatLearn.learn(mono, sr);
+      LEARN.cur = { name: f.name.replace(/\.[^.]+$/, '').slice(0, 40), prof: prof, voice: voice, base: base, orig: mono, sr: sr, note: sep.report.note, vote: 0 };
+      learnBar(null); el.textContent = 'Fatto. Ascolta voce e base separate, poi dimmi se il ritmo ti piace.';
+      learnRender(); coachRec('complete', coachCtx());
+    } catch (e) { learnBar(null); el.textContent = 'Non riesco a leggere questo file. Prova un MP3, M4A o WAV.'; }
+  });
+  function profLine(p) { return p.bpm + ' BPM · ' + (p.key ? p.key.name : 'tonalità incerta') + ' · simile a: ' + (Arranger.STYLES[p.style] ? Arranger.STYLES[p.style].label : p.style); }
+  function learnRender() {
+    var c = LEARN.cur, h = '';
+    if (c) {
+      h = '<div class="dw-agent"><header><span class="dw-dot ok"></span><b>' + esc(c.name) + '</b><span class="st">' + esc(profLine(c.prof)) + '</span></header>' +
+        '<ul class="clean small">' + c.prof.why.map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul><p class="small muted">' + esc(c.note) + ' <span class="tag i">Ipotesi</span> la separazione è una stima: giudica tu ascoltando.</p>' +
+        '<div class="row"><button class="btn sm" data-lp="voice">▶ Voce</button><button class="btn sm" data-lp="base">▶ Base</button><button class="btn sm" data-lp="orig">▶ Originale</button><button class="btn sm" data-lp="stop">■</button></div>' +
+        '<div class="row"><button class="btn sm" data-ls="voice">Salva la voce (WAV)</button><button class="btn sm" data-ls="base">Salva la base (WAV)</button></div>' +
+        '<div class="row"><button class="btn sm pri" data-lv="1">Mi piace questo ritmo</button><button class="btn sm" data-lv="-1">Non mi piace</button></div></div>';
+    }
+    $('#dw-learn-cur').innerHTML = h;
+    var L = learnList();
+    $('#dw-learn-list').innerHTML = L.length ? L.map(function (r, i) { return '<div class="dw-prop"><div><b>' + (r.vote > 0 ? '♥ ' : '✕ ') + esc(r.name) + '</b><small>' + esc(profLine(r.prof)) + '</small></div><button class="btn sm" data-lx="' + i + '" aria-label="Togli">Togli</button></div>'; }).join('') : '<p class="small muted">Ancora niente. Carica 2 o 3 canzoni che ti piacciono e una che non ti piace: impara la differenza.</p>';
+  }
+  $('#dw-p-learn').addEventListener('click', async function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var c = LEARN.cur, lp = b.getAttribute('data-lp'), ls = b.getAttribute('data-ls'), lv = b.getAttribute('data-lv'), lx = b.getAttribute('data-lx');
+    if (lp) { dwStop(); if (lp === 'stop') stopPlay(); else if (c) playBuf(c[lp], c.sr); }
+    if (ls && c) await saveAudio(c[ls], c.sr, c.name.replace(/\W+/g, '-') + '-' + (ls === 'voice' ? 'voce' : 'base'), $('#dw-learn-msg'));
+    if (lv && c) {
+      var L = learnList(); L.push({ id: uid(), name: c.name, prof: c.prof, vote: +lv, at: Date.now() }); if (L.length > 30) L.shift();
+      persist(); LEARN.cur = null; stopPlay();
+      $('#dw-learn-msg').textContent = +lv > 0 ? 'Imparato: terrò conto di questo ritmo. Ho cancellato l\'audio, restano solo le misure.' : 'Segnato: eviterò questo tipo di ritmo.';
+      learnRender(); agentsRun();
+    }
+    if (lx != null) { learnList().splice(+lx, 1); persist(); learnRender(); }
+  });
+  function learnPlan() { var L = learnList(); return BeatLearn.blend(L.filter(function (r) { return r.vote > 0; }).map(function (r) { return r.prof; }), L.filter(function (r) { return r.vote < 0; }).map(function (r) { return r.prof; })); }
+  function learnUse(pl) {
+    var p = cur().prod; if (!pl) return false;
+    if (Arranger.STYLES[pl.genre]) p.genre = pl.genre;
+    p.bpm = Math.max(60, Math.min(180, pl.bpm)); p.mode = pl.mode; p.groove = pl.groove; p.tune = pl.tune; p.seed = (p.seed || 1) + 1;
+    coachRec('change', coachCtx(), { role: 'groove', from: null, to: 'gusti' });
+    dwFill(); fillBase(); dwStop(); dwChanged(true); return true;
+  }
+  $('#dw-learn-make').addEventListener('click', function () {
+    var pl = learnPlan(), el = $('#dw-learn-msg');
+    if (!pl) { el.textContent = 'Prima carica almeno una canzone e premi "Mi piace questo ritmo".'; return; }
+    learnUse(pl); el.textContent = 'Base nuova creata dai tuoi gusti (' + pl.from + ' che ti piacciono' + (pl.avoid ? ', ' + pl.avoid + ' da evitare' : '') + '): ' + (Arranger.STYLES[pl.genre] ? Arranger.STYLES[pl.genre].label : pl.genre) + ', ' + pl.bpm + ' BPM, cassa sui passi ' + pl.groove.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + '. Premi Play.';
+  });
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
-  SHOW.daw = function () { dwFill(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+  SHOW.daw = function () { dwFill(); micRender(); learnRender(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {

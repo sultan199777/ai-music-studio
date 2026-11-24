@@ -132,6 +132,16 @@
   function generate(p) {
     p = p || {};
     var style = STYLES[p.genre] || STYLES.trap, genreKey = STYLES[p.genre] ? p.genre : 'trap';
+    // Groove imparato da una base caricata (BeatLearn): solo numeri misurati, mai l'audio altrui.
+    if (p.groove && typeof p.groove === 'object') {
+      var gv = p.groove, st2 = {}, kk; for (kk in style) st2[kk] = style[kk];
+      var okPat = function (a) { return Array.isArray(a) && a.length && a.every(function (x) { return x >= 0 && x < 16; }); };
+      if (Array.isArray(gv.kickPats) && gv.kickPats.length && gv.kickPats.every(function (pp) { return Array.isArray(pp) && pp.length === 2 && okPat(pp[0]) && okPat(pp[1]); })) st2.kickPats = gv.kickPats;
+      if (typeof gv.rolls === 'number') st2.rolls = Math.max(0, Math.min(1, gv.rolls));
+      if (typeof gv.swing === 'number') st2.swing = Math.max(0, Math.min(0.3, gv.swing));
+      if (okPat(gv.snare)) st2.snare = gv.snare;
+      style = st2;
+    }
     var tune = p.tune || {}, tHat = tune.hat == null ? 1 : tune.hat, tBass = tune.bass == null ? 1 : tune.bass, tLift = tune.lift == null ? 1 : tune.lift, tKick = tune.kickVar == null ? 1 : tune.kickVar;
     var sr = p.sampleRate || 32000, bpm = p.bpm || style.bpm;
     var tonic = ((p.tonic || 0) % 12 + 12) % 12, mode = p.mode === 'maggiore' ? 'maggiore' : 'minore';
