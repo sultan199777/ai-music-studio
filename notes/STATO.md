@@ -62,3 +62,38 @@ Regola della persona: andare avanti un passo alla volta, senza rianalizzare tutt
 ## 2026-11-24 Risparmio di token
 - `notes/MAPPA.md` (generata con `node tools/mappa.js`): mappa di file, scopo e funzioni. Leggerla prima dei sorgenti. Rigenerare dopo cambi grandi.
 - Graphify e Ponytail non installati (rete per pacchetti spenta; Ponytail non verificato).
+
+## 2026-11-24 Voice Lab (autotune migliorato, catena vocale, interfaccia semplice, monitor sperimentale)
+Fatto e provato (test Node 148/148 + prova Playwright con microfono finto in Chromium 390x844, 0 errori in console a parte i font Google non raggiungibili nel sandbox):
+- `src/autotune.js` esteso (compatibile con i test vecchi): tracciatore fine (~6 ms), Retune Speed in ms, Humanize, Flex-Tune (zona morta + scivolate), modo Classico, vibrato naturale/artificiale e deriva lenta (separazione centro nota / deriva / oscillazione veloce), formant shift (cepstrum, `src/formant.js`), tonalità automatica con KeyDetect (se incerta usa "tutte le note" e lo segnala), armonie anche verso il basso. Test numerici in `tests/autotune-voice.test.js`.
+- `src/voice-chain.js`: pulizia, de-esser (ripiano alto dinamico), compressore a 2 stadi, saturazione, distorsione, EQ, filtri, armonie (ritardo casuale 10-30 ms), doppie ADT, delay, riverbero, limitatore; 13 caratteri combinabili e salvabili; 5 cursori; analisi e regolazioni "Auto"; Prima/Dopo a volume pareggiato. Test in `tests/voice-chain.test.js`.
+- `src/realtime-tune.js` + `src/voice-lab.js` + `src/voice-lab.css`: interfaccia nella pagina Voce (Auto, chip, cursori, curva prima/dopo, Avanzato con 60 parametri, preset salvati in localStorage) e monitor in cuffia sperimentale (AudioWorklet, riserva ScriptProcessor).
+Limiti onesti: nessun ascolto umano (misurati cent, picchi, spettro, ritardi); valori dei caratteri NON verificati; uscita mono; monitor non provato su iPhone reale (solo Chromium), latenza di sistema solo "dichiarata dal browser" (Safari non espone outputLatency); suono del monitor granuloso; elaborazione sul file: ~4 s per 5 s di voce nel browser di prova, su iPhone da misurare; formant shift oltre +-4 semitoni artificiale; la tonalità maggiore/minore relativa si confonde; tracciatore con qualche picco isolato sulla curva. Non fatto: stereo, timing/allineamento, vocoder, Worker (il calcolo blocca un poco la pagina, con pause tra le fasi).
+Cablaggio minimo: blocchi "VOICE LAB" in app.js (4 righe + init), app.body.html (2 contenitori), app.shell.html, build.js.
+## Beat Lab (chat "work-beat", 24/11/2026) - in corso
+
+### Tappa 1 - motore in tempo reale + batteria: FATTA e provata
+- File nuovi: `src/beatlab-voices.js` (batteria e sintetizzatori Web Audio), `src/beatlab-engine.js` (progetto, tick/swing/rullate, scheduler con lookahead, grafo tracce con volume/pan/mute/solo/misuratori, Player, esportazione WAV con OfflineAudioContext), `src/beatlab-patterns.js` (7 stili originali + "casuale ma sensato"), `src/beatlab-ui.js`, `src/beatlab-boot.js`, `src/beatlab.css`.
+- Scelta motore: Web Audio puro (non Tone.js): niente file esterni, stessa catena in tempo reale e offline, tempistica testabile in Node.
+- Cablaggio minimo (blocchi commentati "Beat Lab"): `src/app.js` (VIEWS, MENU, SHOW.beatlab), `src/app.body.html` (vista `#v-beatlab`), `src/app.shell.html` (CSS e JS), `build.js` (BEATLAB_FILES).
+- Test Node: `tests/beatlab-engine.test.js`, `tests/beatlab-patterns.test.js` (tempi esatti dello scheduler anche con jitter, swing, rullate, loop, cambio BPM al volo, resize, WAV, regole di genere su 30 semi x 7 stili).
+- Test nel browser (non fanno parte di build.js): `tests/browser/audio-check.js` (render offline di 7 stili x 2 kit: picchi, silenzi, valori finiti) e `tests/browser/ui-check.js` (iPhone emulato, Chromium: tocco, play, misuratori, esporta WAV, nessun errore in console).
+- NON ascoltato da me: misurati picchi (-0,4 / -2,4 dBFS dopo il limitatore di sicurezza), assenza di valori non finiti, suono presente. Il giudizio sul suono e sul groove resta all'orecchio dell'utente.
+
+### Tappa 2 - campioni CC0 intonati: FATTA e provata
+- `src/beatlab-sampler.js` + `docs/samples/` (manifest + 20 strumenti + 5 kit batteria + 808): 8,5 MB (MP3 mono 32 kHz, un campione ogni 3-4 semitoni, loop con dissolvenza per i suoni tenuti), caricati a richiesta con `fetch`. Fonti: VSCO-2-CE, VCSL, stargate-sample-pack, tutte CC0 (licenza controllata cartella per cartella; crediti in `notes/LICENZE-SUONI.md`, generati da `tools/beatlab-credits.js`). Conversione: `tools/beatlab-samples*.py` (servono i cloni dei repo).
+- Altezza misurata con autocorrelazione: errore mediano 0-3 centesimi (campane/carillon ~35, non armoniche). Senza campioni (file:// o dentro Claude) ogni strumento ha un sintetizzatore di riserva e la pagina lo dice.
+- Test: `tests/beatlab-sampler.test.js`, `tests/browser/samples-check.js`, `ui-inst-check.js`.
+
+### Tappa 3 - tastiera, accordi, piano roll, Impara: FATTA e provata
+- `src/beatlab-theory.js` (scale, blocco sulla scala, accordi, atmosfere cupa/malinconica/luminosa/epica/tesa, quantizzazione, operazioni sulle note), `src/beatlab-ui-edit.js`, `src/beatlab-ui-inst.js`. Test: `tests/beatlab-theory.test.js`, `tests/browser/ui-edit-check.js`.
+
+### Tappa 4 - mixer/effetti, misura, MIDI, progetti: FATTA e provata
+- Catena per traccia: EQ 3 bande -> saturazione parallela -> compressore -> abbassamento sidechain -> pan -> volume -> mandate riverbero/delay -> master (collante -> limiter -> tetto regolabile). Stessa catena in ascolto e nel WAV.
+- `src/beatlab-mix.js` (valori di partenza per stile/strumento, "punti di partenza" dalla ricerca C; LUFS BS.1770 con pesatura K e gate; picco reale stimato), `src/beatlab-midi.js` (SMF tipo 1, 96 PPQ, batteria canale 10, swing incluso), `src/beatlab-store.js` (IndexedDB + riparazione `sanitize`), `src/beatlab-ui-mix.js` (scheda "8. Effetti, master e progetti").
+- Test: `tests/beatlab-mix.test.js` (LUFS di riferimento, picchi, preset, ducking, MIDI con parser, sanitize, store), `tests/browser/ui-mix-check.js` (effetti che cambiano davvero il render, sidechain misurato -16,0 -> -17,9 LUFS, limiter, MIDI scaricato valido, IndexedDB salva/riapri/ricarica).
+- LIMITI ONESTI: il sidechain NON legge il segnale della cassa: abbassa a tempo dei colpi di cassa (stessa cosa in ascolto e nel file). Il picco reale e' una stima (interpolazione 4x). I valori di partenza di BPM/effetti sono punti di partenza, non verificati a orecchio.
+
+### Sintesi finale Beat Lab
+- FATTO e provato (Node 157/157 in build + prove Playwright iPhone 13 emulato): motore, batteria a passi con rullate/swing/kit, 7 stili + casuale sensato, WAV, 20 strumenti campionati + sintetizzatori, tastiera con blocco scala, accordi, piano roll, Impara, effetti, master, LUFS, MIDI, progetti.
+- NON FATTO / LIMITI: audio mai ascoltato da me (solo misure di picchi, silenzi, valori finiti); mai provato su un iPhone vero; chitarra e coro non hanno campioni CC0 adatti (sintetici); campane approssimate; il corno ha un salto di 14 semitoni; iOS ferma l'audio a schermo bloccato; la versione `dist/index.html` (artifact Claude) non ha campioni, solo sintetizzatori; BPM predefiniti di boom bap/R&B/pop "non verificati".
