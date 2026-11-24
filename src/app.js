@@ -212,8 +212,7 @@
     if (VIEWS.indexOf(id) === -1) id = 'daw';
     stopPlay(); if (typeof dwStop === 'function' && id !== 'daw') dwStop();
     VIEWS.forEach(function (v) { $('#v-' + v).hidden = v !== id; });
-    var main = ['daw', 'studio', 'voce', 'strumenti'].indexOf(id) !== -1 ? id : 'menu';
-    $$('#tabs a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-r') === main); });
+    $$('#tabs a').forEach(function (a) { a.classList.toggle('on', id === 'daw' && a.getAttribute('data-ws') === dwWsName()); });
     var s = cur();
     $('#top-song').textContent = s.title || 'Senza titolo';
     applyMood();
@@ -1072,7 +1071,7 @@
   }
   async function dwRefresh() { try { var b = await dwBase(); dwBuffers(b); dwDraw(b); dwSteps(); if (window.__prReady) prDraw(); } catch (e) { $('#dw-msg').textContent = 'Non riesco a creare la base.'; } }
   var dwT = null;
-  function dwChanged(rebuildAgents) { SESSION.baseKey = ''; DW.bufKey = ''; persist(); clearTimeout(dwT); dwT = setTimeout(function () { dwRefresh(); if (rebuildAgents) agentsRun(); }, 250); }
+  function dwChanged(rebuildAgents) { try { projLine(); } catch (e) {} SESSION.baseKey = ''; DW.bufKey = ''; persist(); clearTimeout(dwT); dwT = setTimeout(function () { dwRefresh(); if (rebuildAgents) agentsRun(); }, 250); }
 
   // ---------- registrazione nello Studio ----------
   async function dwRecord() {
@@ -1914,7 +1913,22 @@
     learnUse(pl); el.textContent = 'Base nuova creata dai tuoi gusti (' + pl.from + ' che ti piacciono' + (pl.avoid ? ', ' + pl.avoid + ' da evitare' : '') + '): ' + (Arranger.STYLES[pl.genre] ? Arranger.STYLES[pl.genre].label : pl.genre) + ', ' + pl.bpm + ' BPM, cassa sui passi ' + pl.groove.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + '. Premi Play.';
   });
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
-  SHOW.daw = function () { verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+  // spazi di lavoro dello Studio: Impara · Base · Testo · Voce · Mix (un solo gruppo di pannelli alla volta)
+  function dwWsName() { return LIB.settings.ws || 'base'; }
+  function dwWs(ws) {
+    LIB.settings.ws = ws; persist();
+    $$('#v-daw [data-ws]').forEach(function (el) { el.hidden = (' ' + el.getAttribute('data-ws') + ' ').indexOf(' ' + ws + ' ') < 0; });
+    $$('#tabs a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-ws') === ws); });
+    if (ws === 'base' || ws === 'voce' || ws === 'mix') setTimeout(function () { if (SESSION.base) { dwDraw(SESSION.base); prDraw(); } }, 30);
+  }
+  $('#tabs').addEventListener('click', function (e) { var a = e.target.closest('[data-ws]'); if (!a) return; if (location.hash === '#daw') { e.preventDefault(); dwWs(a.getAttribute('data-ws')); window.scrollTo(0, 0); } else LIB.settings.ws = a.getAttribute('data-ws'); });
+  function projLine() { var p = cur().prod; $('#dw-proj-t').textContent = (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode; }
+  $('#dw-proj').addEventListener('click', function () { $('#dw-set').hidden = false; });
+  $('#dw-set').addEventListener('click', function (e) { if (e.target === this || e.target.id === 'dw-set-x') { this.hidden = true; projLine(); } });
+  document.body.appendChild($('#dw-set'));
+  // spiegazioni nascoste: un "?" in ogni pannello le mostra
+  $$('#v-daw .dw-panel .dw-ph').forEach(function (ph) { var b = document.createElement('button'); b.className = 'dw-help'; b.type = 'button'; b.textContent = '?'; b.setAttribute('aria-label', 'Spiegazione'); b.addEventListener('click', function () { ph.parentElement.classList.toggle('show-help'); }); ph.appendChild(b); });
+  SHOW.daw = function () { dwWs(dwWsName()); projLine(); verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {

@@ -313,6 +313,16 @@ details.card[open]>summary{margin-bottom:8px}
 .dw-autor{display:grid;grid-template-columns:80px 1fr 1fr;gap:8px;align-items:center;font-size:.78rem;margin:4px 0}.dw-autor label{display:flex;flex-direction:column}.dw-autor i{font-style:normal;color:var(--muted)}@media(max-width:560px){.dw-autor{grid-template-columns:1fr 1fr}.dw-autor b{grid-column:1/-1}}
 .dw-drow{display:grid;grid-template-columns:70px repeat(16,1fr);gap:3px;align-items:center;margin:4px 0;font-size:.75rem}.dw-step{height:26px;border-radius:5px;border:1px solid var(--line);background:rgba(255,255,255,.04);padding:0}.dw-step.beat{background:rgba(255,255,255,.09)}.dw-step.on{background:#e3c48f;border-color:#e3c48f}
 
+/* --- Studio: interfaccia pulita (spazi di lavoro) --- */
+.dw-proj{display:flex;align-items:center;gap:8px;margin-top:10px;width:100%;justify-content:space-between;border:1px solid var(--line);background:rgba(255,255,255,.04);color:inherit;border-radius:12px;padding:9px 12px;font:inherit;font-size:.82rem;font-weight:600}
+.dw-proj svg{width:18px;height:18px;opacity:.8}
+.dw-meta-sheet{display:grid;gap:10px}.dw-meta-sheet .dw-chip{width:100%;justify-content:space-between}
+.top-menu{margin-left:auto;display:grid;place-items:center;width:38px;height:38px;border-radius:12px;border:1px solid var(--line);color:inherit}.top-menu svg{width:20px;height:20px}
+.dw-panel>p.small.muted:not([id]){display:none}.dw-panel.show-help>p.small.muted:not([id]){display:block}
+.dw-help{margin-left:8px;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted);font-weight:700;font-size:.75rem;padding:0;flex:none}
+.dw-ph{gap:6px}.dw-ph .tag{margin-left:auto}
+.dw-panel{margin-bottom:12px}
+
 /* ===== VOICE LAB (stile Cosmo: usa le variabili del tema) ===== */
 .vl .vl-auto{font-size:1.25rem;min-height:60px;margin:8px 0 4px;letter-spacing:.04em}
 .vl .vl-hint{margin:2px 0 8px}
@@ -432,6 +442,7 @@ details.card[open]>summary{margin-bottom:8px}
 <header class="top">
   <a class="brand" href="#home"><span class="logo"><svg><use href="#i-note"/></svg></span>Sultan Sound</a>
   <a class="chip-song" id="top-song" href="#canzoni">Nessuna canzone</a>
+  <a class="top-menu" href="#menu" aria-label="Altre funzioni"><svg><use href="#i-grid"/></svg></a>
 </header>
 
 <!-- HOME -->
@@ -444,24 +455,13 @@ details.card[open]>summary{margin-bottom:8px}
       <button class="dw-btn dw-rec" id="dw-rec" aria-label="Registra la voce"><span></span></button>
       <div class="dw-clock"><b id="dw-time">0:00</b><small id="dw-pos">battuta 1</small></div>
     </div>
-    <div class="dw-meta">
-      <label class="dw-chip"><span>Stile</span><select id="dw-genre"></select></label>
-      <label class="dw-chip"><span>BPM</span><input type="number" id="dw-bpm" min="60" max="180"></label>
-      <label class="dw-chip"><span>Tonalità</span><select id="dw-key"></select></label>
-      <button class="dw-chip dw-act" id="dw-new" title="Stessi strumenti, nuove note">Nuova variante</button>
-    </div>
+    <button class="dw-proj" id="dw-proj"><span id="dw-proj-t">Progetto</span><svg><use href="#i-gear"/></svg></button>
   </div>
 
-  <nav class="dw-steps" id="dw-steps">
-    <a href="#dw-p-testo" data-step="testo"><i>1</i><span>Testo</span></a>
-    <a href="#dw-p-arr" data-step="base"><i>2</i><span>Base</span></a>
-    <a href="#dw-p-mic" data-step="voce"><i>3</i><span>Voce</span></a>
-    <a href="#dw-p-mix" data-step="mix"><i>4</i><span>Mix e salva</span></a>
-  </nav>
 
-  <section class="dw-panel dw-lyric karaoke" id="dw-kar"><div><b>Scrivi il testo qui sotto, poi premi Play</b><small>La base prende la forma del testo: ogni riga cade sulla sua battuta.</small></div></section>
+  <section class="dw-panel dw-lyric karaoke" id="dw-kar" data-ws="testo voce"><div><b>Scrivi il testo qui sotto, poi premi Play</b><small>La base prende la forma del testo: ogni riga cade sulla sua battuta.</small></div></section>
 
-  <section class="dw-panel" id="dw-p-arr">
+  <section class="dw-panel" id="dw-p-arr" data-ws="base voce mix">
     <div class="dw-ph"><h3>Arrangiamento</h3><span class="small muted" id="dw-arrinfo"></span></div>
     <div class="dw-arr">
       <div class="dw-heads" id="dw-heads"></div>
@@ -471,7 +471,7 @@ details.card[open]>summary{margin-bottom:8px}
     <div class="status" id="dw-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-mic">
+  <section class="dw-panel" id="dw-p-mic" data-ws="voce">
     <div class="dw-ph"><h3>Microfono</h3><span class="tag m" id="dw-mic-state">Mic pulito</span></div>
     <div class="dw-modes">
       <button class="dw-mode on" data-mic="pulito"><b>Mic pulito</b><small>La tua voce vera, solo ripulita: rumore, EQ, compressore, spazio.</small></button>
@@ -489,20 +489,20 @@ details.card[open]>summary{margin-bottom:8px}
     <div class="status" id="dw-mic-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-talk">
+  <section class="dw-panel" id="dw-p-talk" data-ws="testo base">
     <div class="dw-ph"><h3>Parla con lo Studio</h3><span class="tag m">Modifica davvero</span></div>
     <p class="small muted">Scrivi cosa vuoi cambiare: mixer, 808, melodia, effetti, voce, master, velocità, tonalità, stile. La modifica si sente subito; se non ti piace premi Annulla.</p>
     <div class="row"><input id="dw-talk-in" placeholder="es. 808 più lungo e più distorto" autocomplete="off" style="flex:1;min-width:0"><button class="btn pri" id="dw-talk-go">Invia</button></div>
     <div id="dw-talk-log"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-agents">
+  <section class="dw-panel" id="dw-p-agents" data-ws="base">
     <div class="dw-ph"><h3>Agenti al lavoro</h3><span class="tag a">Imparano da te</span></div>
     <p class="small muted">Cinque assistenti lavorano da soli mentre l'app è aperta, sul telefono, gratis. Preparano proposte, inventano suoni e controllano il tuo lavoro. Ogni tua scelta li fa migliorare.</p>
     <div class="dw-agents" id="dw-agents"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-learn">
+  <section class="dw-panel" id="dw-p-learn" data-ws="impara">
     <div class="dw-ph"><h3>Impara da una base</h3><span class="tag a">Solo misure, niente copie</span></div>
     <p class="small muted">Carica una canzone o un video che ti piace. Mettila in una <b>cartella</b> (un artista o un genere): ogni cartella diventa uno stile da cui creare basi nuove. La divido in <b>voce</b> e <b>base</b>, le ripulisco e misuro il ritmo: velocità, cassa, rullante, hi-hat, bassi. Dimmi se ti piace o no. Tengo solo i numeri, mai l'audio, e la base nuova è tua e originale.</p>
     <div class="dw-modes" id="dw-sep-modes">
@@ -519,7 +519,7 @@ details.card[open]>summary{margin-bottom:8px}
     <div class="status" id="dw-learn-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-testo">
+  <section class="dw-panel" id="dw-p-testo" data-ws="testo">
     <div class="dw-ph"><h3>Testo</h3><span class="small muted" id="dw-lyinfo"></span></div>
     <p class="small muted">Usa i titoli tra parentesi quadre per le parti: <span class="mono">[Strofa]</span> <span class="mono">[Ritornello]</span> <span class="mono">[Bridge]</span>. La base si costruisce su queste parti.</p>
     <textarea id="dw-lyrics" rows="9" placeholder="[Strofa]&#10;La prima riga del tuo testo&#10;&#10;[Ritornello]&#10;Il gancio che tutti ricordano"></textarea>
@@ -527,7 +527,7 @@ details.card[open]>summary{margin-bottom:8px}
     <div class="status" id="dw-tmsg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-roll">
+  <section class="dw-panel" id="dw-p-roll" data-ws="base">
     <div class="dw-ph"><h3>Piano roll</h3><span class="tag m">Nota per nota</span></div>
     <div class="chips" id="dw-pr-tr"><button class="chip on" data-prt="lead">Melodia</button><button class="chip" data-prt="bass">Basso 808</button><button class="chip" data-prt="drums">Batteria</button></div>
     <div class="row"><button class="btn sm pri" id="dw-pr-edit">Modifica le note</button><button class="btn sm" id="dw-pr-reset">Torna alle note generate</button><label class="sw small"><input type="checkbox" id="dw-pr-snap" checked> Solo note della scala</label></div>
@@ -538,14 +538,14 @@ details.card[open]>summary{margin-bottom:8px}
     <div class="status" id="dw-pr-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-design">
+  <section class="dw-panel" id="dw-p-design" data-ws="base">
     <div class="dw-ph"><h3>Designer suoni</h3><span class="tag m">Suoni tuoi</span></div>
     <div class="chips" id="dw-ds-tabs"><button class="chip on" data-dst="synth">Synth</button><button class="chip" data-dst="808">808</button><button class="chip" data-dst="fx">Effetti di passaggio</button><button class="chip" data-dst="perc">Percussioni del mondo</button><button class="chip" data-dst="vox">Dalla voce</button></div>
     <div id="dw-ds-body"></div>
     <div class="status" id="dw-ds-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-clips">
+  <section class="dw-panel" id="dw-p-clips" data-ws="voce">
     <div class="dw-ph"><h3>Voce: prove e montaggio</h3><span class="tag m">Niente si perde</span></div>
     <div id="dw-cl-takes"></div>
     <div id="dw-cl-comp-box"></div>
@@ -555,7 +555,7 @@ details.card[open]>summary{margin-bottom:8px}
     <div class="status" id="dw-cl-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-mixer">
+  <section class="dw-panel" id="dw-p-mixer" data-ws="mix">
     <div class="dw-ph"><h3>Mixer</h3><span class="tag m">Si sente subito</span></div>
     <p class="small muted">Scegli una traccia e regola il suo canale mentre suona. Lo stesso mix finisce nel file che salvi.</p>
     <div class="chips" id="dw-mx-lanes"></div>
@@ -565,7 +565,7 @@ details.card[open]>summary{margin-bottom:8px}
     <div class="status" id="dw-mx-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-mix">
+  <section class="dw-panel" id="dw-p-mix" data-ws="mix">
     <div class="dw-ph"><h3>Mix e salvataggio</h3></div>
     <div class="grid2">
       <label class="f"><span>Master (suono finale)</span><select id="dw-master"><option value="off">Spento</option><option value="morbido">Morbido</option><option value="standard">Standard</option><option value="forte">Forte</option></select></label>
@@ -589,6 +589,14 @@ details.card[open]>summary{margin-bottom:8px}
     <div class="dw-more"><a href="#voce">Voce: autotune e caratteri</a><a href="#strumenti">Strumentario e Laboratorio</a><a href="#beatlab">Laboratorio batteria (batteria a passi, piano roll)</a><a href="#studio">Coach completo e percorso</a></div>
   </section>
 
+  <div class="dw-sheet" id="dw-set" hidden><div class="dw-sheet-in"><div class="dw-ph"><h3>Impostazioni del progetto</h3><button class="btn sm" id="dw-set-x">Chiudi</button></div>
+    <div class="dw-meta dw-meta-sheet">
+      <label class="dw-chip"><span>Stile</span><select id="dw-genre"></select></label>
+      <label class="dw-chip"><span>BPM</span><input type="number" id="dw-bpm" min="60" max="180"></label>
+      <label class="dw-chip"><span>Tonalità</span><select id="dw-key"></select></label>
+      <button class="dw-chip dw-act" id="dw-new" title="Stessi strumenti, nuove note">Nuova variante</button>
+    </div>
+  </div></div>
   <div class="dw-sheet" id="dw-sheet" hidden><div class="dw-sheet-in"><div class="dw-ph"><h3 id="dw-sheet-t">Strumento</h3><button class="btn sm" id="dw-sheet-x">Chiudi</button></div><div class="chips" id="dw-sheet-f"></div><div class="dw-grid" id="dw-sheet-g"></div></div></div>
 </main>
 
@@ -602,7 +610,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 19:37</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 19:46</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -958,11 +966,11 @@ details.card[open]>summary{margin-bottom:8px}
 </div>
 
 <div class="tabs"><nav id="tabs">
-  <a href="#daw" data-r="daw"><svg><use href="#i-sliders"/></svg>Studio</a>
-  <a href="#studio" data-r="studio"><svg><use href="#i-spark"/></svg>Testo</a>
-  <a href="#voce" data-r="voce"><svg><use href="#i-mic"/></svg>Voce</a>
-  <a href="#strumenti" data-r="strumenti"><svg><use href="#i-disc"/></svg>Suoni</a>
-  <a href="#menu" data-r="menu"><svg><use href="#i-grid"/></svg>Menu</a>
+  <a href="#daw" data-r="daw" data-ws="impara"><svg><use href="#i-folder"/></svg>Impara</a>
+  <a href="#daw" data-r="daw" data-ws="base"><svg><use href="#i-disc"/></svg>Base</a>
+  <a href="#daw" data-r="daw" data-ws="testo"><svg><use href="#i-spark"/></svg>Testo</a>
+  <a href="#daw" data-r="daw" data-ws="voce"><svg><use href="#i-mic"/></svg>Voce</a>
+  <a href="#daw" data-r="daw" data-ws="mix"><svg><use href="#i-sliders"/></svg>Mix</a>
 </nav></div>
 
 <script>
@@ -10417,8 +10425,7 @@ details.card[open]>summary{margin-bottom:8px}
     if (VIEWS.indexOf(id) === -1) id = 'daw';
     stopPlay(); if (typeof dwStop === 'function' && id !== 'daw') dwStop();
     VIEWS.forEach(function (v) { $('#v-' + v).hidden = v !== id; });
-    var main = ['daw', 'studio', 'voce', 'strumenti'].indexOf(id) !== -1 ? id : 'menu';
-    $$('#tabs a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-r') === main); });
+    $$('#tabs a').forEach(function (a) { a.classList.toggle('on', id === 'daw' && a.getAttribute('data-ws') === dwWsName()); });
     var s = cur();
     $('#top-song').textContent = s.title || 'Senza titolo';
     applyMood();
@@ -11277,7 +11284,7 @@ details.card[open]>summary{margin-bottom:8px}
   }
   async function dwRefresh() { try { var b = await dwBase(); dwBuffers(b); dwDraw(b); dwSteps(); if (window.__prReady) prDraw(); } catch (e) { $('#dw-msg').textContent = 'Non riesco a creare la base.'; } }
   var dwT = null;
-  function dwChanged(rebuildAgents) { SESSION.baseKey = ''; DW.bufKey = ''; persist(); clearTimeout(dwT); dwT = setTimeout(function () { dwRefresh(); if (rebuildAgents) agentsRun(); }, 250); }
+  function dwChanged(rebuildAgents) { try { projLine(); } catch (e) {} SESSION.baseKey = ''; DW.bufKey = ''; persist(); clearTimeout(dwT); dwT = setTimeout(function () { dwRefresh(); if (rebuildAgents) agentsRun(); }, 250); }
 
   // ---------- registrazione nello Studio ----------
   async function dwRecord() {
@@ -12119,7 +12126,22 @@ details.card[open]>summary{margin-bottom:8px}
     learnUse(pl); el.textContent = 'Base nuova creata dai tuoi gusti (' + pl.from + ' che ti piacciono' + (pl.avoid ? ', ' + pl.avoid + ' da evitare' : '') + '): ' + (Arranger.STYLES[pl.genre] ? Arranger.STYLES[pl.genre].label : pl.genre) + ', ' + pl.bpm + ' BPM, cassa sui passi ' + pl.groove.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + '. Premi Play.';
   });
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
-  SHOW.daw = function () { verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+  // spazi di lavoro dello Studio: Impara · Base · Testo · Voce · Mix (un solo gruppo di pannelli alla volta)
+  function dwWsName() { return LIB.settings.ws || 'base'; }
+  function dwWs(ws) {
+    LIB.settings.ws = ws; persist();
+    $$('#v-daw [data-ws]').forEach(function (el) { el.hidden = (' ' + el.getAttribute('data-ws') + ' ').indexOf(' ' + ws + ' ') < 0; });
+    $$('#tabs a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-ws') === ws); });
+    if (ws === 'base' || ws === 'voce' || ws === 'mix') setTimeout(function () { if (SESSION.base) { dwDraw(SESSION.base); prDraw(); } }, 30);
+  }
+  $('#tabs').addEventListener('click', function (e) { var a = e.target.closest('[data-ws]'); if (!a) return; if (location.hash === '#daw') { e.preventDefault(); dwWs(a.getAttribute('data-ws')); window.scrollTo(0, 0); } else LIB.settings.ws = a.getAttribute('data-ws'); });
+  function projLine() { var p = cur().prod; $('#dw-proj-t').textContent = (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode; }
+  $('#dw-proj').addEventListener('click', function () { $('#dw-set').hidden = false; });
+  $('#dw-set').addEventListener('click', function (e) { if (e.target === this || e.target.id === 'dw-set-x') { this.hidden = true; projLine(); } });
+  document.body.appendChild($('#dw-set'));
+  // spiegazioni nascoste: un "?" in ogni pannello le mostra
+  $$('#v-daw .dw-panel .dw-ph').forEach(function (ph) { var b = document.createElement('button'); b.className = 'dw-help'; b.type = 'button'; b.textContent = '?'; b.setAttribute('aria-label', 'Spiegazione'); b.addEventListener('click', function () { ph.parentElement.classList.toggle('show-help'); }); ph.appendChild(b); });
+  SHOW.daw = function () { dwWs(dwWsName()); projLine(); verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {
