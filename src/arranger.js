@@ -420,6 +420,8 @@
     var pa = Math.floor(rand() * progs.length), pb = (pa + 1 + Math.floor(rand() * (progs.length - 1))) % progs.length, pc = (pb + 1) % progs.length;
     if (pc === pa) pc = (pc + 1) % progs.length;
     pick = { strofa: progs[pa], intro: progs[pa], pre: progs[pa], ritornello: progs[pb], bridge: progs[pc], outro: progs[pa] };
+    // progressione imparata da una base caricata (gradi della scala, 4 accordi): strofa e ritornello la usano, il bridge resta diverso
+    if (Array.isArray(p.prog) && p.prog.length === 4 && p.prog.every(function (d) { return d >= 0 && d < 7; })) { pick.strofa = pick.intro = pick.pre = pick.outro = p.prog; pick.ritornello = p.prog; }
 
     // Ritornello: frase "gancio" generata una volta e ripetuta uguale (i ritornelli devono somigliarsi).
     var scaleM = [];
@@ -648,10 +650,13 @@
       events.bass.push({ start: at(n.bar, n.step) / sr, midi: n.midi, dur: dur, bar: n.bar, step: n.step, len: n.len, slide: sl, edited: true }); pm2 = n.midi;
     }); }
 
+    // percussioni del mondo: la funzione riceve le sezioni vere e restituisce colpi {bar, step, buf, track, gain}
+    var percEv = typeof p.percEvents === 'function' ? p.percEvents(sections, sr) : null;
+    if (percEv) percEv.forEach(function (f) { if (f.bar < bars) add(T[f.track] ? f.track : 'hat', f.bar * stepLen * 16 + Math.round((f.step || 0) * stepLen), f.buf, f.gain == null ? 0.4 : f.gain); });
     // effetti di transizione messi a mano (riser, impact, reverse…): {bar, buf, end}
     if (Array.isArray(p.extraFx)) p.extraFx.forEach(function (f) {
       if (!f || !f.buf || f.bar == null || f.bar > bars) return;
-      var at0 = f.end ? f.bar * stepLen * 16 - f.buf.length : f.bar * stepLen * 16; add('fx', Math.max(0, at0), f.buf, f.gain == null ? 0.7 : f.gain);
+      var at0 = f.end ? f.bar * stepLen * 16 - f.buf.length : f.bar * stepLen * 16 + Math.round((f.step || 0) * stepLen); add(f.track && T[f.track] ? f.track : 'fx', Math.max(0, at0), f.buf, f.gain == null ? 0.7 : f.gain);
     });
 
     // "pompaggio": accordi e pad si abbassano a ogni cassa, come in produzione moderna

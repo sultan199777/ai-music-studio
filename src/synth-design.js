@@ -79,5 +79,32 @@
     downlifter: { nome: 'Downlifter (scende)', make: function (sr, bars, bs) { return downlifter(bs * (bars || 1), sr); } },
     impact: { nome: 'Impact (botta)', make: function (sr) { return impact(sr); } },
     reverse: { nome: 'Reverse (crash al contrario)', make: function (sr, bars, bs) { return reverseCrash(Math.min(2.5, bs), sr); }, end: true } };
-  return { TABLES: TABLES, SYNTH_DEF: SYNTH_DEF, SYNTH_PRESETS: SYNTH_PRESETS, synthParams: synthParams, synth: synth, B808_DEF: B808_DEF, b808Params: b808Params, b808: b808, FX: FX, riser: riser, impact: impact, reverseCrash: reverseCrash, downlifter: downlifter };
+  // ---------- 808 pronti ----------
+  var B808_PRESETS = { 'Classico lungo': { decay: 2.2, punch: 0.5, drive: 0.35, tone: 0.45, click: 0.15 }, 'Distorto drill': { decay: 1.6, punch: 0.7, drive: 0.95, tone: 0.75, click: 0.3 }, 'Corto e secco': { decay: 0.45, punch: 0.9, drive: 0.5, tone: 0.6, click: 0.6 }, 'Sub pulito': { decay: 1.8, punch: 0.2, drive: 0, tone: 0.2, click: 0 }, 'Ruvido con click': { decay: 1.2, punch: 0.8, drive: 0.7, tone: 0.9, click: 0.9 } };
+  // ---------- percussioni del mondo (sintetizzate: membrane e rumori filtrati) ----------
+  function membrane(sr, f0, bend, dec, noiseAmt, seed) { var n = Math.round(sr * dec * 4), y = new Float32Array(n), r = noise(seed), ph = 0, lp = 0; for (var i = 0; i < n; i++) { var t = i / sr; ph += 2 * Math.PI * f0 * (1 + bend * Math.exp(-t * 60)) / sr; lp += 0.3 * (r() - lp); y[i] = (Math.sin(ph) + noiseAmt * lp * Math.exp(-t * 80)) * Math.exp(-t / dec) * 0.8; } return y; }
+  function shaker(sr) { var n = Math.round(sr * 0.09), y = new Float32Array(n), r = noise(13), hp = 0, pv = 0; for (var i = 0; i < n; i++) { var x = r(); hp = 0.85 * (hp + x - pv); pv = x; var t = i / n; y[i] = hp * Math.sin(Math.PI * t) * 0.5; } return y; }
+  var PERC = {
+    conga: { nome: 'Conga', hit: function (sr, acc) { return membrane(sr, acc ? 330 : 220, 0.3, 0.12, 0.2, 21); }, steps: [3, 6, 10, 11, 14], acc: [6, 14] },
+    bongo: { nome: 'Bongo', hit: function (sr, acc) { return membrane(sr, acc ? 520 : 400, 0.25, 0.07, 0.3, 22); }, steps: [2, 5, 7, 10, 13, 15], acc: [7, 15] },
+    cajon: { nome: 'Cajón', hit: function (sr, acc) { return acc ? membrane(sr, 180, 0.2, 0.06, 1.2, 23) : membrane(sr, 75, 0.5, 0.1, 0.4, 24); }, steps: [0, 4, 7, 10, 12], acc: [4, 12] },
+    shaker: { nome: 'Shaker', hit: function (sr) { return shaker(sr); }, steps: [0, 2, 4, 6, 8, 10, 12, 14], acc: [2, 6, 10, 14] },
+    tabla: { nome: 'Tabla', hit: function (sr, acc) { return membrane(sr, acc ? 480 : 150, acc ? 0.05 : 0.8, acc ? 0.18 : 0.15, 0.1, 25); }, steps: [0, 3, 6, 8, 11, 14], acc: [3, 11] }
+  };
+  /** Colpi di percussione per la base: [{bar, step, buf, track:'hat'}] nelle sezioni indicate. */
+  function percEvents(type, sections, sr, sectionsOn) {
+    var P = PERC[type]; if (!P) return []; var hitA = P.hit(sr, true), hitN = P.hit(sr, false), out = [];
+    sections.forEach(function (s) { if (sectionsOn.indexOf(s.name) < 0) return; for (var b = 0; b < s.bars; b++) P.steps.forEach(function (st) { var a = P.acc.indexOf(st) >= 0; out.push({ bar: s.startBar + b, step: st, buf: a ? hitA : hitN, track: 'hat', gain: a ? 0.5 : 0.35 }); }); });
+    return out;
+  }
+  // ---------- strumento dalla voce (vocal chop): un pezzo di voce intonato diventa suonabile su ogni nota ----------
+  function voiceInstrument(seg, sr, rootMidi) {
+    return function (midi, dur, sro) {
+      var ratio = Math.pow(2, (midi - rootMidi) / 12) * sr / sro, n = Math.round(dur * sro), y = new Float32Array(n), L = seg.length, xf = Math.round(0.03 * sr);
+      for (var i = 0; i < n; i++) { var pos = i * ratio; if (pos >= L - 1) { var span = L - 2 * xf; pos = xf + ((pos - xf) % span); } var k = Math.floor(pos), f = pos - k; y[i] = seg[k] * (1 - f) + seg[Math.min(L - 1, k + 1)] * f; }
+      var fo = Math.min(n, Math.round(0.04 * sro)), fi = Math.min(n, Math.round(0.005 * sro)); for (i = 0; i < fi; i++) y[i] *= i / fi; for (i = 0; i < fo; i++) y[n - 1 - i] *= i / fo;
+      return y;
+    };
+  }
+  return { B808_PRESETS: B808_PRESETS, PERC: PERC, percEvents: percEvents, voiceInstrument: voiceInstrument, TABLES: TABLES, SYNTH_DEF: SYNTH_DEF, SYNTH_PRESETS: SYNTH_PRESETS, synthParams: synthParams, synth: synth, B808_DEF: B808_DEF, b808Params: b808Params, b808: b808, FX: FX, riser: riser, impact: impact, reverseCrash: reverseCrash, downlifter: downlifter };
 });

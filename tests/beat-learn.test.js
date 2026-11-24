@@ -87,3 +87,11 @@ test('learn: groove "2 e 4" a 96 BPM (non metà tempo)', () => {
   assert.deepStrictEqual(p.snare, [4, 12]);
   assert.ok(p.kick.includes(0) && p.kick.includes(8), 'kick ' + p.kick);
 });
+
+test('accordi: riconosce un giro La minore – Fa – Do – Sol e lo traduce in gradi', () => {
+  const sr = 16000, bpm = 120, bar = 2, seq = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]], n = sr * bar * 8, x = new Float32Array(n);
+  for (let b = 0; b < 8; b++) seq[b % 4].forEach(m => { const f = 440 * Math.pow(2, (m - 69) / 12); for (let i = 0; i < sr * bar; i++) x[b * sr * bar + i] += 0.2 * Math.sin(2 * Math.PI * f * i / sr); });
+  const r = BL.chordsOf(x, sr, bpm, 0, { tonic: 9, mode: 'minore' });
+  assert.deepStrictEqual(r.names.slice(0, 4), ['Lam', 'Fa', 'Do', 'Sol']);
+  assert.deepStrictEqual(r.prog, [0, 5, 2, 6]); assert.strictEqual(BL.progName(r.prog, 'minore'), 'i–VI–III–VII');
+});

@@ -251,13 +251,54 @@
     // energia per sezioni di 8 battute (curva della canzone)
     var curve = [], segF = Math.round(barF * 8); for (var q = 0; q + segF <= all.length; q += segF) curve.push(mean(all.subarray(q, q + segF)));
     var cmx = Math.max.apply(null, curve.concat([1e-9])); curve = curve.map(function (v) { return Math.round(v / cmx * 100) / 100; });
-    var prof = { bpm: Math.round(bpmUse), bpmRaw: an.bpm, bpmStrength: an.bpmStrength, key: an.key ? { tonic: an.key.tonic, mode: an.key.mode, name: an.key.name, level: an.key.level || an.key.confidence } : null,
+    var harm = opt.harm && opt.harm.length >= x.length ? opt.harm.subarray(0, x.length) : x, kH = opt.harm ? (BaseAnalysis.analyze(harm, sr, { maxSeconds: maxS }).key || an.key) : an.key;
+    var chordInfo = chordsOf(harm, sr, bpmUse, bestP / fps, kH);
+    if (chordInfo.key && (!an.key || chordInfo.key.tonic !== an.key.tonic || chordInfo.key.mode !== an.key.mode)) an.key = { tonic: chordInfo.key.tonic, mode: chordInfo.key.mode, name: NN[chordInfo.key.tonic] + ' ' + chordInfo.key.mode, level: 'dagli accordi' };
+    var prof = { chords: chordInfo.names, prog: chordInfo.prog, bpm: Math.round(bpmUse), bpmRaw: an.bpm, bpmStrength: an.bpmStrength, key: an.key ? { tonic: an.key.tonic, mode: an.key.mode, name: an.key.name, level: an.key.level || an.key.confidence } : null,
       kick: kick, snare: snare, hatDensity: Math.round(hatDensity * 100) / 100, triplets: Math.round(triplets * 100) / 100, swing: Math.round(swing * 100) / 100,
       sub: Math.round(sub * 100) / 100, bright: Math.round(bright * 100) / 100, curve: curve, seconds: Math.round(x.length / sr) };
     prof.style = closestStyle(prof);
     prof.why = describe(prof);
     return prof;
   }
+
+  // ---------- accordi: 12 note per battuta (Goertzel su 4 ottave) → accordo maggiore/minore più simile ----------
+  var NN = ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'];
+  function chromaOf(x, sr, a, b) {
+    var c = new Float64Array(12), step = Math.max(1, Math.round(sr / 4000));
+    for (var pc = 0; pc < 12; pc++) for (var oct = 3; oct <= 6; oct++) {
+      var f = 440 * Math.pow(2, (oct * 12 + pc - 57) / 12), w = 2 * Math.PI * f * step / sr, cw = 2 * Math.cos(w), s1 = 0, s2 = 0;
+      for (var i = a; i < b; i += step) { var s0 = x[i] + cw * s1 - s2; s2 = s1; s1 = s0; }
+      c[pc] += Math.sqrt(Math.max(0, s1 * s1 + s2 * s2 - cw * s1 * s2)) / (oct === 3 ? 1.5 : 1);
+    }
+    return c;
+  }
+  function chordsOf(x, sr, bpm, phase, key) {
+    var bar = 240 / bpm, names = [], roots = [], t = phase; if (t > bar) t -= bar * Math.floor(t / bar);
+    for (; (t + bar) * sr <= x.length && names.length < 64; t += bar) {
+      var c = chromaOf(x, sr, Math.round(t * sr), Math.round((t + bar) * sr)), best = -1, bn = null, br = 0;
+      for (var r = 0; r < 12; r++) [[0, 4, 7, 'maggiore'], [0, 3, 7, 'minore']].forEach(function (tp) { var sc = c[r] * 1.2 + c[(r + tp[1]) % 12] + c[(r + tp[2]) % 12] - 0.3 * c[(r + (tp[1] === 4 ? 3 : 4)) % 12]; if (sc > best) { best = sc; bn = NN[r] + (tp[3] === 'minore' ? 'm' : ''); br = r; } });
+      names.push(bn); roots.push(br);
+    }
+    // gradi della scala rispetto alla tonalità (se nota): la sequenza di 4 accordi più frequente
+    // tonalità dagli accordi: quella che contiene più accordi trovati (più affidabile della media delle note)
+    var qual = names.map(function (n) { return /m$/.test(n) ? 'm' : 'M'; }), bestK = null, bestS = -1;
+    for (var kt = 0; kt < 12; kt++) ['maggiore', 'minore'].forEach(function (md) {
+      var st = md === 'maggiore' ? [0, 2, 4, 5, 7, 9, 11] : [0, 2, 3, 5, 7, 8, 10], qq = md === 'maggiore' ? 'MmmMMmd' : 'mdMmmMM', sc = 0;
+      roots.forEach(function (r, i) { var d = st.indexOf(((r - kt) % 12 + 12) % 12); if (d >= 0 && qq[d] === qual[i]) sc += 1; if (d === 0) sc += 0.3; if (i === 0 && d === 0 && qq[0] === qual[0]) sc += 0.5; });
+      if (sc > bestS) { bestS = sc; bestK = { tonic: kt, mode: md }; }
+    });
+    if (bestK && roots.length >= 4 && (!key || bestS >= roots.length * 0.6)) key = bestK;
+    var prog = null;
+    if (key && roots.length >= 4) {
+      var steps = key.mode === 'maggiore' ? [0, 2, 4, 5, 7, 9, 11] : [0, 2, 3, 5, 7, 8, 10], deg = roots.map(function (r) { return steps.indexOf(((r - key.tonic) % 12 + 12) % 12); });
+      var cnt = {}; for (var i = 0; i + 4 <= deg.length; i += 1) { var q = deg.slice(i, i + 4); if (q.indexOf(-1) >= 0) continue; var k = q.join(','); cnt[k] = (cnt[k] || 0) + (i % 4 === 0 ? 2 : 1); }
+      var bestK = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; })[0]; if (bestK) prog = bestK.split(',').map(Number);
+    }
+    return { names: names, prog: prog, key: key };
+  }
+  var ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+  function progName(prog, mode) { if (!prog) return ''; var minor = mode !== 'maggiore', q = minor ? [1, 0, 0, 1, 1, 0, 0] : [0, 1, 1, 0, 0, 1, 0]; return prog.map(function (d) { var r = ROMAN[d]; return q[d] ? r.toLowerCase() : r; }).join('–'); }
 
   function closestStyle(p) {
     var snareHalf = p.snare.indexOf(8) >= 0 && p.snare.indexOf(4) < 0;
@@ -280,6 +321,7 @@
     if (p.swing > 0.06) w.push('Groove con swing (' + Math.round(p.swing * 100) + '%): non è rigido.');
     w.push(p.sub > 0.55 ? 'Bassi molto pesanti (808 in primo piano).' : (p.sub > 0.3 ? 'Bassi presenti ma bilanciati.' : 'Bassi leggeri.'));
     w.push(p.bright > 0.5 ? 'Suono brillante, tanti alti.' : 'Suono più scuro/caldo.');
+    if (p.chords && p.chords.length) w.push('Accordi (prime battute): ' + p.chords.slice(0, 8).join(' · ') + (p.prog ? '. Giro più usato: ' + progName(p.prog, p.key && p.key.mode) + '.' : '.'));
     return w;
   }
 
@@ -300,14 +342,15 @@
     var snare = Object.keys(sn).sort(function (a, b) { return sn[b] - sn[a]; })[0].split(',').map(Number);
     var hat = avg('hatDensity'), trip = avg('triplets'), swing = Math.max(0, Math.min(0.3, avg('swing'))), sub = avg('sub');
     var keys = likes.map(function (p) { return p.key; }).filter(Boolean);
+    var pc = {}; likes.forEach(function (p) { if (p.prog) pc[p.prog.join(',')] = (pc[p.prog.join(',')] || 0) + 1; }); var pk = Object.keys(pc).sort(function (a, b) { return pc[b] - pc[a]; })[0];
     var bpmL = 0; likes.forEach(function (p) { bpmL += p.bpm; });
     return {
       genre: style, bpm: Math.round(bpmL / likes.length), mode: keys.length ? (keys.filter(function (k) { return k.mode === 'minore'; }).length >= keys.length / 2 ? 'minore' : 'maggiore') : 'minore',
       groove: { kickPats: [[kickA, kickB]], snare: snare, swing: swing, rolls: Math.max(0, Math.min(1, trip * 1.2 + (hat - 0.5) * 0.6)) },
       tune: { hat: Math.max(0.4, Math.min(1.6, 0.6 + hat)), bass: Math.max(0.5, Math.min(1.6, 0.6 + sub)) },
-      from: likes.length, avoid: dislikes.length
+      prog: pk ? pk.split(',').map(Number) : null, from: likes.length, avoid: dislikes.length
     };
   }
 
-  return { separate: separate, separateAsync: separateAsync, clean: clean, learn: learn, blend: blend, closestStyle: closestStyle, describe: describe, stft: stft, istft: istft };
+  return { chordsOf: chordsOf, progName: progName, separate: separate, separateAsync: separateAsync, clean: clean, learn: learn, blend: blend, closestStyle: closestStyle, describe: describe, stft: stft, istft: istft };
 });

@@ -455,8 +455,8 @@
     return SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {} });
   }
   function getBase() {
-    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
+    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -1121,7 +1121,7 @@
     var fams = [['tutte', 'Tutti'], ['orig', 'Originali'], ['mine', 'I tuoi']].concat(Object.keys(Instruments.FAMILIES).map(function (f) { return [f, Instruments.FAMILIES[f]]; }));
     $('#dw-sheet-f').innerHTML = fams.map(function (f) { return '<button class="chip' + (SHEET.fam === f[0] ? ' on' : '') + '" data-sf="' + f[0] + '">' + esc(f[1]) + '</button>'; }).join('');
     var list = [{ id: '', nome: 'Sintetizzato (automatico)', come: 'Suono generato dal programma, cambia con lo stile.' }];
-    var orig = SoundLab.ORIGINALS.map(function (r) { return { id: r.id, nome: r.nome, come: r.descr, o: 1 }; }), mine = (LIB.settings.lab || []).concat(LIB.settings.synths || []).map(function (r) { return { id: r.id, nome: r.nome, come: r.descr || 'Creato da te.', m: 1 }; });
+    var orig = SoundLab.ORIGINALS.map(function (r) { return { id: r.id, nome: r.nome, come: r.descr, o: 1 }; }), mine = (LIB.settings.lab || []).concat(LIB.settings.synths || [], LIB.settings.voxInst || []).map(function (r) { return { id: r.id, nome: r.nome, come: r.descr || 'Creato da te.', m: 1 }; });
     var cat = Instruments.CATALOG.filter(function (c) { return role === 'arpeggio' ? c.tipo !== 'sostenuto' || c.ruoli.indexOf('accordi') >= 0 : (c.ruoli.indexOf(role) >= 0 || (role === 'pad' && c.tipo === 'sostenuto')); }).map(function (c) { return { id: c.id, nome: c.nome, come: c.come, f: c.fam }; });
     if (SHEET.fam === 'orig') list = orig; else if (SHEET.fam === 'mine') list = mine; else if (SHEET.fam !== 'tutte') list = cat.filter(function (c) { return c.f === SHEET.fam; }); else list = list.concat(orig, mine, cat);
     $('#dw-sheet-g').innerHTML = list.length ? list.map(function (c) { return '<div class="dw-card' + ((c.id || '') === (cur0 || '') ? ' sel' : '') + '"><b>' + esc(c.nome) + '</b><small>' + esc((c.come || '').slice(0, 110)) + '</small><div class="row">' + (c.id ? '<button class="btn sm" data-sp="' + c.id + '">Ascolta</button>' : '') + '<button class="btn sm pri" data-su="' + c.id + '">Usa</button></div></div>'; }).join('') : '<p class="small muted">Niente qui: crea strumenti nel Laboratorio.</p>';
@@ -1254,7 +1254,7 @@
   $('#dw-rec').addEventListener('click', dwRecord);
   $('#dw-new').addEventListener('click', function () { var p = cur().prod; if (SESSION.lastPlay && performance.now() - SESSION.lastPlay.t < 10000) coachRec('skip', SESSION.lastPlay.ctx); p.seed++; dwStop(); dwChanged(true); setTimeout(function () { dwPlay(0); }, 300); });
   $('#dw-name').addEventListener('input', function () { cur().title = this.value.trim() || 'Senza titolo'; $('#top-song').textContent = cur().title; persist(); });
-  $('#dw-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.bpm = Arranger.STYLES[this.value].bpm; p.tune = null; p.groove = null; p.mix = null; mixRender(); $('#dw-bpm').value = p.bpm; dwStop(); fillBase(); dwChanged(true); });
+  $('#dw-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.bpm = Arranger.STYLES[this.value].bpm; p.tune = null; p.groove = null; p.prog = null; p.mix = null; mixRender(); $('#dw-bpm').value = p.bpm; dwStop(); fillBase(); dwChanged(true); });
   $('#dw-bpm').addEventListener('change', function () { cur().prod.bpm = Math.max(60, Math.min(180, +this.value || 100)); this.value = cur().prod.bpm; dwStop(); fillBase(); dwChanged(true); dwLyInfo(); });
   $('#dw-key').addEventListener('change', function () { var v = this.value.split(':'), p = cur().prod; p.tonic = +v[0]; p.mode = v[1]; dwStop(); fillBase(); dwChanged(true); });
   $('#dw-master').addEventListener('change', function () { cur().prod.master = this.value; persist(); fillBase(); });
@@ -1382,8 +1382,17 @@
         (mine.length ? '<p class="small muted" style="margin:8px 0 4px">I tuoi synth (usali dal nome dello strumento sulla traccia):</p><div class="chips">' + mine.map(function (r, i) { return '<button class="chip" data-dsu="' + i + '">' + esc(r.nome) + ' → melodia</button>'; }).join('') + '</div>' : '');
     } else if (DS.tab === '808') {
       var b = SynthDesign.b808Params(p.b808 || DS.b8 || {}); DS.b8 = b;
-      h = '<div class="dw-knobs">' + dsSliders(DS_808, b, 'data-ds8') + '</div><div class="row"><button class="btn sm" id="dw-ds-8play">▶ Ascolta (con glide)</button><button class="btn sm pri" id="dw-ds-8use">Usa nella base</button><button class="btn sm" id="dw-ds-8off">Torna all\'808 dello stile</button></div>' +
+      h = '<div class="chips">' + Object.keys(SynthDesign.B808_PRESETS).map(function (k) { return '<button class="chip" data-ds8p="' + esc(k) + '">' + esc(k) + '</button>'; }).join('') + '</div><div class="dw-knobs">' + dsSliders(DS_808, b, 'data-ds8') + '</div><div class="row"><button class="btn sm" id="dw-ds-8play">▶ Ascolta (con glide)</button><button class="btn sm pri" id="dw-ds-8use">Usa nella base</button><button class="btn sm" id="dw-ds-8off">Torna all\'808 dello stile</button></div>' +
         '<p class="small muted">' + (p.b808 ? 'La base usa il TUO 808.' : 'La base usa l\'808 dello stile.') + '</p>';
+    } else if (DS.tab === 'perc') {
+      var pc = p.perc || {}, secs = ['intro', 'strofa', 'pre', 'ritornello', 'bridge', 'outro'], on = pc.on || ['strofa', 'ritornello'];
+      h = '<div class="chips">' + Object.keys(SynthDesign.PERC).map(function (k) { return '<button class="chip' + (k === (DS.perc || pc.type) ? ' on' : '') + '" data-dspc="' + k + '">' + SynthDesign.PERC[k].nome + '</button>'; }).join('') + '</div>' +
+        '<div class="chips">' + secs.map(function (x) { return '<label class="chip"><input type="checkbox" data-dspo="' + x + '"' + (on.indexOf(x) >= 0 ? ' checked' : '') + '> ' + x + '</label>'; }).join('') + '</div>' +
+        '<div class="row"><button class="btn sm" id="dw-ds-pplay">▶ Ascolta 1 battuta</button><button class="btn sm pri" id="dw-ds-padd">Metti nella base</button><button class="btn sm" id="dw-ds-poff">Togli le percussioni</button></div><p class="small muted">' + (pc.type ? 'Nella base: ' + SynthDesign.PERC[pc.type].nome + ' in ' + on.join(', ') + '.' : 'Nessuna percussione aggiunta.') + '</p>';
+    } else if (DS.tab === 'vox') {
+      var vx = LIB.settings.voxInst || [];
+      h = '<p class="small muted">Un pezzo di voce intonata diventa uno strumento che suona ogni nota (vocal chop). Dall\'ultima prova registrata, oppure dalla voce separata in "Impara da una base".</p><div class="row"><button class="btn sm pri" id="dw-ds-vtake">Strumento dall\'ultima prova</button><button class="btn sm" id="dw-ds-vlearn">Dalla voce separata</button></div>' +
+        (vx.length ? '<div class="chips">' + vx.map(function (r, i) { return '<button class="chip" data-dsvp="' + i + '">▶ ' + esc(r.nome) + '</button><button class="chip" data-dsvu="' + i + '">usa su arpeggio</button>'; }).join('') + '</div>' : '');
     } else {
       var bars = SESSION.base ? SESSION.base.bars : 16, list = p.fxList || [];
       h = '<div class="chips">' + Object.keys(SynthDesign.FX).map(function (k) { return '<button class="chip' + (k === DS.fxType ? ' on' : '') + '" data-dsf="' + k + '">' + SynthDesign.FX[k].nome + '</button>'; }).join('') + '</div>' +
@@ -1393,9 +1402,18 @@
     }
     $('#dw-ds-body').innerHTML = h;
   }
-  $('#dw-p-design').addEventListener('click', function (e) {
+  $('#dw-p-design').addEventListener('click', async function (e) {
     var b = e.target.closest('button'); if (!b) return; var p = cur().prod, el = $('#dw-ds-msg');
     if (b.getAttribute('data-dst')) { DS.tab = b.getAttribute('data-dst'); dsRender(); return; }
+    if (b.getAttribute('data-ds8p')) { DS.b8 = SynthDesign.b808Params(SynthDesign.B808_PRESETS[b.getAttribute('data-ds8p')]); if (p.b808) p.b808 = Object.assign({}, DS.b8); else p.b808 = null; if (!p.b808) delete p.b808; dsRender(); el.textContent = '808 "' + b.getAttribute('data-ds8p') + '": premi Ascolta, poi Usa nella base.'; return; }
+    if (b.getAttribute('data-dspc')) { DS.perc = b.getAttribute('data-dspc'); dsRender(); return; }
+    if (b.id === 'dw-ds-pplay') { var P = SynthDesign.PERC[DS.perc || 'conga'], srp = 32000, st = 240 / p.bpm / 16, o2 = new Float32Array(Math.round(srp * st * 16 * 2)); for (var rep2 = 0; rep2 < 2; rep2++) P.steps.forEach(function (x) { var hb = P.hit(srp, P.acc.indexOf(x) >= 0), at = Math.round((rep2 * 16 + x) * st * srp); for (var k = 0; k < hb.length && at + k < o2.length; k++) o2[at + k] += hb[k]; }); dwStop(true); playBuf(o2, srp); return; }
+    if (b.id === 'dw-ds-padd') { var on2 = $$('[data-dspo]').filter(function (c) { return c.checked; }).map(function (c) { return c.getAttribute('data-dspo'); }); p.perc = { type: DS.perc || 'conga', on: on2.length ? on2 : ['strofa', 'ritornello'] }; dwChanged(false); dsRender(); el.textContent = SynthDesign.PERC[p.perc.type].nome + ' nella base. Premi Play.'; return; }
+    if (b.id === 'dw-ds-poff') { delete p.perc; dwChanged(false); dsRender(); el.textContent = 'Percussioni tolte.'; return; }
+    if (b.id === 'dw-ds-vtake') { var tk = voiceTake(); if (!tk) { el.textContent = 'Registra prima una prova con ●.'; return; } el.textContent = voxMake((!DW.raw && tk.final) || tk.mono, tk.sr, 'Voce ' + tk.name) || ''; dsRender(); return; }
+    if (b.id === 'dw-ds-vlearn') { if (!LEARN.cur || !LEARN.cur.voice) { el.textContent = 'Carica prima una canzone in "Impara da una base".'; return; } el.textContent = voxMake(LEARN.cur.voice, LEARN.cur.sr, 'Chop ' + LEARN.cur.name) || ''; dsRender(); return; }
+    if (b.getAttribute('data-dsvp') != null) { var r3 = LIB.settings.voxInst[+b.getAttribute('data-dsvp')]; await loadInst(r3.id); previewInst(r3.id, el); return; }
+    if (b.getAttribute('data-dsvu') != null) { var r4 = LIB.settings.voxInst[+b.getAttribute('data-dsvu')]; p.inst = Object.assign({}, p.inst || {}); p.inst.arpeggio = r4.id; fillInst(); dwChanged(false); el.textContent = '"' + r4.nome + '" suona l\'arpeggio. Premi Play.'; return; }
     if (b.getAttribute('data-dsp')) { DS.syn = SynthDesign.synthParams(SynthDesign.SYNTH_PRESETS[b.getAttribute('data-dsp')]); dsRender(); el.textContent = 'Preset "' + b.getAttribute('data-dsp') + '": premi Ascolta.'; return; }
     if (b.id === 'dw-ds-play') { var sr = 32000, seq = [60, 63, 67, 72], out = new Float32Array(Math.round(sr * 2.6)); seq.forEach(function (m, i) { var y = SynthDesign.synth(DS.syn, m + (cur().prod.tonic || 0), 0.35, sr); for (var k = 0; k < y.length && i * 0.4 * sr + k < out.length; k++) out[Math.round(i * 0.4 * sr) + k] += y[k]; }); var ch = SynthDesign.synth(DS.syn, 48 + (p.tonic || 0), 0.6, sr); for (var k2 = 0; k2 < ch.length && 1.7 * sr + k2 < out.length; k2++) out[Math.round(1.7 * sr) + k2] += ch[k2]; dwStop(true); playBuf(out, sr); return; }
     if (b.id === 'dw-ds-save') { var nm = (prompt('Nome del tuo synth') || '').trim().slice(0, 30); if (!nm) return; var r = { id: 'syn:' + uid(), nome: nm, params: Object.assign({}, DS.syn) }; LIB.settings.synths = (LIB.settings.synths || []).concat([r]); synthRegister(r); persist(); refreshInstSelects(); dsRender(); el.textContent = '"' + nm + '" salvato: ora è uno strumento (lo trovi tra "I tuoi").'; return; }
@@ -1413,6 +1431,23 @@
     if (k) DS.syn[k] = v; else if (k8) { DS.b8[k8] = v; } else return;
     e.target.previousElementSibling.querySelector('b').textContent = v.toFixed(+e.target.step >= 1 ? 0 : 2);
   });
+  // strumento dalla voce: trova il pezzo più intonato e stabile (0,5 s), lo salva (22 kHz, 16 bit) e lo registra
+  function voxRegister(r) {
+    var bin = atob(r.pcm), n = bin.length >> 1, seg = new Float32Array(n);
+    for (var i = 0; i < n; i++) { var v = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8); if (v > 32767) v -= 65536; seg[i] = v / 32768; }
+    Instruments.registerCustom(r.id, { id: r.id, nome: r.nome, fam: 'voce', fonte: 'La tua voce', tipo: 'sostenuto', range: [36, 96], ruoli: ['melodia', 'accordi', 'pad', 'arpeggio'], come: 'Strumento fatto da un pezzo di voce.', combina: '', perche: '', stili: [] }, SynthDesign.voiceInstrument(seg, 22050, r.root));
+  }
+  function voxMake(x, sr, name) {
+    var trk = Autotune.track(x, sr, { maxSeconds: 120 }), fr = trk.frames, hop = trk.hopSeconds, need = Math.ceil(0.3 / hop), best = null;
+    for (var i = 0; i + need < fr.length; i += 2) { var ok = true, ms = []; for (var k = i; k < i + need; k++) { if (!fr[k].voiced || !(fr[k].f0 > 0)) { ok = false; break; } ms.push(69 + 12 * Math.log2(fr[k].f0 / 440)); } if (!ok) continue; var mean = ms.reduce(function (a, c) { return a + c; }, 0) / ms.length, v = ms.reduce(function (a, c) { return a + (c - mean) * (c - mean); }, 0) / ms.length; if (!best || v < best.v) best = { i: i, v: v, m: mean }; }
+    if (!best || best.v > 0.8) return 'Non trovo un pezzo di nota tenuta e intonata: canta una vocale lunga ("aaa") e riprova.';
+    var t0 = fr[best.i].t, a0 = Math.round(t0 * sr), n = Math.round(0.3 * sr), ratio = sr / 22050, m = Math.round(0.3 * 22050), seg = new Float32Array(m), pk = 0;
+    for (i = 0; i < m; i++) { var pos = a0 + i * ratio, k2 = Math.floor(pos), f = pos - k2; seg[i] = (x[k2] || 0) * (1 - f) + (x[k2 + 1] || 0) * f; if (Math.abs(seg[i]) > pk) pk = Math.abs(seg[i]); }
+    var s16 = ''; for (i = 0; i < m; i++) { var q = Math.round(Math.max(-1, Math.min(1, seg[i] / (pk || 1) * 0.9)) * 32767); if (q < 0) q += 65536; s16 += String.fromCharCode(q & 255, q >> 8); }
+    var r = { id: 'vox:' + uid(), nome: name.slice(0, 30), root: Math.round(best.m * 10) / 10, pcm: btoa(s16) };
+    LIB.settings.voxInst = (LIB.settings.voxInst || []).concat([r]).slice(-12); voxRegister(r); persist(); refreshInstSelects();
+    return 'Strumento "' + r.nome + '" creato (nota di partenza misurata: ' + NOTES[Math.round(best.m) % 12] + '). Lo trovi tra "I tuoi".';
+  }
   function extraFxBufs(p) { var bs = 240 / p.bpm; return (p.fxList || []).filter(function (f) { return SynthDesign.FX[f.type]; }).map(function (f) { return { bar: f.bar, end: !!SynthDesign.FX[f.type].end, buf: SynthDesign.FX[f.type].make(32000, 1, bs) }; }); }
   // ---------- Piano roll nello Studio (melodia e basso 808) ----------
   var PR = { tr: 'lead', sel: -1, cw: 14, rh: 12 };
@@ -1767,7 +1802,7 @@
       var voice = normOnly(s.voice, s.sr), base = normOnly(s.base, s.sr);
       if (s.stems) for (var k in s.stems) s.stems[k] = normOnly(s.stems[k], s.sr);
       el.textContent = 'Misuro il ritmo…'; learnBar(0.95); await tick();
-      var prof = BeatLearn.learn(s.rhythm, s.sr);
+      var prof = BeatLearn.learn(s.rhythm, s.sr, { harm: s.stems ? (function () { var h = new Float32Array(s.stems.other.length); for (var q = 0; q < h.length; q++) h[q] = s.stems.other[q] + s.stems.bass[q]; return h; })() : null });
       LEARN.cur = { name: f.name.replace(/\.[^.]+$/, '').slice(0, 40), prof: prof, voice: voice, base: base, orig: s.orig, stems: s.stems, sr: s.sr, note: s.note, vote: 0, ai: s.ai };
       learnBar(null); el.textContent = s.ai ? 'Fatto. Ascolta le parti separate, poi dimmi se il ritmo ti piace.' : 'Fatto, ma senza AI (' + why + '): voce e base non sono pulite.';
       learnRender(); coachRec('complete', coachCtx()); sepInfo();
@@ -1776,7 +1811,7 @@
       el.textContent = /video|mov|mp4/i.test((f.type || '') + f.name) ? 'Non riesco a leggere l\'audio di questo video. Su iPhone: apri il video in Foto, Condividi > Salva su File, poi riprova.' : 'Non riesco a leggere questo file. Prova un MP3, M4A, WAV o un video MP4/MOV.';
     }
   });
-  function profLine(p) { return p.bpm + ' BPM · ' + (p.key ? p.key.name : 'tonalità incerta') + ' · simile a: ' + (Arranger.STYLES[p.style] ? Arranger.STYLES[p.style].label : p.style); }
+  function profLine(p) { return p.bpm + ' BPM · ' + (p.key ? p.key.name : 'tonalità incerta') + (p.prog ? ' · giro ' + BeatLearn.progName(p.prog, p.key && p.key.mode) : '') + ' · simile a: ' + (Arranger.STYLES[p.style] ? Arranger.STYLES[p.style].label : p.style); }
   function learnRender() {
     var c = LEARN.cur, h = '';
     if (c) {
@@ -1817,7 +1852,7 @@
   function learnUse(pl) {
     var p = cur().prod; if (!pl) return false;
     if (Arranger.STYLES[pl.genre]) p.genre = pl.genre;
-    p.bpm = Math.max(60, Math.min(180, pl.bpm)); p.mode = pl.mode; p.groove = pl.groove; p.tune = pl.tune; p.seed = (p.seed || 1) + 1;
+    p.bpm = Math.max(60, Math.min(180, pl.bpm)); p.mode = pl.mode; p.groove = pl.groove; p.prog = pl.prog || null; p.tune = pl.tune; p.seed = (p.seed || 1) + 1;
     coachRec('change', coachCtx(), { role: 'groove', from: null, to: 'gusti' });
     dwFill(); fillBase(); dwStop(); dwChanged(true); return true;
   }
@@ -2518,7 +2553,7 @@
 
   /* ================= Avvio ================= */
   async function start() {
-    await load(); renderCoach(); (LIB.settings.lab || []).forEach(function (r) { try { SoundLab.install(r); } catch (e) {} }); (LIB.settings.synths || []).forEach(function (r) { try { synthRegister(r); } catch (e) {} }); refreshInstSelects(); applyTheme(); cur(); restoreTakes(); initSample().then(function () { if (!$('#v-impostazioni').hidden) renderSettings(); });
+    await load(); renderCoach(); (LIB.settings.lab || []).forEach(function (r) { try { SoundLab.install(r); } catch (e) {} }); (LIB.settings.synths || []).forEach(function (r) { try { synthRegister(r); } catch (e) {} }); (LIB.settings.voxInst || []).forEach(function (r) { try { voxRegister(r); } catch (e) {} }); refreshInstSelects(); applyTheme(); cur(); restoreTakes(); initSample().then(function () { if (!$('#v-impostazioni').hidden) renderSettings(); });
     route();
   }
   window.__app = { LIB: function () { return LIB; }, SESSION: SESSION, store: store, addTake: addTake, selectTake: selectTake, buildMix: buildMix, route: route };

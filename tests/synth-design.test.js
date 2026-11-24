@@ -33,3 +33,13 @@ test('arrangiatore: 808 dal designer ed effetti a mano finiscono nella base', ()
   const bar = Math.round(240 / 140 * 8000); let d = 0; for (let i = 2 * bar; i < 2 * bar + 4000; i++) d += Math.abs(h.tracks.fx[i] - ref.tracks.fx[i]);
   assert.ok(d > 10, 'impact alla battuta 3');
 });
+test('percussioni del mondo, 808 pronti e strumento dalla voce', () => {
+  assert.strictEqual(Object.keys(SD.PERC).length, 5); assert.ok(Object.keys(SD.B808_PRESETS).length >= 5);
+  const ev = SD.percEvents('conga', [{ name: 'strofa', startBar: 2, bars: 2 }, { name: 'intro', startBar: 0, bars: 2 }], sr, ['strofa']);
+  assert.strictEqual(ev.length, 10); assert.ok(ev.every(e => e.bar >= 2 && e.track === 'hat' && e.buf.length > 100));
+  // voce a 220 Hz (La3 = 57) → suonata come Mi4 (64) deve stare a ~329.6 Hz
+  const seg = Float32Array.from({ length: sr * 0.5 }, (_, i) => 0.5 * Math.sin(2 * Math.PI * 220 * i / sr)), inst = SD.voiceInstrument(seg, sr, 57), y = inst(64, 1.2, sr);
+  assert.strictEqual(y.length, Math.round(1.2 * sr)); assert.ok(Math.abs(f0(y, 2000, sr) - 329.6) < 6, 'nota ' + f0(y, 2000, sr));
+  const A2 = require('../src/arranger.js'), g = A2.generate({ sampleRate: 8000, bpm: 100, genre: 'melodico', bars: 4, seed: 1, sounds: 'sint', extraFx: [{ bar: 1, step: 4, buf: new Float32Array(400).fill(0.5), track: 'hat' }] });
+  const at = Math.round((240 / 100) * 8000 + 4 * (240 / 100 / 16) * 8000); assert.ok(Math.abs(g.tracks.hat[at + 10]) > 0.2, 'colpo sul passo giusto');
+});
