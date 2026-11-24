@@ -191,10 +191,10 @@
   var AI_RULES = 'Rispondi in italiano, in modo concreto e breve (massimo 150 parole). Distingui chiaramente ciò che è un\'ipotesi da ciò che è un fatto. Non promettere successo, hit o effetti emotivi garantiti. Non citare né copiare testi di altri autori.';
 
   /* ================= Navigazione ================= */
-  var VIEWS = ['home', 'menu', 'canzoni', 'studio', 'producer', 'voce', 'video', 'marketing', 'social', 'libreria', 'impostazioni'];
+  var VIEWS = ['home', 'menu', 'canzoni', 'studio', 'strumenti', 'producer', 'voce', 'video', 'marketing', 'social', 'libreria', 'impostazioni'];
   var MENU = [
     ['home', 'Home e Dashboard', 'Il tuo percorso', 'i-home'], ['canzoni', 'Le mie canzoni', 'Schede e versioni', 'i-disc'],
-    ['studio', 'Music Studio', 'Testo, base, cantare', 'i-sliders'], ['producer', 'AI Producer', 'Comandi a parole', 'i-spark'],
+    ['studio', 'Music Studio', 'Testo, base, cantare', 'i-sliders'], ['strumenti', 'Strumentario', '29 strumenti veri e guida', 'i-sliders'], ['producer', 'AI Producer', 'Comandi a parole', 'i-spark'],
     ['voce', 'Vocal Studio', 'Voce e autotune', 'i-mic'], ['video', 'AI Video Studio', 'Clip a tempo', 'i-film'],
     ['marketing', 'Marketing AI', 'Piano a 30 giorni', 'i-mega'], ['social', 'Social Media Manager', 'Calendario', 'i-cal'],
     ['libreria', 'Libreria contenuti', 'Materiali', 'i-folder'], ['impostazioni', 'Impostazioni', 'Aspetto e dati', 'i-gear']
@@ -407,7 +407,7 @@
   function fillBase() {
     var p = cur().prod;
     $('#b-genre').value = p.genre; $('#b-bpm').value = p.bpm; $('#b-tonic').value = p.tonic; $('#b-mode').value = p.mode;
-    $('#b-master').value = p.master || 'standard'; $('#b-sounds').value = p.sounds || 'campioni'; syncKar(); $('#b-bars').value = p.bars; $('#b-barsv').textContent = p.bars; $('#b-follow').checked = !!p.follow;
+    fillInst(); $('#b-master').value = p.master || 'standard'; $('#b-sounds').value = p.sounds || 'campioni'; syncKar(); $('#b-bars').value = p.bars; $('#b-barsv').textContent = p.bars; $('#b-follow').checked = !!p.follow;
     $('#b-levels').innerHTML = Object.keys(LEVEL_NAMES).map(function (k) {
       return '<label class="f"><span>' + LEVEL_NAMES[k] + '<b data-lv="' + k + '">' + Math.round(p.levels[k] * 100) + '%</b></span><input type="range" min="0" max="180" value="' + Math.round(p.levels[k] * 100) + '" data-level="' + k + '"></label>';
     }).join('');
@@ -437,8 +437,8 @@
     else $('#b-status').textContent = 'Continua a battere il ritmo (almeno 3 colpi).';
   });
   function getBase() {
-    var p = cur().prod, key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.bassStyle, p.tune, p.sounds]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
+    var p = cur().prod, key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.bassStyle, p.tune, p.sounds, p.inst, Instruments.loaded().length]);
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -475,6 +475,7 @@
     var st = $('#b-status'), p = cur().prod;
     if (newVariant) p.seed++;
     st.textContent = 'Sto componendo la base…'; await tick();
+    await ensureInst();
     try {
       var mx = buildMix({ voice: false });
       var ok = playBuf(mx.samples, mx.sr, karaokeTick(mx.bpm), function () { $('#kar').innerHTML = '<div><b>Fine</b><small>Premi di nuovo per ricantare</small></div>'; });
@@ -482,7 +483,7 @@
       st.textContent = ''; SESSION.baseMade = true;
       var s = cur(); if (['idea', 'testo'].indexOf(s.status) !== -1) { s.status = 'base'; persist(); }
       var b = SESSION.useImported ? null : getBase();
-      $('#b-out').innerHTML = b ? '<div class="note"><b>' + esc(ALLG[b.genre].label) + '</b> in ' + NOTES[b.tonic] + ' ' + b.mode + ', ' + b.bpm + ' BPM, ' + b.bars + ' battute (' + fmt(b.duration) + ' s). Accordi: <span class="mono">' + b.progression.join(' · ') + '</span>. Suoni sintetici, bozza. "Nuova variante" cambia la melodia.' + (b.sections ? '<br>Struttura: <span class="mono">' + b.sections.map(function (x) { return x.name + ' ' + x.bars; }).join(' · ') + '</span>' : '') + '</div>' : '';
+      $('#b-out').innerHTML = b ? '<div class="note"><b>' + esc(ALLG[b.genre].label) + '</b> in ' + NOTES[b.tonic] + ' ' + b.mode + ', ' + b.bpm + ' BPM, ' + b.bars + ' battute (' + fmt(b.duration) + ' s). Accordi: <span class="mono">' + b.progression.join(' · ') + '</span>. ' + (b.inst && (b.inst.melodia || b.inst.accordi || b.inst.pad) ? 'Strumenti: ' + ['melodia', 'accordi', 'pad'].filter(function (r) { return b.inst[r]; }).map(function (r) { return instName(b.inst[r]) + ' (' + r + ')'; }).join(', ') + '.' : 'Suoni sintetici.') + ' "Nuova variante" cambia la melodia.' + (b.sections ? '<br>Struttura: <span class="mono">' + b.sections.map(function (x) { return x.name + ' ' + x.bars; }).join(' · ') + '</span>' : '') + '</div>' : '';
       return mx;
     } catch (e) { st.textContent = 'Non sono riuscito a creare la base. Prova con meno battute.'; return null; }
   }
@@ -490,6 +491,96 @@
   $('#b-new').addEventListener('click', function () { makeAndPlay(true); });
   $('#b-stop').addEventListener('click', stopPlay);
   $('#b-save').addEventListener('click', async function () { var mx = buildMix({ voice: false }); saveAudio(mx.samples, mx.sr, 'base-' + (cur().title || 'canzone').replace(/\W+/g, '-'), $('#b-status')); });
+
+  /* ================= Strumenti veri ================= */
+  var INST_BASES = ['inst/', 'https://sultan199777.github.io/ai-music-studio/inst/'];
+  function instName(id) { var c = Instruments.info(id); if (c) return c.nome; var y = Instruments.SYNTH.filter(function (x) { return x.id === id; })[0]; return y ? y.nome : id; }
+  function noteNm(m) { return NOTES[m % 12] + (Math.floor(m / 12) - 1); }
+  async function loadInst(id) {
+    if (!id || Instruments.has(id)) return true;
+    for (var i = 0; i < INST_BASES.length; i++) { if (await Instruments.load(id, INST_BASES[i])) return true; }
+    return false;
+  }
+  async function ensureInst() {
+    var inst = cur().prod.inst || {}, miss = [];
+    for (var r in inst) if (inst[r] && !(await loadInst(inst[r]))) miss.push(instName(inst[r]));
+    if (miss.length) $('#b-in-info').innerHTML = '<span class="err">Non riesco a scaricare: ' + esc(miss.join(', ')) + '. Uso i suoni sintetici (serve internet la prima volta).</span>';
+    return !miss.length;
+  }
+  function instOptions(role) {
+    var h = '<option value="">Automatico (sintetizzato)</option>';
+    Object.keys(Instruments.FAMILIES).forEach(function (f) {
+      var list = Instruments.CATALOG.filter(function (c) { return c.fam === f && c.ruoli.indexOf(role) >= 0; });
+      if (role === 'pad') list = Instruments.CATALOG.filter(function (c) { return c.fam === f && (c.ruoli.indexOf('pad') >= 0 || c.tipo === 'sostenuto'); });
+      if (list.length) h += '<optgroup label="' + esc(Instruments.FAMILIES[f]) + '">' + list.map(function (c) { return '<option value="' + c.id + '">' + esc(c.nome) + '</option>'; }).join('') + '</optgroup>';
+    });
+    return h;
+  }
+  var ROLES = { melodia: '#b-in-melodia', accordi: '#b-in-accordi', pad: '#b-in-pad' };
+  Object.keys(ROLES).forEach(function (r) { $(ROLES[r]).innerHTML = instOptions(r); });
+  function instInfo() {
+    var inst = cur().prod.inst || {}, parts = [];
+    Object.keys(ROLES).forEach(function (r) { var c = Instruments.info(inst[r]); if (c) parts.push('<b>' + esc(c.nome) + '</b> (' + r + '): ' + esc(c.come)); });
+    $('#b-in-info').innerHTML = parts.length ? '<div style="margin-top:6px">' + parts.join('<br>') + '</div>' : '';
+  }
+  function fillInst() { var inst = cur().prod.inst || {}; Object.keys(ROLES).forEach(function (r) { $(ROLES[r]).value = inst[r] || ''; }); instInfo(); }
+  Object.keys(ROLES).forEach(function (r) {
+    $(ROLES[r]).addEventListener('change', async function () {
+      var p = cur().prod; p.inst = Object.assign({}, p.inst || {}); p.inst[r] = this.value || null; persist(); instInfo();
+      if (this.value) { $('#b-status').textContent = 'Carico ' + instName(this.value) + '…'; var ok = await loadInst(this.value); $('#b-status').textContent = ok ? instName(this.value) + ' pronto. Premi "Crea e ascolta".' : 'Download non riuscito: per ora uso il suono sintetizzato.'; }
+    });
+  });
+  function applyRecipe(g) {
+    var R = Instruments.RECIPES[g] || Instruments.RECIPES[Arranger.STYLES[g] ? g : 'melodico'], p = cur().prod;
+    var k = (p.seed || 1) % 2;
+    p.inst = { melodia: R.melodia[k % R.melodia.length], accordi: R.accordi[k % R.accordi.length], pad: R.pad[0] }; persist(); fillInst();
+    return R;
+  }
+  $('#b-in-rec').addEventListener('click', async function () {
+    var R = applyRecipe(cur().prod.genre); $('#b-status').textContent = 'Ricetta "' + R.nome + '": carico gli strumenti…';
+    var ok = await ensureInst(); $('#b-status').textContent = ok ? 'Pronto: ' + R.spiega : '';
+  });
+  // anteprima: accordo arpeggiato e poi suonato insieme, nel registro dello strumento
+  async function previewInst(id, msgEl) {
+    msgEl.textContent = 'Carico ' + instName(id) + '…';
+    if (!(await loadInst(id))) { msgEl.textContent = 'Download non riuscito (serve internet la prima volta).'; return; }
+    var c = Instruments.info(id), sr = 32000, mid = Math.round((c.range[0] + c.range[1]) / 2 / 12) * 12, notes = [mid, mid + 4, mid + 7, mid + 12].map(function (m) { return Math.min(c.range[1], m); });
+    var len = Math.round(3.6 * sr), out = new Float32Array(len);
+    notes.forEach(function (m, i) { var x = Instruments.render(id, m, 0.5, sr), a = Math.round(i * 0.4 * sr); for (var j = 0; j < x.length && a + j < len; j++) out[a + j] += x[j] * 0.5; });
+    notes.slice(0, 3).forEach(function (m) { var x = Instruments.render(id, m, 1.6, sr), a = Math.round(1.8 * sr); for (var j = 0; j < x.length && a + j < len; j++) out[a + j] += x[j] * 0.3; });
+    playBuf(out, sr); msgEl.textContent = 'Ascolti: ' + instName(id) + ' (Do maggiore, registro centrale).';
+  }
+  var stFam = 'tutte';
+  SHOW.strumenti = function () {
+    $('#st-count').textContent = Instruments.CATALOG.length + ' strumenti';
+    $('#st-how').innerHTML = '<ol class="small" style="padding-left:18px;line-height:1.6">' +
+      '<li><b>Ritmo</b> (cassa, rullante o clap, hi-hat): decide il genere e la velocità. Va per primo.</li>' +
+      '<li><b>Basso</b> (808 o basso rotondo): suona la nota principale dell\'accordo insieme alla cassa. Registro Do1-Do3.</li>' +
+      '<li><b>Accordi</b> (piano, chitarra, arpa, piano elettrico): danno l\'emozione (minore = malinconia, maggiore = luce). Registro Do3-Do5.</li>' +
+      '<li><b>Melodia</b> (flauto, campane, pizzicati, synth): il "gancio" che si ricorda. Registro Do4-Do6. Suona soprattutto quando la voce tace.</li>' +
+      '<li><b>Atmosfera / pad</b> (archi, organo, cristalli): note lunghe e basse di volume che riempiono lo spazio.</li>' +
+      '<li><b>Colore</b> (glockenspiel, campane, kalimba): pochi tocchi nei punti importanti.</li></ol>' +
+      '<p class="small"><b>Regola d\'oro:</b> ogni strumento al suo "piano" (registro), così non si coprono. Insieme alla voce, al massimo 3-4 elementi alla volta. Strofa = pochi strumenti (spazio al testo); ritornello = si aggiungono melodia e archi. Il testo viene prima: scegli gli strumenti in base all\'emozione delle tue parole.</p>';
+    $('#st-rec').innerHTML = Object.keys(Instruments.RECIPES).map(function (g) {
+      var R = Instruments.RECIPES[g], nm = function (l) { return l.map(instName).join(', '); };
+      return '<div class="note" style="margin-top:8px"><b>' + esc(R.nome) + '</b><p class="small">' + esc(R.spiega) + '</p><p class="small muted">Melodia: ' + esc(nm(R.melodia)) + ' · Accordi: ' + esc(nm(R.accordi)) + ' · Atmosfera: ' + esc(nm(R.pad)) + '</p>' +
+        '<button class="btn sm" data-recipe="' + g + '">Usa nella base (' + esc(ALLG[g] ? ALLG[g].label : g) + ')</button></div>';
+    }).join('');
+    $('#st-fam').innerHTML = ['tutte'].concat(Object.keys(Instruments.FAMILIES)).map(function (f) { return '<button class="chip' + (f === stFam ? ' on' : '') + '" data-fam="' + f + '">' + (f === 'tutte' ? 'Tutte' : esc(Instruments.FAMILIES[f])) + '</button>'; }).join('');
+    $('#st-list').innerHTML = Instruments.CATALOG.filter(function (c) { return stFam === 'tutte' || c.fam === stFam; }).map(function (c) {
+      return '<div class="note" style="margin-top:8px"><div class="row" style="justify-content:space-between;align-items:center"><b>' + esc(c.nome) + '</b><button class="btn sm" data-prev="' + c.id + '">Ascolta</button></div>' +
+        '<p class="small muted">' + esc(c.famiglia) + ' · ' + (c.fonte === 'campione' ? 'registrato (CC0)' : 'sintetizzato') + ' · ' + esc(c.ruoli.join(', ')) + ' · da ' + noteNm(c.range[0]) + ' a ' + noteNm(c.range[1]) + '</p>' +
+        '<p class="small"><b>Come si usa:</b> ' + esc(c.come) + '</p><p class="small"><b>Combacia con:</b> ' + esc(c.combina.map(instName).join(', ')) + '. ' + esc(c.perche) + '</p>' +
+        '<p class="small muted">Stili: ' + esc(c.stili.join(', ')) + '</p></div>';
+    }).join('');
+  };
+  $('#v-strumenti').addEventListener('click', async function (e) {
+    var t = e.target.closest('button'); if (!t) return;
+    if (t.getAttribute('data-fam')) { stFam = t.getAttribute('data-fam'); SHOW.strumenti(); return; }
+    if (t.getAttribute('data-prev')) { previewInst(t.getAttribute('data-prev'), $('#st-msg')); return; }
+    var g = t.getAttribute('data-recipe');
+    if (g) { var p = cur().prod; if (ALLG[g]) { p.genre = g; p.bpm = ALLG[g].bpm; p.tune = null; if (['trap', 'drill', 'epico'].indexOf(g) >= 0) p.mode = 'minore'; } applyRecipe(g); persist(); fillBase(); $('#st-msg').textContent = 'Ricetta applicata. Vai in Studio e premi "Crea e ascolta".'; ensureInst(); }
+  });
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {
