@@ -151,3 +151,9 @@ Cablaggio minimo: blocchi "VOICE LAB" in app.js (4 righe + init), app.body.html 
 - Il service worker non cancella più le cache dei modelli (cancella solo `studio-*`).
 - Licenze pesi: unblend dichiara Mel-Band RoFormer MIT; SCNet e HTDemucs "senza licenza esplicita" (uso per analisi personale).
 - Da verificare su iPhone: Rapida (memoria, tempo). Studio: pensata per il Mac.
+
+## Punto 1 del nuovo piano: Mixer a canali (fatto, testato)
+- `src/mixer.js`: per ogni traccia EQ 3 bande (120 Hz / medi regolabili / 8 kHz), compressore, saturazione, sidechain dalla cassa (curva di volume calcolata dal file della cassa), panoramica, mandate riverbero (stanza generata) ed eco a tempo. Preset per stile.
+- Lo Studio suona attraverso il mixer (`dwGraph`); il salvataggio usa la STESSA catena in OfflineAudioContext → WAV stereo + master. Provato: file stereo, e il file cambia quando cambi una manopola.
+- Impostazioni salvate in `prod.mix`; cambiando stile si riparte dal preset dello stile.
+- Prossimo: punto 2 (clip audio, tagli, più prove e comping).

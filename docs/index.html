@@ -512,6 +512,15 @@ details.card[open]>summary{margin-bottom:8px}
     <div class="status" id="dw-tmsg"></div>
   </section>
 
+  <section class="dw-panel" id="dw-p-mixer">
+    <div class="dw-ph"><h3>Mixer</h3><span class="tag m">Si sente subito</span></div>
+    <p class="small muted">Scegli una traccia e regola il suo canale mentre suona. Lo stesso mix finisce nel file che salvi.</p>
+    <div class="chips" id="dw-mx-lanes"></div>
+    <div class="dw-knobs" id="dw-mx-knobs"></div>
+    <div class="row" style="margin-top:8px"><button class="btn sm pri" id="dw-mx-preset">Mix di partenza per lo stile</button><button class="btn sm" id="dw-mx-flat">Azzera questo canale</button></div>
+    <div class="status" id="dw-mx-msg"></div>
+  </section>
+
   <section class="dw-panel" id="dw-p-mix">
     <div class="dw-ph"><h3>Mix e salvataggio</h3></div>
     <div class="grid2">
@@ -536,7 +545,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 17:17</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 17:24</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -879,7 +888,7 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">244 test automatici superati su 244 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">249 test automatici superati su 249 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -6260,6 +6269,135 @@ details.card[open]>summary{margin-bottom:8px}
 });
 
 /*
+ * Mixer a canali dello Studio (Web Audio). Ogni traccia ha la sua catena:
+ *   volume → EQ 3 bande (bassi 120 Hz, medi regolabili, alti 8 kHz) → compressore → saturazione → sidechain (solo dove serve)
+ *   → panoramica → uscita; più due mandate: riverbero (stanza generata qui) ed eco a tempo (1/8 puntato, con ritorni filtrati).
+ * La stessa funzione build() costruisce il mixer per l'ascolto (AudioContext) e per il file (OfflineAudioContext):
+ * quello che senti è quello che salvi.
+ * Sidechain: Web Audio non ha un compressore con ingresso esterno, quindi l'inviluppo della cassa (calcolato dal file
+ * della cassa) diventa una curva di volume sul canale: identico nel risultato a un compressore in sidechain.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.Mixer = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  // valori di un canale (tutti in unità comprensibili)
+  var CH = { low: 0, mid: 0, midHz: 1200, high: 0, comp: 0, sat: 0, pan: 0, rev: 0, dly: 0, duck: 0 };
+  var LIMITS = { low: [-12, 12], mid: [-12, 12], midHz: [200, 5000], high: [-12, 12], comp: [0, 1], sat: [0, 1], pan: [-1, 1], rev: [0, 1], dly: [0, 1], duck: [0, 1] };
+  var LABELS = {
+    low: ['Bassi', 'dB', 'Sotto 120 Hz: peso e corpo.'], mid: ['Medi', 'dB', 'Presenza; togli per fare spazio alla voce.'], midHz: ['Frequenza dei medi', 'Hz', 'Dove agisce la manopola Medi.'],
+    high: ['Alti', 'dB', 'Sopra 8 kHz: aria e brillantezza.'], comp: ['Compressione', '%', 'Volume più costante e più davanti.'], sat: ['Calore / distorsione', '%', 'Armoniche in più: suona più grosso e sporco.'],
+    pan: ['Panoramica', '', 'Sinistra o destra.'], rev: ['Riverbero', '%', 'Spazio attorno al suono.'], dly: ['Eco', '%', 'Ripetizioni a tempo (1/8 puntato).'], duck: ['Sidechain dalla cassa', '%', 'Si abbassa quando batte la cassa: 808 e cassa non si pestano.']
+  };
+
+  // punti di partenza per stile (Analisi: regole di mix comuni, da regolare a orecchio)
+  var PRESETS = {
+    base: {
+      drums: { comp: 0.3, sat: 0.15, high: 1 }, bass: { sat: 0.35, duck: 0.45, low: 2 }, chords: { low: -4, rev: 0.25, pan: -0.15 },
+      arp: { low: -6, rev: 0.2, dly: 0.25, pan: 0.25 }, lead: { low: -5, rev: 0.25, dly: 0.2 }, pad: { low: -6, rev: 0.5, high: -2 },
+      voice: { low: -3, mid: -1.5, midHz: 400, high: 3, comp: 0.55, rev: 0.18, dly: 0.12 }
+    },
+    trap: { bass: { sat: 0.55, duck: 0.5 }, drums: { comp: 0.35, sat: 0.2 }, lead: { dly: 0.3 } },
+    drill: { bass: { sat: 0.6, duck: 0.4 }, pad: { rev: 0.6 }, lead: { rev: 0.35 } },
+    melodico: { bass: { sat: 0.15, duck: 0.3 }, chords: { rev: 0.35 }, voice: { rev: 0.28, dly: 0.18 } },
+    epico: { pad: { rev: 0.7 }, chords: { rev: 0.45 }, drums: { comp: 0.45 } },
+    estate: { drums: { comp: 0.25, high: 2 }, bass: { duck: 0.2, sat: 0.1 } }
+  };
+
+  function clamp(v, k) { var l = LIMITS[k]; v = +v; if (!isFinite(v)) v = CH[k]; return Math.max(l[0], Math.min(l[1], v)); }
+  function channel(o) { var c = {}; for (var k in CH) c[k] = o && o[k] != null ? clamp(o[k], k) : CH[k]; return c; }
+  /** Impostazioni di partenza per uno stile: base + differenze dello stile. */
+  function preset(style, laneIds) {
+    var out = {}, b = PRESETS.base, s = PRESETS[style] || {};
+    laneIds.forEach(function (id) { out[id] = channel(Object.assign({}, b[id] || {}, s[id] || {})); });
+    return out;
+  }
+  /** Curva di saturazione morbida (tanh), normalizzata: amt 0 = lineare. */
+  function satCurve(amt, n) {
+    n = n || 2048; var c = new Float32Array(n), k = 1 + amt * 9, norm = Math.tanh(k);
+    for (var i = 0; i < n; i++) { var x = i / (n - 1) * 2 - 1; c[i] = amt <= 0 ? x : Math.tanh(k * x) / norm; }
+    return c;
+  }
+  /** Inviluppo della cassa → curva di volume (fps punti al secondo). amt 0-1 = quanto si abbassa (fino a -14 dB). */
+  function duckCurve(kick, sr, amt, fps) {
+    fps = fps || 200; var hop = Math.max(1, Math.round(sr / fps)), n = Math.ceil(kick.length / hop), env = new Float32Array(n), pk = 0, i, j;
+    for (i = 0; i < n; i++) { var m = 0; for (j = i * hop; j < Math.min(kick.length, (i + 1) * hop); j++) { var v = kick[j] < 0 ? -kick[j] : kick[j]; if (v > m) m = v; } env[i] = m; if (m > pk) pk = m; }
+    var out = new Float32Array(n), rel = Math.exp(-1 / (fps * 0.12)), e = 0, depth = 1 - Math.pow(10, -14 * amt / 20);
+    for (i = 0; i < n; i++) { var x = pk > 0 ? env[i] / pk : 0; e = x > e ? x : e * rel; out[i] = 1 - depth * Math.min(1, e * 1.4); }
+    return out;
+  }
+  /** Risposta all'impulso di una stanza (rumore che si spegne), stereo decorrelato. */
+  function impulse(sr, sec, seed) {
+    var n = Math.round(sr * sec), L = new Float32Array(n), R = new Float32Array(n), s = seed || 7;
+    var rnd = function () { s = (s * 16807) % 2147483647; return s / 2147483647 * 2 - 1; };
+    for (var i = 0; i < n; i++) { var d = Math.pow(1 - i / n, 3) * Math.exp(-i / (sr * sec * 0.35)); L[i] = rnd() * d; R[i] = rnd() * d; }
+    return [L, R];
+  }
+
+  /**
+   * Costruisce il mixer. ctx: AudioContext o OfflineAudioContext; dest: nodo di uscita.
+   * opt: {lanes:[id], settings:{id:channel}, bpm, kick:{x,sr} (per il sidechain), t0 (inizio in tempo del contesto), from (secondi saltati)}
+   * Ritorna {input(id) → nodo dove collegare la sorgente, fader(id) → GainNode del volume, set(id, chiave, valore), stop()}.
+   */
+  function build(ctx, dest, opt) {
+    var M = { ch: {}, settings: {} }, bpm = opt.bpm || 100;
+    // mandate condivise
+    var revIn = ctx.createGain(), conv = ctx.createConvolver(), ir = impulse(ctx.sampleRate, 2.2, 11), irb = ctx.createBuffer(2, ir[0].length, ctx.sampleRate);
+    irb.getChannelData(0).set(ir[0]); irb.getChannelData(1).set(ir[1]); conv.buffer = irb; conv.normalize = true;
+    var revOut = ctx.createGain(); revOut.gain.value = 0.9; revIn.connect(conv); conv.connect(revOut); revOut.connect(dest);
+    var dlyIn = ctx.createGain(), dl = ctx.createDelay(2), fb = ctx.createGain(), dlf = ctx.createBiquadFilter(), dlOut = ctx.createGain();
+    dl.delayTime.value = Math.min(1.9, 60 / bpm * 0.75); fb.gain.value = 0.35; dlf.type = 'lowpass'; dlf.frequency.value = 3500; dlOut.gain.value = 0.8;
+    dlyIn.connect(dl); dl.connect(dlf); dlf.connect(fb); fb.connect(dl); dlf.connect(dlOut); dlOut.connect(dest);
+    (opt.lanes || []).forEach(function (id) {
+      var c = {};
+      c.fader = ctx.createGain();
+      c.low = ctx.createBiquadFilter(); c.low.type = 'lowshelf'; c.low.frequency.value = 120;
+      c.mid = ctx.createBiquadFilter(); c.mid.type = 'peaking'; c.mid.Q.value = 0.9;
+      c.high = ctx.createBiquadFilter(); c.high.type = 'highshelf'; c.high.frequency.value = 8000;
+      c.comp = ctx.createDynamicsCompressor(); c.comp.attack.value = 0.008; c.comp.release.value = 0.18; c.comp.knee.value = 6;
+      c.makeup = ctx.createGain();
+      c.sat = ctx.createWaveShaper(); c.sat.oversample = '2x';
+      c.duck = ctx.createGain();
+      c.pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+      c.out = ctx.createGain(); c.rev = ctx.createGain(); c.dly = ctx.createGain();
+      c.fader.connect(c.low); c.low.connect(c.mid); c.mid.connect(c.high); c.high.connect(c.comp); c.comp.connect(c.makeup); c.makeup.connect(c.sat); c.sat.connect(c.duck);
+      if (c.pan) { c.duck.connect(c.pan); c.pan.connect(c.out); } else c.duck.connect(c.out);
+      c.out.connect(dest); c.out.connect(c.rev); c.out.connect(c.dly); c.rev.connect(revIn); c.dly.connect(dlyIn);
+      M.ch[id] = c;
+      var st = channel((opt.settings || {})[id]); M.settings[id] = st;
+      for (var k in st) apply(id, k, st[k], true);
+    });
+    function apply(id, k, v, now) {
+      var c = M.ch[id]; if (!c) return; v = clamp(v, k); M.settings[id][k] = v;
+      var t = ctx.currentTime, set = function (param, val) { if (now) param.value = val; else param.setTargetAtTime(val, t, 0.03); };
+      if (k === 'low') set(c.low.gain, v); else if (k === 'mid') set(c.mid.gain, v); else if (k === 'midHz') set(c.mid.frequency, v); else if (k === 'high') set(c.high.gain, v);
+      else if (k === 'comp') { set(c.comp.threshold, -2 - 30 * v); set(c.comp.ratio, 1 + 7 * v); set(c.makeup.gain, Math.pow(10, (8 * v) / 20)); }
+      else if (k === 'sat') { c.sat.curve = satCurve(v); set(c.out.gain, 1 / (1 + v * 0.6)); }
+      else if (k === 'pan') { if (c.pan) set(c.pan.pan, v); }
+      else if (k === 'rev') set(c.rev.gain, v * 0.6); else if (k === 'dly') set(c.dly.gain, v * 0.5);
+      else if (k === 'duck') scheduleDuck(id, v);
+    }
+    function scheduleDuck(id, amt) {
+      var c = M.ch[id], kick = opt.kick; c.duck.gain.cancelScheduledValues(0); c.duck.gain.value = 1;
+      if (!kick || amt <= 0) return;
+      var fps = 200, cur = duckCurve(kick.x, kick.sr, amt, fps), from = Math.max(0, opt.from || 0), i0 = Math.floor(from * fps);
+      var seg = cur.subarray(Math.min(i0, cur.length - 2)), t0 = Math.max(ctx.currentTime, opt.t0 || 0);
+      if (seg.length > 2) c.duck.gain.setValueCurveAtTime(seg, t0, seg.length / fps);
+    }
+    return {
+      input: function (id) { return M.ch[id] ? M.ch[id].fader : dest; },
+      fader: function (id) { return M.ch[id] ? M.ch[id].fader : null; },
+      set: function (id, k, v) { apply(id, k, v, false); },
+      settings: M.settings
+    };
+  }
+
+  return { CH: CH, LIMITS: LIMITS, LABELS: LABELS, PRESETS: PRESETS, channel: channel, preset: preset, satCurve: satCurve, duckCurve: duckCurve, impulse: impulse, build: build };
+});
+
+/*
  * Scheda di stile: misura caratteristiche GENERICHE di una canzone di riferimento
  * (tempo, peso del basso, luminosità, densità ritmica, crescita di energia)
  * e le trasforma in parametri per l'arrangiatore. Si possono mescolare più schede.
@@ -10165,15 +10303,8 @@ details.card[open]>summary{margin-bottom:8px}
     from = Math.max(0, Math.min(from || 0, b.duration - 0.5)); DW.from = from;
     var master = ctx.createGain(); master.gain.value = 1; master.connect(ctx.destination); DW.master = master;
     var t0 = ctx.currentTime + 0.08; DW.t0 = t0; DW.dur = b.duration;
-    LANES.forEach(function (L) {
-      var B = bufs[L.id]; if (!B) return;
-      var src = ctx.createBufferSource(); src.buffer = makeBuffer(ctx, B.x, B.sr);
-      var g = ctx.createGain(); g.gain.value = gainFor(L); src.connect(g); g.connect(master); DW.gains[L.id] = g;
-      var st = B.start - from;
-      if (st >= 0) src.start(t0 + st); else if (-st < B.x.length / B.sr) src.start(t0, -st); else return;
-      DW.srcs.push(src);
-      if (L.id === 'drums') src.onended = function () { if (DW.playing) { var lp = SESSION.lastPlay; if (DW.from === 0 && lp) coachRec('complete', lp.ctx); dwStop(); dwPos(0); } };
-    });
+    var gr = dwGraph(ctx, master, bufs, b, from, t0, DW.gains); DW.mixer = gr.mixer; DW.srcs = gr.srcs;
+    gr.srcs.forEach(function (src) { if (src._lane === 'drums') src.onended = function () { if (DW.playing) { var lp = SESSION.lastPlay; if (DW.from === 0 && lp) coachRec('complete', lp.ctx); dwStop(); dwPos(0); } }; });
     DW.playing = true; SESSION.lastPlay = { t: performance.now(), ctx: coachCtx(), dur: b.duration };
     var pb = $('#dw-play'); pb.classList.add('on'); pb.innerHTML = '<svg><use href="#i-stop"/></svg>';
     var map = songMap(), lk = '', loop = function () {
@@ -10414,7 +10545,7 @@ details.card[open]>summary{margin-bottom:8px}
   $('#dw-rec').addEventListener('click', dwRecord);
   $('#dw-new').addEventListener('click', function () { var p = cur().prod; if (SESSION.lastPlay && performance.now() - SESSION.lastPlay.t < 10000) coachRec('skip', SESSION.lastPlay.ctx); p.seed++; dwStop(); dwChanged(true); setTimeout(function () { dwPlay(0); }, 300); });
   $('#dw-name').addEventListener('input', function () { cur().title = this.value.trim() || 'Senza titolo'; $('#top-song').textContent = cur().title; persist(); });
-  $('#dw-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.bpm = Arranger.STYLES[this.value].bpm; p.tune = null; p.groove = null; $('#dw-bpm').value = p.bpm; dwStop(); fillBase(); dwChanged(true); });
+  $('#dw-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.bpm = Arranger.STYLES[this.value].bpm; p.tune = null; p.groove = null; p.mix = null; mixRender(); $('#dw-bpm').value = p.bpm; dwStop(); fillBase(); dwChanged(true); });
   $('#dw-bpm').addEventListener('change', function () { cur().prod.bpm = Math.max(60, Math.min(180, +this.value || 100)); this.value = cur().prod.bpm; dwStop(); fillBase(); dwChanged(true); dwLyInfo(); });
   $('#dw-key').addEventListener('change', function () { var v = this.value.split(':'), p = cur().prod; p.tonic = +v[0]; p.mode = v[1]; dwStop(); fillBase(); dwChanged(true); });
   $('#dw-master').addEventListener('change', function () { cur().prod.master = this.value; persist(); fillBase(); });
@@ -10443,13 +10574,76 @@ details.card[open]>summary{margin-bottom:8px}
     var id = e.target.getAttribute('data-lv'); if (!id) return;
     var L = LANES.filter(function (x) { return x.id === id; })[0]; cur().prod.levels[L.level] = +e.target.value / 100; persist(); dwGains();
   });
+  // ---------- Mixer a canali (stessa catena per ascolto e file salvato) ----------
+  var MIX_LANES = ['drums', 'bass', 'chords', 'arp', 'lead', 'pad', 'voice'];
+  function mixSet() {
+    var p = cur().prod;
+    if (!p.mix || typeof p.mix !== 'object') p.mix = Mixer.preset(p.genre, MIX_LANES);
+    MIX_LANES.forEach(function (id) { p.mix[id] = Mixer.channel(p.mix[id]); });
+    return p.mix;
+  }
+  // collega le sorgenti delle tracce al mixer; usata da Play e dal salvataggio
+  function dwGraph(ctx, dest, bufs, b, from, t0, gains) {
+    var mx = Mixer.build(ctx, dest, { lanes: MIX_LANES, settings: mixSet(), bpm: b.bpm, kick: b.tracks && b.tracks.kick ? { x: b.tracks.kick, sr: b.sampleRate } : null, t0: t0, from: from });
+    var srcs = [];
+    LANES.forEach(function (L) {
+      var B = bufs[L.id]; if (!B) return;
+      var src = ctx.createBufferSource(); src.buffer = makeBuffer(ctx, B.x, B.sr);
+      var g = ctx.createGain(); g.gain.value = gainFor(L); src.connect(g); g.connect(mx.input(L.id)); if (gains) gains[L.id] = g;
+      var st = B.start - from;
+      if (st >= 0) src.start(t0 + st); else if (-st < B.x.length / B.sr) src.start(t0, -st); else return;
+      src._lane = L.id; srcs.push(src);
+    });
+    return { mixer: mx, srcs: srcs };
+  }
+  var MIXUI = { lane: 'voice' };
+  function mixRender() {
+    var m = mixSet(), id = MIXUI.lane, c = m[id];
+    $('#dw-mx-lanes').innerHTML = LANES.map(function (L) { return '<button class="chip' + (L.id === id ? ' on' : '') + '" data-mxl="' + L.id + '" style="border-color:' + L.c + '">' + esc(L.nome) + '</button>'; }).join('');
+    var keys = ['low', 'mid', 'midHz', 'high', 'comp', 'sat', 'pan', 'rev', 'dly'].concat(id === 'drums' || id === 'voice' ? [] : ['duck']);
+    $('#dw-mx-knobs').innerHTML = keys.map(function (k) {
+      var L = Mixer.LIMITS[k], lab = Mixer.LABELS[k], v = c[k], step = k === 'midHz' ? 10 : (L[1] - L[0] > 3 ? 0.5 : 0.01);
+      return '<label class="f"><span>' + esc(lab[0]) + ' <b>' + mixFmt(k, v) + '</b></span><input type="range" min="' + L[0] + '" max="' + L[1] + '" step="' + step + '" value="' + v + '" data-mxk="' + k + '"><small class="muted">' + esc(lab[2]) + '</small></label>';
+    }).join('');
+  }
+  function mixFmt(k, v) { var u = Mixer.LABELS[k][1]; if (u === '%') return Math.round(v * 100) + '%'; if (k === 'pan') return v === 0 ? 'centro' : (v < 0 ? 'sin ' : 'des ') + Math.round(Math.abs(v) * 100); return (k === 'midHz' ? Math.round(v) : (v > 0 ? '+' : '') + (+v).toFixed(1)) + ' ' + u; }
+  $('#dw-p-mixer').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.getAttribute('data-mxl')) { MIXUI.lane = b.getAttribute('data-mxl'); mixRender(); }
+    if (b.id === 'dw-mx-preset') { var p = cur().prod; p.mix = Mixer.preset(p.genre, MIX_LANES); persist(); mixRender(); if (DW.mixer) MIX_LANES.forEach(function (id) { for (var k in p.mix[id]) DW.mixer.set(id, k, p.mix[id][k]); }); $('#dw-mx-msg').textContent = 'Mix di partenza per ' + (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + ' applicato a tutte le tracce.'; }
+    if (b.id === 'dw-mx-flat') { var m = mixSet(); m[MIXUI.lane] = Mixer.channel({}); persist(); mixRender(); if (DW.mixer) for (var k2 in m[MIXUI.lane]) DW.mixer.set(MIXUI.lane, k2, m[MIXUI.lane][k2]); $('#dw-mx-msg').textContent = 'Canale azzerato: senti la traccia senza effetti.'; }
+  });
+  $('#dw-mx-knobs').addEventListener('input', function (e) {
+    var k = e.target.getAttribute('data-mxk'); if (!k) return;
+    var m = mixSet(), v = +e.target.value; m[MIXUI.lane][k] = Mixer.channel(Object.assign({}, m[MIXUI.lane], { [k]: v }))[k];
+    e.target.previousElementSibling.querySelector('b').textContent = mixFmt(k, m[MIXUI.lane][k]);
+    if (DW.mixer) DW.mixer.set(MIXUI.lane, k, m[MIXUI.lane][k]);
+    clearTimeout(MIXUI.t); MIXUI.t = setTimeout(persist, 400);
+  });
+  // salvataggio in stereo con la stessa catena del mixer (OfflineAudioContext)
+  async function dwRender(withVoice) {
+    var b = await dwBase(), bufs = dwBuffers(b), sr = b.sampleRate, t = withVoice ? voiceTake() : null;
+    var len = Math.ceil((b.duration + 2.5) * sr), oc = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(2, len, sr);
+    var use = {}; for (var k in bufs) if (k !== 'voice' || t) use[k] = bufs[k];
+    var wasRec = DW.recording; DW.recording = false; dwGraph(oc, oc.destination, use, b, 0, 0, null); DW.recording = wasRec;
+    var out = await oc.startRendering(), L = out.getChannelData(0), R = out.getChannelData(1), mp = cur().prod.master || 'standard';
+    if (mp !== 'off' && Master.PRESETS[mp]) { L = Master.process(L, sr, mp).samples; R = Master.process(R, sr, mp).samples; }
+    return { L: L, R: R, sr: sr };
+  }
+  function wavStereo(L, R, sr) {
+    var n = L.length, b = new ArrayBuffer(44 + n * 4), v = new DataView(b), o = 44, i;
+    function s(off, t) { for (var k = 0; k < t.length; k++) v.setUint8(off + k, t.charCodeAt(k)); }
+    s(0, 'RIFF'); v.setUint32(4, 36 + n * 4, true); s(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 2, true);
+    v.setUint32(24, sr, true); v.setUint32(28, sr * 4, true); v.setUint16(32, 4, true); v.setUint16(34, 16, true); s(36, 'data'); v.setUint32(40, n * 4, true);
+    for (i = 0; i < n; i++, o += 4) { var a = Math.max(-1, Math.min(1, L[i])), c = Math.max(-1, Math.min(1, R[i])); v.setInt16(o, a < 0 ? a * 32768 : a * 32767, true); v.setInt16(o + 2, c < 0 ? c * 32768 : c * 32767, true); }
+    return new Blob([b], { type: 'audio/wav' });
+  }
   async function dwExport(withVoice) {
-    var el = $('#dw-xmsg'); el.textContent = 'Preparo il file…'; await tick();
+    var el = $('#dw-xmsg'); el.textContent = 'Preparo il file con il mixer…'; await tick();
     try {
-      await dwBase();
-      var g = $('#v-gain'); if (g) g.value = Math.round(lvl('voce') * 100);
-      var mx = buildMix({ voice: withVoice && !!voiceTake() });
-      await saveAudio(mx.samples, mx.sr, (cur().title || 'canzone').replace(/\W+/g, '-') + (withVoice ? '' : '-base'), el);
+      var r = await dwRender(withVoice), name = (cur().title || 'canzone').replace(/\W+/g, '-') + (withVoice ? '' : '-base');
+      if (!(await getDl())) await saveFile(name + '.wav', wavStereo(r.L, r.R, r.sr), el, 'File WAV stereo pronto (con il mixer e il master).');
+      else { var mono = new Float32Array(r.L.length); for (var i = 0; i < mono.length; i++) mono[i] = (r.L[i] + r.R[i]) / 2; await saveAudio(mono, r.sr, name, el); }
       SESSION.dwExported = true; dwSteps(); coachRec('save', coachCtx());
     } catch (e) { el.textContent = 'Salvataggio non riuscito.'; }
   }
@@ -10622,7 +10816,7 @@ details.card[open]>summary{margin-bottom:8px}
     learnUse(pl); el.textContent = 'Base nuova creata dai tuoi gusti (' + pl.from + ' che ti piacciono' + (pl.avoid ? ', ' + pl.avoid + ' da evitare' : '') + '): ' + (Arranger.STYLES[pl.genre] ? Arranger.STYLES[pl.genre].label : pl.genre) + ', ' + pl.bpm + ' BPM, cassa sui passi ' + pl.groove.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + '. Premi Play.';
   });
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
-  SHOW.daw = function () { dwFill(); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+  SHOW.daw = function () { dwFill(); mixRender(); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {

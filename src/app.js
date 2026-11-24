@@ -974,15 +974,8 @@
     from = Math.max(0, Math.min(from || 0, b.duration - 0.5)); DW.from = from;
     var master = ctx.createGain(); master.gain.value = 1; master.connect(ctx.destination); DW.master = master;
     var t0 = ctx.currentTime + 0.08; DW.t0 = t0; DW.dur = b.duration;
-    LANES.forEach(function (L) {
-      var B = bufs[L.id]; if (!B) return;
-      var src = ctx.createBufferSource(); src.buffer = makeBuffer(ctx, B.x, B.sr);
-      var g = ctx.createGain(); g.gain.value = gainFor(L); src.connect(g); g.connect(master); DW.gains[L.id] = g;
-      var st = B.start - from;
-      if (st >= 0) src.start(t0 + st); else if (-st < B.x.length / B.sr) src.start(t0, -st); else return;
-      DW.srcs.push(src);
-      if (L.id === 'drums') src.onended = function () { if (DW.playing) { var lp = SESSION.lastPlay; if (DW.from === 0 && lp) coachRec('complete', lp.ctx); dwStop(); dwPos(0); } };
-    });
+    var gr = dwGraph(ctx, master, bufs, b, from, t0, DW.gains); DW.mixer = gr.mixer; DW.srcs = gr.srcs;
+    gr.srcs.forEach(function (src) { if (src._lane === 'drums') src.onended = function () { if (DW.playing) { var lp = SESSION.lastPlay; if (DW.from === 0 && lp) coachRec('complete', lp.ctx); dwStop(); dwPos(0); } }; });
     DW.playing = true; SESSION.lastPlay = { t: performance.now(), ctx: coachCtx(), dur: b.duration };
     var pb = $('#dw-play'); pb.classList.add('on'); pb.innerHTML = '<svg><use href="#i-stop"/></svg>';
     var map = songMap(), lk = '', loop = function () {
@@ -1223,7 +1216,7 @@
   $('#dw-rec').addEventListener('click', dwRecord);
   $('#dw-new').addEventListener('click', function () { var p = cur().prod; if (SESSION.lastPlay && performance.now() - SESSION.lastPlay.t < 10000) coachRec('skip', SESSION.lastPlay.ctx); p.seed++; dwStop(); dwChanged(true); setTimeout(function () { dwPlay(0); }, 300); });
   $('#dw-name').addEventListener('input', function () { cur().title = this.value.trim() || 'Senza titolo'; $('#top-song').textContent = cur().title; persist(); });
-  $('#dw-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.bpm = Arranger.STYLES[this.value].bpm; p.tune = null; p.groove = null; $('#dw-bpm').value = p.bpm; dwStop(); fillBase(); dwChanged(true); });
+  $('#dw-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.bpm = Arranger.STYLES[this.value].bpm; p.tune = null; p.groove = null; p.mix = null; mixRender(); $('#dw-bpm').value = p.bpm; dwStop(); fillBase(); dwChanged(true); });
   $('#dw-bpm').addEventListener('change', function () { cur().prod.bpm = Math.max(60, Math.min(180, +this.value || 100)); this.value = cur().prod.bpm; dwStop(); fillBase(); dwChanged(true); dwLyInfo(); });
   $('#dw-key').addEventListener('change', function () { var v = this.value.split(':'), p = cur().prod; p.tonic = +v[0]; p.mode = v[1]; dwStop(); fillBase(); dwChanged(true); });
   $('#dw-master').addEventListener('change', function () { cur().prod.master = this.value; persist(); fillBase(); });
@@ -1252,13 +1245,76 @@
     var id = e.target.getAttribute('data-lv'); if (!id) return;
     var L = LANES.filter(function (x) { return x.id === id; })[0]; cur().prod.levels[L.level] = +e.target.value / 100; persist(); dwGains();
   });
+  // ---------- Mixer a canali (stessa catena per ascolto e file salvato) ----------
+  var MIX_LANES = ['drums', 'bass', 'chords', 'arp', 'lead', 'pad', 'voice'];
+  function mixSet() {
+    var p = cur().prod;
+    if (!p.mix || typeof p.mix !== 'object') p.mix = Mixer.preset(p.genre, MIX_LANES);
+    MIX_LANES.forEach(function (id) { p.mix[id] = Mixer.channel(p.mix[id]); });
+    return p.mix;
+  }
+  // collega le sorgenti delle tracce al mixer; usata da Play e dal salvataggio
+  function dwGraph(ctx, dest, bufs, b, from, t0, gains) {
+    var mx = Mixer.build(ctx, dest, { lanes: MIX_LANES, settings: mixSet(), bpm: b.bpm, kick: b.tracks && b.tracks.kick ? { x: b.tracks.kick, sr: b.sampleRate } : null, t0: t0, from: from });
+    var srcs = [];
+    LANES.forEach(function (L) {
+      var B = bufs[L.id]; if (!B) return;
+      var src = ctx.createBufferSource(); src.buffer = makeBuffer(ctx, B.x, B.sr);
+      var g = ctx.createGain(); g.gain.value = gainFor(L); src.connect(g); g.connect(mx.input(L.id)); if (gains) gains[L.id] = g;
+      var st = B.start - from;
+      if (st >= 0) src.start(t0 + st); else if (-st < B.x.length / B.sr) src.start(t0, -st); else return;
+      src._lane = L.id; srcs.push(src);
+    });
+    return { mixer: mx, srcs: srcs };
+  }
+  var MIXUI = { lane: 'voice' };
+  function mixRender() {
+    var m = mixSet(), id = MIXUI.lane, c = m[id];
+    $('#dw-mx-lanes').innerHTML = LANES.map(function (L) { return '<button class="chip' + (L.id === id ? ' on' : '') + '" data-mxl="' + L.id + '" style="border-color:' + L.c + '">' + esc(L.nome) + '</button>'; }).join('');
+    var keys = ['low', 'mid', 'midHz', 'high', 'comp', 'sat', 'pan', 'rev', 'dly'].concat(id === 'drums' || id === 'voice' ? [] : ['duck']);
+    $('#dw-mx-knobs').innerHTML = keys.map(function (k) {
+      var L = Mixer.LIMITS[k], lab = Mixer.LABELS[k], v = c[k], step = k === 'midHz' ? 10 : (L[1] - L[0] > 3 ? 0.5 : 0.01);
+      return '<label class="f"><span>' + esc(lab[0]) + ' <b>' + mixFmt(k, v) + '</b></span><input type="range" min="' + L[0] + '" max="' + L[1] + '" step="' + step + '" value="' + v + '" data-mxk="' + k + '"><small class="muted">' + esc(lab[2]) + '</small></label>';
+    }).join('');
+  }
+  function mixFmt(k, v) { var u = Mixer.LABELS[k][1]; if (u === '%') return Math.round(v * 100) + '%'; if (k === 'pan') return v === 0 ? 'centro' : (v < 0 ? 'sin ' : 'des ') + Math.round(Math.abs(v) * 100); return (k === 'midHz' ? Math.round(v) : (v > 0 ? '+' : '') + (+v).toFixed(1)) + ' ' + u; }
+  $('#dw-p-mixer').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.getAttribute('data-mxl')) { MIXUI.lane = b.getAttribute('data-mxl'); mixRender(); }
+    if (b.id === 'dw-mx-preset') { var p = cur().prod; p.mix = Mixer.preset(p.genre, MIX_LANES); persist(); mixRender(); if (DW.mixer) MIX_LANES.forEach(function (id) { for (var k in p.mix[id]) DW.mixer.set(id, k, p.mix[id][k]); }); $('#dw-mx-msg').textContent = 'Mix di partenza per ' + (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + ' applicato a tutte le tracce.'; }
+    if (b.id === 'dw-mx-flat') { var m = mixSet(); m[MIXUI.lane] = Mixer.channel({}); persist(); mixRender(); if (DW.mixer) for (var k2 in m[MIXUI.lane]) DW.mixer.set(MIXUI.lane, k2, m[MIXUI.lane][k2]); $('#dw-mx-msg').textContent = 'Canale azzerato: senti la traccia senza effetti.'; }
+  });
+  $('#dw-mx-knobs').addEventListener('input', function (e) {
+    var k = e.target.getAttribute('data-mxk'); if (!k) return;
+    var m = mixSet(), v = +e.target.value; m[MIXUI.lane][k] = Mixer.channel(Object.assign({}, m[MIXUI.lane], { [k]: v }))[k];
+    e.target.previousElementSibling.querySelector('b').textContent = mixFmt(k, m[MIXUI.lane][k]);
+    if (DW.mixer) DW.mixer.set(MIXUI.lane, k, m[MIXUI.lane][k]);
+    clearTimeout(MIXUI.t); MIXUI.t = setTimeout(persist, 400);
+  });
+  // salvataggio in stereo con la stessa catena del mixer (OfflineAudioContext)
+  async function dwRender(withVoice) {
+    var b = await dwBase(), bufs = dwBuffers(b), sr = b.sampleRate, t = withVoice ? voiceTake() : null;
+    var len = Math.ceil((b.duration + 2.5) * sr), oc = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(2, len, sr);
+    var use = {}; for (var k in bufs) if (k !== 'voice' || t) use[k] = bufs[k];
+    var wasRec = DW.recording; DW.recording = false; dwGraph(oc, oc.destination, use, b, 0, 0, null); DW.recording = wasRec;
+    var out = await oc.startRendering(), L = out.getChannelData(0), R = out.getChannelData(1), mp = cur().prod.master || 'standard';
+    if (mp !== 'off' && Master.PRESETS[mp]) { L = Master.process(L, sr, mp).samples; R = Master.process(R, sr, mp).samples; }
+    return { L: L, R: R, sr: sr };
+  }
+  function wavStereo(L, R, sr) {
+    var n = L.length, b = new ArrayBuffer(44 + n * 4), v = new DataView(b), o = 44, i;
+    function s(off, t) { for (var k = 0; k < t.length; k++) v.setUint8(off + k, t.charCodeAt(k)); }
+    s(0, 'RIFF'); v.setUint32(4, 36 + n * 4, true); s(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 2, true);
+    v.setUint32(24, sr, true); v.setUint32(28, sr * 4, true); v.setUint16(32, 4, true); v.setUint16(34, 16, true); s(36, 'data'); v.setUint32(40, n * 4, true);
+    for (i = 0; i < n; i++, o += 4) { var a = Math.max(-1, Math.min(1, L[i])), c = Math.max(-1, Math.min(1, R[i])); v.setInt16(o, a < 0 ? a * 32768 : a * 32767, true); v.setInt16(o + 2, c < 0 ? c * 32768 : c * 32767, true); }
+    return new Blob([b], { type: 'audio/wav' });
+  }
   async function dwExport(withVoice) {
-    var el = $('#dw-xmsg'); el.textContent = 'Preparo il file…'; await tick();
+    var el = $('#dw-xmsg'); el.textContent = 'Preparo il file con il mixer…'; await tick();
     try {
-      await dwBase();
-      var g = $('#v-gain'); if (g) g.value = Math.round(lvl('voce') * 100);
-      var mx = buildMix({ voice: withVoice && !!voiceTake() });
-      await saveAudio(mx.samples, mx.sr, (cur().title || 'canzone').replace(/\W+/g, '-') + (withVoice ? '' : '-base'), el);
+      var r = await dwRender(withVoice), name = (cur().title || 'canzone').replace(/\W+/g, '-') + (withVoice ? '' : '-base');
+      if (!(await getDl())) await saveFile(name + '.wav', wavStereo(r.L, r.R, r.sr), el, 'File WAV stereo pronto (con il mixer e il master).');
+      else { var mono = new Float32Array(r.L.length); for (var i = 0; i < mono.length; i++) mono[i] = (r.L[i] + r.R[i]) / 2; await saveAudio(mono, r.sr, name, el); }
       SESSION.dwExported = true; dwSteps(); coachRec('save', coachCtx());
     } catch (e) { el.textContent = 'Salvataggio non riuscito.'; }
   }
@@ -1431,7 +1487,7 @@
     learnUse(pl); el.textContent = 'Base nuova creata dai tuoi gusti (' + pl.from + ' che ti piacciono' + (pl.avoid ? ', ' + pl.avoid + ' da evitare' : '') + '): ' + (Arranger.STYLES[pl.genre] ? Arranger.STYLES[pl.genre].label : pl.genre) + ', ' + pl.bpm + ' BPM, cassa sui passi ' + pl.groove.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + '. Premi Play.';
   });
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
-  SHOW.daw = function () { dwFill(); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+  SHOW.daw = function () { dwFill(); mixRender(); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {
