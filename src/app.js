@@ -21,7 +21,7 @@
   var store = { kind: 'locale', doc: null, busy: false, again: false, ok: false };
 
   function defaultProd() {
-    return { master: 'standard', genre: 'pop', bpm: 100, tonic: 0, mode: 'maggiore', bars: 8, bassStyle: null, reverb: 0, seed: 1, follow: false, levels: { batteria: 1, basso: 1, accordi: 1, pad: 1, melodia: 1 } };
+    return { master: 'standard', genre: 'melodico', bpm: 96, tonic: 0, mode: 'maggiore', inst: { melodia: 'piano', accordi: 'guitar', pad: 'violins' }, v2: 1, bars: 8, bassStyle: null, reverb: 0, seed: 1, follow: false, levels: { batteria: 1, basso: 1, accordi: 1, pad: 1, melodia: 1 } };
   }
   function newSong(title) {
     return { id: uid(), title: title || 'Senza titolo', lyrics: '', versions: [], status: 'idea', folder: 'lavorazione', modes: {}, mood: '', key: '', release: '', links: '', notes: '', prod: defaultProd(), plan: null, created: today() };
@@ -52,6 +52,11 @@
   function sanitize(d) {
     if (!d || typeof d !== 'object' || !Array.isArray(d.songs)) return null;
     d.settings = d.settings || { theme: 'notte', artist: '' };
+    var OLDG = { pop: 'melodico', lofi: 'melodico', hiphop: 'trap', dance: 'estate' };
+    d.songs.forEach(function (s) {
+      // una volta sola: le basi del vecchio generatore (melodia simile a un flauto) passano al nuovo arrangiatore con strumenti veri
+      if (s.prod && !s.prod.v2) { if (OLDG[s.prod.genre]) { s.prod.genre = OLDG[s.prod.genre]; s.prod.tune = null; } if (!s.prod.inst) s.prod.inst = defaultProd().inst; if (s.prod.karBars == null || s.prod.karBars === 2) s.prod.karBars = 'auto'; s.prod.v2 = 1; }
+    });
     d.songs.forEach(function (s) { s.folder = s.folder || 'lavorazione'; s.modes = s.modes || {}; s.prod = Object.assign(defaultProd(), s.prod || {}); s.prod.levels = Object.assign(defaultProd().levels, s.prod.levels || {}); s.versions = s.versions || []; });
     return d;
   }
@@ -361,9 +366,9 @@
     var s = cur(), a = analysisOf(s);
     if (!a) { $('#st-msg').textContent = 'Scrivi prima un testo.'; return; }
     var r = LyricsToBase.suggest(a, { tonic: s.prod.tonic });
-    s.prod.genre = r.genre; s.prod.mode = r.mode; s.prod.bpm = r.bpm; s.prod.tonic = r.tonic; SESSION.base = null;
-    $('#st-msg').textContent = 'Ipotesi: ' + r.why.join(' ') + ' Puoi cambiare tutto qui sotto.';
-    fillBase(); persist();
+    s.prod.genre = r.genre; s.prod.mode = r.mode; s.prod.bpm = r.bpm; s.prod.tonic = r.tonic; s.prod.tune = null; if (r.inst) s.prod.inst = r.inst; SESSION.base = null;
+    $('#st-msg').textContent = 'Ipotesi: ' + r.why.join(' ') + ' Strumenti: ' + ['melodia', 'accordi', 'pad'].map(function (k) { return instName(s.prod.inst[k]); }).join(', ') + '. Puoi cambiare tutto qui sotto.';
+    fillBase(); persist(); ensureInst();
   });
 
 
@@ -402,7 +407,8 @@
   var LEVEL_NAMES = { batteria: 'Batteria', basso: 'Basso', accordi: 'Accordi', pad: 'Atmosfera (pad)', melodia: 'Melodia guida' };
   function followBars() {
     var s = cur(); if (!s.prod.follow) return;
-    var n = Math.max(4, Math.min(32, lyricLines(s.lyrics).length || 8)); s.prod.bars = n; $('#b-bars').value = n; $('#b-barsv').textContent = n; persist();
+    var tl = ClipFx.timeline(lyricLines(s.lyrics), { bpm: s.prod.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {}, barsPerLine: s.prod.karBars || 'auto' });
+    var n = Math.max(4, Math.min(64, tl.length ? tl[tl.length - 1].startBar + tl[tl.length - 1].bars : 8)); s.prod.bars = n; $('#b-bars').value = n; $('#b-barsv').textContent = n; persist();
   }
   function fillBase() {
     var p = cur().prod;
@@ -415,8 +421,8 @@
   $('#b-genre').innerHTML = Object.keys(ALLG).map(function (g) { return '<option value="' + g + '">' + ALLG[g].label + '</option>'; }).join('');
   $('#b-tonic').innerHTML = NOTES.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
   $('#b-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.tune = null; p.bpm = ALLG[this.value].bpm; if (['trap', 'drill', 'epico'].indexOf(this.value) >= 0) { p.mode = 'minore'; $('#b-mode').value = 'minore'; } else if (this.value === 'estate') { p.mode = 'maggiore'; $('#b-mode').value = 'maggiore'; } if (Arranger.STYLES[this.value] && p.bars < 16) { p.bars = 32; $('#b-bars').value = 32; $('#b-barsv').textContent = 32; } $('#b-bpm').value = p.bpm; persist(); });
-  ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.addEventListener('change', function () { cur().prod.karBars = +this.value; persist(); syncKar(); }); });
-  function syncKar() { var v = String(cur().prod.karBars || 2); ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.value = v; }); }
+  ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.addEventListener('change', function () { cur().prod.karBars = this.value === 'auto' ? 'auto' : +this.value; persist(); syncKar(); }); });
+  function syncKar() { var v = String(cur().prod.karBars || 'auto'); ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.value = v; }); }
   $('#b-sounds').addEventListener('change', function () { cur().prod.sounds = this.value; persist(); });
   $('#b-master').addEventListener('change', function () { cur().prod.master = this.value; persist(); });
   $('#b-bpm').addEventListener('change', function () { cur().prod.bpm = Math.max(60, Math.min(180, +this.value || 100)); this.value = cur().prod.bpm; persist(); });
@@ -461,14 +467,17 @@
     if (mp !== 'off' && Master.PRESETS[mp]) { var mr = Master.process(samples, sr, mp); samples = mr.samples; mrep = mr.report; }
     return { samples: samples, sr: sr, bpm: bpm, voice: used, master: mrep };
   }
+  // Testo che scorre: ogni riga dura in base alle sillabe e al modo (canta/parla/allunga); la parola in corso è evidenziata.
   function karaokeTick(bpm, sel) {
     sel = sel || '#kar';
-    var lines = lyricLines(cur().lyrics), barLen = 4 * 60 / bpm;
+    var lines = lyricLines(cur().lyrics), per = cur().prod.karBars || 'auto';
+    var tl = ClipFx.timeline(lines, { bpm: bpm, syll: LyricsEngine.lineSyllables, modes: cur().modes || {}, barsPerLine: per }), lastKey = '';
     return function (t) {
-      var bar = Math.floor(t / barLen), per = +(cur().prod.karBars || 2), li = Math.floor(bar / per);
-      if (!lines.length) { $(sel).innerHTML = '<div><b>Scrivi un testo per vederlo qui</b></div>'; return; }
-      var ln = ClipFx.lyricAt(lines, li), md = (cur().modes || {})[ln] || 'canta';
-      $(sel).innerHTML = '<div><span class="mode">' + md + '</span><br><b>' + esc(ln) + '</b><small>Battuta ' + (bar + 1) + ' · poi: ' + esc(ClipFx.lyricAt(lines, bar + 1)) + '</small></div>';
+      if (!tl.length) { if (lastKey !== 'x') $(sel).innerHTML = '<div><b>Scrivi un testo per vederlo qui</b></div>'; lastKey = 'x'; return; }
+      var p = ClipFx.lineAt(tl, t), key = p.index + ':' + p.word + ':' + p.bar;
+      if (key === lastKey) return; lastKey = key; // aggiorna la pagina solo quando cambia qualcosa (meno lavoro per l'iPhone)
+      var words = p.line.words.map(function (w, k) { return k === p.word ? '<mark>' + esc(w.w) + '</mark>' : (k < p.word ? '<span class="sung">' + esc(w.w) + '</span>' : esc(w.w)); }).join(' ');
+      $(sel).innerHTML = '<div><span class="mode">' + p.line.mode + ' · ' + p.line.bars + (p.line.bars > 1 ? ' battute' : ' battuta') + '</span><br><b class="kw">' + words + '</b><small>Battuta ' + (p.bar + 1) + '/' + p.line.bars + ' · poi: ' + esc(p.next.text) + '</small></div>';
     };
   }
   async function makeAndPlay(newVariant) {
@@ -775,25 +784,45 @@
     try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } }); }
     catch (e) { var inApp = /iPhone|iPad/.test(navigator.userAgent) && !/Safari\//.test(navigator.userAgent); msg.textContent = (inApp ? 'Stai aprendo la pagina dentro un\'altra app (es. Claude): lì il microfono è bloccato. Copia il link e incollalo in Safari. ' : 'Il microfono non parte. ') + 'Dettaglio tecnico: ' + (e && e.name ? e.name : 'errore') + '. Su iPhone: Impostazioni > Safari > Microfono, poi riapri la pagina e consenti.'; msg.className = 'status err'; return; }
     msg.textContent = 'Preparo la base…'; await tick();
-    var mx = buildMix({ voice: false }), mic = ctx.createMediaStreamSource(stream), proc = ctx.createScriptProcessor(4096, 1, 1), mute = ctx.createGain();
-    mute.gain.value = 0; var chunks = [], R = { stream: stream, mic: mic, proc: proc, mute: mute, chunks: chunks, ctx: ctx, level: 0, started: ctx.currentTime };
-    proc.onaudioprocess = function (ev) { var d = ev.inputBuffer.getChannelData(0), m = 0; chunks.push(new Float32Array(d)); for (var i = 0; i < d.length; i++) { var v = d[i] < 0 ? -d[i] : d[i]; if (v > m) m = v; } R.level = m; };
-    mic.connect(proc); proc.connect(mute); mute.connect(ctx.destination); REC = R; recUi(true);
+    var mx = buildMix({ voice: false }), mic = ctx.createMediaStreamSource(stream), chunks = [], R = { stream: stream, mic: mic, chunks: chunks, ctx: ctx, level: 0, started: ctx.currentTime };
+    // Registratore nativo (MediaRecorder): lavora fuori dalla grafica, quindi niente buchi ("sgretolio")
+    // quando il testo scorre. Il misuratore usa un Analyser, che non tocca la registrazione.
+    var rtypes = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'], rmime = window.MediaRecorder ? rtypes.filter(function (t) { return MediaRecorder.isTypeSupported(t); })[0] : null;
+    var an = ctx.createAnalyser(); an.fftSize = 1024; mic.connect(an); R.an = an; R.abuf = new Float32Array(an.fftSize);
+    if (rmime) {
+      R.mr = new MediaRecorder(stream, { mimeType: rmime, audioBitsPerSecond: 256000 }); R.mime = rmime;
+      R.mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+      R.mrStopped = new Promise(function (res) { R.mr.onstop = res; });
+      R.mr.start(); R.recAt = ctx.currentTime;
+    } else { // vecchio metodo, solo se il registratore nativo manca
+      var proc = ctx.createScriptProcessor(4096, 1, 1), mute = ctx.createGain(); mute.gain.value = 0; R.proc = proc; R.mute = mute;
+      proc.onaudioprocess = function (ev) { chunks.push(new Float32Array(ev.inputBuffer.getChannelData(0))); };
+      mic.connect(proc); proc.connect(mute); mute.connect(ctx.destination);
+    }
+    REC = R; recUi(true);
     var kt = karaokeTick(mx.bpm, '#rec-kar');
-    var ok = playBuf(mx.samples, mx.sr, function (t) { kt(t); var m = R.level; $('#orb').style.setProperty('--lvl', Math.min(1, m * 1.6).toFixed(2)); $('#rec-meter i').style.width = Math.min(100, Math.round(m * 140)) + '%'; $('#rec-meter').classList.toggle('hot', m > 0.95); }, function () { finishRec(); });
-    R.delta = Math.max(0, (player.t0 || R.started) - R.started); R.lat = (ctx.baseLatency || 0) + (ctx.outputLatency || 0);
+    var ok = playBuf(mx.samples, mx.sr, function (t) { kt(t); R.an.getFloatTimeDomainData(R.abuf); var m = 0; for (var ai = 0; ai < R.abuf.length; ai++) { var av = R.abuf[ai] < 0 ? -R.abuf[ai] : R.abuf[ai]; if (av > m) m = av; } R.level = m; $('#orb').style.setProperty('--lvl', Math.min(1, m * 1.6).toFixed(2)); $('#rec-meter i').style.width = Math.min(100, Math.round(m * 140)) + '%'; $('#rec-meter').classList.toggle('hot', m > 0.95); }, function () { finishRec(); });
+    R.delta = Math.max(0, (player.t0 || R.started) - (R.recAt != null ? R.recAt : R.started)); R.lat = (ctx.baseLatency || 0) + (ctx.outputLatency || 0);
     if (!ok) { finishRec(); return; }
     msg.textContent = 'Registro. Usa le cuffie, altrimenti la base entra nel microfono.';
   });
   $('#rec-stop').addEventListener('click', stopPlay);
   async function finishRec() {
     var R = REC; if (!R) return; REC = null;
-    try { R.mic.disconnect(); R.proc.disconnect(); R.mute.disconnect(); R.proc.onaudioprocess = null; } catch (e) {}
+    var msg = $('#rec-msg'), mono, sr;
+    if (R.mr) { try { if (R.mr.state !== 'inactive') R.mr.stop(); await R.mrStopped; } catch (e) {} }
+    try { R.mic.disconnect(); if (R.proc) { R.proc.disconnect(); R.mute.disconnect(); R.proc.onaudioprocess = null; } } catch (e) {}
     R.stream.getTracks().forEach(function (t) { t.stop(); }); recUi(false);
-    var n = 0; R.chunks.forEach(function (c) { n += c.length; }); var sr = R.ctx.sampleRate, msg = $('#rec-msg');
     $('#rec-kar').innerHTML = '<div><b>Registrazione finita</b></div>'; $('#orb').style.setProperty('--lvl', 0);
+    if (R.mr) {
+      try { var dd = await decode(new Blob(R.chunks, { type: R.mime })); mono = dd.mono; sr = dd.sr; }
+      catch (e) { msg.textContent = 'Non riesco a leggere la registrazione (' + (e && e.name || 'errore') + '). Riprova.'; msg.className = 'status err'; return; }
+    } else {
+      var n = 0; R.chunks.forEach(function (c) { n += c.length; }); sr = R.ctx.sampleRate;
+      mono = new Float32Array(n); var o = 0; R.chunks.forEach(function (c) { mono.set(c, o); o += c.length; });
+    }
+    var n = mono.length;
     if (n < sr * 0.8) { msg.textContent = 'Registrazione troppo corta: riprova.'; return; }
-    var mono = new Float32Array(n), o = 0; R.chunks.forEach(function (c) { mono.set(c, o); o += c.length; });
     var pk = 0; for (var i = 0; i < n; i += 7) { var v = mono[i] < 0 ? -mono[i] : mono[i]; if (v > pk) pk = v; }
     var boosted = false;
     if (pk > 0.003 && pk < 0.3) { var gk = 0.7 / pk; for (var q = 0; q < n; q++) mono[q] *= gk; boosted = true; }

@@ -9,13 +9,20 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
+  // Emozione -> stile dell'arrangiatore e strumenti veri. Analisi di mestiere, non regole fisse.
   var MAP = {
-    rabbia: { genre: 'hiphop', mode: 'minore', bpm: 140, label: 'rabbia' },
-    tristezza: { genre: 'lofi', mode: 'minore', bpm: 78, label: 'tristezza' },
-    nostalgia: { genre: 'lofi', mode: 'minore', bpm: 84, label: 'nostalgia' },
-    gioia: { genre: 'dance', mode: 'maggiore', bpm: 122, label: 'gioia' },
-    amore: { genre: 'pop', mode: 'maggiore', bpm: 96, label: 'amore' },
-    speranza: { genre: 'pop', mode: 'maggiore', bpm: 108, label: 'speranza' }
+    rabbia: { genre: 'drill', mode: 'minore', bpm: 142, label: 'rabbia', inst: { melodia: 'pizz', accordi: 'piano', pad: 'cellos' },
+      why: 'drill: ritmo spezzato, pizzicati e violoncelli scuri danno tensione' },
+    tristezza: { genre: 'trap', mode: 'minore', bpm: 130, label: 'tristezza', inst: { melodia: 'piano', accordi: 'guitar', pad: 'violins' },
+      why: 'trap lenta e malinconica: piano e chitarra in minore, archi lunghi nel ritornello' },
+    nostalgia: { genre: 'melodico', mode: 'minore', bpm: 86, label: 'nostalgia', inst: { melodia: 'upright', accordi: 'epiano', pad: 'violas' },
+      why: 'melodico lento: pianoforte verticale e piano elettrico, suono "di ricordo"' },
+    gioia: { genre: 'estate', mode: 'maggiore', bpm: 102, label: 'gioia', inst: { melodia: 'marimba', accordi: 'nylon', pad: 'organ' },
+      why: 'ritmo latino in maggiore: marimba e chitarra classica, colori caldi' },
+    amore: { genre: 'melodico', mode: 'maggiore', bpm: 92, label: 'amore', inst: { melodia: 'piano', accordi: 'guitar', pad: 'violins' },
+      why: 'melodico in maggiore: piano e chitarra, archi morbidi' },
+    speranza: { genre: 'epico', mode: 'maggiore', bpm: 88, label: 'speranza', inst: { melodia: 'horn', accordi: 'harp', pad: 'violins' },
+      why: 'cinematico in maggiore: arpa, archi e corno che crescono verso il ritornello' }
   };
 
   /**
@@ -24,19 +31,19 @@
    */
   function suggest(analysis, opts) {
     opts = opts || {};
-    var out = { genre: 'pop', mode: 'maggiore', bpm: 100, tonic: opts.tonic == null ? 0 : opts.tonic, confident: false, why: [] };
+    var out = { genre: 'melodico', mode: 'maggiore', bpm: 96, inst: { melodia: 'piano', accordi: 'guitar', pad: 'violins' }, tonic: opts.tonic == null ? 0 : opts.tonic, confident: false, why: [] };
     if (!analysis || !analysis.counts || !analysis.counts.lines) {
-      out.why.push('Non c\'è ancora un testo: parto da una base pop neutra.');
+      out.why.push('Non c\'è ancora un testo: parto da una base melodica neutra (piano, chitarra, archi).');
       return out;
     }
     var e = analysis.emotions, top = e && e.sufficient ? e.items[0] : null;
     if (top && top.count > 0 && MAP[top.name]) {
       var m = MAP[top.name];
-      out.genre = m.genre; out.mode = m.mode; out.bpm = m.bpm; out.confident = true;
-      out.why.push('Nel testo prevale ' + m.label + ': scelgo ' + m.genre + ' in scala ' + m.mode + '.');
-      if (top.name === 'amore' && e.valence === 'negativo') { out.mode = 'minore'; out.why.push('Il tono complessivo è negativo, quindi uso la scala minore.'); }
+      out.genre = m.genre; out.mode = m.mode; out.bpm = m.bpm; out.inst = Object.assign({}, m.inst); out.confident = true; out.emotion = top.name;
+      out.why.push('Nel testo prevale ' + m.label + ': ' + m.why + '.');
+      if (top.name === 'amore' && e.valence === 'negativo') { out.genre = 'trap'; out.mode = 'minore'; out.bpm = 128; out.inst = { melodia: 'harp', accordi: 'piano', pad: 'violins' }; out.why.push('Ma il tono complessivo è negativo (amore ferito): passo a una trap melodica in minore con arpa e piano.'); }
     } else {
-      out.why.push('Nel testo ci sono poche parole che riconosco: parto da una base pop neutra.');
+      out.why.push('Nel testo ci sono poche parole che riconosco: parto da una base melodica neutra (piano, chitarra, archi).');
     }
     var avg = analysis.syllables.average;
     if (avg > 12) { out.bpm -= 8; out.why.push('Le righe sono lunghe (' + avg.toFixed(0) + ' sillabe): rallento un po\' per farle stare.'); }

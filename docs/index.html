@@ -197,6 +197,8 @@ details.card[open]>summary{margin-bottom:8px}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .karaoke{background:rgba(255,255,255,.05);color:var(--ink);border:1px solid hsl(var(--h2) 100% 60% / .55);box-shadow:0 0 26px hsl(var(--h1) 100% 60% / .22) inset;min-height:96px}
 :root:not([data-theme="light"]) .karaoke b{color:#fff;font-size:1.15rem}:root:not([data-theme="light"]) .karaoke .mode{background:var(--cyan);color:#07070f}}
 
+.kw mark{background:var(--acc,#b06cff);color:#fff;border-radius:6px;padding:0 4px}.kw .sung{opacity:.55}
+
 </style>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></symbol>
@@ -297,8 +299,8 @@ details.card[open]>summary{margin-bottom:8px}
     </div>
     <label class="f"><span>Suoni batteria</span><select id="b-sounds"><option value="campioni" selected>Veri (campioni registrati)</option><option value="sint">Sintetici</option></select></label>
     <label class="f"><span>Master (volume e suono finale)</span><select id="b-master"><option value="off">Spento</option><option value="morbido">Morbido</option><option value="standard" selected>Standard</option><option value="forte">Forte</option></select></label>
-    <div class="sw"><label for="b-follow">Una battuta per ogni riga del testo</label><input type="checkbox" id="b-follow"></div>
-    <label class="f"><span>Battute <b id="b-barsv">8</b></span><input type="range" id="b-bars" min="4" max="32" step="1" value="8"></label>
+    <div class="sw"><label for="b-follow">Durata della base = durata del testo (righe e sillabe)</label><input type="checkbox" id="b-follow"></div>
+    <label class="f"><span>Battute <b id="b-barsv">8</b></span><input type="range" id="b-bars" min="4" max="64" step="1" value="8"></label>
     <h3 style="margin-top:12px">Strumenti</h3>
     <div id="b-levels"></div>
     <div class="row" style="margin-top:10px">
@@ -312,7 +314,7 @@ details.card[open]>summary{margin-bottom:8px}
   </div>
 
   <div class="card"><div class="card-head"><h3>Cantare seguendo il testo</h3></div>
-    <label class="f"><span>Velocità del testo</span><select id="kar-speed"><option value="1">Veloce (1 battuta per riga)</option><option value="2" selected>Media (2 battute)</option><option value="4">Lenta (4 battute)</option><option value="8">Molto lenta (8 battute)</option></select></label>
+    <label class="f"><span>Velocità del testo</span><select id="kar-speed"><option value="auto" selected>Automatica (segue le sillabe)</option><option value="1">Veloce (1 battuta per riga)</option><option value="2">Media (2 battute)</option><option value="4">Lenta (4 battute)</option><option value="8">Molto lenta (8 battute)</option></select></label>
     <div class="karaoke" id="kar"><div><b>Premi "Crea e ascolta" e canta</b><small>Qui vedi la riga giusta a ogni battuta</small></div></div>
     <p class="small muted">Metti le cuffie, registra con Memo Vocali mentre la base suona (da un altro dispositivo o da questa pagina), poi importa la registrazione in Voce.</p>
   </div>
@@ -355,7 +357,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="head"><div class="eyebrow">Vocal Studio</div><h1>La tua voce</h1></div>
   <div class="card"><div class="card-head"><h3>Registra con il microfono</h3></div>
     <div class="orbwrap"><div class="orb" id="orb"></div><div class="orb-cap" id="orb-cap">Emozione del testo: <b>neutra</b></div></div>
-    <label class="f"><span>Velocità del testo</span><select id="kar-speed2"><option value="1">Veloce (1 battuta per riga)</option><option value="2" selected>Media (2 battute)</option><option value="4">Lenta (4 battute)</option><option value="8">Molto lenta (8 battute)</option></select></label>
+    <label class="f"><span>Velocità del testo</span><select id="kar-speed2"><option value="auto" selected>Automatica (segue le sillabe)</option><option value="1">Veloce (1 battuta per riga)</option><option value="2">Media (2 battute)</option><option value="4">Lenta (4 battute)</option><option value="8">Molto lenta (8 battute)</option></select></label>
     <div class="karaoke" id="rec-kar"><div><b>Premi Registra: parte la base e vedi la riga</b><small>Usa le cuffie</small></div></div>
     <div class="meter-bar" id="rec-meter" hidden><i></i></div>
     <div class="row"><button class="btn pri" id="rec-go">Registra con la base</button><button class="btn" id="rec-stop" hidden>Fine registrazione</button></div>
@@ -498,7 +500,7 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">129 test automatici superati su 129 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">130 test automatici superati su 130 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -2839,13 +2841,20 @@ details.card[open]>summary{margin-bottom:8px}
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
+  // Emozione -> stile dell'arrangiatore e strumenti veri. Analisi di mestiere, non regole fisse.
   var MAP = {
-    rabbia: { genre: 'hiphop', mode: 'minore', bpm: 140, label: 'rabbia' },
-    tristezza: { genre: 'lofi', mode: 'minore', bpm: 78, label: 'tristezza' },
-    nostalgia: { genre: 'lofi', mode: 'minore', bpm: 84, label: 'nostalgia' },
-    gioia: { genre: 'dance', mode: 'maggiore', bpm: 122, label: 'gioia' },
-    amore: { genre: 'pop', mode: 'maggiore', bpm: 96, label: 'amore' },
-    speranza: { genre: 'pop', mode: 'maggiore', bpm: 108, label: 'speranza' }
+    rabbia: { genre: 'drill', mode: 'minore', bpm: 142, label: 'rabbia', inst: { melodia: 'pizz', accordi: 'piano', pad: 'cellos' },
+      why: 'drill: ritmo spezzato, pizzicati e violoncelli scuri danno tensione' },
+    tristezza: { genre: 'trap', mode: 'minore', bpm: 130, label: 'tristezza', inst: { melodia: 'piano', accordi: 'guitar', pad: 'violins' },
+      why: 'trap lenta e malinconica: piano e chitarra in minore, archi lunghi nel ritornello' },
+    nostalgia: { genre: 'melodico', mode: 'minore', bpm: 86, label: 'nostalgia', inst: { melodia: 'upright', accordi: 'epiano', pad: 'violas' },
+      why: 'melodico lento: pianoforte verticale e piano elettrico, suono "di ricordo"' },
+    gioia: { genre: 'estate', mode: 'maggiore', bpm: 102, label: 'gioia', inst: { melodia: 'marimba', accordi: 'nylon', pad: 'organ' },
+      why: 'ritmo latino in maggiore: marimba e chitarra classica, colori caldi' },
+    amore: { genre: 'melodico', mode: 'maggiore', bpm: 92, label: 'amore', inst: { melodia: 'piano', accordi: 'guitar', pad: 'violins' },
+      why: 'melodico in maggiore: piano e chitarra, archi morbidi' },
+    speranza: { genre: 'epico', mode: 'maggiore', bpm: 88, label: 'speranza', inst: { melodia: 'horn', accordi: 'harp', pad: 'violins' },
+      why: 'cinematico in maggiore: arpa, archi e corno che crescono verso il ritornello' }
   };
 
   /**
@@ -2854,19 +2863,19 @@ details.card[open]>summary{margin-bottom:8px}
    */
   function suggest(analysis, opts) {
     opts = opts || {};
-    var out = { genre: 'pop', mode: 'maggiore', bpm: 100, tonic: opts.tonic == null ? 0 : opts.tonic, confident: false, why: [] };
+    var out = { genre: 'melodico', mode: 'maggiore', bpm: 96, inst: { melodia: 'piano', accordi: 'guitar', pad: 'violins' }, tonic: opts.tonic == null ? 0 : opts.tonic, confident: false, why: [] };
     if (!analysis || !analysis.counts || !analysis.counts.lines) {
-      out.why.push('Non c\'è ancora un testo: parto da una base pop neutra.');
+      out.why.push('Non c\'è ancora un testo: parto da una base melodica neutra (piano, chitarra, archi).');
       return out;
     }
     var e = analysis.emotions, top = e && e.sufficient ? e.items[0] : null;
     if (top && top.count > 0 && MAP[top.name]) {
       var m = MAP[top.name];
-      out.genre = m.genre; out.mode = m.mode; out.bpm = m.bpm; out.confident = true;
-      out.why.push('Nel testo prevale ' + m.label + ': scelgo ' + m.genre + ' in scala ' + m.mode + '.');
-      if (top.name === 'amore' && e.valence === 'negativo') { out.mode = 'minore'; out.why.push('Il tono complessivo è negativo, quindi uso la scala minore.'); }
+      out.genre = m.genre; out.mode = m.mode; out.bpm = m.bpm; out.inst = Object.assign({}, m.inst); out.confident = true; out.emotion = top.name;
+      out.why.push('Nel testo prevale ' + m.label + ': ' + m.why + '.');
+      if (top.name === 'amore' && e.valence === 'negativo') { out.genre = 'trap'; out.mode = 'minore'; out.bpm = 128; out.inst = { melodia: 'harp', accordi: 'piano', pad: 'violins' }; out.why.push('Ma il tono complessivo è negativo (amore ferito): passo a una trap melodica in minore con arpa e piano.'); }
     } else {
-      out.why.push('Nel testo ci sono poche parole che riconosco: parto da una base pop neutra.');
+      out.why.push('Nel testo ci sono poche parole che riconosco: parto da una base melodica neutra (piano, chitarra, archi).');
     }
     var avg = analysis.syllables.average;
     if (avg > 12) { out.bpm -= 8; out.why.push('Le righe sono lunghe (' + avg.toFixed(0) + ' sillabe): rallento un po\' per farle stare.'); }
@@ -2917,7 +2926,45 @@ details.card[open]>summary{margin-bottom:8px}
     };
   }
 
-  return { beatState: beatState, lyricAt: lyricAt, frame: frame };
+  /**
+   * Tempi del testo che scorre (karaoke) basati sulle SILLABE, non su un tempo fisso.
+   * lines: righe; opt.bpm; opt.syll(riga) -> sillabe; opt.modes {riga: 'canta'|'parla'|'allunga'};
+   * opt.barsPerLine: numero fisso oppure 'auto'.
+   * Velocità tipiche (Analisi, da regolare): parlato/rap ~5,5 sillabe al secondo, cantato ~3, note lunghe ~1,8.
+   * Ogni riga occupa 1, 2 o 4 battute (le frasi musicali stanno su multipli di battuta).
+   * Le parole sono distribuite per sillabe sull'85% della riga (si finisce prima della battuta dopo).
+   */
+  var RATE = { parla: 5.5, canta: 3, allunga: 1.8 };
+  function timeline(lines, opt) {
+    opt = opt || {};
+    var barSec = 4 * 60 / (opt.bpm || 100), out = [], bar = 0;
+    var syll = opt.syll || function (l) { return Math.max(1, Math.round(l.replace(/[^a-zàèéìòù]/gi, '').length / 2.2)); };
+    var sy0 = syll; syll = function (l) { var v = sy0(l); return typeof v === 'object' && v ? (v.metric || v.raw || 1) : v; };
+    (lines || []).filter(function (x) { return x && x.trim(); }).forEach(function (text) {
+      var mode = (opt.modes && opt.modes[text]) || 'canta', n = Math.max(1, syll(text)), bars;
+      if (opt.barsPerLine && opt.barsPerLine !== 'auto') bars = +opt.barsPerLine;
+      else {
+        var need = n / RATE[mode] / barSec;
+        bars = need <= 1.25 ? 1 : (need <= 2.6 ? 2 : 4);
+      }
+      var start = bar * barSec, dur = bars * barSec, words = text.trim().split(/\s+/), ws = words.map(function (w) { return Math.max(1, syll(w)); });
+      var tot = ws.reduce(function (a, b) { return a + b; }, 0), sing = Math.min(dur * 0.85, n / RATE[mode] * 1.05), acc = 0;
+      out.push({ text: text, mode: mode, syllables: n, startBar: bar, bars: bars, start: start, end: start + dur,
+        words: words.map(function (w, i) { var a = start + sing * acc / tot; acc += ws[i]; return { w: w, start: a, end: start + sing * acc / tot }; }) });
+      bar += bars;
+    });
+    return out;
+  }
+  function lineAt(tl, t) {
+    if (!tl.length) return null;
+    var total = tl[tl.length - 1].end, tt = t % total, i;
+    for (i = 0; i < tl.length; i++) if (tt < tl[i].end) break;
+    var L = tl[Math.min(i, tl.length - 1)], w = -1;
+    L.words.forEach(function (x, k) { if (tt >= x.start) w = k; });
+    return { index: Math.min(i, tl.length - 1), line: L, word: w, next: tl[(Math.min(i, tl.length - 1) + 1) % tl.length], bar: Math.min(L.bars - 1, Math.floor((tt - L.start) / ((L.end - L.start) / L.bars))) };
+  }
+
+  return { beatState: beatState, lyricAt: lyricAt, frame: frame, timeline: timeline, lineAt: lineAt };
 });
 
 /*
@@ -3837,7 +3884,7 @@ details.card[open]>summary{margin-bottom:8px}
   var store = { kind: 'locale', doc: null, busy: false, again: false, ok: false };
 
   function defaultProd() {
-    return { master: 'standard', genre: 'pop', bpm: 100, tonic: 0, mode: 'maggiore', bars: 8, bassStyle: null, reverb: 0, seed: 1, follow: false, levels: { batteria: 1, basso: 1, accordi: 1, pad: 1, melodia: 1 } };
+    return { master: 'standard', genre: 'melodico', bpm: 96, tonic: 0, mode: 'maggiore', inst: { melodia: 'piano', accordi: 'guitar', pad: 'violins' }, v2: 1, bars: 8, bassStyle: null, reverb: 0, seed: 1, follow: false, levels: { batteria: 1, basso: 1, accordi: 1, pad: 1, melodia: 1 } };
   }
   function newSong(title) {
     return { id: uid(), title: title || 'Senza titolo', lyrics: '', versions: [], status: 'idea', folder: 'lavorazione', modes: {}, mood: '', key: '', release: '', links: '', notes: '', prod: defaultProd(), plan: null, created: today() };
@@ -3868,6 +3915,11 @@ details.card[open]>summary{margin-bottom:8px}
   function sanitize(d) {
     if (!d || typeof d !== 'object' || !Array.isArray(d.songs)) return null;
     d.settings = d.settings || { theme: 'notte', artist: '' };
+    var OLDG = { pop: 'melodico', lofi: 'melodico', hiphop: 'trap', dance: 'estate' };
+    d.songs.forEach(function (s) {
+      // una volta sola: le basi del vecchio generatore (melodia simile a un flauto) passano al nuovo arrangiatore con strumenti veri
+      if (s.prod && !s.prod.v2) { if (OLDG[s.prod.genre]) { s.prod.genre = OLDG[s.prod.genre]; s.prod.tune = null; } if (!s.prod.inst) s.prod.inst = defaultProd().inst; if (s.prod.karBars == null || s.prod.karBars === 2) s.prod.karBars = 'auto'; s.prod.v2 = 1; }
+    });
     d.songs.forEach(function (s) { s.folder = s.folder || 'lavorazione'; s.modes = s.modes || {}; s.prod = Object.assign(defaultProd(), s.prod || {}); s.prod.levels = Object.assign(defaultProd().levels, s.prod.levels || {}); s.versions = s.versions || []; });
     return d;
   }
@@ -4177,9 +4229,9 @@ details.card[open]>summary{margin-bottom:8px}
     var s = cur(), a = analysisOf(s);
     if (!a) { $('#st-msg').textContent = 'Scrivi prima un testo.'; return; }
     var r = LyricsToBase.suggest(a, { tonic: s.prod.tonic });
-    s.prod.genre = r.genre; s.prod.mode = r.mode; s.prod.bpm = r.bpm; s.prod.tonic = r.tonic; SESSION.base = null;
-    $('#st-msg').textContent = 'Ipotesi: ' + r.why.join(' ') + ' Puoi cambiare tutto qui sotto.';
-    fillBase(); persist();
+    s.prod.genre = r.genre; s.prod.mode = r.mode; s.prod.bpm = r.bpm; s.prod.tonic = r.tonic; s.prod.tune = null; if (r.inst) s.prod.inst = r.inst; SESSION.base = null;
+    $('#st-msg').textContent = 'Ipotesi: ' + r.why.join(' ') + ' Strumenti: ' + ['melodia', 'accordi', 'pad'].map(function (k) { return instName(s.prod.inst[k]); }).join(', ') + '. Puoi cambiare tutto qui sotto.';
+    fillBase(); persist(); ensureInst();
   });
 
 
@@ -4218,7 +4270,8 @@ details.card[open]>summary{margin-bottom:8px}
   var LEVEL_NAMES = { batteria: 'Batteria', basso: 'Basso', accordi: 'Accordi', pad: 'Atmosfera (pad)', melodia: 'Melodia guida' };
   function followBars() {
     var s = cur(); if (!s.prod.follow) return;
-    var n = Math.max(4, Math.min(32, lyricLines(s.lyrics).length || 8)); s.prod.bars = n; $('#b-bars').value = n; $('#b-barsv').textContent = n; persist();
+    var tl = ClipFx.timeline(lyricLines(s.lyrics), { bpm: s.prod.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {}, barsPerLine: s.prod.karBars || 'auto' });
+    var n = Math.max(4, Math.min(64, tl.length ? tl[tl.length - 1].startBar + tl[tl.length - 1].bars : 8)); s.prod.bars = n; $('#b-bars').value = n; $('#b-barsv').textContent = n; persist();
   }
   function fillBase() {
     var p = cur().prod;
@@ -4231,8 +4284,8 @@ details.card[open]>summary{margin-bottom:8px}
   $('#b-genre').innerHTML = Object.keys(ALLG).map(function (g) { return '<option value="' + g + '">' + ALLG[g].label + '</option>'; }).join('');
   $('#b-tonic').innerHTML = NOTES.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
   $('#b-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.tune = null; p.bpm = ALLG[this.value].bpm; if (['trap', 'drill', 'epico'].indexOf(this.value) >= 0) { p.mode = 'minore'; $('#b-mode').value = 'minore'; } else if (this.value === 'estate') { p.mode = 'maggiore'; $('#b-mode').value = 'maggiore'; } if (Arranger.STYLES[this.value] && p.bars < 16) { p.bars = 32; $('#b-bars').value = 32; $('#b-barsv').textContent = 32; } $('#b-bpm').value = p.bpm; persist(); });
-  ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.addEventListener('change', function () { cur().prod.karBars = +this.value; persist(); syncKar(); }); });
-  function syncKar() { var v = String(cur().prod.karBars || 2); ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.value = v; }); }
+  ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.addEventListener('change', function () { cur().prod.karBars = this.value === 'auto' ? 'auto' : +this.value; persist(); syncKar(); }); });
+  function syncKar() { var v = String(cur().prod.karBars || 'auto'); ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.value = v; }); }
   $('#b-sounds').addEventListener('change', function () { cur().prod.sounds = this.value; persist(); });
   $('#b-master').addEventListener('change', function () { cur().prod.master = this.value; persist(); });
   $('#b-bpm').addEventListener('change', function () { cur().prod.bpm = Math.max(60, Math.min(180, +this.value || 100)); this.value = cur().prod.bpm; persist(); });
@@ -4277,14 +4330,17 @@ details.card[open]>summary{margin-bottom:8px}
     if (mp !== 'off' && Master.PRESETS[mp]) { var mr = Master.process(samples, sr, mp); samples = mr.samples; mrep = mr.report; }
     return { samples: samples, sr: sr, bpm: bpm, voice: used, master: mrep };
   }
+  // Testo che scorre: ogni riga dura in base alle sillabe e al modo (canta/parla/allunga); la parola in corso è evidenziata.
   function karaokeTick(bpm, sel) {
     sel = sel || '#kar';
-    var lines = lyricLines(cur().lyrics), barLen = 4 * 60 / bpm;
+    var lines = lyricLines(cur().lyrics), per = cur().prod.karBars || 'auto';
+    var tl = ClipFx.timeline(lines, { bpm: bpm, syll: LyricsEngine.lineSyllables, modes: cur().modes || {}, barsPerLine: per }), lastKey = '';
     return function (t) {
-      var bar = Math.floor(t / barLen), per = +(cur().prod.karBars || 2), li = Math.floor(bar / per);
-      if (!lines.length) { $(sel).innerHTML = '<div><b>Scrivi un testo per vederlo qui</b></div>'; return; }
-      var ln = ClipFx.lyricAt(lines, li), md = (cur().modes || {})[ln] || 'canta';
-      $(sel).innerHTML = '<div><span class="mode">' + md + '</span><br><b>' + esc(ln) + '</b><small>Battuta ' + (bar + 1) + ' · poi: ' + esc(ClipFx.lyricAt(lines, bar + 1)) + '</small></div>';
+      if (!tl.length) { if (lastKey !== 'x') $(sel).innerHTML = '<div><b>Scrivi un testo per vederlo qui</b></div>'; lastKey = 'x'; return; }
+      var p = ClipFx.lineAt(tl, t), key = p.index + ':' + p.word + ':' + p.bar;
+      if (key === lastKey) return; lastKey = key; // aggiorna la pagina solo quando cambia qualcosa (meno lavoro per l'iPhone)
+      var words = p.line.words.map(function (w, k) { return k === p.word ? '<mark>' + esc(w.w) + '</mark>' : (k < p.word ? '<span class="sung">' + esc(w.w) + '</span>' : esc(w.w)); }).join(' ');
+      $(sel).innerHTML = '<div><span class="mode">' + p.line.mode + ' · ' + p.line.bars + (p.line.bars > 1 ? ' battute' : ' battuta') + '</span><br><b class="kw">' + words + '</b><small>Battuta ' + (p.bar + 1) + '/' + p.line.bars + ' · poi: ' + esc(p.next.text) + '</small></div>';
     };
   }
   async function makeAndPlay(newVariant) {
@@ -4591,25 +4647,45 @@ details.card[open]>summary{margin-bottom:8px}
     try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } }); }
     catch (e) { var inApp = /iPhone|iPad/.test(navigator.userAgent) && !/Safari\//.test(navigator.userAgent); msg.textContent = (inApp ? 'Stai aprendo la pagina dentro un\'altra app (es. Claude): lì il microfono è bloccato. Copia il link e incollalo in Safari. ' : 'Il microfono non parte. ') + 'Dettaglio tecnico: ' + (e && e.name ? e.name : 'errore') + '. Su iPhone: Impostazioni > Safari > Microfono, poi riapri la pagina e consenti.'; msg.className = 'status err'; return; }
     msg.textContent = 'Preparo la base…'; await tick();
-    var mx = buildMix({ voice: false }), mic = ctx.createMediaStreamSource(stream), proc = ctx.createScriptProcessor(4096, 1, 1), mute = ctx.createGain();
-    mute.gain.value = 0; var chunks = [], R = { stream: stream, mic: mic, proc: proc, mute: mute, chunks: chunks, ctx: ctx, level: 0, started: ctx.currentTime };
-    proc.onaudioprocess = function (ev) { var d = ev.inputBuffer.getChannelData(0), m = 0; chunks.push(new Float32Array(d)); for (var i = 0; i < d.length; i++) { var v = d[i] < 0 ? -d[i] : d[i]; if (v > m) m = v; } R.level = m; };
-    mic.connect(proc); proc.connect(mute); mute.connect(ctx.destination); REC = R; recUi(true);
+    var mx = buildMix({ voice: false }), mic = ctx.createMediaStreamSource(stream), chunks = [], R = { stream: stream, mic: mic, chunks: chunks, ctx: ctx, level: 0, started: ctx.currentTime };
+    // Registratore nativo (MediaRecorder): lavora fuori dalla grafica, quindi niente buchi ("sgretolio")
+    // quando il testo scorre. Il misuratore usa un Analyser, che non tocca la registrazione.
+    var rtypes = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'], rmime = window.MediaRecorder ? rtypes.filter(function (t) { return MediaRecorder.isTypeSupported(t); })[0] : null;
+    var an = ctx.createAnalyser(); an.fftSize = 1024; mic.connect(an); R.an = an; R.abuf = new Float32Array(an.fftSize);
+    if (rmime) {
+      R.mr = new MediaRecorder(stream, { mimeType: rmime, audioBitsPerSecond: 256000 }); R.mime = rmime;
+      R.mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+      R.mrStopped = new Promise(function (res) { R.mr.onstop = res; });
+      R.mr.start(); R.recAt = ctx.currentTime;
+    } else { // vecchio metodo, solo se il registratore nativo manca
+      var proc = ctx.createScriptProcessor(4096, 1, 1), mute = ctx.createGain(); mute.gain.value = 0; R.proc = proc; R.mute = mute;
+      proc.onaudioprocess = function (ev) { chunks.push(new Float32Array(ev.inputBuffer.getChannelData(0))); };
+      mic.connect(proc); proc.connect(mute); mute.connect(ctx.destination);
+    }
+    REC = R; recUi(true);
     var kt = karaokeTick(mx.bpm, '#rec-kar');
-    var ok = playBuf(mx.samples, mx.sr, function (t) { kt(t); var m = R.level; $('#orb').style.setProperty('--lvl', Math.min(1, m * 1.6).toFixed(2)); $('#rec-meter i').style.width = Math.min(100, Math.round(m * 140)) + '%'; $('#rec-meter').classList.toggle('hot', m > 0.95); }, function () { finishRec(); });
-    R.delta = Math.max(0, (player.t0 || R.started) - R.started); R.lat = (ctx.baseLatency || 0) + (ctx.outputLatency || 0);
+    var ok = playBuf(mx.samples, mx.sr, function (t) { kt(t); R.an.getFloatTimeDomainData(R.abuf); var m = 0; for (var ai = 0; ai < R.abuf.length; ai++) { var av = R.abuf[ai] < 0 ? -R.abuf[ai] : R.abuf[ai]; if (av > m) m = av; } R.level = m; $('#orb').style.setProperty('--lvl', Math.min(1, m * 1.6).toFixed(2)); $('#rec-meter i').style.width = Math.min(100, Math.round(m * 140)) + '%'; $('#rec-meter').classList.toggle('hot', m > 0.95); }, function () { finishRec(); });
+    R.delta = Math.max(0, (player.t0 || R.started) - (R.recAt != null ? R.recAt : R.started)); R.lat = (ctx.baseLatency || 0) + (ctx.outputLatency || 0);
     if (!ok) { finishRec(); return; }
     msg.textContent = 'Registro. Usa le cuffie, altrimenti la base entra nel microfono.';
   });
   $('#rec-stop').addEventListener('click', stopPlay);
   async function finishRec() {
     var R = REC; if (!R) return; REC = null;
-    try { R.mic.disconnect(); R.proc.disconnect(); R.mute.disconnect(); R.proc.onaudioprocess = null; } catch (e) {}
+    var msg = $('#rec-msg'), mono, sr;
+    if (R.mr) { try { if (R.mr.state !== 'inactive') R.mr.stop(); await R.mrStopped; } catch (e) {} }
+    try { R.mic.disconnect(); if (R.proc) { R.proc.disconnect(); R.mute.disconnect(); R.proc.onaudioprocess = null; } } catch (e) {}
     R.stream.getTracks().forEach(function (t) { t.stop(); }); recUi(false);
-    var n = 0; R.chunks.forEach(function (c) { n += c.length; }); var sr = R.ctx.sampleRate, msg = $('#rec-msg');
     $('#rec-kar').innerHTML = '<div><b>Registrazione finita</b></div>'; $('#orb').style.setProperty('--lvl', 0);
+    if (R.mr) {
+      try { var dd = await decode(new Blob(R.chunks, { type: R.mime })); mono = dd.mono; sr = dd.sr; }
+      catch (e) { msg.textContent = 'Non riesco a leggere la registrazione (' + (e && e.name || 'errore') + '). Riprova.'; msg.className = 'status err'; return; }
+    } else {
+      var n = 0; R.chunks.forEach(function (c) { n += c.length; }); sr = R.ctx.sampleRate;
+      mono = new Float32Array(n); var o = 0; R.chunks.forEach(function (c) { mono.set(c, o); o += c.length; });
+    }
+    var n = mono.length;
     if (n < sr * 0.8) { msg.textContent = 'Registrazione troppo corta: riprova.'; return; }
-    var mono = new Float32Array(n), o = 0; R.chunks.forEach(function (c) { mono.set(c, o); o += c.length; });
     var pk = 0; for (var i = 0; i < n; i += 7) { var v = mono[i] < 0 ? -mono[i] : mono[i]; if (v > pk) pk = v; }
     var boosted = false;
     if (pk > 0.003 && pk < 0.3) { var gk = 0.7 / pk; for (var q = 0; q < n; q++) mono[q] *= gk; boosted = true; }

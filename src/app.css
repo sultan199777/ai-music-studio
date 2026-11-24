@@ -192,3 +192,5 @@ details.card[open]>summary{margin-bottom:8px}
 :root[data-theme="dark"] .karaoke .mode{background:var(--cyan);color:#07070f}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .karaoke{background:rgba(255,255,255,.05);color:var(--ink);border:1px solid hsl(var(--h2) 100% 60% / .55);box-shadow:0 0 26px hsl(var(--h1) 100% 60% / .22) inset;min-height:96px}
 :root:not([data-theme="light"]) .karaoke b{color:#fff;font-size:1.15rem}:root:not([data-theme="light"]) .karaoke .mode{background:var(--cyan);color:#07070f}}
+
+.kw mark{background:var(--acc,#b06cff);color:#fff;border-radius:6px;padding:0 4px}.kw .sung{opacity:.55}
