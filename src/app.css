@@ -347,3 +347,5 @@ body[data-mood="dark"] { --mood-glow: rgba(124, 58, 237, .32); }
 body[data-mood="euforico"] { --mood-glow: rgba(245, 158, 11, .35); }
 body[data-mood="romantico"] { --mood-glow: rgba(236, 72, 153, .30); }
 body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
+
+[hidden]{display:none!important}

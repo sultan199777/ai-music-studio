@@ -352,6 +352,8 @@ body[data-mood="euforico"] { --mood-glow: rgba(245, 158, 11, .35); }
 body[data-mood="romantico"] { --mood-glow: rgba(236, 72, 153, .30); }
 body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
 
+[hidden]{display:none!important}
+
 /* ===== VOICE LAB (stile Cosmo: usa le variabili del tema) ===== */
 .vl .vl-auto{font-size:1.25rem;min-height:60px;margin:8px 0 4px;letter-spacing:.04em}
 .vl .vl-hint{margin:2px 0 8px}
@@ -526,6 +528,26 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     <div class="status" id="dw-tmsg"></div>
   </section>
 
+  <section class="dw-panel" id="dw-p-brain" data-ws="testo">
+    <div class="dw-ph"><h3>Crea la base dal tuo testo</h3><span class="tag i">Cervello Sultan</span></div>
+    <p class="small muted">Scrivi lo stile che vuoi (es. "trap dark") oppure lascia vuoto: il testo decide. Poi premi il tasto grande.</p>
+    <div id="dwb-fields"></div>
+    <div class="row" id="dwb-actions"></div>
+    <div id="dwb-out"></div>
+  </section>
+  <section class="dw-panel" id="dw-p-play" data-ws="base">
+    <div class="dw-ph"><h3>Ascolta e cambia</h3></div>
+    <div class="row" id="dwp-actions"></div>
+    <div id="dwp-out"></div>
+    <details style="margin-top:10px"><summary class="small">Altre opzioni (ascolto dell'Orecchio, salva)</summary><div class="row" id="dwp-more" style="margin-top:8px"></div></details>
+  </section>
+  <section class="dw-panel" id="dw-p-extra" data-ws="testo">
+    <details><summary><b>Assistente testi (AI locale, opzionale)</b></summary><div id="dwx-ai" style="margin-top:8px"></div></details>
+    <details style="margin-top:8px"><summary><b>Rime</b></summary><div id="dwx-rh" style="margin-top:8px"></div></details>
+  </section>
+  <section class="dw-panel" id="dw-p-sing" data-ws="voce">
+    <details open><summary><b>Guida al canto</b> <span class="small muted">quando entrare, quanto tenere, dove respirare</span></summary><div id="dwx-sg" style="margin-top:8px"></div></details>
+  </section>
 <section class="dw-panel" id="dw-p-talk" data-ws="testo base">
     <div class="dw-ph"><h3>Agenti</h3><span class="tag m">Modifica davvero</span></div>
     <p class="small muted">Scrivi cosa vuoi cambiare: mixer, 808, melodia, effetti, voce, master, velocità, tonalità, stile. La modifica si sente subito; se non ti piace premi Annulla.</p>
@@ -652,7 +674,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 20:40</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 20:55</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -702,7 +724,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     <div class="row"><button class="btn" id="ai-v" disabled>3 versioni della riga</button><button class="btn" id="ai-p" disabled>Punchline</button><button class="btn" id="ai-c" disabled>Riga dopo</button></div>
     <div id="ai-out"></div>
   </div>
-  <div class="card"><div class="card-head"><h3>Rime</h3><span class="tag m">Dalle tue parole</span></div>
+  <div class="card" id="rh-card"><div class="card-head"><h3>Rime</h3><span class="tag m">Dalle tue parole</span></div>
     <p class="small muted">Scrivi una parola (o lascia vuoto per usare l'ultima parola del testo) e trova rime piene e assonanze. Il dizionario cresce con i tuoi testi e con le cartelle artista (solo parole singole, mai frasi). Suggerimenti approssimati: l'accento non è scritto.</p>
     <div class="row"><input id="rh-word" type="text" autocomplete="off" placeholder="Parola (es. cuore)" style="flex:1;min-width:0"><button class="btn pri" id="rh-go">Trova rime</button></div>
     <div id="rh-out"></div>
@@ -11016,8 +11038,9 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     sel.innerHTML = LocalAI.MODELS.map(function (m) { return '<option value="' + m.id + '">' + m.label + ' · ' + m.note + '</option>'; }).join('');
     function ready(on) { ['#ai-v', '#ai-p', '#ai-c'].forEach(function (i) { $(i).disabled = !on; }); }
     var LINE = '';
+    function lyTa() { var d = $('#dw-lyrics'); return d && d.offsetParent ? d : $('#st-lyrics'); }
     function pickLine() {
-      var ta = $('#st-lyrics'), ls = lyricLines(cur().lyrics), t = ta ? ta.value : cur().lyrics;
+      var ta = lyTa(), ls = lyricLines(cur().lyrics), t = ta ? ta.value : cur().lyrics;
       if (ta && ta.selectionStart != null && ta.selectionEnd > ta.selectionStart) { LINE = t.slice(ta.selectionStart, ta.selectionEnd).trim(); }
       else { var pos = ta && ta.selectionStart != null ? ta.selectionStart : t.length, a = t.lastIndexOf('\n', pos - 1) + 1, b = t.indexOf('\n', pos); LINE = t.slice(a, b < 0 ? t.length : b).trim(); if (!LINE || /^\[/.test(LINE)) LINE = ls.length ? ls[ls.length - 1] : ''; }
       return LINE;
@@ -11044,9 +11067,9 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     $('#ai-c').addEventListener('click', function () { go('continua'); });
     $('#ai-out').addEventListener('click', function (e) {
       var i = e.target && e.target.getAttribute && e.target.getAttribute('data-ai-use'); if (i == null) return;
-      var out = $('#ai-out'), txt = out._res[+i], s = cur(), ta = $('#st-lyrics');
+      var out = $('#ai-out'), txt = out._res[+i], s = cur(), ta = lyTa();
       s.lyrics = out._task === 'continua' ? s.lyrics.replace(/\s+$/, '') + '\n' + txt : s.lyrics.replace(out._line, txt);
-      if (ta) ta.value = s.lyrics; persist(); out.insertAdjacentHTML('beforeend', '<p class="small">Inserita nel testo.</p>');
+      if (ta) { ta.value = s.lyrics; ta.dispatchEvent(new Event('input', { bubbles: true })); } persist(); out.insertAdjacentHTML('beforeend', '<p class="small">Inserita nel testo.</p>');
     });
   })();
   $('#rh-go').addEventListener('click', function () {
@@ -12551,6 +12574,18 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     $$('#tabs a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-ws') === ws); });
     if (ws === 'base' || ws === 'voce' || ws === 'mix') setTimeout(function () { if (SESSION.base) { dwDraw(SESSION.base); prDraw(); } }, 30);
   }
+
+  /* ===== Studio a passi: porto qui i comandi del Cervello (stessi id, stessi ascolti) ===== */
+  (function dwAdoptBrain() {
+    function mv(id, to, wrapLabel) { var el = $('#' + id), t = $(to); if (!el || !t) return; if (wrapLabel) el = el.closest('label') || el; t.appendChild(el); }
+    ['sb-style', 'sb-mood'].forEach(function (id) { mv(id, '#dwb-fields', true); });
+    ['sb-make', 'sb-six', 'sb-again'].forEach(function (id) { mv(id, '#dwb-actions'); });
+    ['sb-list', 'sb-msg'].forEach(function (id) { mv(id, '#dwb-out'); });
+    ['b-play', 'b-mel', 'b-new', 'b-stop'].forEach(function (id) { mv(id, '#dwp-actions'); });
+    ['b-status', 'b-out', 'ear-out'].forEach(function (id) { mv(id, '#dwp-out'); });
+    ['ear-go', 'b-save'].forEach(function (id) { mv(id, '#dwp-more'); });
+    mv('ai-card', '#dwx-ai'); mv('rh-card', '#dwx-rh'); mv('sg-card', '#dwx-sg');
+  })();
   $('#tabs').addEventListener('click', function (e) { var a = e.target.closest('[data-ws]'); if (!a) return; if (location.hash === '#daw') { e.preventDefault(); dwWs(a.getAttribute('data-ws')); window.scrollTo(0, 0); } else LIB.settings.ws = a.getAttribute('data-ws'); });
   // ---------- Ispettore della traccia: un tocco sulla traccia → Suono · Note · Canale ----------
   var INSP = { lane: null, tab: 'suono' };

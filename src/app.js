@@ -522,8 +522,9 @@
     sel.innerHTML = LocalAI.MODELS.map(function (m) { return '<option value="' + m.id + '">' + m.label + ' · ' + m.note + '</option>'; }).join('');
     function ready(on) { ['#ai-v', '#ai-p', '#ai-c'].forEach(function (i) { $(i).disabled = !on; }); }
     var LINE = '';
+    function lyTa() { var d = $('#dw-lyrics'); return d && d.offsetParent ? d : $('#st-lyrics'); }
     function pickLine() {
-      var ta = $('#st-lyrics'), ls = lyricLines(cur().lyrics), t = ta ? ta.value : cur().lyrics;
+      var ta = lyTa(), ls = lyricLines(cur().lyrics), t = ta ? ta.value : cur().lyrics;
       if (ta && ta.selectionStart != null && ta.selectionEnd > ta.selectionStart) { LINE = t.slice(ta.selectionStart, ta.selectionEnd).trim(); }
       else { var pos = ta && ta.selectionStart != null ? ta.selectionStart : t.length, a = t.lastIndexOf('\n', pos - 1) + 1, b = t.indexOf('\n', pos); LINE = t.slice(a, b < 0 ? t.length : b).trim(); if (!LINE || /^\[/.test(LINE)) LINE = ls.length ? ls[ls.length - 1] : ''; }
       return LINE;
@@ -550,9 +551,9 @@
     $('#ai-c').addEventListener('click', function () { go('continua'); });
     $('#ai-out').addEventListener('click', function (e) {
       var i = e.target && e.target.getAttribute && e.target.getAttribute('data-ai-use'); if (i == null) return;
-      var out = $('#ai-out'), txt = out._res[+i], s = cur(), ta = $('#st-lyrics');
+      var out = $('#ai-out'), txt = out._res[+i], s = cur(), ta = lyTa();
       s.lyrics = out._task === 'continua' ? s.lyrics.replace(/\s+$/, '') + '\n' + txt : s.lyrics.replace(out._line, txt);
-      if (ta) ta.value = s.lyrics; persist(); out.insertAdjacentHTML('beforeend', '<p class="small">Inserita nel testo.</p>');
+      if (ta) { ta.value = s.lyrics; ta.dispatchEvent(new Event('input', { bubbles: true })); } persist(); out.insertAdjacentHTML('beforeend', '<p class="small">Inserita nel testo.</p>');
     });
   })();
   $('#rh-go').addEventListener('click', function () {
@@ -2057,6 +2058,18 @@
     $$('#tabs a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-ws') === ws); });
     if (ws === 'base' || ws === 'voce' || ws === 'mix') setTimeout(function () { if (SESSION.base) { dwDraw(SESSION.base); prDraw(); } }, 30);
   }
+
+  /* ===== Studio a passi: porto qui i comandi del Cervello (stessi id, stessi ascolti) ===== */
+  (function dwAdoptBrain() {
+    function mv(id, to, wrapLabel) { var el = $('#' + id), t = $(to); if (!el || !t) return; if (wrapLabel) el = el.closest('label') || el; t.appendChild(el); }
+    ['sb-style', 'sb-mood'].forEach(function (id) { mv(id, '#dwb-fields', true); });
+    ['sb-make', 'sb-six', 'sb-again'].forEach(function (id) { mv(id, '#dwb-actions'); });
+    ['sb-list', 'sb-msg'].forEach(function (id) { mv(id, '#dwb-out'); });
+    ['b-play', 'b-mel', 'b-new', 'b-stop'].forEach(function (id) { mv(id, '#dwp-actions'); });
+    ['b-status', 'b-out', 'ear-out'].forEach(function (id) { mv(id, '#dwp-out'); });
+    ['ear-go', 'b-save'].forEach(function (id) { mv(id, '#dwp-more'); });
+    mv('ai-card', '#dwx-ai'); mv('rh-card', '#dwx-rh'); mv('sg-card', '#dwx-sg');
+  })();
   $('#tabs').addEventListener('click', function (e) { var a = e.target.closest('[data-ws]'); if (!a) return; if (location.hash === '#daw') { e.preventDefault(); dwWs(a.getAttribute('data-ws')); window.scrollTo(0, 0); } else LIB.settings.ws = a.getAttribute('data-ws'); });
   // ---------- Ispettore della traccia: un tocco sulla traccia → Suono · Note · Canale ----------
   var INSP = { lane: null, tab: 'suono' };
