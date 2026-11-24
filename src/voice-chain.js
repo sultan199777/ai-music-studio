@@ -293,7 +293,7 @@
   /* ====================== parametri ====================== */
   var DEFAULTS = {
     clean: { on: true, hp: 90, denoiseDb: 0 },
-    tune: { on: true, key: 'auto', tonic: 0, mode: 'maggiore', strength: 0.8, retuneMs: 25, humanize: 0.3, flexCents: 0, classic: false, vibrato: 0.7, drift: 0.3, vibratoDepth: 0, vibratoRate: 5.6, formantSemitones: 0, refCents: 0 },
+    tune: { on: true, key: 'auto', tonic: 0, mode: 'maggiore', strength: 0.8, retuneMs: 25, humanize: 0.3, flexCents: 0, classic: false, vibrato: 0.7, drift: 0.3, vibratoDepth: 0, vibratoRate: 5.6, formantSemitones: 0, refCents: 0, chordPull: 0 },
     eq: { on: true, boxyDb: -2, presenceDb: 2.5, airDb: 2, lowDb: 0, darkHz: 0 },
     deess: { on: true, freq: 6500, amount: 0.5 },
     comp: { on: true, thresholdDb: -20, ratio: 4, attackMs: 5, releaseMs: 250, peakDb: -8, makeupDb: 0 },
@@ -316,6 +316,7 @@
     ['tune.strength', 'num', 0, 1, 'Quanto correggere', '0 = niente, 1 = tutta la correzione.'],
     ['tune.retuneMs', 'num', 0, 200, 'Velocità (ms)', '0-5 = effetto robot, 10-50 = naturale, più alto = lascia passare di più.'],
     ['tune.humanize', 'num', 0, 1, 'Humanize', 'Rallenta la correzione nelle note lunghe così non suonano statiche.'],
+    ['tune.chordPull', 'num', 0, 1, 'Segui gli accordi', 'Quanto la voce viene portata sulle note dell\'accordo che suona in quel momento (0 = solo la scala).'],
     ['tune.flexCents', 'num', 0, 60, 'Flex-Tune (cent)', 'Zona attorno alla nota dove non si corregge; le scivolate passano.'],
     ['tune.classic', 'bool', 0, 1, 'Modo Classico', 'Passaggio a gradino netto tra le note (effetto duro).'],
     ['tune.vibrato', 'num', 0, 1.5, 'Vibrato naturale', 'Quanto del tuo vibrato resta (0 = piatto, 1 = come l\'hai fatto).'],
@@ -539,7 +540,7 @@
     function add(name, label, fn) { st.push({ name: name, label: label, fn: fn }); }
     if (p.clean.on) add('clean', 'Pulizia', function (S) { S.x = stageClean(S.x, S.sr, p.clean, S.rep); });
     if (p.tune.on) add('tune', 'Intonazione', function (S) {
-      var t = p.tune, o = { strength: t.strength, retuneMs: t.retuneMs, humanize: t.humanize, flexCents: t.flexCents, classic: t.classic, vibrato: t.vibrato, drift: t.drift, vibratoDepth: t.vibratoDepth, vibratoRate: t.vibratoRate, formantSemitones: t.formantSemitones, refCents: t.refCents, maxSeconds: 600, track: S.track };
+      var t = p.tune, o = { strength: t.strength, retuneMs: t.retuneMs, humanize: t.humanize, flexCents: t.flexCents, classic: t.classic, vibrato: t.vibrato, drift: t.drift, vibratoDepth: t.vibratoDepth, vibratoRate: t.vibratoRate, formantSemitones: t.formantSemitones, refCents: t.refCents, maxSeconds: 600, track: S.track, chords: S.ctx.chords, chordPull: t.chordPull, notes: S.ctx.notes, notesOnly: false };
       if (t.key === 'auto') o.key = 'auto'; else { o.tonic = t.tonic; o.mode = t.mode; }
       var r = Autotune.correct(S.x, S.sr, o); S.x = r.samples; S.rep.tune = r.stats;
       S.ctx.tonic = r.stats.tonic; S.ctx.mode = r.stats.mode; S.ctx.scaleKnown = r.stats.mode !== 'cromatica';
@@ -563,7 +564,7 @@
   }
   function newState(x, sr, params, ctx) {
     var p = sanitize(params);
-    return { p: p, S: { x: Float32Array.from(x), sr: sr, track: null, ctx: { bpm: ctx && ctx.bpm, scaleKnown: p.tune.mode !== 'cromatica', tonic: p.tune.tonic, mode: p.tune.mode }, rep: { warnings: [], stageMs: {}, peaks: {} } } };
+    return { p: p, S: { x: Float32Array.from(x), sr: sr, track: null, ctx: { bpm: ctx && ctx.bpm, chords: ctx && ctx.chords, notes: ctx && ctx.notes, scaleKnown: p.tune.mode !== 'cromatica', tonic: p.tune.tonic, mode: p.tune.mode }, rep: { warnings: [], stageMs: {}, peaks: {} } } };
   }
   function finishReport(S, input) {
     var rep = S.rep; rep.inputPeakDb = peakDb(input); rep.outputPeakDb = peakDb(S.x); rep.inputRmsDb = gatedRmsDb(input, S.sr); rep.outputRmsDb = gatedRmsDb(S.x, S.sr); rep.sampleRate = S.sr;

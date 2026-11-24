@@ -1477,7 +1477,19 @@
       var label = !auto && k.id === 'intensity' ? 'Quanto lavoro sulla voce' : k.label;
       return '<label class="f"><span>' + esc(label) + ' <b>' + v + '</b></span><input type="range" min="0" max="100" value="' + v + '" data-mk="' + k.id + '"><small class="muted">' + esc(k.hint) + '</small></label>';
     }).join('');
+    var cp = m.chordPull == null ? 50 : m.chordPull, fxa = m.fxMix == null ? 70 : m.fxMix;
+    $('#dw-mic-knobs').insertAdjacentHTML('beforeend', (auto ? '<label class="f"><span>Segui gli accordi <b>' + cp + '</b></span><input type="range" min="0" max="100" value="' + cp + '" data-mk2="chordPull"><small class="muted">La voce va sulle note dell\'accordo che suona in quel momento (0 = solo la scala).</small></label>' : '') +
+      '<label class="f"><span>Quantità effetto <b>' + fxa + '</b></span><input type="range" min="0" max="100" value="' + fxa + '" data-mk2="fxMix"><small class="muted">Per Vocoder, Metallico e Radio.</small></label>');
+    $('#dw-mic-fx').innerHTML = [['', 'Nessun effetto'], ['vocoder', 'Vocoder sugli accordi'], ['metallico', 'Metallico / robot'], ['radio', 'Radio / telefono']].map(function (f) { return '<button class="chip' + ((m.fx || '') === f[0] ? ' on' : '') + '" data-mfx="' + f[0] + '">' + f[1] + '</button>'; }).join('');
+    var pr = LIB.settings.micPresets || [];
+    $('#dw-mic-presets').innerHTML = pr.map(function (q, i) { return '<button class="chip" data-mpr="' + i + '">' + esc(q.name) + '</button>'; }).join('') + '<button class="chip" id="dw-mic-save">+ Salva come mio preset</button>';
     $('#dw-mic-ab').textContent = DW.raw ? 'Senti la voce regolata' : 'Senti la voce originale';
+  }
+  // accordi della base nel tempo della prova (per autotune che segue gli accordi e vocoder)
+  function takeChords(t) {
+    var b = SESSION.base; if (!b || !b.events || !b.events.chords) return [];
+    var bs = 240 / b.bpm, lat = t.lat || 0;
+    return b.events.chords.map(function (c) { return { t0: c.bar * bs + lat, t1: (c.bar + 1) * bs + lat, pcs: c.midis.map(function (x) { return ((x % 12) + 12) % 12; }) }; });
   }
   async function micApply(quiet) {
     var t = voiceTake(), el = $('#dw-mic-msg');
@@ -1487,11 +1499,14 @@
     try {
       if (!t.vlInfo) t.vlInfo = VoiceChain.analyzeVoice(t.mono, t.sr);
       var info = t.vlInfo, as = VoiceChain.autoSettings(info), adv = auto ? {} : { tune: { on: false } };
+      if (auto) adv.tune = { chordPull: (m.chordPull == null ? 50 : m.chordPull) / 100 };
       var built = VoiceChain.buildParams({ ids: m.ids, macros: m.macros, auto: as, advanced: adv, keyOverride: { tonic: p.tonic, mode: p.mode } });
-      var res = await VoiceChain.renderAsync(t.mono, t.sr, built.params, { bpm: p.bpm }, function (label) { el.textContent = label + '…'; });
-      t.final = res.samples; t.finalV = (t.finalV || 0) + 1; t.finalRes = null; DW.raw = false; DW.bufKey = '';
+      var chords = takeChords(t), res = await VoiceChain.renderAsync(t.mono, t.sr, built.params, { bpm: p.bpm, chords: chords, notes: auto && t.notes ? t.notes.filter(function (n) { return n.edited; }).map(function (n) { return { t0: n.t0, t1: n.t1, target: n.target, amount: n.amount }; }) : null }, function (label) { el.textContent = label + '…'; });
+      var outV = res.samples;
+      if (m.fx) { el.textContent = 'Effetto ' + VoiceFx.FX[m.fx].nome + '…'; await tick(); outV = VoiceFx.apply(m.fx, outV, t.sr, { chords: chords, tonic: p.tonic, mix: (m.fxMix == null ? 70 : m.fxMix) / 100 }); }
+      t.final = outV; t.finalV = (t.finalV || 0) + 1; t.finalRes = null; DW.raw = false; DW.bufKey = '';
       var names = m.ids.map(function (id) { var c = VoiceChain.CHARACTERS.filter(function (x) { return x.id === id; })[0]; return c ? c.label : id; }).join(' + ');
-      el.textContent = (auto ? 'Autotune in ' + NOTES[p.tonic] + ' ' + p.mode + ' (la tonalità della base)' : 'Voce pulita, senza autotune') + ' · ' + names + '. ' + (function () { var nn = (as.notes || []).filter(function (x) { return !/onalit/.test(x); }); return nn.length ? 'Ho misurato: ' + nn.slice(0, 2).join(' ') : ''; })() + ' Premi Play.';
+      el.textContent = (auto ? 'Autotune in ' + NOTES[p.tonic] + ' ' + p.mode + ' (la tonalità della base)' : 'Voce pulita, senza autotune') + ' · ' + names + (m.fx ? ' · effetto ' + VoiceFx.FX[m.fx].nome : '') + (auto ? ' · segue gli accordi ' + (m.chordPull == null ? 50 : m.chordPull) + '%' : '') + '. ' + (function () { var nn = (as.notes || []).filter(function (x) { return !/onalit/.test(x); }); return nn.length ? 'Ho misurato: ' + nn.slice(0, 2).join(' ') : ''; })() + ' Premi Play.';
       coachRec('change', coachCtx(), { role: 'mic', from: null, to: m.mode + ':' + m.ids.join('+') });
       micRender(); if (!quiet) { dwStop(true); await dwRefresh(); }
       return true;
@@ -1503,6 +1518,13 @@
     if (md) { m.mode = md; m.ids = [md === 'autotune' ? 'melodico' : 'naturale']; m.macros = {}; persist(); micRender(); if (voiceTake()) micApply(); }
     if (mc) { var i = m.ids.indexOf(mc); if (i >= 0) { if (m.ids.length > 1) m.ids.splice(i, 1); } else { m.ids.push(mc); if (m.ids.length > 3) m.ids.shift(); } m.macros = {}; persist(); micRender(); }
   });
+  $('#dw-p-mic').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return; var m = micSet();
+    if (b.hasAttribute('data-mfx')) { m.fx = b.getAttribute('data-mfx'); persist(); micRender(); $('#dw-mic-msg').textContent = m.fx ? 'Effetto scelto: premi Applica alla voce.' : 'Nessun effetto.'; }
+    if (b.id === 'dw-mic-save') { var nm = (prompt('Nome del preset (es. "Mia voce trap")') || '').trim().slice(0, 30); if (!nm) return; LIB.settings.micPresets = (LIB.settings.micPresets || []).concat([{ name: nm, set: JSON.parse(JSON.stringify(m)) }]); persist(); micRender(); $('#dw-mic-msg').textContent = 'Preset "' + nm + '" salvato.'; }
+    if (b.hasAttribute('data-mpr')) { var q = (LIB.settings.micPresets || [])[+b.getAttribute('data-mpr')]; if (q) { LIB.settings.mic = JSON.parse(JSON.stringify(q.set)); persist(); micRender(); $('#dw-mic-msg').textContent = 'Preset "' + q.name + '" caricato.'; if (voiceTake()) micApply(); } }
+  });
+  $('#dw-mic-knobs').addEventListener('change', function (e) { var k = e.target.getAttribute('data-mk2'); if (!k) return; micSet()[k] = +e.target.value; persist(); micRender(); });
   $('#dw-mic-knobs').addEventListener('input', function (e) { var k = e.target.getAttribute('data-mk'); if (!k) return; micSet().macros[k] = +e.target.value; e.target.previousElementSibling.querySelector('b').textContent = e.target.value; persist(); });
   $('#dw-mic-apply').addEventListener('click', function () { micApply(false); });
   $('#dw-mic-ab').addEventListener('click', async function () { if (!voiceTake()) { $('#dw-mic-msg').textContent = 'Nessuna voce registrata.'; return; } DW.raw = !DW.raw; DW.bufKey = ''; micRender(); var was = DW.playing, at = DW.playing ? (getCtx().currentTime - DW.t0) : (DW.from || 0); dwStop(true); await dwRefresh(); if (was) dwPlay(Math.max(0, at)); $('#dw-mic-msg').textContent = DW.raw ? 'Ora senti la voce ORIGINALE (come è uscita dal microfono).' : 'Ora senti la voce REGOLATA.'; });
