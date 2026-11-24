@@ -43,3 +43,7 @@ Regola della persona: andare avanti un passo alla volta, senza rianalizzare tutt
 ## Aggiornamento 24/11 - Catena di master (fatto, testato)
 - `src/master.js`: highpass, EQ leggero, compressore "colla", saturazione, volume medio al bersaglio (Morbido -17, Standard -14, Forte -11 dBFS RMS), limitatore con anticipo (tetto -1 dBFS). Applicata a base e mix con voce; selettore in Studio.
 - 116 test passano; verificato in Chromium iPhone emulato. Valori misurati; il giudizio sul suono resta all'orecchio dell'utente.
+
+## Aggiornamento 24/11 - Grafica Cosmo (fatto, controllato con screenshot)
+- Tema Cosmo (notte) di default: sfondo #07070f, neon ciano/magenta/viola, vetro. Sfera nella scheda di registrazione: colori dall'emozione del testo, pulsa col livello del microfono. Karaoke su vetro scuro con bordo neon.
+- Il tema Chiaro resta disponibile in Impostazioni. Da fare: sfera anche in Home, piano roll in stile Cosmo, schermata Libreria.

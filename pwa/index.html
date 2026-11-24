@@ -16,21 +16,21 @@
   --grad:linear-gradient(135deg,#6a4cff 0%,#2a74f5 60%,#14b8d4 100%);
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#12141e; --bg2:#181b28; --ink:#eef0fb; --muted:#a3a9c6; --line:rgba(180,190,255,.14);
-  --card:rgba(32,36,54,.72); --card-solid:#1d2030; --field:#171a27; --field-line:rgba(180,190,255,.22);
-  --violet:#9a82ff; --blue:#6aa2ff; --cyan:#4fd6ee; --pink:#f27ac4; --on-accent:#10121c;
+  --bg:#07070f; --bg2:#0d0d1c; --ink:#eef0fb; --muted:#a3a9c6; --line:rgba(180,190,255,.14);
+  --card:rgba(255,255,255,.06); --card-solid:#14142a; --field:#0e0e20; --field-line:rgba(160,170,255,.28);
+  --violet:#a58cff; --blue:#6aa2ff; --cyan:#00e5ff; --pink:#ff3dc8; --on-accent:#10121c;
   --ok:#52d6a2; --warn:#f0b35a; --bad:#ff7d92; --ok-bg:rgba(82,214,162,.14); --warn-bg:rgba(240,179,90,.14); --info-bg:rgba(106,162,255,.16);
-  --glow1:hsl(var(--h1) 100% 66% / .30); --glow2:hsl(var(--h2) 85% 55% / .22); --glow3:hsl(var(--h3) 85% 62% / .18);
-  --shadow:0 10px 30px rgba(0,0,0,.35); --tabbg:rgba(24,27,40,.88);
-  --grad:linear-gradient(135deg,#8f78ff 0%,#5b94ff 60%,#3fd0e8 100%); color-scheme:dark}}
+  --glow1:hsl(var(--h1) 100% 62% / .38); --glow2:hsl(var(--h2) 100% 55% / .30); --glow3:hsl(var(--h3) 100% 60% / .26);
+  --shadow:0 10px 34px rgba(0,0,0,.5); --tabbg:rgba(10,10,24,.9);
+  --grad:linear-gradient(135deg,#00e5ff 0%,#7b5cff 55%,#ff3dc8 100%); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#12141e; --bg2:#181b28; --ink:#eef0fb; --muted:#a3a9c6; --line:rgba(180,190,255,.14);
-  --card:rgba(32,36,54,.72); --card-solid:#1d2030; --field:#171a27; --field-line:rgba(180,190,255,.22);
-  --violet:#9a82ff; --blue:#6aa2ff; --cyan:#4fd6ee; --pink:#f27ac4; --on-accent:#10121c;
+  --bg:#07070f; --bg2:#0d0d1c; --ink:#eef0fb; --muted:#a3a9c6; --line:rgba(180,190,255,.14);
+  --card:rgba(255,255,255,.06); --card-solid:#14142a; --field:#0e0e20; --field-line:rgba(160,170,255,.28);
+  --violet:#a58cff; --blue:#6aa2ff; --cyan:#00e5ff; --pink:#ff3dc8; --on-accent:#10121c;
   --ok:#52d6a2; --warn:#f0b35a; --bad:#ff7d92; --ok-bg:rgba(82,214,162,.14); --warn-bg:rgba(240,179,90,.14); --info-bg:rgba(106,162,255,.16);
-  --glow1:hsl(var(--h1) 100% 66% / .30); --glow2:hsl(var(--h2) 85% 55% / .22); --glow3:hsl(var(--h3) 85% 62% / .18);
-  --shadow:0 10px 30px rgba(0,0,0,.35); --tabbg:rgba(24,27,40,.88);
-  --grad:linear-gradient(135deg,#8f78ff 0%,#5b94ff 60%,#3fd0e8 100%); color-scheme:dark}
+  --glow1:hsl(var(--h1) 100% 62% / .38); --glow2:hsl(var(--h2) 100% 55% / .30); --glow3:hsl(var(--h3) 100% 60% / .26);
+  --shadow:0 10px 34px rgba(0,0,0,.5); --tabbg:rgba(10,10,24,.9);
+  --grad:linear-gradient(135deg,#00e5ff 0%,#7b5cff 55%,#ff3dc8 100%); color-scheme:dark}
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
@@ -175,6 +175,28 @@ details.card[open]>summary{margin-bottom:8px}
 .meter-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#38bdf8,#7c5cff);transition:width .06s}
 .meter-bar.hot i{background:#ef4444}
 
+/* ===== Cosmo: la sfera che segue l'emozione e la voce ===== */
+.orbwrap{position:relative;display:grid;place-items:center;height:210px;margin:6px 0 10px}
+.orbwrap::before,.orbwrap::after{content:"";position:absolute;border-radius:50%;border:1px solid var(--line)}
+.orbwrap::before{width:196px;height:196px}
+.orbwrap::after{width:158px;height:158px;border-style:dashed;opacity:.7;animation:spin 40s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.orb{width:118px;height:118px;border-radius:50%;--lvl:0;
+  background:radial-gradient(circle at 35% 30%,#fff 0,hsl(var(--h2) 100% 85%) 16%,hsl(var(--h1) 90% 60%) 55%,hsl(var(--h3) 70% 18%) 100%);
+  box-shadow:0 0 calc(40px + var(--lvl)*60px) hsl(var(--h1) 100% 60% / .65),0 0 calc(90px + var(--lvl)*90px) hsl(var(--h3) 100% 60% / .32);
+  transform:scale(calc(1 + var(--lvl)*.22));transition:transform .08s,box-shadow .08s;animation:breathe 5s ease-in-out infinite}
+@keyframes breathe{0%,100%{filter:brightness(1)}50%{filter:brightness(1.12)}}
+.orb-cap{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:.78rem;color:var(--muted)}
+.orb-cap b{color:var(--ink)}
+@media (prefers-reduced-motion:reduce){.orb,.orbwrap::after{animation:none}}
+:root[data-theme="dark"] .btn.pri,:root[data-theme="dark"] #rec-go{box-shadow:0 0 22px hsl(var(--h3) 100% 60% / .45)}
+/* Cosmo: testo del karaoke su vetro scuro con bordo neon, leggibile */
+:root[data-theme="dark"] .karaoke{background:rgba(255,255,255,.05);color:var(--ink);border:1px solid hsl(var(--h2) 100% 60% / .55);box-shadow:0 0 26px hsl(var(--h1) 100% 60% / .22) inset,0 0 18px hsl(var(--h3) 100% 60% / .18);min-height:96px}
+:root[data-theme="dark"] .karaoke b{color:#fff;font-size:1.15rem}
+:root[data-theme="dark"] .karaoke .mode{background:var(--cyan);color:#07070f}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .karaoke{background:rgba(255,255,255,.05);color:var(--ink);border:1px solid hsl(var(--h2) 100% 60% / .55);box-shadow:0 0 26px hsl(var(--h1) 100% 60% / .22) inset;min-height:96px}
+:root:not([data-theme="light"]) .karaoke b{color:#fff;font-size:1.15rem}:root:not([data-theme="light"]) .karaoke .mode{background:var(--cyan);color:#07070f}}
+
 </style>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></symbol>
@@ -284,6 +306,7 @@ details.card[open]>summary{margin-bottom:8px}
   </div>
 
   <div class="card"><div class="card-head"><h3>Registra con il microfono</h3></div>
+    <div class="orbwrap"><div class="orb" id="orb"></div><div class="orb-cap" id="orb-cap">Emozione del testo: <b>neutra</b></div></div>
     <div class="karaoke" id="rec-kar"><div><b>Premi Registra: parte la base e vedi la riga</b><small>Usa le cuffie</small></div></div>
     <div class="meter-bar" id="rec-meter" hidden><i></i></div>
     <div class="row"><button class="btn pri" id="rec-go">Registra con la base</button><button class="btn" id="rec-stop" hidden>Fine registrazione</button></div>
@@ -3291,7 +3314,7 @@ details.card[open]>summary{margin-bottom:8px}
 
   /* ================= Dati e salvataggio ================= */
   var STATUSES = ['idea', 'testo', 'base', 'voce', 'mix', 'clip', 'pubblicata'];
-  var LIB = { songs: [], cur: null, settings: { theme: 'chiaro', artist: '' } };
+  var LIB = { songs: [], cur: null, settings: { theme: 'notte', artist: '' } };
   var SESSION = { takes: [], takeId: null, imported: null, useImported: false, base: null, baseKey: '', photo: null, exports: [], clipDone: false, baseMade: false };
   var store = { kind: 'locale', doc: null, busy: false, again: false, ok: false };
 
@@ -3326,7 +3349,7 @@ details.card[open]>summary{margin-bottom:8px}
   }
   function sanitize(d) {
     if (!d || typeof d !== 'object' || !Array.isArray(d.songs)) return null;
-    d.settings = d.settings || { theme: 'chiaro', artist: '' };
+    d.settings = d.settings || { theme: 'notte', artist: '' };
     d.songs.forEach(function (s) { s.folder = s.folder || 'lavorazione'; s.modes = s.modes || {}; s.prod = Object.assign(defaultProd(), s.prod || {}); s.prod.levels = Object.assign(defaultProd().levels, s.prod.levels || {}); s.versions = s.versions || []; });
     return d;
   }
@@ -3497,6 +3520,7 @@ details.card[open]>summary{margin-bottom:8px}
   function applyMood() {
     var m = (topMood(cur()) || '').toLowerCase(), key = PAL[m] ? m : 'neutro', p = PAL[key], st = document.documentElement.style;
     st.setProperty('--h1', p[0]); st.setProperty('--h2', p[1]); st.setProperty('--h3', p[2]);
+    var oc = document.getElementById('orb-cap'); if (oc) oc.innerHTML = 'Emozione del testo: <b>' + (key === 'neutro' ? 'neutra' : key) + '</b>';
     return key;
   }
 
@@ -3957,7 +3981,7 @@ details.card[open]>summary{margin-bottom:8px}
     proc.onaudioprocess = function (ev) { var d = ev.inputBuffer.getChannelData(0), m = 0; chunks.push(new Float32Array(d)); for (var i = 0; i < d.length; i++) { var v = d[i] < 0 ? -d[i] : d[i]; if (v > m) m = v; } R.level = m; };
     mic.connect(proc); proc.connect(mute); mute.connect(ctx.destination); REC = R; recUi(true);
     var kt = karaokeTick(mx.bpm, '#rec-kar');
-    var ok = playBuf(mx.samples, mx.sr, function (t) { kt(t); var m = R.level; $('#rec-meter i').style.width = Math.min(100, Math.round(m * 140)) + '%'; $('#rec-meter').classList.toggle('hot', m > 0.95); }, function () { finishRec(); });
+    var ok = playBuf(mx.samples, mx.sr, function (t) { kt(t); var m = R.level; $('#orb').style.setProperty('--lvl', Math.min(1, m * 1.6).toFixed(2)); $('#rec-meter i').style.width = Math.min(100, Math.round(m * 140)) + '%'; $('#rec-meter').classList.toggle('hot', m > 0.95); }, function () { finishRec(); });
     R.delta = Math.max(0, (player.t0 || R.started) - R.started); R.lat = (ctx.baseLatency || 0) + (ctx.outputLatency || 0);
     if (!ok) { finishRec(); return; }
     msg.textContent = 'Registro. Usa le cuffie, altrimenti la base entra nel microfono.';
@@ -3968,7 +3992,7 @@ details.card[open]>summary{margin-bottom:8px}
     try { R.mic.disconnect(); R.proc.disconnect(); R.mute.disconnect(); R.proc.onaudioprocess = null; } catch (e) {}
     R.stream.getTracks().forEach(function (t) { t.stop(); }); recUi(false);
     var n = 0; R.chunks.forEach(function (c) { n += c.length; }); var sr = R.ctx.sampleRate, msg = $('#rec-msg');
-    $('#rec-kar').innerHTML = '<div><b>Registrazione finita</b></div>';
+    $('#rec-kar').innerHTML = '<div><b>Registrazione finita</b></div>'; $('#orb').style.setProperty('--lvl', 0);
     if (n < sr * 0.8) { msg.textContent = 'Registrazione troppo corta: riprova.'; return; }
     var mono = new Float32Array(n), o = 0; R.chunks.forEach(function (c) { mono.set(c, o); o += c.length; });
     var pk = 0; for (var i = 0; i < n; i += 7) { var v = mono[i] < 0 ? -mono[i] : mono[i]; if (v > pk) pk = v; }
@@ -4349,7 +4373,7 @@ details.card[open]>summary{margin-bottom:8px}
   }
   function renderSettings() {
     var t = LIB.settings.theme;
-    $('#x-theme').innerHTML = [['chiaro', 'Chiaro'], ['notte', 'Notte'], ['auto', 'Automatico']].map(function (x) { return '<button class="chip ' + (t === x[0] ? 'on' : '') + '" data-theme-set="' + x[0] + '">' + x[1] + '</button>'; }).join('');
+    $('#x-theme').innerHTML = [['notte', 'Cosmo (notte)'], ['chiaro', 'Chiaro'], ['auto', 'Automatico']].map(function (x) { return '<button class="chip ' + (t === x[0] ? 'on' : '') + '" data-theme-set="' + x[0] + '">' + x[1] + '</button>'; }).join('');
     $('#x-artist').value = LIB.settings.artist || '';
     $('#x-store').textContent = store.kind === 'account' ? 'I tuoi testi e piani sono salvati sul tuo account e ti seguono da un dispositivo all\'altro.' : 'Salvataggio solo su questo browser: se cancelli i dati del sito li perdi. Esporta un backup ogni tanto.';
     $('#x-int').innerHTML = [

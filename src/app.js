@@ -16,7 +16,7 @@
 
   /* ================= Dati e salvataggio ================= */
   var STATUSES = ['idea', 'testo', 'base', 'voce', 'mix', 'clip', 'pubblicata'];
-  var LIB = { songs: [], cur: null, settings: { theme: 'chiaro', artist: '' } };
+  var LIB = { songs: [], cur: null, settings: { theme: 'notte', artist: '' } };
   var SESSION = { takes: [], takeId: null, imported: null, useImported: false, base: null, baseKey: '', photo: null, exports: [], clipDone: false, baseMade: false };
   var store = { kind: 'locale', doc: null, busy: false, again: false, ok: false };
 
@@ -51,7 +51,7 @@
   }
   function sanitize(d) {
     if (!d || typeof d !== 'object' || !Array.isArray(d.songs)) return null;
-    d.settings = d.settings || { theme: 'chiaro', artist: '' };
+    d.settings = d.settings || { theme: 'notte', artist: '' };
     d.songs.forEach(function (s) { s.folder = s.folder || 'lavorazione'; s.modes = s.modes || {}; s.prod = Object.assign(defaultProd(), s.prod || {}); s.prod.levels = Object.assign(defaultProd().levels, s.prod.levels || {}); s.versions = s.versions || []; });
     return d;
   }
@@ -222,6 +222,7 @@
   function applyMood() {
     var m = (topMood(cur()) || '').toLowerCase(), key = PAL[m] ? m : 'neutro', p = PAL[key], st = document.documentElement.style;
     st.setProperty('--h1', p[0]); st.setProperty('--h2', p[1]); st.setProperty('--h3', p[2]);
+    var oc = document.getElementById('orb-cap'); if (oc) oc.innerHTML = 'Emozione del testo: <b>' + (key === 'neutro' ? 'neutra' : key) + '</b>';
     return key;
   }
 
@@ -682,7 +683,7 @@
     proc.onaudioprocess = function (ev) { var d = ev.inputBuffer.getChannelData(0), m = 0; chunks.push(new Float32Array(d)); for (var i = 0; i < d.length; i++) { var v = d[i] < 0 ? -d[i] : d[i]; if (v > m) m = v; } R.level = m; };
     mic.connect(proc); proc.connect(mute); mute.connect(ctx.destination); REC = R; recUi(true);
     var kt = karaokeTick(mx.bpm, '#rec-kar');
-    var ok = playBuf(mx.samples, mx.sr, function (t) { kt(t); var m = R.level; $('#rec-meter i').style.width = Math.min(100, Math.round(m * 140)) + '%'; $('#rec-meter').classList.toggle('hot', m > 0.95); }, function () { finishRec(); });
+    var ok = playBuf(mx.samples, mx.sr, function (t) { kt(t); var m = R.level; $('#orb').style.setProperty('--lvl', Math.min(1, m * 1.6).toFixed(2)); $('#rec-meter i').style.width = Math.min(100, Math.round(m * 140)) + '%'; $('#rec-meter').classList.toggle('hot', m > 0.95); }, function () { finishRec(); });
     R.delta = Math.max(0, (player.t0 || R.started) - R.started); R.lat = (ctx.baseLatency || 0) + (ctx.outputLatency || 0);
     if (!ok) { finishRec(); return; }
     msg.textContent = 'Registro. Usa le cuffie, altrimenti la base entra nel microfono.';
@@ -693,7 +694,7 @@
     try { R.mic.disconnect(); R.proc.disconnect(); R.mute.disconnect(); R.proc.onaudioprocess = null; } catch (e) {}
     R.stream.getTracks().forEach(function (t) { t.stop(); }); recUi(false);
     var n = 0; R.chunks.forEach(function (c) { n += c.length; }); var sr = R.ctx.sampleRate, msg = $('#rec-msg');
-    $('#rec-kar').innerHTML = '<div><b>Registrazione finita</b></div>';
+    $('#rec-kar').innerHTML = '<div><b>Registrazione finita</b></div>'; $('#orb').style.setProperty('--lvl', 0);
     if (n < sr * 0.8) { msg.textContent = 'Registrazione troppo corta: riprova.'; return; }
     var mono = new Float32Array(n), o = 0; R.chunks.forEach(function (c) { mono.set(c, o); o += c.length; });
     var pk = 0; for (var i = 0; i < n; i += 7) { var v = mono[i] < 0 ? -mono[i] : mono[i]; if (v > pk) pk = v; }
@@ -1074,7 +1075,7 @@
   }
   function renderSettings() {
     var t = LIB.settings.theme;
-    $('#x-theme').innerHTML = [['chiaro', 'Chiaro'], ['notte', 'Notte'], ['auto', 'Automatico']].map(function (x) { return '<button class="chip ' + (t === x[0] ? 'on' : '') + '" data-theme-set="' + x[0] + '">' + x[1] + '</button>'; }).join('');
+    $('#x-theme').innerHTML = [['notte', 'Cosmo (notte)'], ['chiaro', 'Chiaro'], ['auto', 'Automatico']].map(function (x) { return '<button class="chip ' + (t === x[0] ? 'on' : '') + '" data-theme-set="' + x[0] + '">' + x[1] + '</button>'; }).join('');
     $('#x-artist').value = LIB.settings.artist || '';
     $('#x-store').textContent = store.kind === 'account' ? 'I tuoi testi e piani sono salvati sul tuo account e ti seguono da un dispositivo all\'altro.' : 'Salvataggio solo su questo browser: se cancelli i dati del sito li perdi. Esporta un backup ogni tanto.';
     $('#x-int').innerHTML = [
