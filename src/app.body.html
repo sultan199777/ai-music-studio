@@ -201,7 +201,9 @@
     <label class="f"><span>Battute <b id="b-barsv">8</b></span><input type="range" id="b-bars" min="4" max="64" step="1" value="8"></label>
     <h3 style="margin-top:12px">Strumenti</h3>
     <div id="b-levels"></div>
+    <label class="f"><span>Umore voluto</span><select id="sb-mood"><option value="">Lo decide il testo</option><option value="malinconico">Malinconico</option><option value="dark">Dark</option><option value="euforico">Euforico</option><option value="aggressivo">Aggressivo</option><option value="romantico">Romantico</option><option value="nostalgico">Nostalgico</option></select></label>
     <div class="row" style="margin-top:10px">
+      <button class="btn" id="ear-go">Orecchio di Sultan · ascolta</button>
       <button class="btn pri" id="sb-make">Cervello Sultan · crea dal testo</button>
       <button class="btn" id="sb-again">Altra versione dal testo</button>
       <button class="btn pri" id="b-play"><svg><use href="#i-play"/></svg>Crea e ascolta</button>
@@ -210,6 +212,7 @@
       <button class="btn" id="b-save">Salva la base</button>
     </div>
     <div class="status" id="sb-msg"></div>
+    <div id="ear-out"></div>
     <div class="status" id="b-status"></div>
     <div id="b-out"></div>
   </div>
@@ -334,7 +337,7 @@
       <label class="f"><span>Aggiusta di <b id="v-offv">0 ms</b></span><input type="range" id="v-off" min="-300" max="300" step="10" value="0"></label>
       <div class="row" style="margin-top:10px"><button class="btn" id="v-mkbase">Crea la base sulla mia voce</button></div>
       <p class="small muted">Usa la tonalità scelta sopra e la durata della tua registrazione. Il tempo (BPM) lo scegli tu in Studio.</p>
-      <div class="row" style="margin-top:10px"><button class="btn pri" id="v-mix"><svg><use href="#i-play"/></svg>Voce + base</button><button class="btn" id="v-save">Salva la voce</button><button class="btn" id="v-savemix">Salva il mix</button></div>
+      <div class="row" style="margin-top:10px"><button class="btn" id="v-automix">Mix automatico (Orecchio)</button><button class="btn pri" id="v-mix"><svg><use href="#i-play"/></svg>Voce + base</button><button class="btn" id="v-save">Salva la voce</button><button class="btn" id="v-savemix">Salva il mix</button></div>
       <div class="status" id="v-mixmsg"></div>
     </div>
   </div>
@@ -421,6 +424,25 @@
   <div class="card"><h3>Fonti e licenze</h3><p class="small muted">Campioni registrati: VSCO 2 Community Edition e VCSL di Versilian Studios, licenza CC0 1.0 (pubblico dominio, uso libero anche commerciale). Convertiti in mono 22 kHz compressi (ADPCM 4 bit): qualità buona ma inferiore agli originali. Chitarre: sintetizzate dal programma (Karplus-Strong). Ogni nota è stata misurata: l'altezza corrisponde entro ±0,3 semitoni.</p></div>
 </main>
 
+<!-- CARTELLE ARTISTA -->
+<main class="view" id="v-artisti" hidden>
+  <div class="head"><div class="eyebrow">Sultan Sound</div><h1>Cartelle artista</h1></div>
+  <div class="card"><div class="card-head"><h3>Impara lo stile da un artista</h3><span class="tag m">Solo statistiche</span></div>
+    <p class="small muted">Crea una cartella per artista e caricaci dei testi (file .txt o testo incollato). L'app misura sillabe, rime, ripetizioni, umore e associazioni, poi <b>butta via il testo</b> e tiene solo i numeri. Servono per capire lo stile e per guidare i tuoi testi e le tue basi. Non copia versi e non imita voci.</p>
+    <label class="f"><span>Nome della cartella (es. Sfera Ebbasta)</span><input id="ar-name" type="text" autocomplete="off" placeholder="Nome artista"></label>
+    <label class="f"><span>File di testo (.txt), anche più insieme</span><input id="ar-files" type="file" accept=".txt,text/plain" multiple></label>
+    <label class="f"><span>Oppure incolla un testo (più brani separati da una riga con ---)</span><textarea id="ar-text" rows="5" placeholder="Incolla qui"></textarea></label>
+    <div class="row"><button class="btn pri" id="ar-add">Aggiungi alla cartella</button></div>
+    <div class="status" id="ar-msg"></div>
+  </div>
+  <div id="ar-list"></div>
+  <div class="card"><div class="card-head"><h3>Il mio modello</h3><span class="tag a">Mescola gli artisti spuntati</span></div>
+    <div id="ar-model" class="small muted">Spunta una o più cartelle: il modello è la loro media.</div>
+    <div class="row" style="margin-top:8px"><button class="btn sm pri" id="ar-cmp">Confronta il testo della canzone aperta</button></div>
+    <div id="ar-adv"></div>
+  </div>
+</main>
+
 <main class="view" id="v-libreria" hidden>
   <div class="head"><div class="eyebrow">Libreria dei contenuti</div><h1>Materiali</h1></div>
   <div id="l-out"></div>
@@ -428,7 +450,13 @@
 
 <!-- IMPOSTAZIONI -->
 <!-- ---- Beat Lab (blocco aggiunto): vista #beatlab ---- -->
-<main class="view" id="v-beatlab" hidden><div id="bl-root"></div></main>
+<main class="view" id="v-beatlab" hidden>
+  <div class="card"><div class="card-head"><h3>Cervello Sultan</h3><span class="tag a">Dal testo</span></div>
+    <p class="small muted">Legge il testo della canzone aperta (e il tuo modello artisti, se ne hai spuntato uno) e imposta qui stile, velocità, tonalità e batteria. Un altro testo, un'altra base.</p>
+    <label class="f"><span>Umore voluto</span><select id="bl-mood"><option value="">Lo decide il testo</option><option value="malinconico">Malinconico</option><option value="dark">Dark</option><option value="euforico">Euforico</option><option value="aggressivo">Aggressivo</option><option value="romantico">Romantico</option><option value="nostalgico">Nostalgico</option></select></label>
+    <div class="row"><button class="btn pri" id="bl-brain">Crea la base dal testo</button><button class="btn" id="bl-brain2">Altra versione</button></div>
+    <div class="status" id="bl-brain-msg"></div></div>
+  <div id="bl-root"></div></main>
 <!-- ---- fine Beat Lab ---- -->
 
 <main class="view" id="v-impostazioni" hidden>

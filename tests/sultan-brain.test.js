@@ -38,3 +38,13 @@ test('i nuovi stili pesanti generano audio valido', () => {
     assert.ok(pk > 0.05, g + ' picco ' + pk);
   });
 });
+
+test('umore voluto: dark e euforico spingono stile e scala in direzioni opposte', () => {
+  const neutro = 'Cammino piano sotto un cielo grigio\nPenso a cosa resta di noi\nLa notte è lunga e il tempo scorre';
+  const d = B.plan(neutro, null, { mood: 'dark' }), e = B.plan(neutro, null, { mood: 'euforico' }), m = B.plan(neutro, null, { mood: 'malinconico' });
+  assert.ok(['trapdark', 'drill', 'street'].includes(d.genre), 'dark ' + d.genre);
+  assert.equal(d.mode, 'minore');
+  assert.ok(['clubtrap', 'estate', 'melodico'].includes(e.genre), 'euforico ' + e.genre);
+  assert.ok(['trap', 'boombap', 'melodico'].includes(m.genre), 'malinconico ' + m.genre);
+  assert.equal(d.moodTarget, 'dark'); assert.ok(B.plan(STRADA, null).moodTarget);
+});

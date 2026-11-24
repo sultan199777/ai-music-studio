@@ -88,6 +88,21 @@
     el.appendChild(hint('Scegli uno stile per partire da un disegno di batteria e basso già pronto (originale, non copiato da brani). "Casuale ma sensato" ne inventa uno nuovo restando dentro le regole dello stile: rullante al posto giusto, casse mai attaccate, rullate solo a fine battuta. I valori sono punti di partenza: giudica a orecchio.'));
   }
   function pickStyle(id) { snap(); P.applyStyle(S.project, id); afterPatternChange(true); }
+  /* Cervello Sultan: applica un piano (stile, BPM, tonalità, seme) alla base del Beat Lab. */
+  var BRAIN_STYLE = { trap: 'trap', trapdark: 'drill', drill: 'drill', street: 'boombap', boombap: 'boombap', clubtrap: 'trap', melodico: 'rnb', estate: 'pop', epico: 'orchestrale' };
+  function applyBrain(pl) {
+    if (!S.project || !pl) return null;
+    snap(); var id = BRAIN_STYLE[pl.genre] || 'trap', p = S.project, kits = Object.keys(E.KITS || {});
+    var energy = { trapdark: 0.85, drill: 0.8, street: 0.6, clubtrap: 0.7, trap: 0.6, boombap: 0.4, melodico: 0.35, estate: 0.5, epico: 0.5 }[pl.genre];
+    P.randomize(p, id, pl.seed, { keepBpm: true, energy: energy == null ? 0.5 : energy });
+    p.bpm = Math.max(60, Math.min(190, pl.bpm));
+    var delta = pl.tonic - p.key.root;
+    p.key = { root: pl.tonic, scale: pl.mode === 'maggiore' ? 'major' : (pl.genre === 'trapdark' || pl.genre === 'drill' ? 'phrygian' : 'minor') };
+    if (delta) p.tracks.forEach(function (t) { if (t.kind === 'inst' && t.inst === 'sub808') t.notes.forEach(function (n) { n.n += delta; while (n.n < 24) n.n += 12; while (n.n > 48) n.n -= 12; }); });
+    if (kits.length) p.kit = kits[pl.seed % kits.length];
+    afterPatternChange(true);
+    return { style: id, kit: p.kit, bpm: p.bpm, key: p.key };
+  }
   function randomBeat() { snap(); P.randomize(S.project, S.project.style, Math.floor(Math.random() * 1e9), { keepBpm: false }); afterPatternChange(true); }
   function undo() { if (!S.undo.length) return; S.project = JSON.parse(S.undo.pop()); if (S.player) S.player.project = S.project; afterPatternChange(true); if (S.el.undo) S.el.undo.disabled = !S.undo.length; }
   function afterPatternChange(all) { changed('mix'); if (all) renderAll(); else renderGrid(); }
@@ -249,6 +264,6 @@
   function unmount() { if (S.player && S.player.playing) S.player.stop(); stopLoops(); }
   doc && doc.addEventListener && doc.addEventListener('visibilitychange', function () { if (doc.hidden && S.player && S.player.playing) { S.player.stop(); stopLoops(); if (S.mounted) renderTransport(); } });
 
-  var UI = { mount: mount, unmount: unmount, state: S, h: h, icon: icon, seg: seg, hint: hint, renderAll: renderAll, changed: changed, snap: snap, afterPatternChange: afterPatternChange, extend: function (f) { S.ext.push(f); } };
+  var UI = { applyBrain: applyBrain, mount: mount, unmount: unmount, state: S, h: h, icon: icon, seg: seg, hint: hint, renderAll: renderAll, changed: changed, snap: snap, afterPatternChange: afterPatternChange, extend: function (f) { S.ext.push(f); } };
   return UI;
 });

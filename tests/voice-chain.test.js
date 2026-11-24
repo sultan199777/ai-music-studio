@@ -149,7 +149,7 @@ test('limitatore e livello finale: nessun campione sopra il tetto, volume medio 
 
 test('tutti i caratteri: nessun NaN, picco sotto -1 dBFS, risultato ripetibile', () => {
   const x = melody([[57, 0.8, -25], [60, 0.8, 20], [64, 0.8, -15], [62, 0.8, 30], [60, 0.8, 0]], SR, { vibCents: 18, noise: 0.002 });
-  assert.equal(V.CHARACTERS.length, 13);
+  assert.equal(V.CHARACTERS.length, 17);
   V.CHARACTERS.forEach(c => {
     const b = V.buildParams({ ids: [c.id] }), r = V.render(x, SR, b.params, { bpm: 95 });
     assert.ok(finite(r.samples), c.id + ' NaN'); assert.ok(db(peak(r.samples)) <= -0.99, c.id + ' picco ' + db(peak(r.samples)));

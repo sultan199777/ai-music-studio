@@ -46,7 +46,7 @@
       '<h4 class="vl-h">Ascolta Prima / Dopo</h4>' +
       '<div class="row vl-row"><button class="btn" id="vl-a"><svg><use href="#i-play"/></svg>Prima</button><button class="btn" id="vl-b"><svg><use href="#i-play"/></svg>Dopo</button><button class="btn" id="vl-ab">Alterna A/B</button><button class="btn" id="vl-stop" aria-label="Ferma"><svg><use href="#i-stop"/></svg></button></div>' +
       '<div class="sw"><label for="vl-eq">Stesso volume (pareggia prima e dopo)</label><input type="checkbox" id="vl-eq" checked></div><div class="small muted" id="vl-abinfo"></div>' +
-      '<div id="vl-chart"></div><div id="vl-meas"></div><ul class="clean small" id="vl-notes"></ul>' +
+      '<div id="vl-chart"></div><div id="vl-meas"></div><ul class="clean small" id="vl-notes"></ul><div id="vl-ear"></div>' +
       '<details class="vl-adv" id="vl-adv"><summary>Avanzato: tutti i parametri</summary><div id="vl-advbody"></div></details>' +
       '</div>';
   }
@@ -148,7 +148,7 @@
   function f1(v) { return String(Math.round(v * 10) / 10).replace('.', ','); }
   function renderResult(t) {
     var meas = $('#vl-meas'), notes = $('#vl-notes'); if (!meas) return;
-    if (!t || !t.vl) { meas.innerHTML = ''; notes.innerHTML = ''; drawChart(null); keyUI(null); abInfo(); return; }
+    if (!t || !t.vl) { meas.innerHTML = ''; notes.innerHTML = ''; drawChart(null); keyUI(null); abInfo(); earVoice(t && t.mono ? t : null); return; }
     var v = t.vl, r = v.report, h = '<div class="meters">';
     if (isFinite(v.before.centerCents) && isFinite(v.after.centerCents)) h += api.meter('Errore sulle note', 'misurato', Math.round(v.before.centerCents) + ' → ' + Math.round(v.after.centerCents) + ' cent', v.mask.every(Boolean) ? 'Distanza dalla nota più vicina (vibrato escluso), prima e dopo.' : 'Distanza dalla nota di scala più vicina (vibrato escluso), prima e dopo.');
     h += api.meter('Picco', 'misurato', f1(r.outputPeakDb) + ' dB', 'Il limitatore tiene il picco sotto ' + f1(v.params.out.ceilingDb) + ' dB.');
@@ -162,7 +162,29 @@
     if (r.tune && r.tune.meanShiftCents != null && v.params.tune.on) ns.push('Spostamento medio dell\'altezza: ' + Math.round(r.tune.meanShiftCents) + ' cent, massimo ' + Math.round(r.tune.maxShiftCents) + ' cent (misurato).');
     ns.push('Non posso ascoltare: i numeri dicono cosa è cambiato, il suono lo giudichi tu.');
     notes.innerHTML = ns.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('');
-    keyUI(t); drawChart(t); abInfo();
+    keyUI(t); drawChart(t); abInfo(); earVoice(t);
+  }
+
+  /* ---------- Orecchio voce: misure su registrazione e risultato ---------- */
+  var EAR_FIX = null;
+  function earVoice(t) {
+    var box = $('#vl-ear'); if (!box) return; EAR_FIX = null;
+    if (!t || !root.Ear || !t.mono) { box.innerHTML = ''; return; }
+    var a, b = null;
+    try { a = root.Ear.listenVoice(t.mono, t.sr); if (t.final) b = root.Ear.listenVoice(t.final, t.sr); } catch (e) { box.innerHTML = ''; return; }
+    var m = a.metrics, line = function (r, nm) { var q = r.metrics; return '<li><b>' + nm + '</b>: ' + q.lufs + ' LUFS · picco ' + q.peakDb + ' dB · rumore di fondo ' + q.noiseFloorDb + ' dB (voce sopra di ' + q.snrDb + ' dB) · S taglienti ' + Math.round(q.sibilance * 100) + '% · scatola ' + Math.round(q.mud * 100) + '% · presenza ' + Math.round(q.presence * 100) + '%</li>'; };
+    var fix = {}, has = false;
+    a.findings.forEach(function (f) { if (f.fix && f.fix.adv) { Object.keys(f.fix.adv).forEach(function (g) { fix[g] = fix[g] || {}; Object.keys(f.fix.adv[g]).forEach(function (k) { fix[g][k] = f.fix.adv[g][k]; has = true; }); }); } });
+    if (has) EAR_FIX = fix;
+    box.innerHTML = '<div class="note"><b>Orecchio di Sultan · voce</b> <span class="tag m">Misurato</span> · registrazione: <b>' + esc(a.verdict) + '</b>' +
+      '<ul class="clean small">' + line(a, 'Registrazione') + (b ? line(b, 'Dopo il Voice Lab') : '') + '</ul>' +
+      (a.findings.length ? '<ul class="clean small">' + a.findings.map(function (f) { return '<li><span class="tag ' + (f.level === 'errore' ? 'soon' : 'm') + '">' + (f.level === 'errore' ? 'Errore' : 'Misurato') + '</span> ' + esc(f.text) + '</li>'; }).join('') + '</ul>' : '<p class="small">Nessun problema misurabile nella ripresa.</p>') +
+      (has ? '<div class="row"><button class="btn sm pri" id="vl-ear-fix">Applica i consigli e rifai la voce</button></div>' : '') + '</div>';
+  }
+  function earVoiceFix() {
+    var t = api.activeTake(); if (!t || !EAR_FIX) return;
+    Object.keys(EAR_FIX).forEach(function (g) { st.advanced[g] = st.advanced[g] || {}; Object.keys(EAR_FIX[g]).forEach(function (k) { st.advanced[g][k] = EAR_FIX[g][k]; }); });
+    save(); buildAdvanced(); renderSliders(); applyTake(t, {});
   }
 
   /* ---------- parametri avanzati (generati dall'elenco SPEC) ---------- */
@@ -332,6 +354,7 @@
 
   /* ---------- eventi ---------- */
   function wire() {
+    document.addEventListener('click', function (e) { if (e.target && e.target.id === 'vl-ear-fix') earVoiceFix(); });
     $('#vl-auto').addEventListener('click', function () { var t = api.activeTake(); if (!t) { setStatus('Prima registra o importa una voce.'); return; } st.macros = {}; st.advanced = {}; save(); renderSliders(); applyTake(t, { reanalyze: true }); });
     $('#vl-apply').addEventListener('click', function () { var t = api.activeTake(); if (t) applyTake(t, {}); });
     $('#vl-reset').addEventListener('click', function () { st.macros = {}; st.advanced = {}; save(); renderSliders(); buildAdvanced(); var t = api.activeTake(); if (t) schedule(200); });

@@ -25,7 +25,7 @@
   // Direzioni di stile. kick/snare: posizioni sui 16 passi; kickExtra: candidati variabili.
   var STYLES = {
     trap: {
-      label: 'Trap', bpm: 140, swing: 0, kick: [0], kickExtra: [3, 6, 7, 10, 11, 13, 14], snare: [8], clap: true,
+      label: 'Trap', leadShift: 0, bpm: 140, swing: 0, kick: [0], kickExtra: [3, 6, 7, 10, 11, 13, 14], snare: [8], clap: true,
       hat: 'trap', bass: '808', slide: 0.3, glide: 0.07, drive: 1.8, rolls: 0.7,
       kickPats: [[[0, 10], [0, 7, 11]], [[0, 6, 10], [0, 3, 10, 14]], [[0, 11], [0, 7, 10, 13]]],
       chord: 'pluck', chordPat: [0, 6, 10], arp: false, pad: 'warm', lead: 'bell', duck: 0.35
@@ -49,25 +49,25 @@
       chord: 'pluck', chordPat: [0, 3, 6, 10, 12], arp: false, pad: 'warm', lead: 'pluck', duck: 0.25
     },
     boombap: {
-      label: 'Boom bap pesante', bpm: 90, swing: 0.16, kick: [0], kickExtra: [7, 10, 11], snare: [4, 12], clap: false,
+      label: 'Boom bap pesante', leadShift: 0, bpm: 90, swing: 0.16, kick: [0], kickExtra: [7, 10, 11], snare: [4, 12], clap: false,
       hat: 'soft', bass: 'round', slide: 0.08, rolls: 0.05,
       kickPats: [[[0, 10], [0, 7, 10]], [[0, 7], [0, 7, 11]], [[0, 10, 11], [0, 6, 10]]],
       chord: 'pluck', chordPat: [0, 6, 10], arp: false, pad: 'dark', lead: 'pluck', duck: 0.3
     },
     street: {
-      label: 'Street (stile 50 Cent)', bpm: 96, swing: 0.06, kick: [0], kickExtra: [6, 10, 14], snare: [4, 12], clap: true,
+      label: 'Street (stile 50 Cent)', leadShift: 0, bpm: 96, swing: 0.06, kick: [0], kickExtra: [6, 10, 14], snare: [4, 12], clap: true,
       hat: 'soft', bass: '808', slide: 0.2, glide: 0.06, drive: 1.7, rolls: 0.1,
       kickPats: [[[0, 10], [0, 6, 10]], [[0, 7, 10], [0, 3, 10, 14]], [[0, 11], [0, 6, 14]]],
       chord: 'pluck', chordPat: [0, 3, 8, 11], arp: false, pad: 'dark', lead: 'bell', duck: 0.35
     },
     trapdark: {
-      label: 'Trap scura pesante', bpm: 144, swing: 0, kick: [0], kickExtra: [3, 7, 10, 13], snare: [8], clap: true,
+      label: 'Trap scura pesante', leadShift: 0, bpm: 144, swing: 0, kick: [0], kickExtra: [3, 7, 10, 13], snare: [8], clap: true,
       hat: 'drill', bass: '808', slide: 0.6, glide: 0.12, drive: 2.7, rolls: 0.6,
       kickPats: [[[0, 10], [0, 7, 13]], [[0, 6, 11], [0, 3, 10]], [[0, 7, 10], [0, 13]]],
       chord: 'pluck', chordPat: [0, 8], arp: true, pad: 'dark', lead: 'bell', duck: 0.32
     },
     clubtrap: {
-      label: 'Club (dembow trap)', bpm: 98, swing: 0, kick: [0, 4, 8, 12], kickExtra: [], snare: [3, 6, 11, 14], clap: true,
+      label: 'Club (dembow trap)', leadShift: 0, bpm: 98, swing: 0, kick: [0, 4, 8, 12], kickExtra: [], snare: [3, 6, 11, 14], clap: true,
       hat: 'offbeat', bass: '808', slide: 0.15, glide: 0.05, drive: 1.8, rolls: 0.2,
       kickPats: [[[0, 4, 8, 12], [0, 4, 8, 12]]],
       chord: 'pluck', chordPat: [0, 6, 10], arp: false, pad: 'warm', lead: 'bell', duck: 0.28
@@ -430,7 +430,7 @@
           var l = [2, 2, 3, 4][Math.floor(rand() * 4)];
           if (rand() < 0.3 && s > 0) { s += l; continue; }
           idx = Math.max(0, Math.min(scaleM.length - 1, idx + Math.floor(rand() * 5) - 2));
-          var midi = scaleM[idx] + 12;
+          var midi = scaleM[idx] + (style.leadShift == null ? 12 : style.leadShift);
           if (s % 4 === 0 || bi === 3) {
             var near = chord.reduce(function (a, c) { return Math.abs(c - midi) < Math.abs(a - midi) ? c : a; }, chord[0]);
             if (Math.abs(near - midi) <= 3) midi = near;

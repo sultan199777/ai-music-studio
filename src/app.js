@@ -198,13 +198,13 @@
   var AI_RULES = 'Rispondi in italiano, in modo concreto e breve (massimo 150 parole). Distingui chiaramente ciò che è un\'ipotesi da ciò che è un fatto. Non promettere successo, hit o effetti emotivi garantiti. Non citare né copiare testi di altri autori.';
 
   /* ================= Navigazione ================= */
-  var VIEWS = ['daw', 'home', 'menu', 'canzoni', 'studio', 'strumenti', 'producer', 'voce', 'video', 'marketing', 'social', 'libreria', 'impostazioni', 'beatlab' /* Beat Lab */];
+  var VIEWS = ['daw', 'home', 'menu', 'canzoni', 'studio', 'strumenti', 'producer', 'voce', 'video', 'marketing', 'social', 'libreria', 'impostazioni', 'artisti', 'beatlab' /* Beat Lab */];
   var MENU = [
     ['home', 'Home e Dashboard', 'Il tuo percorso', 'i-home'], ['canzoni', 'Le mie canzoni', 'Schede e versioni', 'i-disc'],
     ['studio', 'Testo e Base', 'Scrivi, crea la base, canta', 'i-sliders'], ['strumenti', 'Strumentario', '29 strumenti veri e guida', 'i-sliders'], ['beatlab', 'Beat Lab', 'Fai le tue basi', 'i-note'] /* Beat Lab */, ['producer', 'AI Producer', 'Comandi a parole', 'i-spark'],
     ['voce', 'Vocal Studio', 'Voce e autotune', 'i-mic'], ['video', 'AI Video Studio', 'Clip a tempo', 'i-film'],
     ['marketing', 'Marketing AI', 'Piano a 30 giorni', 'i-mega'], ['social', 'Social Media Manager', 'Calendario', 'i-cal'],
-    ['libreria', 'Libreria contenuti', 'Materiali', 'i-folder'], ['impostazioni', 'Impostazioni', 'Aspetto e dati', 'i-gear']
+    ['artisti', 'Cartelle artista', 'Impara lo stile (solo numeri)', 'i-disc'], ['libreria', 'Libreria contenuti', 'Materiali', 'i-folder'], ['impostazioni', 'Impostazioni', 'Aspetto e dati', 'i-gear']
   ];
   var SHOW = {};
   function route() {
@@ -512,13 +512,102 @@
       return mx;
     } catch (e) { st.textContent = 'Non sono riuscito a creare la base. Prova con meno battute.'; return null; }
   }
+  /* ===== Cartelle artista: stile misurato dai testi caricati (solo numeri) ===== */
+  function arStore() { LIB.settings.artists = LIB.settings.artists || {}; return LIB.settings.artists; }
+  function arModel() {
+    var st = arStore(), names = Object.keys(st).filter(function (n) { return st[n].on; });
+    if (!names.length) return null;
+    return ArtistLab.blend(names.map(function (n) { return ArtistLab.finalize(st[n].acc); }), names);
+  }
+  function arBars(P) { return P.top.slice(0, 5).map(function (t) { return '<div class="small">' + esc(ArtistLab.SCENE_IT[t.scene]) + ' <b>' + Math.round(t.share * 100) + '%</b><div style="height:6px;border-radius:3px;background:var(--line,#333);overflow:hidden"><i style="display:block;height:100%;width:' + Math.round(t.share * 100) + '%;background:var(--acc,#8b5cf6)"></i></div></div>'; }).join(''); }
+  function arRender() {
+    var st = arStore(), names = Object.keys(st);
+    $('#ar-list').innerHTML = names.map(function (n) {
+      var P = ArtistLab.finalize(st[n].acc); if (!P) return '';
+      return '<div class="card"><div class="card-head"><h3>' + esc(n) + '</h3><span class="tag m">' + P.songs + ' brani · ' + P.lines + ' righe</span></div>' +
+        '<div class="sw"><label for="ar-on-' + esc(n) + '">Usa nel mio modello</label><input type="checkbox" data-aron="' + esc(n) + '" id="ar-on-' + esc(n) + '"' + (st[n].on ? ' checked' : '') + '></div>' +
+        '<p class="small"><b>Umore:</b> ' + esc(P.mood) + '</p>' + arBars(P) +
+        '<ul class="clean small"><li>Sillabe per riga: <b>' + P.avgSyll + '</b> <span class="tag m">Misurato</span></li><li>Righe in rima: <b>' + Math.round(P.rhyme * 100) + '%</b></li><li>Ripetizioni: <b>' + Math.round(P.rep * 100) + '%</b></li><li>Varietà di parole: <b>' + Math.round(P.richness * 100) + '%</b></li>' +
+        (P.pairs.length ? '<li>Mondi che stanno insieme: ' + P.pairs.slice(0, 3).map(function (q) { return esc(q.pair.split('+').map(function (k) { return ArtistLab.SCENE_IT[k]; }).join(' + ')) + ' (' + q.lines + ' righe)'; }).join('; ') + '</li>' : '') + '</ul>' +
+        (P.enough ? '' : '<p class="small muted">Pochi dati (meno di 20 righe): le misure sono ancora instabili. Aggiungi altri brani.</p>') +
+        '<div class="row"><button class="btn sm" data-ardel="' + esc(n) + '">Elimina cartella</button></div></div>';
+    }).join('') || '<div class="card"><p class="small muted">Nessuna cartella ancora. Creane una qui sopra.</p></div>';
+    var M = arModel();
+    $('#ar-model').innerHTML = M ? '<p><b>' + esc(M.names) + '</b></p><p class="small">' + esc(M.mood) + '</p><ul class="clean small"><li>Sillabe per riga: ' + M.avgSyll + '</li><li>Rime: ' + Math.round(M.rhyme * 100) + '% · Ripetizioni: ' + Math.round(M.rep * 100) + '%</li></ul><p class="small muted">Il bottone "Cervello Sultan" in Testo e Base ora segue questo modello.</p>' : 'Spunta una o più cartelle: il modello è la loro media.';
+  }
+  SHOW.artisti = arRender;
+  async function arAdd() {
+    var nm = ($('#ar-name').value || '').trim(), m = $('#ar-msg'); m.className = 'status';
+    if (!nm) { m.textContent = 'Scrivi il nome della cartella (es. un artista).'; return; }
+    var texts = [], f = $('#ar-files').files;
+    for (var i = 0; i < f.length; i++) { try { texts.push(await f[i].text()); } catch (e) {} }
+    var pasted = ($('#ar-text').value || '').trim(); if (pasted) pasted.split(/\n\s*---+\s*\n/).forEach(function (t) { if (t.trim()) texts.push(t); });
+    if (!texts.length) { m.textContent = 'Carica un file .txt o incolla un testo.'; return; }
+    var st = arStore(), rec = st[nm] || (st[nm] = { acc: ArtistLab.newAcc(), on: false }), added = 0;
+    texts.forEach(function (t) { var me = ArtistLab.measure(t); if (me.lines) { rec.acc = ArtistLab.merge(rec.acc, me); added++; } });
+    if (!added) { m.textContent = 'Non ho trovato righe di testo da misurare.'; if (!rec.acc.lines) delete st[nm]; return; }
+    persist(); $('#ar-files').value = ''; $('#ar-text').value = '';
+    m.textContent = 'Aggiunti ' + added + ' brani a "' + nm + '". Ho tenuto solo i numeri, non il testo.'; arRender();
+  }
+  $('#ar-add').addEventListener('click', arAdd);
+  $('#ar-list').addEventListener('change', function (e) { var n = e.target.getAttribute('data-aron'); if (n && arStore()[n]) { arStore()[n].on = e.target.checked; persist(); arRender(); } });
+  $('#ar-list').addEventListener('click', function (e) { var n = e.target.getAttribute('data-ardel'); if (n) { delete arStore()[n]; persist(); arRender(); } });
+  $('#ar-cmp').addEventListener('click', function () {
+    var M = arModel(), s = cur(); if (!M) { $('#ar-adv').innerHTML = '<p class="small">Spunta prima almeno una cartella.</p>'; return; }
+    $('#ar-adv').innerHTML = '<ul class="clean small">' + ArtistLab.compare(s.lyrics, M).map(function (x) { return '<li><span class="tag ' + (x.tag === 'Misurato' ? 'm' : 'i') + '">' + x.tag + '</span> ' + esc(x.text) + '</li>'; }).join('') + '</ul>';
+  });
+  /* ===== Cervello Sultan nel Beat Lab ===== */
+  function blBrain(again) {
+    var s = cur(), m = $('#bl-brain-msg');
+    if (!s.lyrics.trim()) { m.textContent = 'Scrivi prima il testo in Testo e Base: il cervello parte da quello.'; return; }
+    if (!window.BeatLabUI || !window.BeatLabUI.state.project) { m.textContent = 'Il Beat Lab si sta caricando: riprova tra un secondo.'; return; }
+    s.brainBL = again ? (s.brainBL || 0) + 1 : 0;
+    var pl = SultanBrain.plan(s.lyrics, analysisOf(s), { variant: s.brainBL, profile: arModel(), mood: $('#bl-mood').value || null }), r = window.BeatLabUI.applyBrain(pl);
+    m.innerHTML = '<b>' + esc(pl.label) + '</b> → stile Beat Lab "' + esc(r.style) + '" · ' + r.bpm + ' BPM · ' + NOTES[pl.tonic] + ' ' + (pl.mode === 'maggiore' ? 'maggiore' : 'minore') + '<br>' + pl.why.slice(0, 3).map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Premi "Suona". Se non ti piace: "Altra versione".';
+  }
+  $('#bl-brain').addEventListener('click', function () { blBrain(false); });
+  $('#bl-brain2').addEventListener('click', function () { blBrain(true); });
+  /* ===== Orecchio di Sultan: ascolto con strumenti di misura ===== */
+  function earMeasure() { var p = cur().prod, mx = buildMix({ voice: false }); return Ear.listen(mx.samples, mx.sr, { genre: SESSION.useImported ? null : p.genre, bpm: p.bpm }); }
+  function earApply(r) {
+    var p = cur().prod, ch = [], add = {};
+    r.findings.forEach(function (f) { if (f.fix && f.fix.levels) Object.keys(f.fix.levels).forEach(function (k) { add[k] = (add[k] || 0) + f.fix.levels[k]; }); });
+    Object.keys(add).forEach(function (k) { if (p.levels[k] == null) return; var nv = Math.max(0.1, Math.min(1.8, Math.round((p.levels[k] + Math.max(-0.4, Math.min(0.4, add[k]))) * 100) / 100)); if (nv !== p.levels[k]) { ch.push(LEVEL_NAMES[k] + ' ' + Math.round(p.levels[k] * 100) + '% → ' + Math.round(nv * 100) + '%'); p.levels[k] = nv; } });
+    if (ch.length) { persist(); fillBase(); }
+    return ch;
+  }
+  function earHtml(r) {
+    var M = r.metrics, sh = M.shares;
+    return '<div class="note"><b>Orecchio di Sultan</b> <span class="tag m">Misurato</span> · verdetto: <b>' + esc(r.verdict) + '</b>' +
+      '<ul class="clean small"><li>Livello medio ' + M.rmsDb + ' dB, picco ' + M.peakDb + ' dB, dinamica (crest) ' + M.crestDb + ' dB</li>' +
+      '<li>Grave (sotto 250 Hz) ' + Math.round(M.lowShare * 100) + '% · sub ' + Math.round(sh.sub * 100) + '% · medi ' + Math.round((sh['medio-basso'] + sh.medio) * 100) + '% · presenza ' + Math.round(sh.presenza * 100) + '% · aria ' + Math.round(sh.aria * 100) + '%</li>' +
+      '<li>Centro di gravità ' + M.centroidHz + ' Hz · colpi nel grave ' + (M.lowHitsPerBar == null ? '–' : M.lowHitsPerBar + ' a battuta') + '</li></ul>' +
+      (r.findings.length ? '<ul class="clean small">' + r.findings.map(function (f) { return '<li><span class="tag ' + (f.level === 'errore' ? 'soon' : (f.tag === 'Ipotesi' ? 'i' : 'm')) + '">' + (f.level === 'errore' ? 'Errore' : (f.tag || 'Misurato')) + '</span> ' + esc(f.text) + '</li>'; }).join('') + '</ul>' : '<p class="small">Nessun problema misurabile.</p>') + '</div>';
+  }
+  function earMoodNote(r) {
+    var s = cur(), p = s.prod, want = s.moodTarget; if (!want || SESSION.useImported) return '';
+    var m = Ear.moodOf({ mode: p.mode, bpm: p.bpm, centroidHz: r.metrics.centroidHz, lowShare: r.metrics.lowShare });
+    var ok = m.top === want || m.second === want;
+    return '<p class="small"><span class="tag i">Ipotesi</span> Umore voluto: <b>' + esc(want) + '</b>. La base misurata suona soprattutto <b>' + esc(m.top) + '</b> (poi ' + esc(m.second) + '). ' + (ok ? 'Coincidono.' : 'Non coincidono: scegli l\'umore in alto e premi "Altra versione dal testo", oppure cambia scala e velocità.') + '</p>';
+  }
+  async function earRun(auto) {
+    var out = $('#ear-out'); out.innerHTML = '<p class="small muted">Ascolto la base con gli strumenti di misura…</p>'; await tick();
+    try {
+      var r = earMeasure(), fixed = [];
+      if (auto) for (var i = 0; i < 2; i++) { var ch = r.findings.some(function (f) { return f.fix && f.fix.levels; }) ? earApply(r) : []; if (!ch.length) break; fixed = fixed.concat(ch); await tick(); r = earMeasure(); }
+      out.innerHTML = earHtml(r) + earMoodNote(r) + (fixed.length ? '<p class="small"><b>Ho corretto da solo i volumi:</b> ' + esc(fixed.join(', ')) + '.</p>' : '') + (!auto && r.findings.some(function (f) { return f.fix && f.fix.levels; }) ? '<div class="row"><button class="btn sm pri" id="ear-fix">Applica i consigli</button></div>' : '');
+      return r;
+    } catch (e) { out.innerHTML = '<p class="small">Non sono riuscito a misurare la base.</p>'; return null; }
+  }
+  $('#ear-go').addEventListener('click', function () { earRun(false); });
+  $('#ear-out').addEventListener('click', async function (e) { if (e.target.id !== 'ear-fix') return; var r = earMeasure(), ch = earApply(r); $('#ear-out').innerHTML = '<p class="small">' + (ch.length ? 'Ho cambiato: ' + esc(ch.join(', ')) + '. Riascolto…' : 'Niente da cambiare.') + '</p>'; await tick(); await earRun(false); });
   /* ===== Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti) ===== */
   var BANNED_INST = { flute: 1, ocarina: 1, harmonica: 1, clarinet: 1, kalimba: 0 };
   async function runBrain(again) {
     var s = cur(), p = s.prod, m = $('#sb-msg');
     if (!s.lyrics.trim()) { m.textContent = 'Scrivi o incolla prima il testo (in alto): il cervello parte da quello.'; return; }
     s.brainV = again ? (s.brainV || 0) + 1 : 0;
-    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV });
+    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel(), mood: $('#sb-mood').value || null }); s.moodTarget = pl.moodTarget; persist();
     p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
     var res = Coach.suggest(coachState(), coachCands(p.genre), { emotion: pl.scene, seed: pl.seed }), R = Instruments.RECIPES[p.genre] || {};
     ['melodia', 'accordi', 'pad'].forEach(function (role) { if (BANNED_INST[res.inst[role]]) res.inst[role] = (R[role] || ['piano'])[0]; });
@@ -526,7 +615,10 @@
     p.inst = res.inst; persist(); fillBase();
     m.innerHTML = '<b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + pl.mode + '<br>' + pl.why.map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Strumenti: ' + ['melodia', 'accordi', 'pad'].map(function (r) { return r + ' ' + esc(instName(p.inst[r])); }).join(', ') + '. Se non ti piace premi "Altra versione dal testo".';
     await makeAndPlay(false);
+    earRun(true);
   }
+  $('#sb-mood').addEventListener('change', function () { $('#bl-mood').value = this.value; });
+  $('#bl-mood').addEventListener('change', function () { $('#sb-mood').value = this.value; });
   $('#sb-make').addEventListener('click', function () { runBrain(false); });
   $('#sb-again').addEventListener('click', function () { runBrain(true); });
   $('#b-play').addEventListener('click', function () { makeAndPlay(false); });
@@ -1702,6 +1794,20 @@
   $('#v-orig').addEventListener('click', function () { var t = activeTake(); if (t) playBuf(t.mono, t.sr); });
   $('#v-fix').addEventListener('click', function () { var t = activeTake(); if (t && t.final) playBuf(t.final, t.sr); });
   $('#v-stop').addEventListener('click', stopPlay);
+  /* Mix automatico: l'Orecchio misura voce e base (LUFS) e regola il volume della voce; poi misura il mix finale. */
+  $('#v-automix').addEventListener('click', async function () {
+    var t = activeTake(), m = $('#v-mixmsg'); if (!t) { m.textContent = 'Prima registra o importa una voce.'; return; }
+    m.textContent = 'Misuro voce e base…'; await tick();
+    try {
+      var base = buildMix({ voice: false }), vox = t.final || t.mono, bl = Ear.lufs(base.samples, base.sr), vl = Ear.lufs(vox, t.sr);
+      if (vl < -60 || bl < -60) { m.textContent = 'Non riesco a misurare: voce o base quasi silenziose.'; return; }
+      var wantDb = 1.0, gain = Math.pow(10, (bl + wantDb - vl) / 20), sv = Math.max(20, Math.min(160, Math.round(gain * 100)));
+      $('#v-gain').value = sv; $('#v-gv').textContent = sv + '%'; await tick();
+      var mx = buildMix({ voice: true }), r = Ear.listen(mx.samples, mx.sr, { bpm: cur().prod.bpm }), notes = r.findings.filter(function (f) { return f.id === 'clip' || f.id === 'picco' || f.id === 'schiacciato'; }).map(function (f) { return f.text; });
+      var fl = r.metrics.lufs, adv = fl > -9 ? 'più forte dello streaming: le piattaforme lo abbassano (circa -14 LUFS)' : (fl < -16 ? 'più basso dello standard streaming (circa -14 LUFS): usa il master "Forte"' : 'vicino allo standard streaming (circa -14 LUFS)');
+      m.innerHTML = '<span class="tag m">Misurato</span> Base ' + bl + ' LUFS · voce ' + vl + ' LUFS → ho messo il volume voce al <b>' + sv + '%</b> (voce circa 1 LU sopra la base: <span class="tag i">Ipotesi</span> di mestiere, regola a orecchio)' + (Math.round(gain * 100) > 160 ? ' <b>Limite massimo raggiunto</b>: la voce è molto bassa, scegli un carattere più potente o registra più forte.' : '') + ' Mix finale: <b>' + fl + ' LUFS</b>, picco ' + r.metrics.peakDb + ' dB: ' + esc(adv) + '.' + (notes.length ? ' Attenzione: ' + esc(notes.join(' ')) : '');
+    } catch (e) { m.textContent = 'Non sono riuscito a misurare il mix.'; }
+  });
   $('#v-mix').addEventListener('click', async function () {
     var t = activeTake(), m = $('#v-mixmsg'); if (!t) return; m.textContent = 'Preparo il mix…'; await tick();
     try {
