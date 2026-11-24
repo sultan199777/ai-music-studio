@@ -48,7 +48,7 @@ fs.writeFileSync(path.join(root, 'dist', 'index.html'), html);
 console.log(`OK: dist/index.html (${Math.round(html.length / 1024)} KB), test ${passed}/${total}`);
 
 // --- versione app (PWA): stessa app, ma con microfono, installabile e funzionante offline ---
-const pwa = path.join(root, 'pwa');
+const pwa = path.join(root, 'docs'); // GitHub Pages serve la cartella /docs
 fs.mkdirSync(pwa, { recursive: true });
 const shell = `<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#07070F"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Music Studio"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><style>:root{color-scheme:light}html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body>${html}<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}</script></body></html>`;
 fs.writeFileSync(path.join(pwa, 'index.html'), shell);
@@ -60,4 +60,4 @@ self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.a
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const c=r.clone();if(new URL(e.request.url).origin===location.origin)caches.open(V).then(x=>x.put(e.request,c));return r}).catch(()=>caches.match(e.request).then(m=>m||caches.match('index.html'))))});
 `);
 fs.writeFileSync(path.join(pwa, '_headers'), '/*\n  X-Content-Type-Options: nosniff\n  X-Frame-Options: DENY\n  Referrer-Policy: no-referrer\n  Permissions-Policy: microphone=(self), camera=(), geolocation=()\n/sw.js\n  Cache-Control: no-cache\n');
-console.log('OK: pwa/ (index.html, manifest, sw.js, _headers)');
+console.log('OK: docs/ (index.html, manifest, sw.js, _headers)');

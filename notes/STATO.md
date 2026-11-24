@@ -35,7 +35,7 @@ Regola della persona: andare avanti un passo alla volta, senza rianalizzare tutt
 ## Aggiornamento 24/11 - Registrazione con microfono e versione app (fatto, testato in emulazione)
 - Studio > "Registra con il microfono": parte la base, scorre la riga del testo (parla/canta/allunga), indicatore di livello, fine registrazione -> prova in Voce con latenza compensata (stima). Prove salvate in IndexedDB e ripristinate al riavvio.
 - Salvataggio: nella versione app scarica WAV a qualita' piena; dentro Claude resta il vecchio metodo.
-- `pwa/` (generata da build.js): index.html, manifest, sw.js (offline), icone. Va servita in HTTPS (richiesto dal microfono su iPhone).
+- `docs/` (generata da build.js, servita da GitHub Pages): index.html, manifest, sw.js (offline), icone. Va servita in HTTPS (richiesto dal microfono su iPhone).
 - Repo GitHub privato sultan199777/ai-music-studio, ramo claude/app-con-microfono (clone di lavoro: /home/claude/ams-repo).
 - NON verificato: microfono su iPhone reale (Safari), latenza reale, installazione sulla Home. Test fatti con microfono finto in Chromium.
 - Da decidere: dove pubblicare (GitHub Pages richiede repo pubblico o piano a pagamento).
@@ -47,3 +47,6 @@ Regola della persona: andare avanti un passo alla volta, senza rianalizzare tutt
 ## Aggiornamento 24/11 - Grafica Cosmo (fatto, controllato con screenshot)
 - Tema Cosmo (notte) di default: sfondo #07070f, neon ciano/magenta/viola, vetro. Sfera nella scheda di registrazione: colori dall'emozione del testo, pulsa col livello del microfono. Karaoke su vetro scuro con bordo neon.
 - Il tema Chiaro resta disponibile in Impostazioni. Da fare: sfera anche in Home, piano roll in stile Cosmo, schermata Libreria.
+
+## 24/11 - Pubblicazione
+- L'app compilata sta in `docs/` (GitHub Pages serve /docs). Le note stanno in `notes/`. Per attivarla: repo pubblico, Settings > Pages > ramo main, cartella /docs. Richiede HTTPS: il microfono lo esige.
