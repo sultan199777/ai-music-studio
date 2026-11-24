@@ -594,7 +594,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 19:00</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 19:02</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -11310,7 +11310,7 @@ details.card[open]>summary{margin-bottom:8px}
     if (pa.understood) { ['bpm', 'mode', 'bassStyle', 'reverb', 'levels', 'sec', 'tonic', 'genre', 'tune'].forEach(function (k) { if (pa.state[k] !== undefined) st.prod[k] = pa.state[k]; }); said = said.concat(pa.notes); }
     if (!r.understood && !pa.understood) { TALK.push({ text: text, reply: 'Non l\'ho capito, quindi non ho cambiato niente. Prova: ' + StudioAgent.EXAMPLES.slice(0, 4).join(' · '), state: 'nulla' }); talkRender(); return; }
     s.prod = st.prod; LIB.settings.mic = st.mic; persist();
-    TALK.push({ text: text, reply: 'Fatto: ' + said.join('; ') + '. Ascolta: se non ti piace, Annulla.', state: 'attesa', before: before, mic: !!st.micChanged }); talkRender();
+    TALK.push({ text: text, reply: 'Fatto: ' + said.map(function (x) { return String(x).replace(/\.+$/, ''); }).join('; ') + '. Ascolta: se non ti piace, Annulla.', state: 'attesa', before: before, mic: !!st.micChanged }); talkRender();
     coachRec('change', coachCtx(), { role: 'chat', from: null, to: text.slice(0, 40) });
     await talkApply(!!st.micChanged);
   }
