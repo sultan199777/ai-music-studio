@@ -157,3 +157,11 @@ test('autotune fine: nessun NaN, picco sotto 1, durata uguale, a 44,1 kHz e temp
   assert.ok(ms < 20000, 'tempo ' + ms + ' ms per 6 s di voce');
   console.log('   (6 s di voce a 44,1 kHz elaborati in ' + ms + ' ms)');
 });
+
+test('accordatura della base (refCents): una nota a +30 cent resta lì se la base è a +30, altrimenti va a 0', () => {
+  const x = melody([[57, 1.2, 30]], SR);
+  const run = (ref) => { const r = T.correct(x, SR, { tonic: 9, mode: 'cromatica', strength: 1, retuneMs: 0, refCents: ref }); return mean(midiBetween(tr(r.samples), 0.3, 0.9)); };
+  const noRef = run(0), withRef = run(30);
+  assert.ok(Math.abs(noRef - 57) < 0.08, 'senza ref ' + noRef);
+  assert.ok(Math.abs(withRef - 57.3) < 0.08, 'con ref ' + withRef);
+});

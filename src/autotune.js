@@ -230,6 +230,7 @@
     var degrees = opts.harmonyDegrees || 0;                                     // armonia: gradini della scala sopra la nota
     var shift = clamp(opts.shiftSemitones || 0, -12, 12);                       // spostamento creativo della voce
     var formant = clamp(opts.formantSemitones || 0, -8, 8);
+    var refSt = clamp(opts.refCents || 0, -50, 50) / 100;                       // accordatura della base (cent rispetto al LA 440)
     var notes = Array.isArray(opts.notes) ? opts.notes : null;   // note modificate a mano: {t0,t1,target,amount}
     var notesOnly = notes ? opts.notesOnly !== false : false;    // fuori dalle note non si tocca nulla
 
@@ -293,7 +294,7 @@
     runs.forEach(function (idx) {
       if (idx.length < minRun) return;
       var K = idx.length;
-      var midi = median3(idx.map(function (i) { return toMidiF(frames[i].f0); }));
+      var midi = median3(idx.map(function (i) { return toMidiF(frames[i].f0) - refSt; }));
       var slow = boxcar(medianN(midi, nmWin), smallWin);
       var times = idx.map(function (i) { return frames[i].t + half; });
       var k, curQ = null, tg = [], seg = [], segN = -1, segStart = [], segEnd = [], lastT = null;

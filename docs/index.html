@@ -632,7 +632,13 @@ details.card[open]>summary{margin-bottom:8px}
     <label class="f"><span>Velocità del testo</span><select id="kar-speed2"><option value="auto" selected>Automatica (segue le sillabe)</option><option value="1">Veloce (1 battuta per riga)</option><option value="2">Media (2 battute)</option><option value="4">Lenta (4 battute)</option><option value="8">Molto lenta (8 battute)</option></select></label>
     <div class="karaoke" id="rec-kar"><div><b>Premi Registra: parte la base e vedi la riga</b><small>Usa le cuffie</small></div></div>
     <div class="meter-bar" id="rec-meter" hidden><i></i></div>
-    <div class="row"><button class="btn pri" id="rec-go">Registra con la base</button><button class="btn" id="rec-stop" hidden>Fine registrazione</button></div>
+    <div class="row"><button class="btn pri" id="rec-go">Mic 1 · Registra pulito</button><button class="btn pri" id="rec-live">Mic 2 · Autotune dal vivo</button><button class="btn" id="rec-stop" hidden>Fine registrazione</button></div>
+    <p class="small muted"><b>Mic 1</b>: registra la voce pulita, poi l'autotune lo applichi e lo modifichi sotto. <b>Mic 2</b>: senti l'autotune in cuffia mentre canti e ottieni <b>due prove</b>: quella con autotune come l'hai sentita e quella pulita, da rifinire sotto senza perdere l'originale. Servono cuffie con filo.</p>
+    <div id="rec-live-box" class="grid2">
+      <label class="f"><span>Stile dal vivo</span><select id="rec-live-st"><option value="60,40">Naturale</option><option value="80,15" selected>Pop</option><option value="100,0">Trap duro (robot)</option><option value="100,6">Melodico veloce</option></select></label>
+      <label class="f"><span>Scala</span><select id="rec-live-m"><option value="cromatica">Tutte le note</option><option value="maggiore">Maggiore</option><option value="minore">Minore</option></select></label>
+      <label class="f"><span>Nota di partenza</span><select id="rec-live-t"></select></label>
+    </div>
     <div class="status" id="rec-msg"></div>
     <p class="small muted">La voce finisce tra le prove in Voce, dove applichi autotune e mix. Le prove restano salvate sul telefono (nella versione app).</p>
   </div>
@@ -799,7 +805,7 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">214 test automatici superati su 214 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">215 test automatici superati su 215 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -1864,6 +1870,7 @@ details.card[open]>summary{margin-bottom:8px}
     var degrees = opts.harmonyDegrees || 0;                                     // armonia: gradini della scala sopra la nota
     var shift = clamp(opts.shiftSemitones || 0, -12, 12);                       // spostamento creativo della voce
     var formant = clamp(opts.formantSemitones || 0, -8, 8);
+    var refSt = clamp(opts.refCents || 0, -50, 50) / 100;                       // accordatura della base (cent rispetto al LA 440)
     var notes = Array.isArray(opts.notes) ? opts.notes : null;   // note modificate a mano: {t0,t1,target,amount}
     var notesOnly = notes ? opts.notesOnly !== false : false;    // fuori dalle note non si tocca nulla
 
@@ -1927,7 +1934,7 @@ details.card[open]>summary{margin-bottom:8px}
     runs.forEach(function (idx) {
       if (idx.length < minRun) return;
       var K = idx.length;
-      var midi = median3(idx.map(function (i) { return toMidiF(frames[i].f0); }));
+      var midi = median3(idx.map(function (i) { return toMidiF(frames[i].f0) - refSt; }));
       var slow = boxcar(medianN(midi, nmWin), smallWin);
       var times = idx.map(function (i) { return frames[i].t + half; });
       var k, curQ = null, tg = [], seg = [], segN = -1, segStart = [], segEnd = [], lastT = null;
@@ -2561,7 +2568,7 @@ details.card[open]>summary{margin-bottom:8px}
   /* ====================== parametri ====================== */
   var DEFAULTS = {
     clean: { on: true, hp: 90, denoiseDb: 0 },
-    tune: { on: true, key: 'auto', tonic: 0, mode: 'maggiore', strength: 0.8, retuneMs: 25, humanize: 0.3, flexCents: 0, classic: false, vibrato: 0.7, drift: 0.3, vibratoDepth: 0, vibratoRate: 5.6, formantSemitones: 0 },
+    tune: { on: true, key: 'auto', tonic: 0, mode: 'maggiore', strength: 0.8, retuneMs: 25, humanize: 0.3, flexCents: 0, classic: false, vibrato: 0.7, drift: 0.3, vibratoDepth: 0, vibratoRate: 5.6, formantSemitones: 0, refCents: 0 },
     eq: { on: true, boxyDb: -2, presenceDb: 2.5, airDb: 2, lowDb: 0, darkHz: 0 },
     deess: { on: true, freq: 6500, amount: 0.5 },
     comp: { on: true, thresholdDb: -20, ratio: 4, attackMs: 5, releaseMs: 250, peakDb: -8, makeupDb: 0 },
@@ -2590,6 +2597,7 @@ details.card[open]>summary{margin-bottom:8px}
     ['tune.drift', 'num', 0, 1, 'Deriva lenta', 'Quanto delle lente oscillazioni dentro la nota resta.'],
     ['tune.vibratoDepth', 'num', 0, 80, 'Vibrato aggiunto (cent)', 'Aggiunge un vibrato finto sulle note lunghe. 0 = nessuno.'],
     ['tune.vibratoRate', 'num', 3, 9, 'Velocità vibrato (Hz)', 'Quante oscillazioni al secondo ha il vibrato aggiunto.'],
+    ['tune.refCents', 'num', -50, 50, 'Accordatura della base (cent)', 'Se la base non è intonata a LA 440 Hz (succede con campioni e basi scaricate) sposta qui di quanto è calante (-) o crescente (+): l\'autotune userà le note della base, non quelle "teoriche".'],
     ['tune.formantSemitones', 'num', -6, 6, 'Timbro (semitoni)', 'Voce più scura (-) o più chiara (+) senza cambiare nota.'],
     ['eq.on', 'bool', 0, 1, 'Equalizzatore', 'Dà forma al suono.'],
     ['eq.boxyDb', 'num', -8, 3, 'Meno "scatola" (dB)', 'Taglio sui medio-bassi contro il suono chiuso.'],
@@ -2802,7 +2810,7 @@ details.card[open]>summary{margin-bottom:8px}
     function add(name, label, fn) { st.push({ name: name, label: label, fn: fn }); }
     if (p.clean.on) add('clean', 'Pulizia', function (S) { S.x = stageClean(S.x, S.sr, p.clean, S.rep); });
     if (p.tune.on) add('tune', 'Intonazione', function (S) {
-      var t = p.tune, o = { strength: t.strength, retuneMs: t.retuneMs, humanize: t.humanize, flexCents: t.flexCents, classic: t.classic, vibrato: t.vibrato, drift: t.drift, vibratoDepth: t.vibratoDepth, vibratoRate: t.vibratoRate, formantSemitones: t.formantSemitones, maxSeconds: 600, track: S.track };
+      var t = p.tune, o = { strength: t.strength, retuneMs: t.retuneMs, humanize: t.humanize, flexCents: t.flexCents, classic: t.classic, vibrato: t.vibrato, drift: t.drift, vibratoDepth: t.vibratoDepth, vibratoRate: t.vibratoRate, formantSemitones: t.formantSemitones, refCents: t.refCents, maxSeconds: 600, track: S.track };
       if (t.key === 'auto') o.key = 'auto'; else { o.tonic = t.tonic; o.mode = t.mode; }
       var r = Autotune.correct(S.x, S.sr, o); S.x = r.samples; S.rep.tune = r.stats;
       S.ctx.tonic = r.stats.tonic; S.ctx.mode = r.stats.mode; S.ctx.scaleKnown = r.stats.mode !== 'cromatica';
@@ -2904,7 +2912,7 @@ details.card[open]>summary{margin-bottom:8px}
 
   function createCore(sr, opts) {
     var STEPS = { maggiore: [0, 2, 4, 5, 7, 9, 11], minore: [0, 2, 3, 5, 7, 8, 10] };
-    var P = { enabled: true, strength: 0.8, retuneMs: 30, tonic: 0, mode: 'cromatica', grainMs: 28 };
+    var P = { enabled: true, strength: 0.8, retuneMs: 30, tonic: 0, mode: 'cromatica', grainMs: 28, refCents: 0 };
     var mask = [], i;
     function setParams(q) {
       if (!q) return;
@@ -2952,7 +2960,7 @@ details.card[open]>summary{margin-bottom:8px}
     function control() {
       var f0 = detect();
       if (f0 > 0) {
-        unv = 0; var m = 69 + 12 * Math.log(f0 / 440) / Math.LN2;
+        unv = 0; var m = 69 + 12 * Math.log(f0 / 440) / Math.LN2 - Math.max(-50, Math.min(50, +P.refCents || 0)) / 100;
         hist.push(m); if (hist.length > 5) hist.shift();
         var med = hist.slice().sort(function (p, q) { return p - q; })[hist.length >> 1];
         var q = quant(med);
@@ -3062,6 +3070,34 @@ details.card[open]>summary{margin-bottom:8px}
       '<div class="row vl-row"><label class="f"><span>Nota di partenza</span><select id="vl-mon-t"></select></label><label class="f"><span>Scala</span><select id="vl-mon-m"><option value="cromatica">Tutte le note</option><option value="maggiore">Maggiore</option><option value="minore">Minore</option></select></label></div>' +
       '<label class="f"><span>Volume del monitor <b id="vl-mon-vv">100%</b></span><input type="range" id="vl-mon-v" min="0" max="100" value="100"></label>' +
       '<div class="status" id="vl-mon-msg" role="status"></div><div class="vl-lat" id="vl-mon-lat"></div></div>';
+  }
+  function featHtml() {
+    var have = [
+      ['Mic 1 · registra pulito', 'Registri la voce pulita; l\'autotune parte da solo dopo e lo rifinisci sotto.'],
+      ['Mic 2 · autotune dal vivo', 'Senti l\'autotune in cuffia mentre canti. Ottieni 2 prove: con autotune e pulita.'],
+      ['Intensità e velocità', 'Quanto e quanto in fretta la nota viene portata sulla scala (0 ms = effetto robot).'],
+      ['Classic', 'Passaggio a gradino netto, suono trap duro.'],
+      ['Humanize', 'Rallenta la correzione sulle note lunghe, così non suonano statiche.'],
+      ['Flex-Tune', 'Non tocca le note già vicine e lascia passare le scivolate.'],
+      ['Vibrato naturale e creato', 'Conservi o riduci il tuo vibrato, oppure ne aggiungi uno pulito (profondità e velocità).'],
+      ['Deriva lenta', 'Quanto della lenta oscillazione dentro la nota viene mantenuto.'],
+      ['Timbro (formante)', 'Voce più scura o più chiara senza cambiare nota.'],
+      ['Armonie e spostamento', 'Terza o quinta sopra la scala, oppure voce spostata di semitoni.'],
+      ['Tonalità automatica', 'Capisce la scala dalla tua voce; se è incerta lo dice e usa tutte le note.'],
+      ['Editor note a mano', 'Sposti o correggi le singole note disegnate.'],
+      ['Accordatura della base (cent)', 'Per basi non intonate a LA 440: l\'autotune segue la base.'],
+      ['Caratteri vocali e A/B', 'Molti caratteri pronti e confronto prima/dopo.']
+    ], miss = [
+      ['Modello della gola (throat) dei plugin pro', 'Non c\'è: il timbro si cambia solo con la formante.'],
+      ['Controllo da tastiera MIDI', 'Safari su iPhone non supporta il MIDI nel browser.'],
+      ['Ritardo di 2-5 ms dei plugin pro', 'Qui il ritardo è molto più alto (decine di ms): il monitor serve da guida, non da sostituto.'],
+      ['Correzione del tempo (timing)', 'Non fatta.'],
+      ['Doppia voce automatica', 'Non fatta come funzione a parte: per ora si ottiene con le armonie.']
+    ];
+    var li = function (a) { return '<li><b>' + a[0] + '</b>: ' + a[1] + '</li>'; };
+    return '<div class="card vl"><details><summary><b>Tutte le funzioni dell\'autotune</b> <span class="tag m">Misurato</span></summary>' +
+      '<p class="small muted">Confronto con Auto-Tune Pro e Melodyne fatto sulle loro funzioni dichiarate. Il suono finale lo giudichi tu: io non posso ascoltarlo.</p>' +
+      '<h4>Ce l\'hai</h4><ul class="clean small">' + have.map(li).join('') + '</ul><h4>Non c\'è ancora</h4><ul class="clean small">' + miss.map(li).join('') + '</ul></details></div>';
   }
   function setStatus(msg, kind) { var el = $('#vl-status'); if (!el) return; el.textContent = msg; el.className = 'status' + (kind === 'err' ? ' err' : ''); }
   function setBar(f) { var b = $('#vl-bar'); if (!b) return; b.hidden = f == null; if (f != null) b.firstChild.style.width = Math.round(f * 100) + '%'; }
@@ -3272,6 +3308,37 @@ details.card[open]>summary{margin-bottom:8px}
     var g = $('#vl-mon-go'); if (g) { g.hidden = false; $('#vl-mon-stop').hidden = true; } monMsg('Monitor spento.');
   }
 
+
+  /* ---------- Mic 2: autotune dal vivo DURANTE la registrazione (due uscite: cuffia e registratore) ---------- */
+  function liveParams() {
+    var st = ($('#rec-live-st') ? $('#rec-live-st').value : '80,15').split(','), strength = +st[0] / 100, ret = +st[1];
+    return { enabled: true, strength: strength, retuneMs: ret, tonic: +($('#rec-live-t') ? $('#rec-live-t').value : 0), mode: $('#rec-live-m') ? $('#rec-live-m').value : 'cromatica' };
+  }
+  // mic = nodo sorgente del microfono già creato dall'app. Restituisce { wetStream, stop(), mode, latencyMs } oppure null.
+  async function liveAttach(ctx, mic) {
+    if (MON.on) monStop();
+    var p = liveParams(), L = { nodes: [], url: null }, dest = ctx.createMediaStreamDestination(), out = ctx.createGain();
+    out.gain.value = 1; out.connect(dest); out.connect(ctx.destination);
+    var mode = 'worklet', core0 = RT.createCore(ctx.sampleRate, p), latMs = core0.getLatencyMs();
+    try {
+      if (!ctx.audioWorklet || typeof AudioWorkletNode === 'undefined') throw new Error('no worklet');
+      L.url = URL.createObjectURL(new Blob([RT.workletSource()], { type: 'application/javascript' }));
+      await ctx.audioWorklet.addModule(L.url);
+      var node = new AudioWorkletNode(ctx, 'vl-rt', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1], processorOptions: p });
+      mic.connect(node); node.connect(out); L.nodes.push(node);
+    } catch (e) {
+      mode = 'script';
+      if (!ctx.createScriptProcessor) return null;
+      var core = RT.createCore(ctx.sampleRate, p), proc = ctx.createScriptProcessor(1024, 1, 1);
+      proc.onaudioprocess = function (ev) { core.process(ev.inputBuffer.getChannelData(0), ev.outputBuffer.getChannelData(0)); };
+      mic.connect(proc); proc.connect(out); L.nodes.push(proc); latMs += 1024 / ctx.sampleRate * 1000;
+    }
+    return { wetStream: dest.stream, mode: mode, latencyMs: latMs, stop: function () {
+      try { L.nodes.forEach(function (n) { n.disconnect(); if (n.onaudioprocess) n.onaudioprocess = null; }); out.disconnect(); } catch (e) {}
+      if (L.url) { try { URL.revokeObjectURL(L.url); } catch (e) {} }
+    } };
+  }
+
   /* ---------- eventi ---------- */
   function wire() {
     $('#vl-auto').addEventListener('click', function () { var t = api.activeTake(); if (!t) { setStatus('Prima registra o importa una voce.'); return; } st.macros = {}; st.advanced = {}; save(); renderSliders(); applyTake(t, { reanalyze: true }); });
@@ -3314,6 +3381,7 @@ details.card[open]>summary{margin-bottom:8px}
     });
     // monitor
     $('#vl-mon-t').innerHTML = api.NOTES.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
+    var lt = $('#rec-live-t'); if (lt) lt.innerHTML = $('#vl-mon-t').innerHTML;
     $('#vl-mon-go').addEventListener('click', monStart); $('#vl-mon-stop').addEventListener('click', monStop);
     ['#vl-mon-on', '#vl-mon-t', '#vl-mon-m'].forEach(function (s) { $(s).addEventListener('change', monPush); });
     $('#vl-mon-s').addEventListener('input', function () { $('#vl-mon-sv').textContent = this.value + '%'; monPush(); });
@@ -3327,7 +3395,7 @@ details.card[open]>summary{margin-bottom:8px}
     api = a; load();
     var r = document.getElementById('vl-root'), m = document.getElementById('vl-mon-root');
     if (!r || !m) return;
-    r.innerHTML = html(); m.innerHTML = monHtml();
+    r.innerHTML = html(); m.innerHTML = featHtml() + monHtml();
     renderChips(); renderSliders(); wire();
   }
   function onNewTake(t, recMsg) {
@@ -3336,7 +3404,7 @@ details.card[open]>summary{margin-bottom:8px}
   }
   function onSelect(t) { if (!api || !$('#vl-card')) return; renderResult(t && t.vl ? t : null); if (t && !t.vl) setStatus('Premi Auto per intonare e rifinire questa voce.'); else if (t && t.vl) setStatus('Ultima elaborazione: ' + t.vl.label + '.'); abStop(); }
   function stop() { abStop(); }
-  root.VoiceLab = { init: init, onNewTake: onNewTake, onSelect: onSelect, stop: stop, monitorStop: monStop, _state: function () { return { st: st, busy: busy, mon: MON, built: lastBuilt }; }, _apply: applyTake };
+  root.VoiceLab = { liveAttach: liveAttach, liveParams: liveParams, init: init, onNewTake: onNewTake, onSelect: onSelect, stop: stop, monitorStop: monStop, _state: function () { return { st: st, busy: busy, mon: MON, built: lastBuilt }; }, _apply: applyTake };
 })(typeof self !== 'undefined' ? self : this);
 
 /*
@@ -9434,8 +9502,11 @@ details.card[open]>summary{margin-bottom:8px}
     renderTakes();
   }
   function recUi(on) { $('#rec-go').hidden = on; $('#rec-stop').hidden = !on; $('#rec-meter').hidden = !on; }
-  $('#rec-go').addEventListener('click', async function () {
+  $('#rec-go').addEventListener('click', function () { startRec(false); });
+  $('#rec-live').addEventListener('click', function () { startRec(true); });
+  async function startRec(live) {
     var msg = $('#rec-msg'); msg.className = 'status'; if (REC) return;
+    $('#rec-live-box').hidden = !live && $('#rec-live-box').hidden;
     if (!micOk()) { msg.textContent = 'Il microfono non è disponibile in questa pagina (se hai toccato un link dentro Claude, copialo e aprilo in Safari) (dentro Claude è bloccato). Apri il sito: https://sultan199777.github.io/ai-music-studio/ (da Safari), oppure registra con Memo Vocali e importa in Voce.'; msg.className = 'status err'; return; }
     var ctx = getCtx(); if (!ctx || !ctx.createScriptProcessor) { msg.textContent = 'Questo browser non supporta la registrazione.'; msg.className = 'status err'; return; }
     if (!lyricLines(cur().lyrics).length) { msg.textContent = 'Nota: qui non c\'è ancora il testo di questa canzone. Incollalo nel campo "Testo" in alto in questa pagina per vederlo scorrere mentre canti. Chiedo il microfono…'; } else msg.textContent = 'Chiedo il permesso del microfono…';
@@ -9458,18 +9529,31 @@ details.card[open]>summary{margin-bottom:8px}
       proc.onaudioprocess = function (ev) { chunks.push(new Float32Array(ev.inputBuffer.getChannelData(0))); };
       mic.connect(proc); proc.connect(mute); mute.connect(ctx.destination);
     }
+    if (live) {
+      if (!window.VoiceLab || !rmime) { msg.textContent = 'Mic 2 non è disponibile su questo browser: uso la registrazione pulita.'; }
+      else {
+        try { R.live = await VoiceLab.liveAttach(ctx, mic); } catch (e) { R.live = null; }
+        if (R.live) {
+          R.wchunks = []; R.wmr = new MediaRecorder(R.live.wetStream, { mimeType: rmime, audioBitsPerSecond: 256000 });
+          R.wmr.ondataavailable = function (e) { if (e.data && e.data.size) R.wchunks.push(e.data); };
+          R.wStopped = new Promise(function (res) { R.wmr.onstop = res; }); R.wmr.start();
+        } else msg.textContent = 'Non riesco ad accendere l\'autotune dal vivo: registro solo la voce pulita.';
+      }
+    }
     REC = R; recUi(true);
     var kt = karaokeTick(mx.bpm, '#rec-kar');
     var ok = playBuf(mx.samples, mx.sr, function (t) { kt(t); R.an.getFloatTimeDomainData(R.abuf); var m = 0; for (var ai = 0; ai < R.abuf.length; ai++) { var av = R.abuf[ai] < 0 ? -R.abuf[ai] : R.abuf[ai]; if (av > m) m = av; } R.level = m; $('#orb').style.setProperty('--lvl', Math.min(1, m * 1.6).toFixed(2)); $('#rec-meter i').style.width = Math.min(100, Math.round(m * 140)) + '%'; $('#rec-meter').classList.toggle('hot', m > 0.95); }, function () { finishRec(); });
     R.delta = Math.max(0, (player.t0 || R.started) - (R.recAt != null ? R.recAt : R.started)); R.lat = (ctx.baseLatency || 0) + (ctx.outputLatency || 0);
     if (!ok) { finishRec(); return; }
-    msg.textContent = 'Registro. Usa le cuffie, altrimenti la base entra nel microfono.';
-  });
+    msg.textContent = live && R.live ? 'Registro con autotune dal vivo (' + (R.live.mode === 'worklet' ? 'AudioWorklet' : 'modo di riserva') + ', ritardo di calcolo circa ' + Math.round(R.live.latencyMs) + ' ms). Cuffie con filo!' : 'Registro. Usa le cuffie, altrimenti la base entra nel microfono.';
+  }
   $('#rec-stop').addEventListener('click', stopPlay);
   async function finishRec() {
     var R = REC; if (!R) return; REC = null;
     var msg = $('#rec-msg'), mono, sr;
     if (R.mr) { try { if (R.mr.state !== 'inactive') R.mr.stop(); await R.mrStopped; } catch (e) {} }
+    if (R.wmr) { try { if (R.wmr.state !== 'inactive') R.wmr.stop(); await R.wStopped; } catch (e) {} }
+    if (R.live) { try { R.live.stop(); } catch (e) {} }
     try { R.mic.disconnect(); if (R.proc) { R.proc.disconnect(); R.mute.disconnect(); R.proc.onaudioprocess = null; } } catch (e) {}
     R.stream.getTracks().forEach(function (t) { t.stop(); }); recUi(false);
     $('#rec-kar').innerHTML = '<div><b>Registrazione finita</b></div>'; $('#orb').style.setProperty('--lvl', 0);
@@ -9487,7 +9571,15 @@ details.card[open]>summary{margin-bottom:8px}
     if (pk > 0.003 && pk < 0.3) { var gk = 0.7 / pk; for (var q = 0; q < n; q++) mono[q] *= gk; boosted = true; }
     msg.textContent = 'Analizzo la registrazione…'; await tick();
     var name = 'Registrazione ' + new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-    var t = await addTake(mono, sr, name, false); t.lat = R.delta + R.lat; t.at = Date.now();
+    if (R.wchunks && R.wchunks.length) {
+      try {
+        var wd = await decode(new Blob(R.wchunks, { type: R.mime })), wm = wd.mono, wp = 0; for (var wi = 0; wi < wm.length; wi += 7) { var wv = wm[wi] < 0 ? -wm[wi] : wm[wi]; if (wv > wp) wp = wv; }
+        if (wp > 0.003 && wp < 0.3) { var wg = 0.7 / wp; for (var wq = 0; wq < wm.length; wq++) wm[wq] *= wg; }
+        var wt = await addTake(wm, wd.sr, name + ' · Mic 2 live', false); wt.lat = R.delta + R.lat; wt.at = Date.now();
+        dbTake('put', { id: wt.id, name: wt.name, mono: wt.mono, sr: wt.sr, lat: wt.lat, at: wt.at }).then(function (ok) { wt.saved = !!ok; });
+      } catch (e) {}
+    }
+    var t = await addTake(mono, sr, name + (R.wchunks ? ' · pulita' : ''), false); t.lat = R.delta + R.lat; t.at = Date.now();
     dbTake('put', { id: t.id, name: t.name, mono: t.mono, sr: t.sr, lat: t.lat, at: t.at }).then(function (ok) { t.saved = !!ok; });
     var s = cur(); if (['idea', 'testo', 'base'].indexOf(s.status) !== -1) { s.status = 'voce'; persist(); }
     selectTake(t.id);

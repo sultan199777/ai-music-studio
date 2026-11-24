@@ -62,6 +62,34 @@
       '<label class="f"><span>Volume del monitor <b id="vl-mon-vv">100%</b></span><input type="range" id="vl-mon-v" min="0" max="100" value="100"></label>' +
       '<div class="status" id="vl-mon-msg" role="status"></div><div class="vl-lat" id="vl-mon-lat"></div></div>';
   }
+  function featHtml() {
+    var have = [
+      ['Mic 1 · registra pulito', 'Registri la voce pulita; l\'autotune parte da solo dopo e lo rifinisci sotto.'],
+      ['Mic 2 · autotune dal vivo', 'Senti l\'autotune in cuffia mentre canti. Ottieni 2 prove: con autotune e pulita.'],
+      ['Intensità e velocità', 'Quanto e quanto in fretta la nota viene portata sulla scala (0 ms = effetto robot).'],
+      ['Classic', 'Passaggio a gradino netto, suono trap duro.'],
+      ['Humanize', 'Rallenta la correzione sulle note lunghe, così non suonano statiche.'],
+      ['Flex-Tune', 'Non tocca le note già vicine e lascia passare le scivolate.'],
+      ['Vibrato naturale e creato', 'Conservi o riduci il tuo vibrato, oppure ne aggiungi uno pulito (profondità e velocità).'],
+      ['Deriva lenta', 'Quanto della lenta oscillazione dentro la nota viene mantenuto.'],
+      ['Timbro (formante)', 'Voce più scura o più chiara senza cambiare nota.'],
+      ['Armonie e spostamento', 'Terza o quinta sopra la scala, oppure voce spostata di semitoni.'],
+      ['Tonalità automatica', 'Capisce la scala dalla tua voce; se è incerta lo dice e usa tutte le note.'],
+      ['Editor note a mano', 'Sposti o correggi le singole note disegnate.'],
+      ['Accordatura della base (cent)', 'Per basi non intonate a LA 440: l\'autotune segue la base.'],
+      ['Caratteri vocali e A/B', 'Molti caratteri pronti e confronto prima/dopo.']
+    ], miss = [
+      ['Modello della gola (throat) dei plugin pro', 'Non c\'è: il timbro si cambia solo con la formante.'],
+      ['Controllo da tastiera MIDI', 'Safari su iPhone non supporta il MIDI nel browser.'],
+      ['Ritardo di 2-5 ms dei plugin pro', 'Qui il ritardo è molto più alto (decine di ms): il monitor serve da guida, non da sostituto.'],
+      ['Correzione del tempo (timing)', 'Non fatta.'],
+      ['Doppia voce automatica', 'Non fatta come funzione a parte: per ora si ottiene con le armonie.']
+    ];
+    var li = function (a) { return '<li><b>' + a[0] + '</b>: ' + a[1] + '</li>'; };
+    return '<div class="card vl"><details><summary><b>Tutte le funzioni dell\'autotune</b> <span class="tag m">Misurato</span></summary>' +
+      '<p class="small muted">Confronto con Auto-Tune Pro e Melodyne fatto sulle loro funzioni dichiarate. Il suono finale lo giudichi tu: io non posso ascoltarlo.</p>' +
+      '<h4>Ce l\'hai</h4><ul class="clean small">' + have.map(li).join('') + '</ul><h4>Non c\'è ancora</h4><ul class="clean small">' + miss.map(li).join('') + '</ul></details></div>';
+  }
   function setStatus(msg, kind) { var el = $('#vl-status'); if (!el) return; el.textContent = msg; el.className = 'status' + (kind === 'err' ? ' err' : ''); }
   function setBar(f) { var b = $('#vl-bar'); if (!b) return; b.hidden = f == null; if (f != null) b.firstChild.style.width = Math.round(f * 100) + '%'; }
 
@@ -271,6 +299,37 @@
     var g = $('#vl-mon-go'); if (g) { g.hidden = false; $('#vl-mon-stop').hidden = true; } monMsg('Monitor spento.');
   }
 
+
+  /* ---------- Mic 2: autotune dal vivo DURANTE la registrazione (due uscite: cuffia e registratore) ---------- */
+  function liveParams() {
+    var st = ($('#rec-live-st') ? $('#rec-live-st').value : '80,15').split(','), strength = +st[0] / 100, ret = +st[1];
+    return { enabled: true, strength: strength, retuneMs: ret, tonic: +($('#rec-live-t') ? $('#rec-live-t').value : 0), mode: $('#rec-live-m') ? $('#rec-live-m').value : 'cromatica' };
+  }
+  // mic = nodo sorgente del microfono già creato dall'app. Restituisce { wetStream, stop(), mode, latencyMs } oppure null.
+  async function liveAttach(ctx, mic) {
+    if (MON.on) monStop();
+    var p = liveParams(), L = { nodes: [], url: null }, dest = ctx.createMediaStreamDestination(), out = ctx.createGain();
+    out.gain.value = 1; out.connect(dest); out.connect(ctx.destination);
+    var mode = 'worklet', core0 = RT.createCore(ctx.sampleRate, p), latMs = core0.getLatencyMs();
+    try {
+      if (!ctx.audioWorklet || typeof AudioWorkletNode === 'undefined') throw new Error('no worklet');
+      L.url = URL.createObjectURL(new Blob([RT.workletSource()], { type: 'application/javascript' }));
+      await ctx.audioWorklet.addModule(L.url);
+      var node = new AudioWorkletNode(ctx, 'vl-rt', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1], processorOptions: p });
+      mic.connect(node); node.connect(out); L.nodes.push(node);
+    } catch (e) {
+      mode = 'script';
+      if (!ctx.createScriptProcessor) return null;
+      var core = RT.createCore(ctx.sampleRate, p), proc = ctx.createScriptProcessor(1024, 1, 1);
+      proc.onaudioprocess = function (ev) { core.process(ev.inputBuffer.getChannelData(0), ev.outputBuffer.getChannelData(0)); };
+      mic.connect(proc); proc.connect(out); L.nodes.push(proc); latMs += 1024 / ctx.sampleRate * 1000;
+    }
+    return { wetStream: dest.stream, mode: mode, latencyMs: latMs, stop: function () {
+      try { L.nodes.forEach(function (n) { n.disconnect(); if (n.onaudioprocess) n.onaudioprocess = null; }); out.disconnect(); } catch (e) {}
+      if (L.url) { try { URL.revokeObjectURL(L.url); } catch (e) {} }
+    } };
+  }
+
   /* ---------- eventi ---------- */
   function wire() {
     $('#vl-auto').addEventListener('click', function () { var t = api.activeTake(); if (!t) { setStatus('Prima registra o importa una voce.'); return; } st.macros = {}; st.advanced = {}; save(); renderSliders(); applyTake(t, { reanalyze: true }); });
@@ -313,6 +372,7 @@
     });
     // monitor
     $('#vl-mon-t').innerHTML = api.NOTES.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
+    var lt = $('#rec-live-t'); if (lt) lt.innerHTML = $('#vl-mon-t').innerHTML;
     $('#vl-mon-go').addEventListener('click', monStart); $('#vl-mon-stop').addEventListener('click', monStop);
     ['#vl-mon-on', '#vl-mon-t', '#vl-mon-m'].forEach(function (s) { $(s).addEventListener('change', monPush); });
     $('#vl-mon-s').addEventListener('input', function () { $('#vl-mon-sv').textContent = this.value + '%'; monPush(); });
@@ -326,7 +386,7 @@
     api = a; load();
     var r = document.getElementById('vl-root'), m = document.getElementById('vl-mon-root');
     if (!r || !m) return;
-    r.innerHTML = html(); m.innerHTML = monHtml();
+    r.innerHTML = html(); m.innerHTML = featHtml() + monHtml();
     renderChips(); renderSliders(); wire();
   }
   function onNewTake(t, recMsg) {
@@ -335,5 +395,5 @@
   }
   function onSelect(t) { if (!api || !$('#vl-card')) return; renderResult(t && t.vl ? t : null); if (t && !t.vl) setStatus('Premi Auto per intonare e rifinire questa voce.'); else if (t && t.vl) setStatus('Ultima elaborazione: ' + t.vl.label + '.'); abStop(); }
   function stop() { abStop(); }
-  root.VoiceLab = { init: init, onNewTake: onNewTake, onSelect: onSelect, stop: stop, monitorStop: monStop, _state: function () { return { st: st, busy: busy, mon: MON, built: lastBuilt }; }, _apply: applyTake };
+  root.VoiceLab = { liveAttach: liveAttach, liveParams: liveParams, init: init, onNewTake: onNewTake, onSelect: onSelect, stop: stop, monitorStop: monStop, _state: function () { return { st: st, busy: busy, mon: MON, built: lastBuilt }; }, _apply: applyTake };
 })(typeof self !== 'undefined' ? self : this);
