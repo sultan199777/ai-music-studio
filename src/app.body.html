@@ -272,6 +272,24 @@
 <!-- LIBRERIA -->
 <main class="view" id="v-strumenti" hidden>
   <div class="head"><div class="eyebrow">Strumentario</div><h1>Gli strumenti e come si usano</h1></div>
+  <div class="card"><div class="card-head"><h3>Laboratorio suoni</h3><span class="tag i">Originale</span></div>
+    <p class="small muted">Strumenti che non esistono in nessuna libreria: il programma prende i suoni grezzi e li stratifica, li trasforma e li deforma. Ascoltali, usali, oppure crea il tuo.</p>
+    <div id="lab-orig"></div>
+    <h3 style="margin-top:14px">Generi da inventare</h3><p class="small muted">Combinazioni nuove che non hanno ancora un nome (ipotesi da provare).</p><div id="lab-gen"></div>
+    <h3 style="margin-top:14px">Crea il tuo strumento</h3>
+    <div class="grid2">
+      <label class="f"><span>Suono A</span><select id="lab-a"></select></label>
+      <label class="f"><span>Suono B (facoltativo)</span><select id="lab-b"></select></label>
+      <label class="f"><span>Volume B <b id="lab-bvv">50%</b></span><input type="range" id="lab-bv" min="0" max="100" value="50"></label>
+      <label class="f"><span>Ottava B</span><select id="lab-bo"><option value="-1">Sotto</option><option value="0" selected>Uguale</option><option value="1">Sopra</option></select></label>
+    </div>
+    <label class="f"><span>Trasformazione A → B durante la nota <b id="lab-mv">0%</b></span><input type="range" id="lab-m" min="0" max="100" value="0"></label>
+    <div id="lab-knobs"></div>
+    <label class="f"><span>Nome</span><input type="text" id="lab-name" placeholder="Es. Pioggia d'argento" maxlength="40" autocomplete="off"></label>
+    <div class="row" style="margin-top:8px"><button class="btn sm" id="lab-play">Ascolta</button><button class="btn sm" id="lab-rand">Sorprendimi</button><button class="btn sm pri" id="lab-save">Salva tra i miei strumenti</button></div>
+    <div class="status" id="lab-msg"></div>
+    <div id="lab-mine"></div>
+  </div>
   <div class="card"><div class="card-head"><h3>Come si costruisce una base</h3><span class="tag a">Analisi</span></div><div id="st-how"></div></div>
   <div class="card"><div class="card-head"><h3>Ricette per stile</h3><span class="tag i">Ipotesi</span></div><p class="small muted">Combinazioni di partenza. Caratteristiche generiche di genere, non copie di artisti: poi cambi a orecchio.</p><div id="st-rec"></div></div>
   <div class="card"><div class="card-head"><h3>Tutti gli strumenti <span class="small muted" id="st-count"></span></h3></div>

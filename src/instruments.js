@@ -135,9 +135,9 @@
 
   // Ricette per stile: quali strumenti per ruolo e perché (caratteristiche generiche di genere, non imitazioni).
   var RECIPES = {
-    trap: { nome: 'Trap melodica', melodia: ['harp', 'piano', 'flute', 'glock'], accordi: ['piano', 'guitar', 'harp'], pad: ['violins', 'glass'],
+    trap: { nome: 'Trap melodica', melodia: ['harp', 'piano', 'glock', 'pizz'], accordi: ['piano', 'guitar', 'harp'], pad: ['violins', 'glass'],
       spiega: 'Melodia malinconica in minore (arpa, piano o chitarra), archi lunghi nel ritornello, glockenspiel per brillare. 808 lungo con scivolate, hi-hat con rullate. La voce resta al centro: la melodia della base suona soprattutto quando non canti.' },
-    drill: { nome: 'Drill', melodia: ['pizz', 'flute', 'bells'], accordi: ['pizz', 'piano'], pad: ['violins', 'cellos', 'organ'],
+    drill: { nome: 'Drill', melodia: ['pizz', 'bells', 'piano'], accordi: ['pizz', 'piano'], pad: ['violins', 'cellos', 'organ'],
       spiega: 'Atmosfera cupa: pizzicati, campane, cori e archi scuri. Ritmo a terzine sugli hi-hat, 808 che scivola molto e salta d\'ottava.' },
     epico: { nome: 'Epico / cinematico', melodia: ['horn', 'violins', 'oboe'], accordi: ['harp', 'pizz'], pad: ['violins', 'cellos', 'horn'],
       spiega: 'Orchestra: archi in sezione, corni, campane, tamburi grandi. Le dinamiche crescono verso il ritornello.' },
@@ -171,8 +171,11 @@
     bank[json.id] = { sr: json.sr, notes: json.notes.map(function (n) { return { m: n.m, x: imaDecode(b64(n.d), n.n) }; }) };
     return bank[json.id];
   }
-  function has(id) { return !!bank[id] || synthIds.indexOf(id) >= 0; }
-  function info(id) { for (var i = 0; i < C.length; i++) if (C[i].id === id) return C[i]; return null; }
+  // Strumenti personalizzati (Laboratorio suoni): id 'lab:...', con funzione di sintesi e dipendenze.
+  var custom = {};
+  function registerCustom(id, inf, fn, ready) { custom[id] = { info: inf, fn: fn, ready: ready || function () { return true; } }; cache = {}; }
+  function has(id) { return !!bank[id] || synthIds.indexOf(id) >= 0 || (!!custom[id] && custom[id].ready()); }
+  function info(id) { if (custom[id]) return custom[id].info; for (var i = 0; i < C.length; i++) if (C[i].id === id) return C[i]; return null; }
   /** Carica uno strumento (browser): base = cartella dei file (es. 'inst/'). */
   function load(id, base) {
     if (has(id)) return Promise.resolve(true);
@@ -213,7 +216,8 @@
     var vel = opt.vel == null ? 1 : opt.vel, key = id + '|' + midi + '|' + dur.toFixed(2) + '|' + sr + '|' + vel.toFixed(2) + '|' + (opt.attack || 0) + (opt.hold ? 'h' : '');
     if (cache[key]) return cache[key];
     var out;
-    if (synthIds.indexOf(id) >= 0) out = synthGuitar(id, midi, dur, sr);
+    if (custom[id]) { if (!custom[id].ready()) return null; out = custom[id].fn(midi, dur, sr, opt); }
+    else if (synthIds.indexOf(id) >= 0) out = synthGuitar(id, midi, dur, sr);
     else {
       var b = bank[id]; if (!b) return null;
       var best = b.notes[0];
@@ -274,6 +278,7 @@
   return {
     CATALOG: C, SYNTH: SYNTH, FAMILIES: FAMILIES, RECIPES: RECIPES,
     register: register, load: load, has: has, info: info, render: render, imaDecode: imaDecode, sustainTo: sustainTo,
+    registerCustom: registerCustom, customIds: function () { return Object.keys(custom); }, renderRaw: function (id, midi, dur, sr, opt) { return render(id, midi, dur, sr, opt); },
     loaded: function () { return Object.keys(bank).concat(synthIds); }
   };
 });

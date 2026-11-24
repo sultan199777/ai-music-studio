@@ -505,8 +505,11 @@
   var INST_BASES = ['inst/', 'https://sultan199777.github.io/ai-music-studio/inst/'];
   function instName(id) { var c = Instruments.info(id); if (c) return c.nome; var y = Instruments.SYNTH.filter(function (x) { return x.id === id; })[0]; return y ? y.nome : id; }
   function noteNm(m) { return NOTES[m % 12] + (Math.floor(m / 12) - 1); }
+  function labRec(id) { return SoundLab.ORIGINALS.concat(LIB.settings.lab || []).filter(function (r) { return r.id === id; })[0]; }
   async function loadInst(id) {
     if (!id || Instruments.has(id)) return true;
+    var lr = labRec(id);
+    if (lr) { var deps = SoundLab.deps(lr), okAll = true; for (var d = 0; d < deps.length; d++) if (!(await loadInst(deps[d]))) okAll = false; return okAll; }
     for (var i = 0; i < INST_BASES.length; i++) { if (await Instruments.load(id, INST_BASES[i])) return true; }
     return false;
   }
@@ -523,8 +526,13 @@
       if (role === 'pad') list = Instruments.CATALOG.filter(function (c) { return c.fam === f && (c.ruoli.indexOf('pad') >= 0 || c.tipo === 'sostenuto'); });
       if (list.length) h += '<optgroup label="' + esc(Instruments.FAMILIES[f]) + '">' + list.map(function (c) { return '<option value="' + c.id + '">' + esc(c.nome) + '</option>'; }).join('') + '</optgroup>';
     });
+    var orig = SoundLab.ORIGINALS.filter(function (r) { return r.ruoli.indexOf(role) >= 0 || role === 'pad' && r.tipo === 'sostenuto'; });
+    if (orig.length) h += '<optgroup label="Originali (Laboratorio)">' + orig.map(function (r) { return '<option value="' + r.id + '">' + esc(r.nome) + '</option>'; }).join('') + '</optgroup>';
+    var mine = LIB.settings.lab || [];
+    if (mine.length) h += '<optgroup label="I tuoi strumenti">' + mine.map(function (r) { return '<option value="' + r.id + '">' + esc(r.nome) + '</option>'; }).join('') + '</optgroup>';
     return h;
   }
+  function refreshInstSelects() { Object.keys(ROLES).forEach(function (r) { $(ROLES[r]).innerHTML = instOptions(r); }); fillInst(); }
   var ROLES = { melodia: '#b-in-melodia', accordi: '#b-in-accordi', pad: '#b-in-pad' };
   Object.keys(ROLES).forEach(function (r) { $(ROLES[r]).innerHTML = instOptions(r); });
   function instInfo() {
@@ -553,14 +561,87 @@
   async function previewInst(id, msgEl) {
     msgEl.textContent = 'Carico ' + instName(id) + '…';
     if (!(await loadInst(id))) { msgEl.textContent = 'Download non riuscito (serve internet la prima volta).'; return; }
-    var c = Instruments.info(id), sr = 32000, mid = Math.round((c.range[0] + c.range[1]) / 2 / 12) * 12, notes = [mid, mid + 4, mid + 7, mid + 12].map(function (m) { return Math.min(c.range[1], m); });
+    var c = Instruments.info(id) || { range: [48, 84] }, sr = 32000, mid = Math.round((c.range[0] + c.range[1]) / 2 / 12) * 12, notes = [mid, mid + 4, mid + 7, mid + 12].map(function (m) { return Math.min(c.range[1], m); });
     var len = Math.round(3.6 * sr), out = new Float32Array(len);
     notes.forEach(function (m, i) { var x = Instruments.render(id, m, 0.5, sr), a = Math.round(i * 0.4 * sr); for (var j = 0; j < x.length && a + j < len; j++) out[a + j] += x[j] * 0.5; });
     notes.slice(0, 3).forEach(function (m) { var x = Instruments.render(id, m, 1.6, sr), a = Math.round(1.8 * sr); for (var j = 0; j < x.length && a + j < len; j++) out[a + j] += x[j] * 0.3; });
     playBuf(out, sr); msgEl.textContent = 'Ascolti: ' + instName(id) + ' (Do maggiore, registro centrale).';
   }
+
+  /* ---------- Laboratorio suoni ---------- */
+  var LAB = { c: {} };
+  function labOptions(optional) {
+    var h = optional ? '<option value="">Nessuno</option>' : '';
+    h += Instruments.CATALOG.map(function (c) { return '<option value="' + c.id + '">' + esc(c.nome) + '</option>'; }).join('');
+    return h + Object.keys(SoundLab.SYNTHS).map(function (k) { return '<option value="' + k + '">' + esc(SoundLab.SYNTHS[k].nome) + '</option>'; }).join('');
+  }
+  function labCurrent() {
+    var a = $('#lab-a').value, b = $('#lab-b').value, rec = { id: 'lab:prova', nome: $('#lab-name').value.trim() || 'Senza nome', strati: [{ src: a, vol: 1 }], c: Object.assign({}, LAB.c), tipo: (Instruments.info(a) || {}).tipo || 'sostenuto', ruoli: ['melodia', 'accordi', 'pad'] };
+    if (b) { rec.strati.push({ src: b, vol: +$('#lab-bv').value / 100, ott: +$('#lab-bo').value }); rec.morph = +$('#lab-m').value / 100; }
+    Object.keys(rec.c).forEach(function (k) { if (!rec.c[k]) delete rec.c[k]; });
+    return rec;
+  }
+  function labSet(rec) {
+    $('#lab-a').value = rec.strati[0].src; $('#lab-b').value = rec.strati[1] ? rec.strati[1].src : '';
+    $('#lab-bv').value = Math.round(((rec.strati[1] || {}).vol || 0.5) * 100); $('#lab-bvv').textContent = $('#lab-bv').value + '%'; $('#lab-bo').value = String((rec.strati[1] || {}).ott || 0);
+    $('#lab-m').value = Math.round((rec.morph || 0) * 100); $('#lab-mv').textContent = $('#lab-m').value + '%';
+    LAB.c = Object.assign({}, rec.c || {}); renderKnobs();
+  }
+  function renderKnobs() {
+    $('#lab-knobs').innerHTML = Object.keys(SoundLab.KNOBS).map(function (k) {
+      var v = Math.round((LAB.c[k] || 0) * 100), txt = SoundLab.KNOBS[k];
+      return '<label class="f"><span>' + esc(txt.split(':')[0]) + ' <b data-kv="' + k + '">' + v + '%</b></span><input type="range" min="0" max="100" value="' + v + '" data-knob="' + k + '"><small class="muted">' + esc(txt.split(':').slice(1).join(':').trim()) + '</small></label>';
+    }).join('');
+  }
+  async function labPlayRec(rec, msg) {
+    var deps = SoundLab.deps(rec); msg.textContent = 'Carico i suoni…';
+    for (var i = 0; i < deps.length; i++) if (!(await loadInst(deps[i]))) { msg.textContent = 'Download non riuscito (serve internet la prima volta).'; return; }
+    SoundLab.install(rec); await previewInst(rec.id, msg);
+  }
+  function renderLab() {
+    $('#lab-orig').innerHTML = SoundLab.ORIGINALS.map(function (r) {
+      return '<div class="note" style="margin-top:8px"><div class="row" style="justify-content:space-between;align-items:center"><b>' + esc(r.nome) + '</b><span class="row"><button class="btn sm" data-labprev="' + r.id + '">Ascolta</button><button class="btn sm" data-labedit="' + r.id + '">Modifica</button></span></div>' +
+        '<p class="small">' + esc(r.descr) + '</p><p class="small"><b>Perché dovrebbe esistere:</b> ' + esc(r.perche) + '</p><p class="small muted"><b>Come si usa:</b> ' + esc(r.uso) + ' · Stili: ' + esc(r.stili.join(', ')) + '</p></div>';
+    }).join('');
+    $('#lab-gen').innerHTML = SoundLab.GENRES.map(function (g, i) {
+      return '<div class="note" style="margin-top:8px"><b>' + esc(g.nome) + '</b><p class="small">' + esc(g.idea) + '</p><p class="small muted">Melodia: ' + esc(instName(g.inst.melodia)) + ' · Accordi: ' + esc(instName(g.inst.accordi)) + ' · Atmosfera: ' + esc(instName(g.inst.pad)) + '</p><button class="btn sm" data-labgen="' + i + '">Prova nella base</button></div>';
+    }).join('');
+    var mine = LIB.settings.lab || [];
+    $('#lab-mine').innerHTML = mine.length ? '<h3 style="margin-top:12px">I tuoi strumenti</h3>' + mine.map(function (r) {
+      return '<div class="note" style="margin-top:6px"><div class="row" style="justify-content:space-between;align-items:center"><b>' + esc(r.nome) + '</b><span class="row"><button class="btn sm" data-labprev="' + r.id + '">Ascolta</button><button class="btn sm" data-labedit="' + r.id + '">Modifica</button><button class="btn sm" data-labdel="' + r.id + '">Elimina</button></span></div><p class="small muted">' + esc(r.descr || '') + '</p></div>';
+    }).join('') : '';
+  }
+  $('#lab-a').innerHTML = labOptions(false); $('#lab-b').innerHTML = labOptions(true); $('#lab-a').value = 'piano'; renderKnobs();
+  $('#lab-knobs').addEventListener('input', function (e) { var k = e.target.getAttribute('data-knob'); if (!k) return; LAB.c[k] = +e.target.value / 100; $('[data-kv="' + k + '"]').textContent = e.target.value + '%'; });
+  $('#lab-bv').addEventListener('input', function () { $('#lab-bvv').textContent = this.value + '%'; });
+  $('#lab-m').addEventListener('input', function () { $('#lab-mv').textContent = this.value + '%'; });
+  $('#lab-play').addEventListener('click', function () { labPlayRec(labCurrent(), $('#lab-msg')); });
+  $('#lab-rand').addEventListener('click', function () {
+    LAB.seed = (LAB.seed || Math.floor(Math.random() * 9000) + 1) + 1;
+    var r = SoundLab.invent(LAB.seed); labSet(r); $('#lab-name').value = ''; $('#lab-msg').textContent = 'Invenzione n. ' + LAB.seed + ': ' + r.descr;
+    labPlayRec(Object.assign(r, { id: 'lab:prova' }), $('#lab-msg'));
+  });
+  $('#lab-save').addEventListener('click', function () {
+    var r = labCurrent(), nm = $('#lab-name').value.trim(); if (!nm) { $('#lab-msg').textContent = 'Dai un nome al tuo strumento.'; return; }
+    LIB.settings.lab = LIB.settings.lab || [];
+    var ex = LIB.settings.lab.filter(function (x) { return x.nome === nm; })[0];
+    r.id = ex ? ex.id : 'lab:mio' + Date.now().toString(36); r.nome = nm;
+    r.descr = 'Strati: ' + r.strati.map(function (L) { return instName(L.src) || L.src; }).join(' + ') + (Object.keys(r.c).length ? '. Carattere: ' + Object.keys(r.c).map(function (k) { return k + ' ' + Math.round(r.c[k] * 100) + '%'; }).join(', ') : '') + '.';
+    if (ex) LIB.settings.lab[LIB.settings.lab.indexOf(ex)] = r; else LIB.settings.lab.push(r);
+    SoundLab.install(r); persist(); renderLab(); refreshInstSelects();
+    $('#lab-msg').textContent = '"' + nm + '" salvato. Ora lo trovi nei menu Melodia, Accordi e Atmosfera della base.';
+  });
+  $('#v-strumenti').addEventListener('click', function (e) {
+    var t = e.target.closest('button'); if (!t) return;
+    var pv = t.getAttribute('data-labprev'), ed = t.getAttribute('data-labedit'), dl = t.getAttribute('data-labdel'), gi = t.getAttribute('data-labgen');
+    if (pv) labPlayRec(labRec(pv), $('#lab-msg'));
+    if (ed) { var r = labRec(ed); labSet(r); $('#lab-name').value = (LIB.settings.lab || []).indexOf(r) >= 0 ? r.nome : r.nome + ' (mia versione)'; $('#lab-msg').textContent = 'Modifica i cursori, premi Ascolta, poi Salva.'; $('#lab-a').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    if (dl) { LIB.settings.lab = (LIB.settings.lab || []).filter(function (x) { return x.id !== dl; }); persist(); renderLab(); refreshInstSelects(); }
+    if (gi != null) { var g = SoundLab.GENRES[+gi], p = cur().prod; p.genre = g.base; p.bpm = g.bpm || ALLG[g.base].bpm; p.tune = null; if (['trap', 'drill', 'epico'].indexOf(g.base) >= 0) p.mode = 'minore'; p.inst = Object.assign({}, g.inst); persist(); fillBase(); ensureInst(); $('#lab-msg').textContent = '"' + g.nome + '" impostato. Vai in Studio e premi "Crea e ascolta".'; }
+  });
   var stFam = 'tutte';
   SHOW.strumenti = function () {
+    renderLab();
     $('#st-count').textContent = Instruments.CATALOG.length + ' strumenti';
     $('#st-how').innerHTML = '<ol class="small" style="padding-left:18px;line-height:1.6">' +
       '<li><b>Ritmo</b> (cassa, rullante o clap, hi-hat): decide il genere e la velocità. Va per primo.</li>' +
@@ -1229,7 +1310,7 @@
 
   /* ================= Avvio ================= */
   async function start() {
-    await load(); applyTheme(); cur(); restoreTakes(); initSample().then(function () { if (!$('#v-impostazioni').hidden) renderSettings(); });
+    await load(); (LIB.settings.lab || []).forEach(function (r) { try { SoundLab.install(r); } catch (e) {} }); refreshInstSelects(); applyTheme(); cur(); restoreTakes(); initSample().then(function () { if (!$('#v-impostazioni').hidden) renderSettings(); });
     route();
   }
   window.__app = { LIB: function () { return LIB; }, SESSION: SESSION, store: store, addTake: addTake, selectTake: selectTake, buildMix: buildMix, route: route };
