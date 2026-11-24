@@ -233,6 +233,8 @@
     var refSt = clamp(opts.refCents || 0, -50, 50) / 100;                       // accordatura della base (cent rispetto al LA 440)
     var notes = Array.isArray(opts.notes) ? opts.notes : null;   // note modificate a mano: {t0,t1,target,amount}
     var notesOnly = notes ? opts.notesOnly !== false : false;    // fuori dalle note non si tocca nulla
+    var chords = Array.isArray(opts.chords) && opts.chords.length ? opts.chords : null; // accordi della base nel tempo: {t0,t1,pcs:[0-11]}
+    var chordPull = clamp(opts.chordPull == null ? 0 : opts.chordPull, 0, 1);  // 0 = solo scala, 1 = tira forte verso le note dell'accordo
 
     var mono = mixToMono(input);
     if (mono.length > maxSeconds * sr) mono = mono.subarray(0, Math.floor(maxSeconds * sr));
@@ -267,6 +269,16 @@
     var mask = opts.mask && opts.mask.length === 12 ? opts.mask : scaleMask(tonic, mode);
     if (strength === 0 && !degrees && !shift) return finish();
 
+    // nota dell'accordo di quel momento più vicina, se entro la distanza scelta (accordi della base battuta per battuta)
+    function chordTone(m, t) {
+      if (!chords || chordPull <= 0) return null;
+      var c = null; for (var q = 0; q < chords.length; q++) if (t >= chords[q].t0 && t < chords[q].t1) { c = chords[q]; break; }
+      if (!c || !c.pcs || !c.pcs.length) return null;
+      var best = null, bd = 9;
+      var r0 = Math.round(m);
+      c.pcs.forEach(function (pc) { var up = r0 + ((((pc - r0) % 12) + 12) % 12); [up, up - 12].forEach(function (x2) { var d = Math.abs(x2 - m); if (d < bd) { bd = d; best = x2; } }); });
+      return bd <= 0.35 + chordPull * 1.15 ? best : null;
+    }
     function noteAt(t) {
       if (!notes) return null;
       for (var q = 0; q < notes.length; q++) if (t >= notes[q].t0 && t < notes[q].t1) return notes[q];
@@ -279,6 +291,7 @@
       if (notesOnly) return { target: m, amt: 0, q: null };
       var q = quantizeMidi(m, mask);
       if (curQ != null && q !== curQ && Math.abs(m - q) + 0.12 >= Math.abs(m - curQ)) q = curQ; // isteresi: niente rimbalzi tra due note vicine
+      var cq = chordTone(m, t); if (cq != null) q = cq;
       return { target: (degrees ? stepUp(q, degrees, mask) : q) + shift, amt: 1, q: q };
     }
 

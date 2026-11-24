@@ -478,6 +478,10 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted" style="margin:10px 0 4px">Carattere della voce (puoi sceglierne fino a 3 insieme):</p>
     <div class="chips" id="dw-mic-chars"></div>
     <div class="dw-knobs" id="dw-mic-knobs"></div>
+    <p class="small muted" style="margin:10px 0 4px">Trasformazione della voce:</p>
+    <div class="chips" id="dw-mic-fx"></div>
+    <p class="small muted" style="margin:10px 0 4px">I tuoi preset:</p>
+    <div class="chips" id="dw-mic-presets"></div>
     <div class="row" style="margin-top:10px"><button class="btn pri" id="dw-mic-apply">Applica alla voce</button><button class="btn" id="dw-mic-ab">Senti la voce originale</button><a class="btn" href="#voce">Tutte le regolazioni</a></div>
     <p class="small muted">Si regola sempre sull'ultima voce registrata con ●. L'originale non si perde mai: puoi cambiare idea quante volte vuoi.</p>
     <div class="status" id="dw-mic-msg"></div>
@@ -567,7 +571,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 18:50</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 18:52</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -917,7 +921,7 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">267 test automatici superati su 267 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">270 test automatici superati su 270 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -1985,6 +1989,8 @@ details.card[open]>summary{margin-bottom:8px}
     var refSt = clamp(opts.refCents || 0, -50, 50) / 100;                       // accordatura della base (cent rispetto al LA 440)
     var notes = Array.isArray(opts.notes) ? opts.notes : null;   // note modificate a mano: {t0,t1,target,amount}
     var notesOnly = notes ? opts.notesOnly !== false : false;    // fuori dalle note non si tocca nulla
+    var chords = Array.isArray(opts.chords) && opts.chords.length ? opts.chords : null; // accordi della base nel tempo: {t0,t1,pcs:[0-11]}
+    var chordPull = clamp(opts.chordPull == null ? 0 : opts.chordPull, 0, 1);  // 0 = solo scala, 1 = tira forte verso le note dell'accordo
 
     var mono = mixToMono(input);
     if (mono.length > maxSeconds * sr) mono = mono.subarray(0, Math.floor(maxSeconds * sr));
@@ -2019,6 +2025,16 @@ details.card[open]>summary{margin-bottom:8px}
     var mask = opts.mask && opts.mask.length === 12 ? opts.mask : scaleMask(tonic, mode);
     if (strength === 0 && !degrees && !shift) return finish();
 
+    // nota dell'accordo di quel momento più vicina, se entro la distanza scelta (accordi della base battuta per battuta)
+    function chordTone(m, t) {
+      if (!chords || chordPull <= 0) return null;
+      var c = null; for (var q = 0; q < chords.length; q++) if (t >= chords[q].t0 && t < chords[q].t1) { c = chords[q]; break; }
+      if (!c || !c.pcs || !c.pcs.length) return null;
+      var best = null, bd = 9;
+      var r0 = Math.round(m);
+      c.pcs.forEach(function (pc) { var up = r0 + ((((pc - r0) % 12) + 12) % 12); [up, up - 12].forEach(function (x2) { var d = Math.abs(x2 - m); if (d < bd) { bd = d; best = x2; } }); });
+      return bd <= 0.35 + chordPull * 1.15 ? best : null;
+    }
     function noteAt(t) {
       if (!notes) return null;
       for (var q = 0; q < notes.length; q++) if (t >= notes[q].t0 && t < notes[q].t1) return notes[q];
@@ -2031,6 +2047,7 @@ details.card[open]>summary{margin-bottom:8px}
       if (notesOnly) return { target: m, amt: 0, q: null };
       var q = quantizeMidi(m, mask);
       if (curQ != null && q !== curQ && Math.abs(m - q) + 0.12 >= Math.abs(m - curQ)) q = curQ; // isteresi: niente rimbalzi tra due note vicine
+      var cq = chordTone(m, t); if (cq != null) q = cq;
       return { target: (degrees ? stepUp(q, degrees, mask) : q) + shift, amt: 1, q: q };
     }
 
@@ -2680,7 +2697,7 @@ details.card[open]>summary{margin-bottom:8px}
   /* ====================== parametri ====================== */
   var DEFAULTS = {
     clean: { on: true, hp: 90, denoiseDb: 0 },
-    tune: { on: true, key: 'auto', tonic: 0, mode: 'maggiore', strength: 0.8, retuneMs: 25, humanize: 0.3, flexCents: 0, classic: false, vibrato: 0.7, drift: 0.3, vibratoDepth: 0, vibratoRate: 5.6, formantSemitones: 0, refCents: 0 },
+    tune: { on: true, key: 'auto', tonic: 0, mode: 'maggiore', strength: 0.8, retuneMs: 25, humanize: 0.3, flexCents: 0, classic: false, vibrato: 0.7, drift: 0.3, vibratoDepth: 0, vibratoRate: 5.6, formantSemitones: 0, refCents: 0, chordPull: 0 },
     eq: { on: true, boxyDb: -2, presenceDb: 2.5, airDb: 2, lowDb: 0, darkHz: 0 },
     deess: { on: true, freq: 6500, amount: 0.5 },
     comp: { on: true, thresholdDb: -20, ratio: 4, attackMs: 5, releaseMs: 250, peakDb: -8, makeupDb: 0 },
@@ -2703,6 +2720,7 @@ details.card[open]>summary{margin-bottom:8px}
     ['tune.strength', 'num', 0, 1, 'Quanto correggere', '0 = niente, 1 = tutta la correzione.'],
     ['tune.retuneMs', 'num', 0, 200, 'Velocità (ms)', '0-5 = effetto robot, 10-50 = naturale, più alto = lascia passare di più.'],
     ['tune.humanize', 'num', 0, 1, 'Humanize', 'Rallenta la correzione nelle note lunghe così non suonano statiche.'],
+    ['tune.chordPull', 'num', 0, 1, 'Segui gli accordi', 'Quanto la voce viene portata sulle note dell\'accordo che suona in quel momento (0 = solo la scala).'],
     ['tune.flexCents', 'num', 0, 60, 'Flex-Tune (cent)', 'Zona attorno alla nota dove non si corregge; le scivolate passano.'],
     ['tune.classic', 'bool', 0, 1, 'Modo Classico', 'Passaggio a gradino netto tra le note (effetto duro).'],
     ['tune.vibrato', 'num', 0, 1.5, 'Vibrato naturale', 'Quanto del tuo vibrato resta (0 = piatto, 1 = come l\'hai fatto).'],
@@ -2926,7 +2944,7 @@ details.card[open]>summary{margin-bottom:8px}
     function add(name, label, fn) { st.push({ name: name, label: label, fn: fn }); }
     if (p.clean.on) add('clean', 'Pulizia', function (S) { S.x = stageClean(S.x, S.sr, p.clean, S.rep); });
     if (p.tune.on) add('tune', 'Intonazione', function (S) {
-      var t = p.tune, o = { strength: t.strength, retuneMs: t.retuneMs, humanize: t.humanize, flexCents: t.flexCents, classic: t.classic, vibrato: t.vibrato, drift: t.drift, vibratoDepth: t.vibratoDepth, vibratoRate: t.vibratoRate, formantSemitones: t.formantSemitones, refCents: t.refCents, maxSeconds: 600, track: S.track };
+      var t = p.tune, o = { strength: t.strength, retuneMs: t.retuneMs, humanize: t.humanize, flexCents: t.flexCents, classic: t.classic, vibrato: t.vibrato, drift: t.drift, vibratoDepth: t.vibratoDepth, vibratoRate: t.vibratoRate, formantSemitones: t.formantSemitones, refCents: t.refCents, maxSeconds: 600, track: S.track, chords: S.ctx.chords, chordPull: t.chordPull, notes: S.ctx.notes, notesOnly: false };
       if (t.key === 'auto') o.key = 'auto'; else { o.tonic = t.tonic; o.mode = t.mode; }
       var r = Autotune.correct(S.x, S.sr, o); S.x = r.samples; S.rep.tune = r.stats;
       S.ctx.tonic = r.stats.tonic; S.ctx.mode = r.stats.mode; S.ctx.scaleKnown = r.stats.mode !== 'cromatica';
@@ -2950,7 +2968,7 @@ details.card[open]>summary{margin-bottom:8px}
   }
   function newState(x, sr, params, ctx) {
     var p = sanitize(params);
-    return { p: p, S: { x: Float32Array.from(x), sr: sr, track: null, ctx: { bpm: ctx && ctx.bpm, scaleKnown: p.tune.mode !== 'cromatica', tonic: p.tune.tonic, mode: p.tune.mode }, rep: { warnings: [], stageMs: {}, peaks: {} } } };
+    return { p: p, S: { x: Float32Array.from(x), sr: sr, track: null, ctx: { bpm: ctx && ctx.bpm, chords: ctx && ctx.chords, notes: ctx && ctx.notes, scaleKnown: p.tune.mode !== 'cromatica', tonic: p.tune.tonic, mode: p.tune.mode }, rep: { warnings: [], stageMs: {}, peaks: {} } } };
   }
   function finishReport(S, input) {
     var rep = S.rep; rep.inputPeakDb = peakDb(input); rep.outputPeakDb = peakDb(S.x); rep.inputRmsDb = gatedRmsDb(input, S.sr); rep.outputRmsDb = gatedRmsDb(S.x, S.sr); rep.sampleRate = S.sr;
@@ -6697,6 +6715,69 @@ details.card[open]>summary{margin-bottom:8px}
   }
   function end(clips) { return clips.reduce(function (a, c) { return Math.max(a, c.start + c.len); }, 0); }
   return { XF: XF, clip: clip, whole: whole, split: split, compByLines: compByLines, render: render, end: end };
+});
+
+/*
+ * Effetti di trasformazione della voce (calcolo sul file, nessun plugin esterno):
+ *  - vocoder: la voce "suona" un sintetizzatore che fa gli ACCORDI DELLA BASE (16 bande, come i vocoder classici):
+ *             la voce dà le parole e il ritmo, il synth dà le note.
+ *  - metallico: modulazione ad anello + risonanza a pettine (voce da robot/metallo).
+ *  - radio: banda stretta 400-3500 Hz + leggera distorsione (voce da telefono/vecchia radio).
+ * mix 0-1 = quanto effetto rispetto alla voce originale.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.VoiceFx = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  function biquad(type, f, q, sr) {
+    var w = 2 * Math.PI * f / sr, cs = Math.cos(w), sn = Math.sin(w), a = sn / (2 * q), b0, b1, b2, a0 = 1 + a, a1 = -2 * cs, a2 = 1 - a;
+    if (type === 'bp') { b0 = a; b1 = 0; b2 = -a; } else if (type === 'lp') { b0 = (1 - cs) / 2; b1 = 1 - cs; b2 = b0; } else { b0 = (1 + cs) / 2; b1 = -(1 + cs); b2 = b0; }
+    return { b0: b0 / a0, b1: b1 / a0, b2: b2 / a0, a1: a1 / a0, a2: a2 / a0 };
+  }
+  function run(x, c) { var y = new Float32Array(x.length), x1 = 0, x2 = 0, y1 = 0, y2 = 0; for (var i = 0; i < x.length; i++) { var v = c.b0 * x[i] + c.b1 * x1 + c.b2 * x2 - c.a1 * y1 - c.a2 * y2; x2 = x1; x1 = x[i]; y2 = y1; y1 = v; y[i] = v; } return y; }
+  function peak(x) { var p = 0; for (var i = 0; i < x.length; i++) { var a = x[i] < 0 ? -x[i] : x[i]; if (a > p) p = a; } return p; }
+  function blend(dry, wet, mix) { var pd = peak(dry), pw = peak(wet), g = pw > 0 ? pd / pw : 0, y = new Float32Array(dry.length); for (var i = 0; i < y.length; i++) y[i] = dry[i] * (1 - mix) + wet[i] * g * mix; return y; }
+
+  /** Portante del vocoder: onde a dente di sega sulle note dell'accordo di ogni momento (chords: [{t0,t1,pcs}]). */
+  function carrier(n, sr, chords, base) {
+    var y = new Float32Array(n), ph = [0, 0, 0, 0];
+    for (var i = 0; i < n; i++) {
+      var t = i / sr, c = null; for (var k = 0; k < chords.length; k++) if (t >= chords[k].t0 && t < chords[k].t1) { c = chords[k]; break; }
+      var pcs = c ? c.pcs : [base % 12, (base + 3) % 12, (base + 7) % 12], v = 0;
+      for (var j = 0; j < Math.min(4, pcs.length); j++) { var f = 440 * Math.pow(2, (48 + pcs[j] - 69) / 12) * (j === 3 ? 2 : 1); ph[j] += f / sr; if (ph[j] > 1) ph[j] -= 1; v += 2 * ph[j] - 1; }
+      y[i] = v / 3;
+    }
+    return y;
+  }
+  function vocoder(x, sr, opt) {
+    opt = opt || {};
+    var bands = opt.bands || 16, lo = 120, hi = Math.min(7000, sr / 2 - 500), car = carrier(x.length, sr, opt.chords || [], opt.tonic || 0), out = new Float32Array(x.length);
+    var att = Math.exp(-1 / (sr * 0.004)), rel = Math.exp(-1 / (sr * 0.03));
+    for (var b = 0; b < bands; b++) {
+      var f = lo * Math.pow(hi / lo, (b + 0.5) / bands), q = 6, c = biquad('bp', f, q, sr);
+      var mod = run(x, c), cb = run(car, c), e = 0;
+      for (var i = 0; i < x.length; i++) { var a = mod[i] < 0 ? -mod[i] : mod[i]; e = a > e ? att * e + (1 - att) * a : rel * e + (1 - rel) * a; out[i] += cb[i] * e; }
+    }
+    // un po' di consonanti originali sopra (si capiscono le parole)
+    var sib = run(x, biquad('hp', 5000, 0.7, sr)); for (var i2 = 0; i2 < out.length; i2++) out[i2] += sib[i2] * 0.04;
+    return blend(x, out, opt.mix == null ? 0.8 : opt.mix);
+  }
+  function metallic(x, sr, opt) {
+    opt = opt || {};
+    var fr = opt.freq || 95, d = Math.round(sr / (opt.comb || 210)), y = new Float32Array(x.length);
+    for (var i = 0; i < x.length; i++) { var r = x[i] * Math.sin(2 * Math.PI * fr * i / sr); y[i] = 0.6 * r + 0.4 * x[i] + (i >= d ? 0.55 * y[i - d] : 0); }
+    return blend(x, y, opt.mix == null ? 0.7 : opt.mix);
+  }
+  function radio(x, sr, opt) {
+    opt = opt || {};
+    var y = run(run(x, biquad('hp', 400, 0.8, sr)), biquad('lp', 3500, 0.8, sr)), p = peak(y) || 1;
+    for (var i = 0; i < y.length; i++) y[i] = Math.tanh(2.5 * y[i] / p) * p;
+    return blend(x, y, opt.mix == null ? 0.9 : opt.mix);
+  }
+  var FX = { vocoder: { nome: 'Vocoder sugli accordi', fn: vocoder }, metallico: { nome: 'Metallico / robot', fn: metallic }, radio: { nome: 'Radio / telefono', fn: radio } };
+  function apply(id, x, sr, opt) { return FX[id] ? FX[id].fn(x, sr, opt) : x; }
+  return { FX: FX, apply: apply, vocoder: vocoder, metallic: metallic, radio: radio, carrier: carrier };
 });
 
 /*
@@ -11129,7 +11210,19 @@ details.card[open]>summary{margin-bottom:8px}
       var label = !auto && k.id === 'intensity' ? 'Quanto lavoro sulla voce' : k.label;
       return '<label class="f"><span>' + esc(label) + ' <b>' + v + '</b></span><input type="range" min="0" max="100" value="' + v + '" data-mk="' + k.id + '"><small class="muted">' + esc(k.hint) + '</small></label>';
     }).join('');
+    var cp = m.chordPull == null ? 50 : m.chordPull, fxa = m.fxMix == null ? 70 : m.fxMix;
+    $('#dw-mic-knobs').insertAdjacentHTML('beforeend', (auto ? '<label class="f"><span>Segui gli accordi <b>' + cp + '</b></span><input type="range" min="0" max="100" value="' + cp + '" data-mk2="chordPull"><small class="muted">La voce va sulle note dell\'accordo che suona in quel momento (0 = solo la scala).</small></label>' : '') +
+      '<label class="f"><span>Quantità effetto <b>' + fxa + '</b></span><input type="range" min="0" max="100" value="' + fxa + '" data-mk2="fxMix"><small class="muted">Per Vocoder, Metallico e Radio.</small></label>');
+    $('#dw-mic-fx').innerHTML = [['', 'Nessun effetto'], ['vocoder', 'Vocoder sugli accordi'], ['metallico', 'Metallico / robot'], ['radio', 'Radio / telefono']].map(function (f) { return '<button class="chip' + ((m.fx || '') === f[0] ? ' on' : '') + '" data-mfx="' + f[0] + '">' + f[1] + '</button>'; }).join('');
+    var pr = LIB.settings.micPresets || [];
+    $('#dw-mic-presets').innerHTML = pr.map(function (q, i) { return '<button class="chip" data-mpr="' + i + '">' + esc(q.name) + '</button>'; }).join('') + '<button class="chip" id="dw-mic-save">+ Salva come mio preset</button>';
     $('#dw-mic-ab').textContent = DW.raw ? 'Senti la voce regolata' : 'Senti la voce originale';
+  }
+  // accordi della base nel tempo della prova (per autotune che segue gli accordi e vocoder)
+  function takeChords(t) {
+    var b = SESSION.base; if (!b || !b.events || !b.events.chords) return [];
+    var bs = 240 / b.bpm, lat = t.lat || 0;
+    return b.events.chords.map(function (c) { return { t0: c.bar * bs + lat, t1: (c.bar + 1) * bs + lat, pcs: c.midis.map(function (x) { return ((x % 12) + 12) % 12; }) }; });
   }
   async function micApply(quiet) {
     var t = voiceTake(), el = $('#dw-mic-msg');
@@ -11139,11 +11232,14 @@ details.card[open]>summary{margin-bottom:8px}
     try {
       if (!t.vlInfo) t.vlInfo = VoiceChain.analyzeVoice(t.mono, t.sr);
       var info = t.vlInfo, as = VoiceChain.autoSettings(info), adv = auto ? {} : { tune: { on: false } };
+      if (auto) adv.tune = { chordPull: (m.chordPull == null ? 50 : m.chordPull) / 100 };
       var built = VoiceChain.buildParams({ ids: m.ids, macros: m.macros, auto: as, advanced: adv, keyOverride: { tonic: p.tonic, mode: p.mode } });
-      var res = await VoiceChain.renderAsync(t.mono, t.sr, built.params, { bpm: p.bpm }, function (label) { el.textContent = label + '…'; });
-      t.final = res.samples; t.finalV = (t.finalV || 0) + 1; t.finalRes = null; DW.raw = false; DW.bufKey = '';
+      var chords = takeChords(t), res = await VoiceChain.renderAsync(t.mono, t.sr, built.params, { bpm: p.bpm, chords: chords, notes: auto && t.notes ? t.notes.filter(function (n) { return n.edited; }).map(function (n) { return { t0: n.t0, t1: n.t1, target: n.target, amount: n.amount }; }) : null }, function (label) { el.textContent = label + '…'; });
+      var outV = res.samples;
+      if (m.fx) { el.textContent = 'Effetto ' + VoiceFx.FX[m.fx].nome + '…'; await tick(); outV = VoiceFx.apply(m.fx, outV, t.sr, { chords: chords, tonic: p.tonic, mix: (m.fxMix == null ? 70 : m.fxMix) / 100 }); }
+      t.final = outV; t.finalV = (t.finalV || 0) + 1; t.finalRes = null; DW.raw = false; DW.bufKey = '';
       var names = m.ids.map(function (id) { var c = VoiceChain.CHARACTERS.filter(function (x) { return x.id === id; })[0]; return c ? c.label : id; }).join(' + ');
-      el.textContent = (auto ? 'Autotune in ' + NOTES[p.tonic] + ' ' + p.mode + ' (la tonalità della base)' : 'Voce pulita, senza autotune') + ' · ' + names + '. ' + (function () { var nn = (as.notes || []).filter(function (x) { return !/onalit/.test(x); }); return nn.length ? 'Ho misurato: ' + nn.slice(0, 2).join(' ') : ''; })() + ' Premi Play.';
+      el.textContent = (auto ? 'Autotune in ' + NOTES[p.tonic] + ' ' + p.mode + ' (la tonalità della base)' : 'Voce pulita, senza autotune') + ' · ' + names + (m.fx ? ' · effetto ' + VoiceFx.FX[m.fx].nome : '') + (auto ? ' · segue gli accordi ' + (m.chordPull == null ? 50 : m.chordPull) + '%' : '') + '. ' + (function () { var nn = (as.notes || []).filter(function (x) { return !/onalit/.test(x); }); return nn.length ? 'Ho misurato: ' + nn.slice(0, 2).join(' ') : ''; })() + ' Premi Play.';
       coachRec('change', coachCtx(), { role: 'mic', from: null, to: m.mode + ':' + m.ids.join('+') });
       micRender(); if (!quiet) { dwStop(true); await dwRefresh(); }
       return true;
@@ -11155,6 +11251,13 @@ details.card[open]>summary{margin-bottom:8px}
     if (md) { m.mode = md; m.ids = [md === 'autotune' ? 'melodico' : 'naturale']; m.macros = {}; persist(); micRender(); if (voiceTake()) micApply(); }
     if (mc) { var i = m.ids.indexOf(mc); if (i >= 0) { if (m.ids.length > 1) m.ids.splice(i, 1); } else { m.ids.push(mc); if (m.ids.length > 3) m.ids.shift(); } m.macros = {}; persist(); micRender(); }
   });
+  $('#dw-p-mic').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return; var m = micSet();
+    if (b.hasAttribute('data-mfx')) { m.fx = b.getAttribute('data-mfx'); persist(); micRender(); $('#dw-mic-msg').textContent = m.fx ? 'Effetto scelto: premi Applica alla voce.' : 'Nessun effetto.'; }
+    if (b.id === 'dw-mic-save') { var nm = (prompt('Nome del preset (es. "Mia voce trap")') || '').trim().slice(0, 30); if (!nm) return; LIB.settings.micPresets = (LIB.settings.micPresets || []).concat([{ name: nm, set: JSON.parse(JSON.stringify(m)) }]); persist(); micRender(); $('#dw-mic-msg').textContent = 'Preset "' + nm + '" salvato.'; }
+    if (b.hasAttribute('data-mpr')) { var q = (LIB.settings.micPresets || [])[+b.getAttribute('data-mpr')]; if (q) { LIB.settings.mic = JSON.parse(JSON.stringify(q.set)); persist(); micRender(); $('#dw-mic-msg').textContent = 'Preset "' + q.name + '" caricato.'; if (voiceTake()) micApply(); } }
+  });
+  $('#dw-mic-knobs').addEventListener('change', function (e) { var k = e.target.getAttribute('data-mk2'); if (!k) return; micSet()[k] = +e.target.value; persist(); micRender(); });
   $('#dw-mic-knobs').addEventListener('input', function (e) { var k = e.target.getAttribute('data-mk'); if (!k) return; micSet().macros[k] = +e.target.value; e.target.previousElementSibling.querySelector('b').textContent = e.target.value; persist(); });
   $('#dw-mic-apply').addEventListener('click', function () { micApply(false); });
   $('#dw-mic-ab').addEventListener('click', async function () { if (!voiceTake()) { $('#dw-mic-msg').textContent = 'Nessuna voce registrata.'; return; } DW.raw = !DW.raw; DW.bufKey = ''; micRender(); var was = DW.playing, at = DW.playing ? (getCtx().currentTime - DW.t0) : (DW.from || 0); dwStop(true); await dwRefresh(); if (was) dwPlay(Math.max(0, at)); $('#dw-mic-msg').textContent = DW.raw ? 'Ora senti la voce ORIGINALE (come è uscita dal microfono).' : 'Ora senti la voce REGOLATA.'; });
