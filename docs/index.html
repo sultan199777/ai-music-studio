@@ -309,6 +309,7 @@ details.card[open]>summary{margin-bottom:8px}
 .dw-chip{padding:3px 10px}
 .dw-prop{flex-wrap:wrap}.dw-prop div{flex-basis:100%}.dw-prop .btn{flex:1}
 .dw-compl{display:grid;grid-template-columns:1fr 120px;gap:8px;align-items:center}.dw-compl span{font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dw-pr-wrap{overflow:auto;max-height:300px;border:1px solid var(--line);border-radius:10px;margin:8px 0;-webkit-overflow-scrolling:touch}.dw-pr-wrap canvas{display:block}
 
 /* ===== VOICE LAB (stile Cosmo: usa le variabili del tema) ===== */
 .vl .vl-auto{font-size:1.25rem;min-height:60px;margin:8px 0 4px;letter-spacing:.04em}
@@ -513,6 +514,16 @@ details.card[open]>summary{margin-bottom:8px}
     <div class="status" id="dw-tmsg"></div>
   </section>
 
+  <section class="dw-panel" id="dw-p-roll">
+    <div class="dw-ph"><h3>Piano roll</h3><span class="tag m">Nota per nota</span></div>
+    <div class="chips" id="dw-pr-tr"><button class="chip on" data-prt="lead">Melodia</button><button class="chip" data-prt="bass">Basso 808</button></div>
+    <div class="row"><button class="btn sm pri" id="dw-pr-edit">Modifica le note</button><button class="btn sm" id="dw-pr-reset">Torna alle note generate</button><label class="sw small"><input type="checkbox" id="dw-pr-snap" checked> Solo note della scala</label></div>
+    <div class="dw-pr-wrap"><canvas id="dw-pr-cv"></canvas></div>
+    <p class="small muted" id="dw-pr-info"></p>
+    <div class="row" id="dw-pr-tools" hidden><button class="btn sm" data-pra="up">▲</button><button class="btn sm" data-pra="down">▼</button><button class="btn sm" data-pra="left">◀</button><button class="btn sm" data-pra="right">▶</button><button class="btn sm" data-pra="short">Più corta</button><button class="btn sm" data-pra="long">Più lunga</button><button class="btn sm" data-pra="oct">Ottava</button><button class="btn sm" data-pra="glide" id="dw-pr-glide">Glide 808</button><button class="btn sm" data-pra="del">Elimina</button></div>
+    <div class="status" id="dw-pr-msg"></div>
+  </section>
+
   <section class="dw-panel" id="dw-p-clips">
     <div class="dw-ph"><h3>Voce: prove e montaggio</h3><span class="tag m">Niente si perde</span></div>
     <div id="dw-cl-takes"></div>
@@ -556,7 +567,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 17:45</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 18:39</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -904,7 +915,7 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">261 test automatici superati su 261 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">262 test automatici superati su 262 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -5284,6 +5295,8 @@ details.card[open]>summary{margin-bottom:8px}
     var bassKind = p.bassStyle === '808' ? '808' : (style.bass);
     var T = { arp: new Float32Array(N), kick: new Float32Array(N), snare: new Float32Array(N), hat: new Float32Array(N), bass: new Float32Array(N), chords: new Float32Array(N), pad: new Float32Array(N), lead: new Float32Array(N), fx: new Float32Array(N) };
     var events = { bass: [], chords: [], lead: [], kick: [], hat: [], arp: [] }, kickStarts = [];
+    function okNotes(a) { return Array.isArray(a) && a.length ? a.filter(function (n) { return n && n.bar >= 0 && n.step >= 0 && n.step < 16 && n.len > 0 && n.midi > 0; }) : null; }
+    var NL = okNotes(p.notes && p.notes.lead), NB = okNotes(p.notes && p.notes.bass);
     var LEADS = { trap: ['synth', 'keys', 'bell'], drill: ['dark', 'keys', 'bell'], epico: ['strings', 'synth', 'keys'], melodico: ['keys', 'synth', 'pluck'], boombap: ['keys', 'pluck', 'bell'], street: ['keys', 'bell', 'synth'], trapdark: ['dark', 'bell', 'keys'], clubtrap: ['bell', 'synth', 'marimba'], estate: ['marimba', 'keys', 'synth'] };
     // Strumenti veri scelti per ruolo (p.inst = {melodia, accordi, pad}); se non caricati si usa la sintesi.
     var pin = p.inst || {};
@@ -5663,8 +5676,8 @@ details.card[open]>summary{margin-bottom:8px}
               sl = style.slide > 0 && prevBassMidi != null && prevBassMidi !== midi && rand() < style.slide;
               buf = bass808(midi, sl ? prevBassMidi : null, dur, sl);
             } else buf = bassRound(midi, dur, bassKind === 'sub');
-            add('bass', at(bar, s), buf, 0.75 * cfg.bass);
-            events.bass.push({ start: at(bar, s) / sr, midi: midi, dur: dur, slideFrom: (bassKind === '808' && sl) ? prevBassMidi : null }); prevBassMidi = midi;
+            if (!NB) add('bass', at(bar, s), buf, 0.75 * cfg.bass);
+            if (!NB) events.bass.push({ start: at(bar, s) / sr, midi: midi, dur: dur, bar: bar, step: s, len: next - s, slide: !!sl, slideFrom: (bassKind === '808' && sl) ? prevBassMidi : null }); prevBassMidi = midi;
           });
         }
 
@@ -5711,13 +5724,13 @@ details.card[open]>summary{margin-bottom:8px}
         }
 
         // melodia
-        if (cfg.lead) {
+        if (cfg.lead && !NL) {
           var src = sec.name === 'bridge' ? bridgeLine : hook;
           src[k % 4].forEach(function (n) {
             var d3 = n.len * stepSec * 0.95, m3 = n.midi;
             if (LI) add('lead', at(bar, n.step), Inst.render(LI, fit(m3, LI), d3, sr, { vel: n.step % 4 === 0 ? 1 : 0.85 }), 0.3 * cfg.lead);
             else add('lead', at(bar, n.step), leadBuf(leadKind, m3, d3), (leadKind === 'strings' ? 0.32 : 0.36) * cfg.lead);
-            events.lead.push({ start: at(bar, n.step) / sr, midi: m3, dur: d3 });
+            events.lead.push({ start: at(bar, n.step) / sr, midi: m3, dur: d3, bar: bar, step: n.step, len: n.len });
           });
         }
 
@@ -5732,6 +5745,19 @@ details.card[open]>summary{margin-bottom:8px}
         }
       }
     });
+
+    // note scritte a mano nel piano roll (sostituiscono quelle generate; il resto della base resta identico)
+    if (NL) NL.forEach(function (n) {
+      if (n.bar >= bars) return; var d3 = n.len * stepSec * 0.95, vel = n.vel == null ? 0.9 : n.vel;
+      if (LI) add('lead', at(n.bar, n.step), Inst.render(LI, fit(n.midi, LI), d3, sr, { vel: vel }), 0.3);
+      else add('lead', at(n.bar, n.step), leadBuf(leadKind, n.midi, d3), 0.36 * vel);
+      events.lead.push({ start: at(n.bar, n.step) / sr, midi: n.midi, dur: d3, bar: n.bar, step: n.step, len: n.len, edited: true });
+    });
+    if (NB) { var pm2 = null; NB.slice().sort(function (a, b) { return a.bar * 16 + a.step - b.bar * 16 - b.step; }).forEach(function (n) {
+      if (n.bar >= bars) return; var dur = Math.min(n.len * stepSec, 2.2), sl = !!n.slide && pm2 != null && pm2 !== n.midi;
+      add('bass', at(n.bar, n.step), bassKind === '808' ? bass808(n.midi, sl ? pm2 : null, dur, sl) : bassRound(n.midi, dur, bassKind === 'sub'), 0.75);
+      events.bass.push({ start: at(n.bar, n.step) / sr, midi: n.midi, dur: dur, bar: n.bar, step: n.step, len: n.len, slide: sl, edited: true }); pm2 = n.midi;
+    }); }
 
     // "pompaggio": accordi e pad si abbassano a ogni cassa, come in produzione moderna
     function duck(tr, depth) {
@@ -9982,8 +10008,8 @@ details.card[open]>summary{margin-bottom:8px}
     return SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {} });
   }
   function getBase() {
-    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, map && map.plan, Instruments.loaded().length]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
+    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.notes, map && map.plan, Instruments.loaded().length]);
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, notes: p.notes || undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -10572,7 +10598,7 @@ details.card[open]>summary{margin-bottom:8px}
     $('#dw-arrinfo').textContent = (Arranger.STYLES[b.genre] ? Arranger.STYLES[b.genre].label : b.genre) + ' · ' + NOTES[b.tonic] + ' ' + b.mode + ' · ' + b.bpm + ' BPM · ' + b.bars + ' battute (' + fmt(b.duration, 0) + ' s)' + (map ? ' · forma dal testo' : '');
     dwPos(DW.from || 0);
   }
-  async function dwRefresh() { try { var b = await dwBase(); dwBuffers(b); dwDraw(b); dwSteps(); } catch (e) { $('#dw-msg').textContent = 'Non riesco a creare la base.'; } }
+  async function dwRefresh() { try { var b = await dwBase(); dwBuffers(b); dwDraw(b); dwSteps(); if (window.__prReady) prDraw(); } catch (e) { $('#dw-msg').textContent = 'Non riesco a creare la base.'; } }
   var dwT = null;
   function dwChanged(rebuildAgents) { SESSION.baseKey = ''; DW.bufKey = ''; persist(); clearTimeout(dwT); dwT = setTimeout(function () { dwRefresh(); if (rebuildAgents) agentsRun(); }, 250); }
 
@@ -10789,6 +10815,62 @@ details.card[open]>summary{margin-bottom:8px}
     var id = e.target.getAttribute('data-lv'); if (!id) return;
     var L = LANES.filter(function (x) { return x.id === id; })[0]; cur().prod.levels[L.level] = +e.target.value / 100; persist(); dwGains();
   });
+  // ---------- Piano roll nello Studio (melodia e basso 808) ----------
+  var PR = { tr: 'lead', sel: -1, cw: 14, rh: 12 };
+  var PR_RANGE = { lead: [55, 86], bass: [24, 50] };
+  var SCALE_ST = { maggiore: [0, 2, 4, 5, 7, 9, 11], minore: [0, 2, 3, 5, 7, 8, 10] };
+  function prNotes() { var p = cur().prod; return p.notes && Array.isArray(p.notes[PR.tr]) ? p.notes[PR.tr] : null; }
+  function prGenerated() { var b = SESSION.base; if (!b || !b.events) return []; return (b.events[PR.tr] || []).filter(function (n) { return n.bar != null; }).map(function (n) { return { bar: n.bar, step: n.step, len: Math.max(1, Math.round(n.len || 2)), midi: Math.round(n.midi), slide: !!n.slide }; }); }
+  function inScale(m) { var p = cur().prod; return (SCALE_ST[p.mode] || SCALE_ST.minore).indexOf(((m - p.tonic) % 12 + 12) % 12) >= 0; }
+  function prDraw() {
+    var b = SESSION.base, cv = $('#dw-pr-cv'); if (!b || !cv) return;
+    var own = prNotes(), notes = own || prGenerated(), r = PR_RANGE[PR.tr], rows = r[1] - r[0] + 1, W = b.bars * 16 * PR.cw, H = rows * PR.rh, dpr = window.devicePixelRatio || 1;
+    cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    var g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+    for (var m = r[0]; m <= r[1]; m++) { var y = (r[1] - m) * PR.rh; g.fillStyle = inScale(m) ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.25)'; g.fillRect(0, y, W, PR.rh - 1); if (m % 12 === cur().prod.tonic) { g.fillStyle = 'rgba(227,196,143,.16)'; g.fillRect(0, y, W, PR.rh - 1); } }
+    for (var s = 0; s <= b.bars * 16; s++) { g.fillStyle = s % 16 === 0 ? 'rgba(255,255,255,.35)' : (s % 4 === 0 ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.04)'); g.fillRect(s * PR.cw, 0, 1, H); }
+    notes.forEach(function (n, i) {
+      var x = (n.bar * 16 + n.step) * PR.cw, y = (r[1] - n.midi) * PR.rh;
+      g.fillStyle = !own ? 'rgba(156,134,255,.45)' : (i === PR.sel ? '#ffe2a8' : (PR.tr === 'bass' ? '#ff8f6b' : '#e6a1c4'));
+      g.fillRect(x + 1, y + 1, n.len * PR.cw - 2, PR.rh - 2);
+      if (n.slide) { g.fillStyle = '#fff'; g.fillText('↗', x + 2, y + PR.rh - 2); }
+    });
+    var NN = ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'], sn = own && own[PR.sel];
+    $('#dw-pr-info').textContent = own ? (sn ? 'Nota scelta: ' + NN[sn.midi % 12] + (Math.floor(sn.midi / 12) - 1) + ', battuta ' + (sn.bar + 1) + ', passo ' + (sn.step + 1) + ', lunga ' + sn.len + '/16' + (sn.slide ? ', con glide' : '') : 'Tocca una casella vuota per aggiungere una nota, tocca una nota per sceglierla.') : 'Queste sono le note generate (viola). Premi "Modifica le note" per cambiarle.';
+    $('#dw-pr-tools').hidden = !own; $('#dw-pr-glide').hidden = PR.tr !== 'bass';
+    $$('#dw-pr-tr .chip').forEach(function (c) { c.classList.toggle('on', c.getAttribute('data-prt') === PR.tr); });
+  }
+  function prSave(msg) { var p = cur().prod; persist(); SESSION.baseKey = ''; DW.bufKey = ''; prDraw(); if (msg) $('#dw-pr-msg').textContent = msg; clearTimeout(PR.t); PR.t = setTimeout(function () { var was = DW.playing, at = was ? getCtx().currentTime - DW.t0 + DW.from : DW.from; dwStop(true); dwRefresh().then(function () { prDraw(); if (was) dwPlay(at); }); }, 350); }
+  function prStepMidi(m, d) { var x = m + d, guard = 0; if ($('#dw-pr-snap').checked) while (!inScale(x) && guard++ < 3) x += d; return x; }
+  $('#dw-p-roll').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var p = cur().prod, own = prNotes(), n = own && own[PR.sel];
+    if (b.getAttribute('data-prt')) { PR.tr = b.getAttribute('data-prt'); PR.sel = -1; prDraw(); return; }
+    if (b.id === 'dw-pr-edit') { p.notes = Object.assign({}, p.notes || {}); p.notes[PR.tr] = prGenerated(); PR.sel = -1; prSave('Ora le note sono tue: modificale.'); coachRec('change', coachCtx(), { role: 'pianoroll', from: null, to: PR.tr }); return; }
+    if (b.id === 'dw-pr-reset') { if (p.notes) { delete p.notes[PR.tr]; } PR.sel = -1; prSave('Tornato alle note generate.'); return; }
+    if (!n) { $('#dw-pr-msg').textContent = 'Scegli prima una nota.'; return; }
+    var a = b.getAttribute('data-pra');
+    if (a === 'up') n.midi = prStepMidi(n.midi, 1); else if (a === 'down') n.midi = prStepMidi(n.midi, -1);
+    else if (a === 'left') { var t = n.bar * 16 + n.step - 1; if (t >= 0) { n.bar = Math.floor(t / 16); n.step = t % 16; } }
+    else if (a === 'right') { var t2 = n.bar * 16 + n.step + 1; n.bar = Math.floor(t2 / 16); n.step = t2 % 16; }
+    else if (a === 'long') n.len = Math.min(32, n.len + 1); else if (a === 'short') n.len = Math.max(1, n.len - 1);
+    else if (a === 'oct') n.midi += n.midi + 12 <= PR_RANGE[PR.tr][1] ? 12 : -12;
+    else if (a === 'glide') n.slide = !n.slide;
+    else if (a === 'del') { own.splice(PR.sel, 1); PR.sel = -1; }
+    n.midi = Math.max(PR_RANGE[PR.tr][0], Math.min(PR_RANGE[PR.tr][1], n.midi));
+    prSave('');
+  });
+  $('#dw-pr-cv').addEventListener('click', function (e) {
+    var own = prNotes(); if (!own) { $('#dw-pr-msg').textContent = 'Premi prima "Modifica le note".'; return; }
+    var rc = this.getBoundingClientRect(), x = e.clientX - rc.left, y = e.clientY - rc.top, r = PR_RANGE[PR.tr];
+    var st = Math.floor(x / PR.cw), midi = r[1] - Math.floor(y / PR.rh), bar = Math.floor(st / 16), step = st % 16;
+    var hit = -1; own.forEach(function (n, i) { var s0 = n.bar * 16 + n.step; if (n.midi === midi && st >= s0 && st < s0 + n.len) hit = i; });
+    if (hit >= 0) { PR.sel = hit; prDraw(); return; }
+    if (bar >= (SESSION.base ? SESSION.base.bars : 0)) return;
+    own.push({ bar: bar, step: step, len: PR.tr === 'bass' ? 4 : 2, midi: midi, slide: false }); PR.sel = own.length - 1;
+    prSave('Nota aggiunta.');
+  });
+  window.__prReady = true;
   // ---------- Voce: prove e montaggio (clip) ----------
   function realTakes() { return SESSION.takes.filter(function (t) { return !t.example; }); }
   function takeById(id) { return SESSION.takes.filter(function (t) { return t.id === id; })[0] || null; }
@@ -11095,7 +11177,7 @@ details.card[open]>summary{margin-bottom:8px}
     learnUse(pl); el.textContent = 'Base nuova creata dai tuoi gusti (' + pl.from + ' che ti piacciono' + (pl.avoid ? ', ' + pl.avoid + ' da evitare' : '') + '): ' + (Arranger.STYLES[pl.genre] ? Arranger.STYLES[pl.genre].label : pl.genre) + ', ' + pl.bpm + ' BPM, cassa sui passi ' + pl.groove.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + '. Premi Play.';
   });
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
-  SHOW.daw = function () { dwFill(); mixRender(); clipsRender(); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+  SHOW.daw = function () { dwFill(); mixRender(); clipsRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {

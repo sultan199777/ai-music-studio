@@ -177,6 +177,8 @@
     var bassKind = p.bassStyle === '808' ? '808' : (style.bass);
     var T = { arp: new Float32Array(N), kick: new Float32Array(N), snare: new Float32Array(N), hat: new Float32Array(N), bass: new Float32Array(N), chords: new Float32Array(N), pad: new Float32Array(N), lead: new Float32Array(N), fx: new Float32Array(N) };
     var events = { bass: [], chords: [], lead: [], kick: [], hat: [], arp: [] }, kickStarts = [];
+    function okNotes(a) { return Array.isArray(a) && a.length ? a.filter(function (n) { return n && n.bar >= 0 && n.step >= 0 && n.step < 16 && n.len > 0 && n.midi > 0; }) : null; }
+    var NL = okNotes(p.notes && p.notes.lead), NB = okNotes(p.notes && p.notes.bass);
     var LEADS = { trap: ['synth', 'keys', 'bell'], drill: ['dark', 'keys', 'bell'], epico: ['strings', 'synth', 'keys'], melodico: ['keys', 'synth', 'pluck'], boombap: ['keys', 'pluck', 'bell'], street: ['keys', 'bell', 'synth'], trapdark: ['dark', 'bell', 'keys'], clubtrap: ['bell', 'synth', 'marimba'], estate: ['marimba', 'keys', 'synth'] };
     // Strumenti veri scelti per ruolo (p.inst = {melodia, accordi, pad}); se non caricati si usa la sintesi.
     var pin = p.inst || {};
@@ -556,8 +558,8 @@
               sl = style.slide > 0 && prevBassMidi != null && prevBassMidi !== midi && rand() < style.slide;
               buf = bass808(midi, sl ? prevBassMidi : null, dur, sl);
             } else buf = bassRound(midi, dur, bassKind === 'sub');
-            add('bass', at(bar, s), buf, 0.75 * cfg.bass);
-            events.bass.push({ start: at(bar, s) / sr, midi: midi, dur: dur, slideFrom: (bassKind === '808' && sl) ? prevBassMidi : null }); prevBassMidi = midi;
+            if (!NB) add('bass', at(bar, s), buf, 0.75 * cfg.bass);
+            if (!NB) events.bass.push({ start: at(bar, s) / sr, midi: midi, dur: dur, bar: bar, step: s, len: next - s, slide: !!sl, slideFrom: (bassKind === '808' && sl) ? prevBassMidi : null }); prevBassMidi = midi;
           });
         }
 
@@ -604,13 +606,13 @@
         }
 
         // melodia
-        if (cfg.lead) {
+        if (cfg.lead && !NL) {
           var src = sec.name === 'bridge' ? bridgeLine : hook;
           src[k % 4].forEach(function (n) {
             var d3 = n.len * stepSec * 0.95, m3 = n.midi;
             if (LI) add('lead', at(bar, n.step), Inst.render(LI, fit(m3, LI), d3, sr, { vel: n.step % 4 === 0 ? 1 : 0.85 }), 0.3 * cfg.lead);
             else add('lead', at(bar, n.step), leadBuf(leadKind, m3, d3), (leadKind === 'strings' ? 0.32 : 0.36) * cfg.lead);
-            events.lead.push({ start: at(bar, n.step) / sr, midi: m3, dur: d3 });
+            events.lead.push({ start: at(bar, n.step) / sr, midi: m3, dur: d3, bar: bar, step: n.step, len: n.len });
           });
         }
 
@@ -625,6 +627,19 @@
         }
       }
     });
+
+    // note scritte a mano nel piano roll (sostituiscono quelle generate; il resto della base resta identico)
+    if (NL) NL.forEach(function (n) {
+      if (n.bar >= bars) return; var d3 = n.len * stepSec * 0.95, vel = n.vel == null ? 0.9 : n.vel;
+      if (LI) add('lead', at(n.bar, n.step), Inst.render(LI, fit(n.midi, LI), d3, sr, { vel: vel }), 0.3);
+      else add('lead', at(n.bar, n.step), leadBuf(leadKind, n.midi, d3), 0.36 * vel);
+      events.lead.push({ start: at(n.bar, n.step) / sr, midi: n.midi, dur: d3, bar: n.bar, step: n.step, len: n.len, edited: true });
+    });
+    if (NB) { var pm2 = null; NB.slice().sort(function (a, b) { return a.bar * 16 + a.step - b.bar * 16 - b.step; }).forEach(function (n) {
+      if (n.bar >= bars) return; var dur = Math.min(n.len * stepSec, 2.2), sl = !!n.slide && pm2 != null && pm2 !== n.midi;
+      add('bass', at(n.bar, n.step), bassKind === '808' ? bass808(n.midi, sl ? pm2 : null, dur, sl) : bassRound(n.midi, dur, bassKind === 'sub'), 0.75);
+      events.bass.push({ start: at(n.bar, n.step) / sr, midi: n.midi, dur: dur, bar: n.bar, step: n.step, len: n.len, slide: sl, edited: true }); pm2 = n.midi;
+    }); }
 
     // "pompaggio": accordi e pad si abbassano a ogni cassa, come in produzione moderna
     function duck(tr, depth) {

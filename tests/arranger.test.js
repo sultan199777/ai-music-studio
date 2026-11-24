@@ -199,3 +199,19 @@ test('arpeggi: ci sono in ogni stile, più fitti nel ritornello, note dell\'acco
   const off = A.generate({ sampleRate: 8000, genre: 'trap', bars: 8, seed: 1, arp: false });
   assert.equal(off.events.arp.length, 0);
 });
+
+test('piano roll: note scritte a mano sostituiscono melodia e basso, il resto resta identico', () => {
+  const base = { sampleRate: 8000, bpm: 140, genre: 'trap', bars: 4, seed: 3, sounds: 'sint' };
+  const a = A.generate(base);
+  assert.ok(a.events.lead.length && a.events.lead[0].bar != null && a.events.lead[0].step != null);
+  assert.ok(a.events.bass[0].len > 0);
+  const notes = { lead: [{ bar: 0, step: 0, len: 4, midi: 72 }], bass: [{ bar: 0, step: 0, len: 8, midi: 36 }, { bar: 0, step: 8, len: 8, midi: 41, slide: true }] };
+  const b = A.generate(Object.assign({}, base, { notes }));
+  assert.strictEqual(b.events.lead.length, 1); assert.strictEqual(b.events.bass.length, 2); assert.ok(b.events.bass[1].slide);
+  const e = (x, s, n) => { let t = 0; for (let i = s; i < s + n; i++) t += x[i] * x[i]; return t; };
+  const bar = Math.round(240 / 140 * 8000);
+  assert.ok(e(b.tracks.lead, bar * 2, bar) < 1e-9, 'niente melodia dopo la nota scritta');
+  assert.ok(e(b.tracks.bass, bar, bar) < 1e-9, 'niente basso nelle battute senza note');
+  let d = 0; for (let i = 0; i < a.tracks.kick.length; i++) d = Math.max(d, Math.abs(a.tracks.kick[i] - b.tracks.kick[i]));
+  assert.strictEqual(d, 0, 'la batteria non cambia');
+});
