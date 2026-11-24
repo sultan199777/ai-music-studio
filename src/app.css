@@ -320,3 +320,20 @@ details.card[open]>summary{margin-bottom:8px}
 .dw-panel{margin-bottom:12px}
 .dw-lyrsug{display:block;margin:6px 0;padding:6px 8px;border-left:2px solid #e3c48f;color:var(--text)!important;font-style:italic}
 .dw-chgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}.dw-chcell{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:10px;padding:6px}.dw-chcell.own{border-color:#e3c48f}.dw-chcell small{color:var(--muted);font-size:.68rem}.dw-chcell select{width:100%}
+
+/* --- Studio logico: barra fissa, ispettore traccia, passi --- */
+#v-daw .dw-transport{position:sticky;top:0;z-index:15}
+.tabs a span{display:flex;align-items:center;gap:4px}.tabs a span i{font-style:normal;font-size:.62rem;width:15px;height:15px;border-radius:50%;display:inline-grid;place-items:center;border:1px solid currentColor;opacity:.75}
+.dw-next{display:flex;justify-content:flex-end;margin:4px 0 18px}
+.dw-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;padding:4px;margin:6px 0 12px}
+.dw-seg button{border:0;background:transparent;color:var(--muted);font:inherit;font-weight:700;font-size:.82rem;padding:8px;border-radius:9px}.dw-seg button.on{background:var(--grad);color:var(--on-accent)}.dw-seg button[hidden]{display:none}
+.dw-insp-dot{width:12px;height:12px;border-radius:50%;flex:none}
+#dw-insp .dw-panel{background:transparent;border:0;padding:0;margin:0;box-shadow:none}#dw-insp .dw-panel>.dw-ph{display:none}
+.dw-lh{cursor:pointer}.dw-lh b::after{content:' ›';opacity:.5}
+.dw-hint{display:block!important}
+#dw-insp .dw-knobs small,#dw-insp .dw-knobs label>small{display:none}#dw-insp .dw-knobs{grid-template-columns:1fr 1fr;gap:2px 12px}#dw-insp .dw-knobs label.f{margin:2px 0}
+#dw-insp .dw-sheet-in{max-height:88vh;overflow:auto}
+#v-daw .dw-transport{padding:10px 12px;margin-bottom:12px}
+#v-daw .dw-title .eyebrow{display:none}#v-daw .dw-name{font-size:1.05rem}
+#v-daw .dw-ctrls{gap:8px;margin-top:6px}#v-daw .dw-btn{width:42px;height:42px}#v-daw .dw-btn.dw-play{width:54px;height:54px}
+#v-daw .dw-clock b{font-size:1.25rem}#v-daw .dw-proj{margin-top:8px;padding:7px 10px}

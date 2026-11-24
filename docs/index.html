@@ -325,6 +325,23 @@ details.card[open]>summary{margin-bottom:8px}
 .dw-lyrsug{display:block;margin:6px 0;padding:6px 8px;border-left:2px solid #e3c48f;color:var(--text)!important;font-style:italic}
 .dw-chgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}.dw-chcell{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:10px;padding:6px}.dw-chcell.own{border-color:#e3c48f}.dw-chcell small{color:var(--muted);font-size:.68rem}.dw-chcell select{width:100%}
 
+/* --- Studio logico: barra fissa, ispettore traccia, passi --- */
+#v-daw .dw-transport{position:sticky;top:0;z-index:15}
+.tabs a span{display:flex;align-items:center;gap:4px}.tabs a span i{font-style:normal;font-size:.62rem;width:15px;height:15px;border-radius:50%;display:inline-grid;place-items:center;border:1px solid currentColor;opacity:.75}
+.dw-next{display:flex;justify-content:flex-end;margin:4px 0 18px}
+.dw-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;padding:4px;margin:6px 0 12px}
+.dw-seg button{border:0;background:transparent;color:var(--muted);font:inherit;font-weight:700;font-size:.82rem;padding:8px;border-radius:9px}.dw-seg button.on{background:var(--grad);color:var(--on-accent)}.dw-seg button[hidden]{display:none}
+.dw-insp-dot{width:12px;height:12px;border-radius:50%;flex:none}
+#dw-insp .dw-panel{background:transparent;border:0;padding:0;margin:0;box-shadow:none}#dw-insp .dw-panel>.dw-ph{display:none}
+.dw-lh{cursor:pointer}.dw-lh b::after{content:' ›';opacity:.5}
+.dw-hint{display:block!important}
+#dw-insp .dw-knobs small,#dw-insp .dw-knobs label>small{display:none}#dw-insp .dw-knobs{grid-template-columns:1fr 1fr;gap:2px 12px}#dw-insp .dw-knobs label.f{margin:2px 0}
+#dw-insp .dw-sheet-in{max-height:88vh;overflow:auto}
+#v-daw .dw-transport{padding:10px 12px;margin-bottom:12px}
+#v-daw .dw-title .eyebrow{display:none}#v-daw .dw-name{font-size:1.05rem}
+#v-daw .dw-ctrls{gap:8px;margin-top:6px}#v-daw .dw-btn{width:42px;height:42px}#v-daw .dw-btn.dw-play{width:54px;height:54px}
+#v-daw .dw-clock b{font-size:1.25rem}#v-daw .dw-proj{margin-top:8px;padding:7px 10px}
+
 /* ===== VOICE LAB (stile Cosmo: usa le variabili del tema) ===== */
 .vl .vl-auto{font-size:1.25rem;min-height:60px;margin:8px 0 4px;letter-spacing:.04em}
 .vl .vl-hint{margin:2px 0 8px}
@@ -461,15 +478,15 @@ details.card[open]>summary{margin-bottom:8px}
   </div>
 
 
-  <section class="dw-panel dw-lyric karaoke" id="dw-kar" data-ws="testo voce"><div><b>Scrivi il testo qui sotto, poi premi Play</b><small>La base prende la forma del testo: ogni riga cade sulla sua battuta.</small></div></section>
+  <section class="dw-panel dw-lyric karaoke" id="dw-kar" data-ws="voce"><div><b>Scrivi il testo qui sotto, poi premi Play</b><small>La base prende la forma del testo: ogni riga cade sulla sua battuta.</small></div></section>
 
   <section class="dw-panel" id="dw-p-arr" data-ws="base voce mix">
-    <div class="dw-ph"><h3>Arrangiamento</h3><span class="small muted" id="dw-arrinfo"></span></div>
+    <div class="dw-ph"><h3>Tracce</h3><span class="small muted" id="dw-arrinfo"></span></div>
     <div class="dw-arr">
       <div class="dw-heads" id="dw-heads"></div>
       <div class="dw-scroll" id="dw-scroll"><div class="dw-canvas" id="dw-canvas"><div class="dw-ruler" id="dw-ruler"></div><div class="dw-secs" id="dw-secs"></div><div class="dw-lyl" id="dw-lyl"></div><div id="dw-lanes"></div><div class="dw-head" id="dw-playhead"></div></div></div>
     </div>
-    <p class="small muted" style="margin-top:8px">Tocca la timeline per partire da lì. <b>M</b> = muto, <b>S</b> = solo. Tocca il nome dello strumento per cambiarlo.</p>
+    <p class="small muted dw-hint" id="dw-arr-hint">Tocca il nome di una traccia per aprirla: suono, note, canale del mixer.</p>
     <div class="status" id="dw-msg"></div>
   </section>
 
@@ -491,7 +508,15 @@ details.card[open]>summary{margin-bottom:8px}
     <div class="status" id="dw-mic-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-talk" data-ws="testo base">
+  <section class="dw-panel" id="dw-p-testo" data-ws="testo">
+    <div class="dw-ph"><h3>Testo</h3><span class="small muted" id="dw-lyinfo"></span></div>
+    <p class="small muted">Usa i titoli tra parentesi quadre per le parti: <span class="mono">[Strofa]</span> <span class="mono">[Ritornello]</span> <span class="mono">[Bridge]</span>. La base si costruisce su queste parti.</p>
+    <textarea id="dw-lyrics" rows="9" placeholder="[Strofa]&#10;La prima riga del tuo testo&#10;&#10;[Ritornello]&#10;Il gancio che tutti ricordano"></textarea>
+    <div class="row" style="margin-top:8px"><button class="btn sm" id="dw-fromtext">Base dalle emozioni del testo</button><a class="btn sm" href="#studio">Analisi del testo e guida voce</a></div>
+    <div class="status" id="dw-tmsg"></div>
+  </section>
+
+<section class="dw-panel" id="dw-p-talk" data-ws="testo base">
     <div class="dw-ph"><h3>Agenti</h3><span class="tag m">Modifica davvero</span></div>
     <p class="small muted">Scrivi cosa vuoi cambiare: mixer, 808, melodia, effetti, voce, master, velocità, tonalità, stile. La modifica si sente subito; se non ti piace premi Annulla.</p>
     <div class="row"><select id="dw-ai-engine"><option value="regole">Regole (subito)</option><option value="significato">IA che capisce (gratis, anche iPhone)</option><option value="browser">IA che scrive nel browser (computer)</option><option value="ollama">IA Ollama sul Mac (gratis)</option></select><select id="dw-ai-model"></select><button class="btn sm" id="dw-ai-test">Prova collegamento</button></div>
@@ -506,7 +531,7 @@ details.card[open]>summary{margin-bottom:8px}
     <div class="dw-agents" id="dw-agents"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-learn" data-ws="impara">
+  <section class="dw-panel" id="dw-p-learn" data-ws="libreria">
     <div class="dw-ph"><h3>Impara da una base</h3><span class="tag a">Solo misure, niente copie</span></div>
     <p class="small muted">Carica una canzone o un video che ti piace. Mettila in una <b>cartella</b> (un artista o un genere): ogni cartella diventa uno stile da cui creare basi nuove. La divido in <b>voce</b> e <b>base</b>, le ripulisco e misuro il ritmo: velocità, cassa, rullante, hi-hat, bassi. Dimmi se ti piace o no. Tengo solo i numeri, mai l'audio, e la base nuova è tua e originale.</p>
     <div class="dw-modes" id="dw-sep-modes">
@@ -523,15 +548,8 @@ details.card[open]>summary{margin-bottom:8px}
     <div class="status" id="dw-learn-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-testo" data-ws="testo">
-    <div class="dw-ph"><h3>Testo</h3><span class="small muted" id="dw-lyinfo"></span></div>
-    <p class="small muted">Usa i titoli tra parentesi quadre per le parti: <span class="mono">[Strofa]</span> <span class="mono">[Ritornello]</span> <span class="mono">[Bridge]</span>. La base si costruisce su queste parti.</p>
-    <textarea id="dw-lyrics" rows="9" placeholder="[Strofa]&#10;La prima riga del tuo testo&#10;&#10;[Ritornello]&#10;Il gancio che tutti ricordano"></textarea>
-    <div class="row" style="margin-top:8px"><button class="btn sm" id="dw-fromtext">Base dalle emozioni del testo</button><a class="btn sm" href="#studio">Analisi del testo e guida voce</a></div>
-    <div class="status" id="dw-tmsg"></div>
-  </section>
-
-  <section class="dw-panel" id="dw-p-roll" data-ws="base">
+  
+  <section class="dw-panel" id="dw-p-roll">
     <div class="dw-ph"><h3>Piano roll</h3><span class="tag m">Nota per nota</span></div>
     <div class="chips" id="dw-pr-tr"><button class="chip on" data-prt="lead">Melodia</button><button class="chip" data-prt="bass">Basso 808</button><button class="chip" data-prt="drums">Batteria</button><button class="chip" data-prt="chords">Accordi e arpeggio</button></div>
     <div class="row"><button class="btn sm pri" id="dw-pr-edit">Modifica le note</button><button class="btn sm" id="dw-pr-reset">Torna alle note generate</button><label class="sw small"><input type="checkbox" id="dw-pr-snap" checked> Solo note della scala</label></div>
@@ -543,7 +561,7 @@ details.card[open]>summary{margin-bottom:8px}
     <div class="status" id="dw-pr-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-design" data-ws="base">
+  <section class="dw-panel" id="dw-p-design" data-ws="libreria">
     <div class="dw-ph"><h3>Designer suoni</h3><span class="tag m">Suoni tuoi</span></div>
     <div class="chips" id="dw-ds-tabs"><button class="chip on" data-dst="synth">Synth</button><button class="chip" data-dst="808">808</button><button class="chip" data-dst="fx">Effetti di passaggio</button><button class="chip" data-dst="perc">Percussioni del mondo</button><button class="chip" data-dst="vox">Dalla voce</button></div>
     <div id="dw-ds-body"></div>
@@ -560,7 +578,7 @@ details.card[open]>summary{margin-bottom:8px}
     <div class="status" id="dw-cl-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-mixer" data-ws="mix">
+  <section class="dw-panel" id="dw-p-mixer">
     <div class="dw-ph"><h3>Mixer</h3><span class="tag m">Si sente subito</span></div>
     <p class="small muted">Scegli una traccia e regola il suo canale mentre suona. Lo stesso mix finisce nel file che salvi.</p>
     <div class="chips" id="dw-mx-lanes"></div>
@@ -571,7 +589,7 @@ details.card[open]>summary{margin-bottom:8px}
   </section>
 
   <section class="dw-panel" id="dw-p-mix" data-ws="mix">
-    <div class="dw-ph"><h3>Mix e salvataggio</h3></div>
+    <div class="dw-ph"><h3>Master e salvataggio</h3></div>
     <div class="grid2">
       <label class="f"><span>Master (suono finale)</span><select id="dw-master"><option value="off">Spento</option><option value="morbido">Morbido</option><option value="standard">Standard</option><option value="forte">Forte</option></select></label>
       <label class="f"><span>Voce: spostamento (ms) <b id="dw-offv">0</b></span><input type="range" id="dw-off" min="-300" max="300" step="5" value="0"></label>
@@ -594,6 +612,15 @@ details.card[open]>summary{margin-bottom:8px}
     <div class="dw-more"><a href="#voce">Voce: autotune e caratteri</a><a href="#strumenti">Strumentario e Laboratorio</a><a href="#beatlab">Laboratorio batteria (batteria a passi, piano roll)</a><a href="#studio">Coach completo e percorso</a></div>
   </section>
 
+  <div class="dw-next" data-ws="testo"><button class="btn pri" data-next="base">Avanti: crea la base →</button></div>
+  <div class="dw-next" data-ws="base"><button class="btn pri" data-next="voce">Avanti: registra la voce →</button></div>
+  <div class="dw-next" data-ws="voce"><button class="btn pri" data-next="mix">Avanti: mix e salvataggio →</button></div>
+  <div class="dw-next" data-ws="libreria"><button class="btn" data-next="base">Torna alla base →</button></div>
+  <div class="dw-sheet" id="dw-insp" hidden><div class="dw-sheet-in">
+    <div class="dw-ph"><span class="dw-insp-dot" id="dw-in-dot"></span><h3 id="dw-in-t">Traccia</h3><button class="btn sm" id="dw-in-x">Chiudi</button></div>
+    <div class="dw-seg" id="dw-in-tabs"><button data-int="suono" class="on">Suono</button><button data-int="note">Note</button><button data-int="canale">Canale</button></div>
+    <div id="dw-in-suono"></div><div id="dw-in-note" hidden></div><div id="dw-in-canale" hidden></div>
+  </div></div>
   <div class="dw-sheet" id="dw-set" hidden><div class="dw-sheet-in"><div class="dw-ph"><h3>Impostazioni del progetto</h3><button class="btn sm" id="dw-set-x">Chiudi</button></div>
     <div class="dw-meta dw-meta-sheet">
       <label class="dw-chip"><span>Stile</span><select id="dw-genre"></select></label>
@@ -615,7 +642,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 20:15</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 20:21</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -979,11 +1006,11 @@ details.card[open]>summary{margin-bottom:8px}
 </div>
 
 <div class="tabs"><nav id="tabs">
-  <a href="#daw" data-r="daw" data-ws="impara"><svg><use href="#i-folder"/></svg>Impara</a>
-  <a href="#daw" data-r="daw" data-ws="base"><svg><use href="#i-disc"/></svg>Base</a>
-  <a href="#daw" data-r="daw" data-ws="testo"><svg><use href="#i-spark"/></svg>Testo</a>
-  <a href="#daw" data-r="daw" data-ws="voce"><svg><use href="#i-mic"/></svg>Voce</a>
-  <a href="#daw" data-r="daw" data-ws="mix"><svg><use href="#i-sliders"/></svg>Mix</a>
+  <a href="#daw" data-r="daw" data-ws="testo"><svg><use href="#i-spark"/></svg><span><i>1</i>Testo</span></a>
+  <a href="#daw" data-r="daw" data-ws="base"><svg><use href="#i-disc"/></svg><span><i>2</i>Base</span></a>
+  <a href="#daw" data-r="daw" data-ws="voce"><svg><use href="#i-mic"/></svg><span><i>3</i>Voce</span></a>
+  <a href="#daw" data-r="daw" data-ws="mix"><svg><use href="#i-sliders"/></svg><span><i>4</i>Mix</span></a>
+  <a href="#daw" data-r="daw" data-ws="libreria"><svg><use href="#i-folder"/></svg><span>Libreria</span></a>
 </nav></div>
 
 <script>
@@ -11714,11 +11741,14 @@ details.card[open]>summary{margin-bottom:8px}
     DW.from = Math.max(0, t); if (DW.playing) dwPlay(DW.from); else dwPos(DW.from);
   });
   $('#dw-heads').addEventListener('click', function (e) {
-    var b = e.target.closest('button'); if (!b) return;
+    var lh = e.target.closest('.dw-lh'), b = e.target.closest('button');
+    if (lh && !b && !e.target.closest('input')) { var idx = Array.prototype.indexOf.call($$('#dw-heads .dw-lh'), lh); if (LANES[idx]) inspOpen(LANES[idx].id, 'suono'); return; }
+    if (!b) return;
     var m = b.getAttribute('data-m'), so = b.getAttribute('data-s'), ins = b.getAttribute('data-inst');
     if (m) { DW.mute[m] = !DW.mute[m]; b.classList.toggle('on', DW.mute[m]); dwGains(); }
     if (so) { DW.solo[so] = !DW.solo[so]; b.classList.toggle('on', DW.solo[so]); dwGains(); }
-    if (ins) {
+    if (ins) { inspOpen(ins, 'suono'); return; }
+    if (false) {
       var L = LANES.filter(function (x) { return x.id === ins; })[0], p = cur().prod;
       if (L.role) sheetOpen(L.role);
       else if (L.id === 'drums') { p.sounds = p.sounds === 'sint' ? 'campioni' : 'sint'; fillBase(); dwStop(); dwChanged(true); }
@@ -12421,7 +12451,7 @@ details.card[open]>summary{margin-bottom:8px}
   });
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
   // spazi di lavoro dello Studio: Impara · Base · Testo · Voce · Mix (un solo gruppo di pannelli alla volta)
-  function dwWsName() { return LIB.settings.ws || 'base'; }
+  function dwWsName() { var w = LIB.settings.ws; return ['testo', 'base', 'voce', 'mix', 'libreria'].indexOf(w) >= 0 ? w : 'testo'; }
   function dwWs(ws) {
     LIB.settings.ws = ws; persist();
     $$('#v-daw [data-ws]').forEach(function (el) { el.hidden = (' ' + el.getAttribute('data-ws') + ' ').indexOf(' ' + ws + ' ') < 0; });
@@ -12429,6 +12459,44 @@ details.card[open]>summary{margin-bottom:8px}
     if (ws === 'base' || ws === 'voce' || ws === 'mix') setTimeout(function () { if (SESSION.base) { dwDraw(SESSION.base); prDraw(); } }, 30);
   }
   $('#tabs').addEventListener('click', function (e) { var a = e.target.closest('[data-ws]'); if (!a) return; if (location.hash === '#daw') { e.preventDefault(); dwWs(a.getAttribute('data-ws')); window.scrollTo(0, 0); } else LIB.settings.ws = a.getAttribute('data-ws'); });
+  // ---------- Ispettore della traccia: un tocco sulla traccia → Suono · Note · Canale ----------
+  var INSP = { lane: null, tab: 'suono' };
+  var LANE_NOTES = { lead: 'lead', bass: 'bass', drums: 'drums', chords: 'chords', arp: 'chords', pad: 'chords' };
+  (function () { // pannelli piano roll e mixer dentro l'ispettore (stessi controlli, un posto solo)
+    $('#dw-in-note').appendChild($('#dw-p-roll')); $('#dw-in-canale').appendChild($('#dw-p-mixer'));
+    $('#dw-pr-tr').hidden = true; $('#dw-mx-lanes').hidden = true; document.body.appendChild($('#dw-insp'));
+  })();
+  function inspSuono(L) {
+    var p = cur().prod, inst = p.inst || {}, h = '';
+    if (L.role) h = '<p class="small">Suono: <b>' + esc(inst[L.role] ? instName(inst[L.role]) : 'Sintetizzato') + '</b></p><div class="row"><button class="btn pri" data-ins="choose">Cambia suono</button><button class="btn" data-ins="lib">Crea un suono tuo</button></div>';
+    else if (L.id === 'drums') h = '<p class="small">Batteria: <b>' + (p.sounds === 'sint' ? 'sintetica' : 'campioni veri') + '</b>' + (p.perc ? ' · percussioni: ' + esc(SynthDesign.PERC[p.perc.type].nome) : '') + '</p><div class="row"><button class="btn pri" data-ins="drumsnd">Passa a ' + (p.sounds === 'sint' ? 'campioni veri' : 'sintetica') + '</button><button class="btn" data-ins="perc">Percussioni del mondo</button></div>';
+    else if (L.id === 'bass') h = '<p class="small">Basso: <b>' + (p.b808 ? '808 tuo (designer)' : (p.bassStyle === '808' ? '808' : 'dallo stile')) + '</b></p><div class="row"><button class="btn pri" data-ins="808">Disegna il tuo 808</button><button class="btn" data-ins="bassty">' + (p.bassStyle === '808' ? 'Basso dello stile' : 'Usa 808') + '</button></div>';
+    else h = '<p class="small">' + (voiceTake() ? 'Prova attiva: <b>' + esc(voiceTake().name) + '</b>' : 'Nessuna voce registrata.') + '</p><div class="row"><button class="btn pri" data-ins="mic">Microfono e prove</button></div>';
+    $('#dw-in-suono').innerHTML = h;
+  }
+  function inspTab(t) {
+    INSP.tab = t; $$('#dw-in-tabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-int') === t); });
+    ['suono', 'note', 'canale'].forEach(function (k) { $('#dw-in-' + k).hidden = k !== t; });
+    if (t === 'note') { PR.tr = LANE_NOTES[INSP.lane]; PR.sel = -1; prDraw(); }
+    if (t === 'canale') { MIXUI.lane = INSP.lane; mixRender(); }
+  }
+  function inspOpen(id, tab) {
+    var L = LANES.filter(function (x) { return x.id === id; })[0]; if (!L) return; INSP.lane = id;
+    $('#dw-in-t').textContent = L.nome; $('#dw-in-dot').style.background = L.c;
+    $('#dw-in-tabs [data-int="note"]').hidden = !LANE_NOTES[id];
+    inspSuono(L); $('#dw-insp').hidden = false; inspTab(tab === 'note' && !LANE_NOTES[id] ? 'suono' : tab);
+  }
+  $('#dw-insp').addEventListener('click', function (e) {
+    if (e.target === this || e.target.id === 'dw-in-x') { this.hidden = true; return; }
+    var t = e.target.closest('[data-int]'); if (t) { inspTab(t.getAttribute('data-int')); return; }
+    var b = e.target.closest('[data-ins]'); if (!b) return; var a = b.getAttribute('data-ins'), L = LANES.filter(function (x) { return x.id === INSP.lane; })[0], p = cur().prod;
+    if (a === 'choose') sheetOpen(L.role);
+    else if (a === 'lib' || a === 'perc' || a === '808') { this.hidden = true; DS.tab = a === 'perc' ? 'perc' : (a === '808' ? '808' : 'synth'); dwWs('libreria'); dsRender(); setTimeout(function () { $('#dw-p-design').scrollIntoView({ behavior: 'smooth' }); }, 50); }
+    else if (a === 'drumsnd') { p.sounds = p.sounds === 'sint' ? 'campioni' : 'sint'; fillBase(); dwStop(); dwChanged(true); inspSuono(L); }
+    else if (a === 'bassty') { p.bassStyle = p.bassStyle === '808' ? null : '808'; dwStop(); dwChanged(true); inspSuono(L); }
+    else if (a === 'mic') { this.hidden = true; dwWs('voce'); }
+  });
+  $('#v-daw').addEventListener('click', function (e) { var b = e.target.closest('[data-next]'); if (!b) return; dwWs(b.getAttribute('data-next')); window.scrollTo(0, 0); });
   function projLine() { var p = cur().prod; $('#dw-proj-t').textContent = (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode; }
   $('#dw-proj').addEventListener('click', function () { $('#dw-set').hidden = false; });
   $('#dw-set').addEventListener('click', function (e) { if (e.target === this || e.target.id === 'dw-set-x') { this.hidden = true; projLine(); } });

@@ -1320,11 +1320,14 @@
     DW.from = Math.max(0, t); if (DW.playing) dwPlay(DW.from); else dwPos(DW.from);
   });
   $('#dw-heads').addEventListener('click', function (e) {
-    var b = e.target.closest('button'); if (!b) return;
+    var lh = e.target.closest('.dw-lh'), b = e.target.closest('button');
+    if (lh && !b && !e.target.closest('input')) { var idx = Array.prototype.indexOf.call($$('#dw-heads .dw-lh'), lh); if (LANES[idx]) inspOpen(LANES[idx].id, 'suono'); return; }
+    if (!b) return;
     var m = b.getAttribute('data-m'), so = b.getAttribute('data-s'), ins = b.getAttribute('data-inst');
     if (m) { DW.mute[m] = !DW.mute[m]; b.classList.toggle('on', DW.mute[m]); dwGains(); }
     if (so) { DW.solo[so] = !DW.solo[so]; b.classList.toggle('on', DW.solo[so]); dwGains(); }
-    if (ins) {
+    if (ins) { inspOpen(ins, 'suono'); return; }
+    if (false) {
       var L = LANES.filter(function (x) { return x.id === ins; })[0], p = cur().prod;
       if (L.role) sheetOpen(L.role);
       else if (L.id === 'drums') { p.sounds = p.sounds === 'sint' ? 'campioni' : 'sint'; fillBase(); dwStop(); dwChanged(true); }
@@ -2027,7 +2030,7 @@
   });
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
   // spazi di lavoro dello Studio: Impara · Base · Testo · Voce · Mix (un solo gruppo di pannelli alla volta)
-  function dwWsName() { return LIB.settings.ws || 'base'; }
+  function dwWsName() { var w = LIB.settings.ws; return ['testo', 'base', 'voce', 'mix', 'libreria'].indexOf(w) >= 0 ? w : 'testo'; }
   function dwWs(ws) {
     LIB.settings.ws = ws; persist();
     $$('#v-daw [data-ws]').forEach(function (el) { el.hidden = (' ' + el.getAttribute('data-ws') + ' ').indexOf(' ' + ws + ' ') < 0; });
@@ -2035,6 +2038,44 @@
     if (ws === 'base' || ws === 'voce' || ws === 'mix') setTimeout(function () { if (SESSION.base) { dwDraw(SESSION.base); prDraw(); } }, 30);
   }
   $('#tabs').addEventListener('click', function (e) { var a = e.target.closest('[data-ws]'); if (!a) return; if (location.hash === '#daw') { e.preventDefault(); dwWs(a.getAttribute('data-ws')); window.scrollTo(0, 0); } else LIB.settings.ws = a.getAttribute('data-ws'); });
+  // ---------- Ispettore della traccia: un tocco sulla traccia → Suono · Note · Canale ----------
+  var INSP = { lane: null, tab: 'suono' };
+  var LANE_NOTES = { lead: 'lead', bass: 'bass', drums: 'drums', chords: 'chords', arp: 'chords', pad: 'chords' };
+  (function () { // pannelli piano roll e mixer dentro l'ispettore (stessi controlli, un posto solo)
+    $('#dw-in-note').appendChild($('#dw-p-roll')); $('#dw-in-canale').appendChild($('#dw-p-mixer'));
+    $('#dw-pr-tr').hidden = true; $('#dw-mx-lanes').hidden = true; document.body.appendChild($('#dw-insp'));
+  })();
+  function inspSuono(L) {
+    var p = cur().prod, inst = p.inst || {}, h = '';
+    if (L.role) h = '<p class="small">Suono: <b>' + esc(inst[L.role] ? instName(inst[L.role]) : 'Sintetizzato') + '</b></p><div class="row"><button class="btn pri" data-ins="choose">Cambia suono</button><button class="btn" data-ins="lib">Crea un suono tuo</button></div>';
+    else if (L.id === 'drums') h = '<p class="small">Batteria: <b>' + (p.sounds === 'sint' ? 'sintetica' : 'campioni veri') + '</b>' + (p.perc ? ' · percussioni: ' + esc(SynthDesign.PERC[p.perc.type].nome) : '') + '</p><div class="row"><button class="btn pri" data-ins="drumsnd">Passa a ' + (p.sounds === 'sint' ? 'campioni veri' : 'sintetica') + '</button><button class="btn" data-ins="perc">Percussioni del mondo</button></div>';
+    else if (L.id === 'bass') h = '<p class="small">Basso: <b>' + (p.b808 ? '808 tuo (designer)' : (p.bassStyle === '808' ? '808' : 'dallo stile')) + '</b></p><div class="row"><button class="btn pri" data-ins="808">Disegna il tuo 808</button><button class="btn" data-ins="bassty">' + (p.bassStyle === '808' ? 'Basso dello stile' : 'Usa 808') + '</button></div>';
+    else h = '<p class="small">' + (voiceTake() ? 'Prova attiva: <b>' + esc(voiceTake().name) + '</b>' : 'Nessuna voce registrata.') + '</p><div class="row"><button class="btn pri" data-ins="mic">Microfono e prove</button></div>';
+    $('#dw-in-suono').innerHTML = h;
+  }
+  function inspTab(t) {
+    INSP.tab = t; $$('#dw-in-tabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-int') === t); });
+    ['suono', 'note', 'canale'].forEach(function (k) { $('#dw-in-' + k).hidden = k !== t; });
+    if (t === 'note') { PR.tr = LANE_NOTES[INSP.lane]; PR.sel = -1; prDraw(); }
+    if (t === 'canale') { MIXUI.lane = INSP.lane; mixRender(); }
+  }
+  function inspOpen(id, tab) {
+    var L = LANES.filter(function (x) { return x.id === id; })[0]; if (!L) return; INSP.lane = id;
+    $('#dw-in-t').textContent = L.nome; $('#dw-in-dot').style.background = L.c;
+    $('#dw-in-tabs [data-int="note"]').hidden = !LANE_NOTES[id];
+    inspSuono(L); $('#dw-insp').hidden = false; inspTab(tab === 'note' && !LANE_NOTES[id] ? 'suono' : tab);
+  }
+  $('#dw-insp').addEventListener('click', function (e) {
+    if (e.target === this || e.target.id === 'dw-in-x') { this.hidden = true; return; }
+    var t = e.target.closest('[data-int]'); if (t) { inspTab(t.getAttribute('data-int')); return; }
+    var b = e.target.closest('[data-ins]'); if (!b) return; var a = b.getAttribute('data-ins'), L = LANES.filter(function (x) { return x.id === INSP.lane; })[0], p = cur().prod;
+    if (a === 'choose') sheetOpen(L.role);
+    else if (a === 'lib' || a === 'perc' || a === '808') { this.hidden = true; DS.tab = a === 'perc' ? 'perc' : (a === '808' ? '808' : 'synth'); dwWs('libreria'); dsRender(); setTimeout(function () { $('#dw-p-design').scrollIntoView({ behavior: 'smooth' }); }, 50); }
+    else if (a === 'drumsnd') { p.sounds = p.sounds === 'sint' ? 'campioni' : 'sint'; fillBase(); dwStop(); dwChanged(true); inspSuono(L); }
+    else if (a === 'bassty') { p.bassStyle = p.bassStyle === '808' ? null : '808'; dwStop(); dwChanged(true); inspSuono(L); }
+    else if (a === 'mic') { this.hidden = true; dwWs('voce'); }
+  });
+  $('#v-daw').addEventListener('click', function (e) { var b = e.target.closest('[data-next]'); if (!b) return; dwWs(b.getAttribute('data-next')); window.scrollTo(0, 0); });
   function projLine() { var p = cur().prod; $('#dw-proj-t').textContent = (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode; }
   $('#dw-proj').addEventListener('click', function () { $('#dw-set').hidden = false; });
   $('#dw-set').addEventListener('click', function (e) { if (e.target === this || e.target.id === 'dw-set-x') { this.hidden = true; projLine(); } });

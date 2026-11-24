@@ -183,3 +183,9 @@ Ancora da fare: piano roll accordi/arpeggio, trascinare note voce (stile Melodyn
 - Piano roll: "Accordi e arpeggio" (accordo per battuta `p.chordBars`, schema arpeggio o spento `p.arp=false`).
 - Collegamento basi → cervello: `beatProfile()` (solo numeri dalle basi che ti piacciono) entra in `arModel()` come `styleScore` per SultanBrain.plan.
 - Rispettata la divisione in notes/DIVISIONE-CHAT.md: da ora non tocco autotune/voce/cervello (chat A).
+
+## Studio logico (come i DAW professionali)
+- Percorso in basso nell'ordine della creazione: 1 Testo → 2 Base → 3 Voce → 4 Mix, più Libreria (Impara da una base + Designer suoni). Pulsante "Avanti" in fondo a ogni passo.
+- Barra di trasporto fissa in alto (sottile). Impostazioni progetto nell'ingranaggio.
+- Ispettore della traccia: tocco sul nome della traccia → Suono · Note · Canale. Il piano roll (melodia, 808, batteria, accordi/arpeggio) e il canale del mixer (con automazioni) vivono solo lì, legati alla traccia scelta.
+- Nessuna funzione tolta; gli id esistenti restano.

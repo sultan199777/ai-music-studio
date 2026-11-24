@@ -38,15 +38,15 @@
   </div>
 
 
-  <section class="dw-panel dw-lyric karaoke" id="dw-kar" data-ws="testo voce"><div><b>Scrivi il testo qui sotto, poi premi Play</b><small>La base prende la forma del testo: ogni riga cade sulla sua battuta.</small></div></section>
+  <section class="dw-panel dw-lyric karaoke" id="dw-kar" data-ws="voce"><div><b>Qui scorre il testo mentre canti</b><small>Premi ● per registrare sulla base. Il testo si scrive nel passo 1.</small></div></section>
 
   <section class="dw-panel" id="dw-p-arr" data-ws="base voce mix">
-    <div class="dw-ph"><h3>Arrangiamento</h3><span class="small muted" id="dw-arrinfo"></span></div>
+    <div class="dw-ph"><h3>Tracce</h3><span class="small muted" id="dw-arrinfo"></span></div>
     <div class="dw-arr">
       <div class="dw-heads" id="dw-heads"></div>
       <div class="dw-scroll" id="dw-scroll"><div class="dw-canvas" id="dw-canvas"><div class="dw-ruler" id="dw-ruler"></div><div class="dw-secs" id="dw-secs"></div><div class="dw-lyl" id="dw-lyl"></div><div id="dw-lanes"></div><div class="dw-head" id="dw-playhead"></div></div></div>
     </div>
-    <p class="small muted" style="margin-top:8px">Tocca la timeline per partire da lì. <b>M</b> = muto, <b>S</b> = solo. Tocca il nome dello strumento per cambiarlo.</p>
+    <p class="small muted dw-hint" id="dw-arr-hint">Tocca il nome di una traccia per aprirla: suono, note, canale del mixer.</p>
     <div class="status" id="dw-msg"></div>
   </section>
 
@@ -68,7 +68,15 @@
     <div class="status" id="dw-mic-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-talk" data-ws="testo base">
+  <section class="dw-panel" id="dw-p-testo" data-ws="testo">
+    <div class="dw-ph"><h3>Testo</h3><span class="small muted" id="dw-lyinfo"></span></div>
+    <p class="small muted">Usa i titoli tra parentesi quadre per le parti: <span class="mono">[Strofa]</span> <span class="mono">[Ritornello]</span> <span class="mono">[Bridge]</span>. La base si costruisce su queste parti.</p>
+    <textarea id="dw-lyrics" rows="9" placeholder="[Strofa]&#10;La prima riga del tuo testo&#10;&#10;[Ritornello]&#10;Il gancio che tutti ricordano"></textarea>
+    <div class="row" style="margin-top:8px"><button class="btn sm" id="dw-fromtext">Base dalle emozioni del testo</button><a class="btn sm" href="#studio">Analisi del testo e guida voce</a></div>
+    <div class="status" id="dw-tmsg"></div>
+  </section>
+
+<section class="dw-panel" id="dw-p-talk" data-ws="testo base">
     <div class="dw-ph"><h3>Agenti</h3><span class="tag m">Modifica davvero</span></div>
     <p class="small muted">Scrivi cosa vuoi cambiare: mixer, 808, melodia, effetti, voce, master, velocità, tonalità, stile. La modifica si sente subito; se non ti piace premi Annulla.</p>
     <div class="row"><select id="dw-ai-engine"><option value="regole">Regole (subito)</option><option value="significato">IA che capisce (gratis, anche iPhone)</option><option value="browser">IA che scrive nel browser (computer)</option><option value="ollama">IA Ollama sul Mac (gratis)</option></select><select id="dw-ai-model"></select><button class="btn sm" id="dw-ai-test">Prova collegamento</button></div>
@@ -83,7 +91,7 @@
     <div class="dw-agents" id="dw-agents"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-learn" data-ws="impara">
+  <section class="dw-panel" id="dw-p-learn" data-ws="libreria">
     <div class="dw-ph"><h3>Impara da una base</h3><span class="tag a">Solo misure, niente copie</span></div>
     <p class="small muted">Carica una canzone o un video che ti piace. Mettila in una <b>cartella</b> (un artista o un genere): ogni cartella diventa uno stile da cui creare basi nuove. La divido in <b>voce</b> e <b>base</b>, le ripulisco e misuro il ritmo: velocità, cassa, rullante, hi-hat, bassi. Dimmi se ti piace o no. Tengo solo i numeri, mai l'audio, e la base nuova è tua e originale.</p>
     <div class="dw-modes" id="dw-sep-modes">
@@ -100,15 +108,8 @@
     <div class="status" id="dw-learn-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-testo" data-ws="testo">
-    <div class="dw-ph"><h3>Testo</h3><span class="small muted" id="dw-lyinfo"></span></div>
-    <p class="small muted">Usa i titoli tra parentesi quadre per le parti: <span class="mono">[Strofa]</span> <span class="mono">[Ritornello]</span> <span class="mono">[Bridge]</span>. La base si costruisce su queste parti.</p>
-    <textarea id="dw-lyrics" rows="9" placeholder="[Strofa]&#10;La prima riga del tuo testo&#10;&#10;[Ritornello]&#10;Il gancio che tutti ricordano"></textarea>
-    <div class="row" style="margin-top:8px"><button class="btn sm" id="dw-fromtext">Base dalle emozioni del testo</button><a class="btn sm" href="#studio">Analisi del testo e guida voce</a></div>
-    <div class="status" id="dw-tmsg"></div>
-  </section>
-
-  <section class="dw-panel" id="dw-p-roll" data-ws="base">
+  
+  <section class="dw-panel" id="dw-p-roll">
     <div class="dw-ph"><h3>Piano roll</h3><span class="tag m">Nota per nota</span></div>
     <div class="chips" id="dw-pr-tr"><button class="chip on" data-prt="lead">Melodia</button><button class="chip" data-prt="bass">Basso 808</button><button class="chip" data-prt="drums">Batteria</button><button class="chip" data-prt="chords">Accordi e arpeggio</button></div>
     <div class="row"><button class="btn sm pri" id="dw-pr-edit">Modifica le note</button><button class="btn sm" id="dw-pr-reset">Torna alle note generate</button><label class="sw small"><input type="checkbox" id="dw-pr-snap" checked> Solo note della scala</label></div>
@@ -120,7 +121,7 @@
     <div class="status" id="dw-pr-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-design" data-ws="base">
+  <section class="dw-panel" id="dw-p-design" data-ws="libreria">
     <div class="dw-ph"><h3>Designer suoni</h3><span class="tag m">Suoni tuoi</span></div>
     <div class="chips" id="dw-ds-tabs"><button class="chip on" data-dst="synth">Synth</button><button class="chip" data-dst="808">808</button><button class="chip" data-dst="fx">Effetti di passaggio</button><button class="chip" data-dst="perc">Percussioni del mondo</button><button class="chip" data-dst="vox">Dalla voce</button></div>
     <div id="dw-ds-body"></div>
@@ -137,7 +138,7 @@
     <div class="status" id="dw-cl-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-mixer" data-ws="mix">
+  <section class="dw-panel" id="dw-p-mixer">
     <div class="dw-ph"><h3>Mixer</h3><span class="tag m">Si sente subito</span></div>
     <p class="small muted">Scegli una traccia e regola il suo canale mentre suona. Lo stesso mix finisce nel file che salvi.</p>
     <div class="chips" id="dw-mx-lanes"></div>
@@ -148,7 +149,7 @@
   </section>
 
   <section class="dw-panel" id="dw-p-mix" data-ws="mix">
-    <div class="dw-ph"><h3>Mix e salvataggio</h3></div>
+    <div class="dw-ph"><h3>Master e salvataggio</h3></div>
     <div class="grid2">
       <label class="f"><span>Master (suono finale)</span><select id="dw-master"><option value="off">Spento</option><option value="morbido">Morbido</option><option value="standard">Standard</option><option value="forte">Forte</option></select></label>
       <label class="f"><span>Voce: spostamento (ms) <b id="dw-offv">0</b></span><input type="range" id="dw-off" min="-300" max="300" step="5" value="0"></label>
@@ -171,6 +172,15 @@
     <div class="dw-more"><a href="#voce">Voce: autotune e caratteri</a><a href="#strumenti">Strumentario e Laboratorio</a><a href="#beatlab">Laboratorio batteria (batteria a passi, piano roll)</a><a href="#studio">Coach completo e percorso</a></div>
   </section>
 
+  <div class="dw-next" data-ws="testo"><button class="btn pri" data-next="base">Avanti: crea la base →</button></div>
+  <div class="dw-next" data-ws="base"><button class="btn pri" data-next="voce">Avanti: registra la voce →</button></div>
+  <div class="dw-next" data-ws="voce"><button class="btn pri" data-next="mix">Avanti: mix e salvataggio →</button></div>
+  <div class="dw-next" data-ws="libreria"><button class="btn" data-next="base">Torna alla base →</button></div>
+  <div class="dw-sheet" id="dw-insp" hidden><div class="dw-sheet-in">
+    <div class="dw-ph"><span class="dw-insp-dot" id="dw-in-dot"></span><h3 id="dw-in-t">Traccia</h3><button class="btn sm" id="dw-in-x">Chiudi</button></div>
+    <div class="dw-seg" id="dw-in-tabs"><button data-int="suono" class="on">Suono</button><button data-int="note">Note</button><button data-int="canale">Canale</button></div>
+    <div id="dw-in-suono"></div><div id="dw-in-note" hidden></div><div id="dw-in-canale" hidden></div>
+  </div></div>
   <div class="dw-sheet" id="dw-set" hidden><div class="dw-sheet-in"><div class="dw-ph"><h3>Impostazioni del progetto</h3><button class="btn sm" id="dw-set-x">Chiudi</button></div>
     <div class="dw-meta dw-meta-sheet">
       <label class="dw-chip"><span>Stile</span><select id="dw-genre"></select></label>
@@ -556,9 +566,9 @@
 </div>
 
 <div class="tabs"><nav id="tabs">
-  <a href="#daw" data-r="daw" data-ws="impara"><svg><use href="#i-folder"/></svg>Impara</a>
-  <a href="#daw" data-r="daw" data-ws="base"><svg><use href="#i-disc"/></svg>Base</a>
-  <a href="#daw" data-r="daw" data-ws="testo"><svg><use href="#i-spark"/></svg>Testo</a>
-  <a href="#daw" data-r="daw" data-ws="voce"><svg><use href="#i-mic"/></svg>Voce</a>
-  <a href="#daw" data-r="daw" data-ws="mix"><svg><use href="#i-sliders"/></svg>Mix</a>
+  <a href="#daw" data-r="daw" data-ws="testo"><svg><use href="#i-spark"/></svg><span><i>1</i>Testo</span></a>
+  <a href="#daw" data-r="daw" data-ws="base"><svg><use href="#i-disc"/></svg><span><i>2</i>Base</span></a>
+  <a href="#daw" data-r="daw" data-ws="voce"><svg><use href="#i-mic"/></svg><span><i>3</i>Voce</span></a>
+  <a href="#daw" data-r="daw" data-ws="mix"><svg><use href="#i-sliders"/></svg><span><i>4</i>Mix</span></a>
+  <a href="#daw" data-r="daw" data-ws="libreria"><svg><use href="#i-folder"/></svg><span>Libreria</span></a>
 </nav></div>
