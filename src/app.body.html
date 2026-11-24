@@ -105,6 +105,26 @@
     <div class="status" id="dw-tmsg"></div>
   </section>
 
+  <section class="dw-panel" id="dw-p-roll">
+    <div class="dw-ph"><h3>Piano roll</h3><span class="tag m">Nota per nota</span></div>
+    <div class="chips" id="dw-pr-tr"><button class="chip on" data-prt="lead">Melodia</button><button class="chip" data-prt="bass">Basso 808</button></div>
+    <div class="row"><button class="btn sm pri" id="dw-pr-edit">Modifica le note</button><button class="btn sm" id="dw-pr-reset">Torna alle note generate</button><label class="sw small"><input type="checkbox" id="dw-pr-snap" checked> Solo note della scala</label></div>
+    <div class="dw-pr-wrap"><canvas id="dw-pr-cv"></canvas></div>
+    <p class="small muted" id="dw-pr-info"></p>
+    <div class="row" id="dw-pr-tools" hidden><button class="btn sm" data-pra="up">▲</button><button class="btn sm" data-pra="down">▼</button><button class="btn sm" data-pra="left">◀</button><button class="btn sm" data-pra="right">▶</button><button class="btn sm" data-pra="short">Più corta</button><button class="btn sm" data-pra="long">Più lunga</button><button class="btn sm" data-pra="oct">Ottava</button><button class="btn sm" data-pra="glide" id="dw-pr-glide">Glide 808</button><button class="btn sm" data-pra="del">Elimina</button></div>
+    <div class="status" id="dw-pr-msg"></div>
+  </section>
+
+  <section class="dw-panel" id="dw-p-clips">
+    <div class="dw-ph"><h3>Voce: prove e montaggio</h3><span class="tag m">Niente si perde</span></div>
+    <div id="dw-cl-takes"></div>
+    <div id="dw-cl-comp-box"></div>
+    <p class="small muted" style="margin:10px 0 4px">Clip sulla traccia voce (tocca la timeline per mettere il cursore):</p>
+    <div class="chips" id="dw-cl-list"></div>
+    <div class="dw-knobs" id="dw-cl-edit"></div>
+    <div class="status" id="dw-cl-msg"></div>
+  </section>
+
   <section class="dw-panel" id="dw-p-mixer">
     <div class="dw-ph"><h3>Mixer</h3><span class="tag m">Si sente subito</span></div>
     <p class="small muted">Scegli una traccia e regola il suo canale mentre suona. Lo stesso mix finisce nel file che salvi.</p>

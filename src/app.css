@@ -304,3 +304,5 @@ details.card[open]>summary{margin-bottom:8px}
 .dw-chip select,.dw-chip input{padding:0!important;height:24px!important;min-height:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
 .dw-chip{padding:3px 10px}
 .dw-prop{flex-wrap:wrap}.dw-prop div{flex-basis:100%}.dw-prop .btn{flex:1}
+.dw-compl{display:grid;grid-template-columns:1fr 120px;gap:8px;align-items:center}.dw-compl span{font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dw-pr-wrap{overflow:auto;max-height:300px;border:1px solid var(--line);border-radius:10px;margin:8px 0;-webkit-overflow-scrolling:touch}.dw-pr-wrap canvas{display:block}
