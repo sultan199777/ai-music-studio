@@ -545,7 +545,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 17:25</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 17:41</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -893,7 +893,7 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">254 test automatici superati su 254 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">257 test automatici superati su 257 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -3280,7 +3280,21 @@ details.card[open]>summary{margin-bottom:8px}
     box.innerHTML = '<div class="note"><b>Orecchio di Sultan · voce</b> <span class="tag m">Misurato</span> · registrazione: <b>' + esc(a.verdict) + '</b>' +
       '<ul class="clean small">' + line(a, 'Registrazione') + (b ? line(b, 'Dopo il Voice Lab') : '') + '</ul>' +
       (a.findings.length ? '<ul class="clean small">' + a.findings.map(function (f) { return '<li><span class="tag ' + (f.level === 'errore' ? 'soon' : 'm') + '">' + (f.level === 'errore' ? 'Errore' : 'Misurato') + '</span> ' + esc(f.text) + '</li>'; }).join('') + '</ul>' : '<p class="small">Nessun problema misurabile nella ripresa.</p>') +
+      tmHtml(t) +
       (has ? '<div class="row"><button class="btn sm pri" id="vl-ear-fix">Applica i consigli e rifai la voce</button></div>' : '') + '</div>';
+  }
+  var TM = null;
+  function tmHtml(t) {
+    TM = null; if (!root.Timing) return '';
+    var m = root.Timing.measure(t.mono, t.sr, api.bpm ? api.bpm() : 140); TM = m;
+    if (!m.reliable) return '<p class="small"><span class="tag i">Ipotesi</span> Tempo: servono almeno 6 sillabe nette per misurarlo (trovate ' + m.n + ').</p>';
+    var ms = m.offsetMs, big = Math.abs(ms) >= 12;
+    return '<p class="small"><span class="tag m">Misurato</span> Tempo sulla griglia (semicrome a ' + (api.bpm ? api.bpm() : 140) + ' BPM): la voce è ' + (Math.abs(ms) < 6 ? 'in tempo' : Math.abs(ms) + ' ms in ' + (ms > 0 ? 'ritardo' : 'anticipo')) + ' (oscillazione ±' + m.spreadMs + ' ms). <span class="tag i">Ipotesi</span> vale se la registrazione parte insieme alla base.</p>' +
+      (big ? '<div class="row"><button class="btn sm" id="vl-tm-fix">Correggi il tempo (' + (ms > 0 ? '−' : '+') + Math.abs(ms) + ' ms)</button></div>' : '');
+  }
+  function tmFix() {
+    var t = api.activeTake(); if (!t || !TM || !root.Timing) return;
+    t.mono = root.Timing.shift(t.mono, t.sr, TM.offsetMs); t.final = null; applyTake(t, {});
   }
   function earVoiceFix() {
     var t = api.activeTake(); if (!t || !EAR_FIX) return;
@@ -3455,7 +3469,7 @@ details.card[open]>summary{margin-bottom:8px}
 
   /* ---------- eventi ---------- */
   function wire() {
-    document.addEventListener('click', function (e) { if (e.target && e.target.id === 'vl-ear-fix') earVoiceFix(); });
+    document.addEventListener('click', function (e) { if (e.target && e.target.id === 'vl-ear-fix') earVoiceFix(); if (e.target && e.target.id === 'vl-tm-fix') tmFix(); });
     $('#vl-auto').addEventListener('click', function () { var t = api.activeTake(); if (!t) { setStatus('Prima registra o importa una voce.'); return; } st.macros = {}; st.advanced = {}; save(); renderSliders(); applyTake(t, { reanalyze: true }); });
     $('#vl-apply').addEventListener('click', function () { var t = api.activeTake(); if (t) applyTake(t, {}); });
     $('#vl-reset').addEventListener('click', function () { st.macros = {}; st.advanced = {}; save(); renderSliders(); buildAdvanced(); var t = api.activeTake(); if (t) schedule(200); });
@@ -4603,6 +4617,49 @@ details.card[open]>summary{margin-bottom:8px}
   }
 
   return { lufs: lufs, listenVoice: listenVoice, moodOf: moodOf, MOODS: MOODS, listen: listen, spectrum: spectrum, BANDS: BANDS, REF: REF };
+});
+
+/*
+ * Correzione del tempo: misura di quanto la voce è in anticipo o in ritardo rispetto alla griglia della base
+ * (semicrome al BPM del progetto) e sposta la voce. Si assume che la registrazione parta insieme alla base.
+ * Misurato: inizi delle sillabe (onset) e loro distanza dalla semicroma più vicina. Ipotesi: la griglia è quella giusta.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.Timing = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  function onsets(x, sr) {
+    var hop = Math.round(sr * 0.005), n = Math.floor(x.length / hop), env = new Float32Array(n), i, j, s;
+    for (i = 0; i < n; i++) { s = 0; for (j = 0; j < hop; j++) { var v = x[i * hop + j] || 0; s += v * v; } env[i] = Math.sqrt(s / hop); }
+    var mx = 0; for (i = 0; i < n; i++) if (env[i] > mx) mx = env[i];
+    if (mx < 1e-4) return [];
+    var out = [], last = -1e9, thr = mx * 0.12;
+    for (i = 4; i < n; i++) {
+      var prev = 0; for (j = 1; j <= 4; j++) prev += env[i - j] / 4;
+      if (env[i] > thr && env[i] > prev * 2.2 && (i - last) * 0.005 > 0.09) { out.push(i * 0.005); last = i; }
+    }
+    return out;
+  }
+  /* -> {n, offsetMs (+ = voce in ritardo), spreadMs, reliable, grid} */
+  function measure(x, sr, bpm, o) {
+    o = o || {};
+    var grid = 60 / (bpm || 140) / 4, on = onsets(x, sr), res = [], i;
+    if (o.startAt) on = on.filter(function (t) { return t >= o.startAt; });
+    for (i = 0; i < on.length; i++) { var k = Math.round(on[i] / grid); res.push(on[i] - k * grid); }
+    if (res.length < 6) return { n: res.length, offsetMs: 0, spreadMs: 0, reliable: false, grid: grid };
+    var s = res.slice().sort(function (a, b) { return a - b; }), med = s[s.length >> 1];
+    var dev = res.map(function (r) { return Math.abs(r - med); }).sort(function (a, b) { return a - b; });
+    var spread = dev[dev.length >> 1];
+    return { n: res.length, offsetMs: Math.round(med * 1000), spreadMs: Math.round(spread * 1000), reliable: spread < grid * 0.25, grid: grid };
+  }
+  /* sposta la voce di -offsetMs (positivo = ritardo da togliere); restituisce una copia */
+  function shift(x, sr, offsetMs) {
+    var d = Math.round(-offsetMs / 1000 * sr), out = new Float32Array(x.length), i;
+    for (i = 0; i < x.length; i++) { var j = i - d; out[i] = j >= 0 && j < x.length ? x[j] : 0; }
+    return out;
+  }
+  return { onsets: onsets, measure: measure, shift: shift };
 });
 
 /*
@@ -9821,7 +9878,7 @@ details.card[open]>summary{margin-bottom:8px}
   }
   $('#b-genre').innerHTML = Object.keys(ALLG).map(function (g) { return '<option value="' + g + '">' + ALLG[g].label + '</option>'; }).join('');
   $('#b-tonic').innerHTML = NOTES.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
-  $('#b-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.tune = null; p.bpm = ALLG[this.value].bpm; if (['trap', 'drill', 'epico', 'boombap', 'street', 'trapdark', 'clubtrap'].indexOf(this.value) >= 0) { p.mode = 'minore'; $('#b-mode').value = 'minore'; } else if (this.value === 'estate') { p.mode = 'maggiore'; $('#b-mode').value = 'maggiore'; } if (Arranger.STYLES[this.value] && p.bars < 16) { p.bars = 32; $('#b-bars').value = 32; $('#b-barsv').textContent = 32; } $('#b-bpm').value = p.bpm; persist(); });
+  $('#b-genre').addEventListener('change', function () { cur().genreManual = true; var p = cur().prod; p.genre = this.value; p.tune = null; p.bpm = ALLG[this.value].bpm; if (['trap', 'drill', 'epico', 'boombap', 'street', 'trapdark', 'clubtrap'].indexOf(this.value) >= 0) { p.mode = 'minore'; $('#b-mode').value = 'minore'; } else if (this.value === 'estate') { p.mode = 'maggiore'; $('#b-mode').value = 'maggiore'; } if (Arranger.STYLES[this.value] && p.bars < 16) { p.bars = 32; $('#b-bars').value = 32; $('#b-barsv').textContent = 32; } $('#b-bpm').value = p.bpm; persist(); });
   ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.addEventListener('change', function () { cur().prod.karBars = this.value === 'auto' ? 'auto' : +this.value; persist(); syncKar(); }); });
   function syncKar() { var v = String(cur().prod.karBars || 'auto'); ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.value = v; }); }
   $('#b-sounds').addEventListener('change', function () { cur().prod.sounds = this.value; persist(); });
@@ -10015,7 +10072,7 @@ details.card[open]>summary{margin-bottom:8px}
   async function runBrain(again) {
     var s = cur(), p = s.prod, m = $('#sb-msg');
     if (!s.lyrics.trim()) { m.textContent = 'Scrivi o incolla prima il testo (in alto): il cervello parte da quello.'; return; }
-    s.brainV = again ? (s.brainV || 0) + 1 : 0;
+    s.brainV = again ? (s.brainV || 0) + 1 : 0; s.brainFor = SultanBrain.hash(s.lyrics.trim()); s.genreManual = false;
     var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel(), mood: $('#sb-mood').value || null }); s.moodTarget = pl.moodTarget; persist();
     p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
     var res = Coach.suggest(coachState(), coachCands(p.genre), { emotion: pl.scene, seed: pl.seed }), R = Instruments.RECIPES[p.genre] || {};
@@ -10030,8 +10087,10 @@ details.card[open]>summary{margin-bottom:8px}
   $('#bl-mood').addEventListener('change', function () { $('#sb-mood').value = this.value; });
   $('#sb-make').addEventListener('click', function () { runBrain(false); });
   $('#sb-again').addEventListener('click', function () { runBrain(true); });
-  $('#b-play').addEventListener('click', function () { makeAndPlay(false); });
-  $('#b-new').addEventListener('click', function () { makeAndPlay(true); });
+  /* il testo decide la base: se non hai scelto tu il genere a mano, parte il Cervello Sultan (una base diversa per ogni testo) */
+  function brainFirst(again) { var s = cur(); if (s.lyrics && s.lyrics.trim() && !s.genreManual && (again || s.brainFor !== SultanBrain.hash(s.lyrics.trim()))) { runBrain(again && s.brainFor === SultanBrain.hash(s.lyrics.trim())); return true; } return false; }
+  $('#b-play').addEventListener('click', function () { if (!brainFirst(false)) makeAndPlay(false); });
+  $('#b-new').addEventListener('click', function () { if (!brainFirst(true)) makeAndPlay(true); });
   $('#b-stop').addEventListener('click', stopPlay);
   $('#b-save').addEventListener('click', async function () { coachRec('save', coachCtx()); var mx = buildMix({ voice: false }); saveAudio(mx.samples, mx.sr, 'base-' + (cur().title || 'canzone').replace(/\W+/g, '-'), $('#b-status')); });
 
