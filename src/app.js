@@ -1283,6 +1283,53 @@
     var id = e.target.getAttribute('data-lv'); if (!id) return;
     var L = LANES.filter(function (x) { return x.id === id; })[0]; cur().prod.levels[L.level] = +e.target.value / 100; persist(); dwGains();
   });
+  // ---------- Mastering professionale, riferimento A/B, tracce separate ----------
+  var MP = { ref: null, out: null };
+  function mpSet() { var p = cur().prod; if (!p.mpro) p.mpro = { target: 'forte', width: 1.1, sat: 0.25, comp: 0.35, match: false }; return p.mpro; }
+  function mpRender() {
+    var m = mpSet();
+    $('#dw-mp-target').innerHTML = Object.keys(MasterPro.TARGETS).map(function (k) { var t = MasterPro.TARGETS[k]; return '<option value="' + k + '"' + (k === m.target ? ' selected' : '') + '>' + t.nome + ' (' + t.lufs + ' LUFS)</option>'; }).join('');
+    $('#dw-mp-knobs').innerHTML = [['comp', 'Compressione multibanda', 0, 1, 0.01], ['width', 'Larghezza stereo', 0, 2, 0.01], ['sat', 'Saturazione analogica', 0, 1, 0.01]].map(function (d) { return '<label class="f"><span>' + d[1] + ' <b>' + Math.round(m[d[0]] * 100) + '%</b></span><input type="range" min="' + d[2] + '" max="' + d[3] + '" step="' + d[4] + '" value="' + m[d[0]] + '" data-mpk="' + d[0] + '"></label>'; }).join('');
+    $('#dw-mp-match').checked = !!m.match; $('#dw-mp-match').disabled = !MP.ref;
+    $('#dw-mp-refinfo').textContent = MP.ref ? 'Riferimento: ' + MP.ref.name + ' · ' + MP.ref.lufs.toFixed(1) + ' LUFS' : 'Nessun riferimento caricato.';
+  }
+  $('#dw-mp-knobs').addEventListener('input', function (e) { var k = e.target.getAttribute('data-mpk'); if (!k) return; mpSet()[k] = +e.target.value; e.target.previousElementSibling.querySelector('b').textContent = Math.round(+e.target.value * 100) + '%'; persist(); });
+  $('#dw-mp-target').addEventListener('change', function () { mpSet().target = this.value; persist(); });
+  $('#dw-mp-match').addEventListener('change', function () { mpSet().match = this.checked; persist(); });
+  $('#dw-mp-ref').addEventListener('change', async function () {
+    var f = this.files && this.files[0], el = $('#dw-mp-msg'); this.value = ''; if (!f) return; el.textContent = 'Leggo il riferimento…';
+    try { var d = await decodeStereo(f, 32000), R = d.R || d.L, n = Math.min(d.L.length, 32000 * 90), L = d.L.subarray(0, n); R = R.subarray(0, n);
+      MP.ref = { name: f.name.replace(/\.[^.]+$/, '').slice(0, 40), L: L, R: R, sr: d.sr, lufs: BeatMix.loudness([L, R], d.sr).lufs, spec: MasterPro.spectrum(MasterPro.mono(L, R), d.sr) };
+      mpRender(); el.textContent = 'Riferimento pronto: serve solo per confrontare (non finisce nel tuo brano).'; } catch (e) { el.textContent = 'Non riesco a leggere questo file.'; }
+  });
+  async function mpMake(withVoice) {
+    var m = mpSet(), el = $('#dw-mp-msg'); el.textContent = 'Preparo il mix…'; await tick();
+    var raw = await dwRender(withVoice, true); el.textContent = 'Mastering: multibanda, stereo, saturazione, volume e limitatore…'; await tick();
+    var c = m.comp, band = function (thr) { return { thr: thr + 8 - 16 * c, ratio: 1 + 3 * c, gain: 0 }; };
+    var mine = MasterPro.spectrum(MasterPro.mono(raw.L, raw.R), raw.sr);
+    var r = MasterPro.process(raw.L, raw.R, raw.sr, { target: m.target, low: band(-18), mid: band(-20), high: band(-22), width: m.width, sat: m.sat, matchRef: m.match && MP.ref ? MP.ref.spec : null, mySpec: mine }, BeatMix.loudness);
+    MP.out = { L: r.L, R: r.R, sr: raw.sr, rep: r.report, spec: MasterPro.spectrum(MasterPro.mono(r.L, r.R), raw.sr) };
+    var rp = r.report, h = '<div class="dw-agent"><header><span class="dw-dot ok"></span><b>Master pronto</b><span class="st">' + esc(rp.target) + '</span></header><ul class="clean small">' +
+      '<li>Volume: <b>' + rp.lufs + ' LUFS</b> · picco reale ' + rp.truePeakDb + ' dBTP · limitatore ' + rp.limiterDb + ' dB</li>' +
+      '<li>Compressione: bassi ' + rp.grLow + ' dB · medi ' + rp.grMid + ' dB · alti ' + rp.grHigh + ' dB</li>' +
+      '<li>Fase (correlazione L/R): ' + rp.corr + (rp.corr < 0.2 ? ' — attenzione: in mono si perde qualcosa, riduci la larghezza.' : ' — ok anche in mono.') + '</li></ul>';
+    if (MP.ref) h += '<p class="small"><b>Confronto col riferimento:</b></p><ul class="clean small">' + MasterPro.compare(MP.out.spec, MP.ref.spec).tips.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
+    $('#dw-mp-report').innerHTML = h + '</div>'; el.textContent = 'Ascolta e confronta, poi salva.'; coachRec('save', coachCtx());
+  }
+  $('#dw-p-mix').addEventListener('click', async function (e) {
+    var b = e.target.closest('button'); if (!b) return; var el = $('#dw-mp-msg');
+    try {
+      if (b.id === 'dw-mp-make') await mpMake(true);
+      if (b.id === 'dw-mp-play') { if (!MP.out) { el.textContent = 'Prima premi "Crea il master".'; return; } dwStop(true); playBuf(MasterPro.mono(MP.out.L, MP.out.R), MP.out.sr); el.textContent = 'Ascolti il TUO master.'; }
+      if (b.id === 'dw-mp-ab') { if (!MP.ref) { el.textContent = 'Carica prima un brano di riferimento.'; return; } var g = MP.out ? Math.pow(10, (MP.out.rep.lufs - MP.ref.lufs) / 20) : 1, mo = MasterPro.mono(MP.ref.L, MP.ref.R); for (var i = 0; i < mo.length; i++) mo[i] *= g; dwStop(true); playBuf(mo, MP.ref.sr); el.textContent = 'Ascolti il RIFERIMENTO allo stesso volume del tuo master (confronto onesto).'; }
+      if (b.id === 'dw-mp-save') { if (!MP.out) { el.textContent = 'Prima premi "Crea il master".'; return; } await saveFile((cur().title || 'canzone').replace(/\W+/g, '-') + '-master.wav', wavStereo(MP.out.L, MP.out.R, MP.out.sr), el, 'Master WAV stereo salvato.'); }
+      if (b.id === 'dw-mp-stems') {
+        var names = { drums: 'batteria', bass: 'basso', chords: 'accordi', arp: 'arpeggio', lead: 'melodia', pad: 'atmosfera', voice: 'voce' }, saved = 0, solo0 = DW.solo, mute0 = DW.mute;
+        for (var k in names) { if (k === 'voice' && !voiceTake()) continue; DW.solo = {}; DW.solo[k] = true; DW.mute = {}; el.textContent = 'Salvo la traccia ' + names[k] + '…'; var r = await dwRender(k === 'voice', true); var e2 = 0; for (var j = 0; j < r.L.length; j += 64) e2 += Math.abs(r.L[j]); if (e2 < 1e-3) continue; await saveFile((cur().title || 'canzone').replace(/\W+/g, '-') + '-' + names[k] + '.wav', wavStereo(r.L, r.R, r.sr), el, ''); saved++; }
+        DW.solo = solo0; DW.mute = mute0; el.textContent = saved + ' tracce separate salvate (WAV stereo, con il mixer, senza master).';
+      }
+    } catch (err) { el.textContent = 'Non riuscito: ' + (err && err.message || 'errore'); }
+  });
   // ---------- Designer suoni: synth, 808, effetti di transizione ----------
   function synthRegister(r) {
     Instruments.registerCustom(r.id, { id: r.id, nome: r.nome, fam: 'synth', fonte: 'Creato da te', tipo: 'sostenuto', range: [24, 100], ruoli: ['melodia', 'accordi', 'pad', 'arpeggio'], come: 'Synth wavetable creato nel Designer.', combina: '', perche: '', stili: [] },
@@ -1502,13 +1549,13 @@
     clearTimeout(MIXUI.t); MIXUI.t = setTimeout(persist, 400);
   });
   // salvataggio in stereo con la stessa catena del mixer (OfflineAudioContext)
-  async function dwRender(withVoice) {
+  async function dwRender(withVoice, raw) {
     var b = await dwBase(), bufs = dwBuffers(b), sr = b.sampleRate, t = withVoice ? voiceTake() : null;
     var len = Math.ceil((b.duration + 2.5) * sr), oc = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(2, len, sr);
     var use = {}; for (var k in bufs) if (k !== 'voice' || t) use[k] = bufs[k];
     var wasRec = DW.recording; DW.recording = false; dwGraph(oc, oc.destination, use, b, 0, 0, null); DW.recording = wasRec;
     var out = await oc.startRendering(), L = out.getChannelData(0), R = out.getChannelData(1), mp = cur().prod.master || 'standard';
-    if (mp !== 'off' && Master.PRESETS[mp]) { L = Master.process(L, sr, mp).samples; R = Master.process(R, sr, mp).samples; }
+    if (!raw && mp !== 'off' && Master.PRESETS[mp]) { L = Master.process(L, sr, mp).samples; R = Master.process(R, sr, mp).samples; }
     return { L: L, R: R, sr: sr };
   }
   function wavStereo(L, R, sr) {
@@ -1719,7 +1766,7 @@
     learnUse(pl); el.textContent = 'Base nuova creata dai tuoi gusti (' + pl.from + ' che ti piacciono' + (pl.avoid ? ', ' + pl.avoid + ' da evitare' : '') + '): ' + (Arranger.STYLES[pl.genre] ? Arranger.STYLES[pl.genre].label : pl.genre) + ', ' + pl.bpm + ' BPM, cassa sui passi ' + pl.groove.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + '. Premi Play.';
   });
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
-  SHOW.daw = function () { dwFill(); mixRender(); clipsRender(); dsRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+  SHOW.daw = function () { dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {

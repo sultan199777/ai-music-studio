@@ -153,6 +153,15 @@
     </div>
     <div class="row" style="margin-top:8px"><button class="btn pri" id="dw-export">Salva la canzone (WAV)</button><button class="btn" id="dw-export-base">Solo la base</button></div>
     <div class="status" id="dw-xmsg"></div>
+    <h4 style="margin:16px 0 6px">Mastering professionale</h4>
+    <label class="f"><span>Volume finale</span><select id="dw-mp-target"></select></label>
+    <div class="dw-knobs" id="dw-mp-knobs"></div>
+    <div class="row"><label class="btn sm" for="dw-mp-ref">Carica un brano di riferimento</label><input type="file" id="dw-mp-ref" accept="audio/*,video/*" hidden><label class="sw small"><input type="checkbox" id="dw-mp-match"> Avvicina il suono al riferimento</label></div>
+    <p class="small muted" id="dw-mp-refinfo"></p>
+    <div class="row"><button class="btn pri" id="dw-mp-make">Crea il master</button><button class="btn sm" id="dw-mp-play">▶ Il mio master</button><button class="btn sm" id="dw-mp-ab">▶ Riferimento (stesso volume)</button></div>
+    <div id="dw-mp-report"></div>
+    <div class="row"><button class="btn sm pri" id="dw-mp-save">Salva il master (WAV)</button><button class="btn sm" id="dw-mp-stems">Salva le tracce separate</button></div>
+    <div class="status" id="dw-mp-msg"></div>
     <div class="dw-more"><a href="#voce">Voce: autotune e caratteri</a><a href="#strumenti">Strumentario e Laboratorio</a><a href="#beatlab">Laboratorio batteria (batteria a passi, piano roll)</a><a href="#studio">Coach completo e percorso</a></div>
   </section>
 

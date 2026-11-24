@@ -562,6 +562,15 @@ details.card[open]>summary{margin-bottom:8px}
     </div>
     <div class="row" style="margin-top:8px"><button class="btn pri" id="dw-export">Salva la canzone (WAV)</button><button class="btn" id="dw-export-base">Solo la base</button></div>
     <div class="status" id="dw-xmsg"></div>
+    <h4 style="margin:16px 0 6px">Mastering professionale</h4>
+    <label class="f"><span>Volume finale</span><select id="dw-mp-target"></select></label>
+    <div class="dw-knobs" id="dw-mp-knobs"></div>
+    <div class="row"><label class="btn sm" for="dw-mp-ref">Carica un brano di riferimento</label><input type="file" id="dw-mp-ref" accept="audio/*,video/*" hidden><label class="sw small"><input type="checkbox" id="dw-mp-match"> Avvicina il suono al riferimento</label></div>
+    <p class="small muted" id="dw-mp-refinfo"></p>
+    <div class="row"><button class="btn pri" id="dw-mp-make">Crea il master</button><button class="btn sm" id="dw-mp-play">▶ Il mio master</button><button class="btn sm" id="dw-mp-ab">▶ Riferimento (stesso volume)</button></div>
+    <div id="dw-mp-report"></div>
+    <div class="row"><button class="btn sm pri" id="dw-mp-save">Salva il master (WAV)</button><button class="btn sm" id="dw-mp-stems">Salva le tracce separate</button></div>
+    <div class="status" id="dw-mp-msg"></div>
     <div class="dw-more"><a href="#voce">Voce: autotune e caratteri</a><a href="#strumenti">Strumentario e Laboratorio</a><a href="#beatlab">Laboratorio batteria (batteria a passi, piano roll)</a><a href="#studio">Coach completo e percorso</a></div>
   </section>
 
@@ -578,7 +587,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 18:53</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 18:56</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -928,7 +937,7 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">274 test automatici superati su 274 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">278 test automatici superati su 278 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -6879,6 +6888,101 @@ details.card[open]>summary{margin-bottom:8px}
 });
 
 /*
+ * Mastering stereo (calcolo sul file):
+ *  1. compressore multibanda a 3 bande (incroci 150 Hz e 3 kHz, filtri Linkwitz-Riley 4° ordine: le bande sommate ridanno il segnale);
+ *  2. larghezza stereo (mid/side) con i bassi sotto 150 Hz sempre in mono (fase sicura);
+ *  3. saturazione morbida (clipper "analogico");
+ *  4. volume portato al bersaglio LUFS (misura BS.1770) e limitatore con anticipo al tetto di true peak.
+ * Analisi: spettro a 10 bande (dB), correlazione di fase L/R (-1…+1), confronto con un brano di riferimento.
+ * meter = funzione di misura {lufs, truePeakDb} (BeatMix.loudness): passata da fuori per non duplicare il codice.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.MasterPro = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  var TARGETS = { streaming: { nome: 'Streaming (Spotify, Apple)', lufs: -14, tp: -1 }, forte: { nome: 'Forte (trap/drill)', lufs: -9, tp: -1 }, club: { nome: 'Club / molto forte', lufs: -7.5, tp: -0.8 }, morbido: { nome: 'Morbido', lufs: -16, tp: -1 } };
+  var DEF = { target: 'forte', low: { thr: -18, ratio: 2.5, gain: 0 }, mid: { thr: -20, ratio: 2, gain: 0 }, high: { thr: -22, ratio: 2, gain: 0 }, width: 1.1, sat: 0.25 };
+  var BANDS = [40, 80, 160, 315, 630, 1250, 2500, 5000, 10000, 16000];
+
+  function bq(type, f, sr, q) {
+    var w = 2 * Math.PI * f / sr, c = Math.cos(w), al = Math.sin(w) / (2 * (q || Math.SQRT1_2)), a0 = 1 + al, b;
+    if (type === 'lp') b = [(1 - c) / 2, 1 - c, (1 - c) / 2]; else if (type === 'hp') b = [(1 + c) / 2, -(1 + c), (1 + c) / 2]; else b = [al, 0, -al];
+    return { b0: b[0] / a0, b1: b[1] / a0, b2: b[2] / a0, a1: -2 * c / a0, a2: (1 - al) / a0 };
+  }
+  function filt(x, c) { var y = new Float32Array(x.length), x1 = 0, x2 = 0, y1 = 0, y2 = 0; for (var i = 0; i < x.length; i++) { var v = c.b0 * x[i] + c.b1 * x1 + c.b2 * x2 - c.a1 * y1 - c.a2 * y2; x2 = x1; x1 = x[i]; y2 = y1; y1 = v; y[i] = v; } return y; }
+  function lr4(x, type, f, sr) { var c = bq(type, f, sr); return filt(filt(x, c), c); }
+  /** 3 bande Linkwitz-Riley: low, mid, high (la somma = passa-tutto, stesso livello del segnale). */
+  function split3(x, sr, f1, f2) {
+    var low = lr4(x, 'lp', f1, sr), hi1 = lr4(x, 'hp', f1, sr), mid = lr4(hi1, 'lp', f2, sr), high = lr4(hi1, 'hp', f2, sr);
+    return { low: low, mid: mid, high: high };
+  }
+  function compBand(xs, sr, o) { // xs = [L, R] della banda; compressione con rilevatore RMS collegato tra i canali
+    var thr = o.thr, ratio = Math.max(1, o.ratio), mk = Math.pow(10, (o.gain || 0) / 20), at = Math.exp(-1 / (sr * 0.01)), rl = Math.exp(-1 / (sr * 0.15)), e = 0, gr = 0;
+    var L = xs[0], R = xs[1], n = L.length;
+    for (var i = 0; i < n; i++) {
+      var p = Math.max(L[i] * L[i], R[i] * R[i]); e = p > e ? at * e + (1 - at) * p : rl * e + (1 - rl) * p;
+      var lev = 10 * Math.log10(e + 1e-12), over = lev - thr, g = over > 0 ? -over * (1 - 1 / ratio) : 0;
+      var gl = Math.pow(10, g / 20) * mk; L[i] *= gl; R[i] *= gl; if (-g > gr) gr = -g;
+    }
+    return gr;
+  }
+  function limiter(L, R, sr, ceilDb) {
+    var ceil = Math.pow(10, ceilDb / 20), la = Math.round(sr * 0.003), n = L.length, g = 1, rel = Math.exp(-1 / (sr * 0.08)), need = new Float32Array(n), outL = new Float32Array(n), outR = new Float32Array(n), maxRed = 0;
+    for (var i = 0; i < n; i++) { var a = Math.max(Math.abs(L[i]), Math.abs(R[i])) * 1.12; need[i] = a > ceil ? ceil / a : 1; } // 1.12 ≈ margine per i picchi tra i campioni
+    var minWin = new Float32Array(n); for (i = 0; i < n; i++) { var m = 1; for (var k = 0; k <= la && i + k < n; k += 4) if (need[i + k] < m) m = need[i + k]; minWin[i] = m; }
+    for (i = 0; i < n; i++) { var t = minWin[i]; g = t < g ? t : rel * g + (1 - rel) * t; if (g > 1) g = 1; outL[i] = L[i] * g; outR[i] = R[i] * g; if (1 - g > maxRed) maxRed = 1 - g; }
+    return { L: outL, R: outR, maxRedDb: maxRed > 0 ? -20 * Math.log10(1 - maxRed) : 0 };
+  }
+  function correlation(L, R) { var s = 0, a = 0, b = 0; for (var i = 0; i < L.length; i++) { s += L[i] * R[i]; a += L[i] * L[i]; b += R[i] * R[i]; } return a > 0 && b > 0 ? s / Math.sqrt(a * b) : 1; }
+  /** Spettro in 10 bande (dB relativi al totale), mono. */
+  function spectrum(x, sr) {
+    var tot = 0, i; for (i = 0; i < x.length; i++) tot += x[i] * x[i]; tot = tot || 1e-12;
+    return BANDS.map(function (f) { if (f >= sr / 2) return -60; var y = filt(x, bq('bp', f, sr, 1.4)), e = 0; for (var k = 0; k < y.length; k++) e += y[k] * y[k]; return Math.max(-60, 10 * Math.log10(e / tot + 1e-12)); });
+  }
+  function mono(L, R) { var m = new Float32Array(L.length); for (var i = 0; i < m.length; i++) m[i] = (L[i] + R[i]) / 2; return m; }
+  /** Confronto con un riferimento: differenze per banda e consigli in italiano. */
+  function compare(mineSpec, refSpec) {
+    var names = ['sub 40', 'bassi 80', 'bassi 160', 'calore 315', 'medi 630', 'medi 1,2k', 'presenza 2,5k', 'presenza 5k', 'aria 10k', 'aria 16k'], tips = [];
+    var d = mineSpec.map(function (v, i) { return Math.round((v - refSpec[i]) * 10) / 10; });
+    d.forEach(function (v, i) { if (v > 3) tips.push(names[i] + ' Hz: +' + v + ' dB rispetto al riferimento (togli un po\').'); else if (v < -3) tips.push(names[i] + ' Hz: ' + v + ' dB rispetto al riferimento (alza un po\').'); });
+    return { diff: d, tips: tips.length ? tips : ['Lo spettro è vicino al riferimento (entro 3 dB per banda).'] };
+  }
+  /**
+   * Master completo. opts: {target, low/mid/high: {thr, ratio, gain}, width, sat, matchRef (spettro riferimento → EQ max ±3 dB)}.
+   * Ritorna {L, R, report: {lufs, truePeakDb, corr, grLow, grMid, grHigh, limiterDb, gainDb}}.
+   */
+  function process(Lin, Rin, sr, opts, meter) {
+    var o = Object.assign({}, DEF, opts || {}), T = TARGETS[o.target] || TARGETS.forte, n = Lin.length, i;
+    var bL = split3(Lin, sr, 150, 3000), bR = split3(Rin, sr, 150, 3000);
+    var grL = compBand([bL.low, bR.low], sr, Object.assign({}, DEF.low, o.low)), grM = compBand([bL.mid, bR.mid], sr, Object.assign({}, DEF.mid, o.mid)), grH = compBand([bL.high, bR.high], sr, Object.assign({}, DEF.high, o.high));
+    var L = new Float32Array(n), R = new Float32Array(n), w = Math.max(0, Math.min(2, o.width));
+    for (i = 0; i < n; i++) {
+      var lo = (bL.low[i] + bR.low[i]) / 2; // bassi in mono
+      var mL = bL.mid[i] + bL.high[i], mR = bR.mid[i] + bR.high[i], M = (mL + mR) / 2, S = (mL - mR) / 2 * w;
+      L[i] = lo + M + S; R[i] = lo + M - S;
+    }
+    if (o.matchRef && o.mySpec) {
+      var diff = compare(o.mySpec, o.matchRef).diff;
+      BANDS.forEach(function (f, k) { if (f >= sr / 2) return; var g = Math.max(-3, Math.min(3, -diff[k] * 0.5)); if (Math.abs(g) < 0.5) return; var A = Math.pow(10, g / 40), w0 = 2 * Math.PI * f / sr, al = Math.sin(w0) / (2 * 1.4), c = Math.cos(w0), a0 = 1 + al / A;
+        var cf = { b0: (1 + al * A) / a0, b1: -2 * c / a0, b2: (1 - al * A) / a0, a1: -2 * c / a0, a2: (1 - al / A) / a0 }; L = filt(L, cf); R = filt(R, cf); });
+    }
+    if (o.sat > 0) { var k2 = 1 + o.sat * 3, nk = Math.tanh(k2); for (i = 0; i < n; i++) { L[i] = Math.tanh(k2 * L[i]) / nk * (1 - o.sat * 0.3) + L[i] * o.sat * 0.3; R[i] = Math.tanh(k2 * R[i]) / nk * (1 - o.sat * 0.3) + R[i] * o.sat * 0.3; } }
+    // volume al bersaglio: due giri (misura → guadagno → limitatore → misura → correzione)
+    var gainDb = 0, lim = null;
+    for (var pass = 0; pass < 2; pass++) {
+      var m = meter([L, R], sr), now = isFinite(m.lufs) ? m.lufs : -40, gdb = Math.max(-20, Math.min(24, T.lufs - now)), g = Math.pow(10, gdb / 20);
+      var gL = new Float32Array(n), gR = new Float32Array(n); for (i = 0; i < n; i++) { gL[i] = L[i] * g; gR[i] = R[i] * g; }
+      lim = limiter(gL, gR, sr, T.tp); L = lim.L; R = lim.R; gainDb += gdb;
+      if (Math.abs(meter([L, R], sr).lufs - T.lufs) < 0.5) break;
+    }
+    var fin = meter([L, R], sr);
+    return { L: L, R: R, report: { target: T.nome, lufs: Math.round(fin.lufs * 10) / 10, truePeakDb: Math.round(fin.truePeakDb * 10) / 10, corr: Math.round(correlation(L, R) * 100) / 100, grLow: Math.round(grL * 10) / 10, grMid: Math.round(grM * 10) / 10, grHigh: Math.round(grH * 10) / 10, limiterDb: Math.round(lim.maxRedDb * 10) / 10, gainDb: Math.round(gainDb * 10) / 10 } };
+  }
+  return { TARGETS: TARGETS, DEF: DEF, BANDS: BANDS, split3: split3, limiter: limiter, correlation: correlation, spectrum: spectrum, compare: compare, mono: mono, process: process };
+});
+
+/*
  * Scheda di stile: misura caratteristiche GENERICHE di una canzone di riferimento
  * (tempo, peso del basso, luminosità, densità ritmica, crescita di energia)
  * e le trasforma in parametri per l'arrangiatore. Si possono mescolare più schede.
@@ -11093,6 +11197,53 @@ details.card[open]>summary{margin-bottom:8px}
     var id = e.target.getAttribute('data-lv'); if (!id) return;
     var L = LANES.filter(function (x) { return x.id === id; })[0]; cur().prod.levels[L.level] = +e.target.value / 100; persist(); dwGains();
   });
+  // ---------- Mastering professionale, riferimento A/B, tracce separate ----------
+  var MP = { ref: null, out: null };
+  function mpSet() { var p = cur().prod; if (!p.mpro) p.mpro = { target: 'forte', width: 1.1, sat: 0.25, comp: 0.5, match: false }; return p.mpro; }
+  function mpRender() {
+    var m = mpSet();
+    $('#dw-mp-target').innerHTML = Object.keys(MasterPro.TARGETS).map(function (k) { var t = MasterPro.TARGETS[k]; return '<option value="' + k + '"' + (k === m.target ? ' selected' : '') + '>' + t.nome + ' (' + t.lufs + ' LUFS)</option>'; }).join('');
+    $('#dw-mp-knobs').innerHTML = [['comp', 'Compressione multibanda', 0, 1, 0.01], ['width', 'Larghezza stereo', 0, 2, 0.01], ['sat', 'Saturazione analogica', 0, 1, 0.01]].map(function (d) { return '<label class="f"><span>' + d[1] + ' <b>' + Math.round(m[d[0]] * 100) + '%</b></span><input type="range" min="' + d[2] + '" max="' + d[3] + '" step="' + d[4] + '" value="' + m[d[0]] + '" data-mpk="' + d[0] + '"></label>'; }).join('');
+    $('#dw-mp-match').checked = !!m.match; $('#dw-mp-match').disabled = !MP.ref;
+    $('#dw-mp-refinfo').textContent = MP.ref ? 'Riferimento: ' + MP.ref.name + ' · ' + MP.ref.lufs.toFixed(1) + ' LUFS' : 'Nessun riferimento caricato.';
+  }
+  $('#dw-mp-knobs').addEventListener('input', function (e) { var k = e.target.getAttribute('data-mpk'); if (!k) return; mpSet()[k] = +e.target.value; e.target.previousElementSibling.querySelector('b').textContent = Math.round(+e.target.value * 100) + '%'; persist(); });
+  $('#dw-mp-target').addEventListener('change', function () { mpSet().target = this.value; persist(); });
+  $('#dw-mp-match').addEventListener('change', function () { mpSet().match = this.checked; persist(); });
+  $('#dw-mp-ref').addEventListener('change', async function () {
+    var f = this.files && this.files[0], el = $('#dw-mp-msg'); this.value = ''; if (!f) return; el.textContent = 'Leggo il riferimento…';
+    try { var d = await decodeStereo(f, 32000), R = d.R || d.L, n = Math.min(d.L.length, 32000 * 90), L = d.L.subarray(0, n); R = R.subarray(0, n);
+      MP.ref = { name: f.name.replace(/\.[^.]+$/, '').slice(0, 40), L: L, R: R, sr: d.sr, lufs: BeatMix.loudness([L, R], d.sr).lufs, spec: MasterPro.spectrum(MasterPro.mono(L, R), d.sr) };
+      mpRender(); el.textContent = 'Riferimento pronto: serve solo per confrontare (non finisce nel tuo brano).'; } catch (e) { el.textContent = 'Non riesco a leggere questo file.'; }
+  });
+  async function mpMake(withVoice) {
+    var m = mpSet(), el = $('#dw-mp-msg'); el.textContent = 'Preparo il mix…'; await tick();
+    var raw = await dwRender(withVoice, true); el.textContent = 'Mastering: multibanda, stereo, saturazione, volume e limitatore…'; await tick();
+    var c = m.comp, band = function (thr) { return { thr: thr + 8 - 16 * c, ratio: 1 + 3 * c, gain: 0 }; };
+    var mine = MasterPro.spectrum(MasterPro.mono(raw.L, raw.R), raw.sr);
+    var r = MasterPro.process(raw.L, raw.R, raw.sr, { target: m.target, low: band(-18), mid: band(-20), high: band(-22), width: m.width, sat: m.sat, matchRef: m.match && MP.ref ? MP.ref.spec : null, mySpec: mine }, BeatMix.loudness);
+    MP.out = { L: r.L, R: r.R, sr: raw.sr, rep: r.report, spec: MasterPro.spectrum(MasterPro.mono(r.L, r.R), raw.sr) };
+    var rp = r.report, h = '<div class="dw-agent"><header><span class="dw-dot ok"></span><b>Master pronto</b><span class="st">' + esc(rp.target) + '</span></header><ul class="clean small">' +
+      '<li>Volume: <b>' + rp.lufs + ' LUFS</b> · picco reale ' + rp.truePeakDb + ' dBTP · limitatore ' + rp.limiterDb + ' dB</li>' +
+      '<li>Compressione: bassi ' + rp.grLow + ' dB · medi ' + rp.grMid + ' dB · alti ' + rp.grHigh + ' dB</li>' +
+      '<li>Fase (correlazione L/R): ' + rp.corr + (rp.corr < 0.2 ? ' — attenzione: in mono si perde qualcosa, riduci la larghezza.' : ' — ok anche in mono.') + '</li></ul>';
+    if (MP.ref) h += '<p class="small"><b>Confronto col riferimento:</b></p><ul class="clean small">' + MasterPro.compare(MP.out.spec, MP.ref.spec).tips.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
+    $('#dw-mp-report').innerHTML = h + '</div>'; el.textContent = 'Ascolta e confronta, poi salva.'; coachRec('save', coachCtx());
+  }
+  $('#dw-p-mix').addEventListener('click', async function (e) {
+    var b = e.target.closest('button'); if (!b) return; var el = $('#dw-mp-msg');
+    try {
+      if (b.id === 'dw-mp-make') await mpMake(true);
+      if (b.id === 'dw-mp-play') { if (!MP.out) { el.textContent = 'Prima premi "Crea il master".'; return; } dwStop(true); playBuf(MasterPro.mono(MP.out.L, MP.out.R), MP.out.sr); el.textContent = 'Ascolti il TUO master.'; }
+      if (b.id === 'dw-mp-ab') { if (!MP.ref) { el.textContent = 'Carica prima un brano di riferimento.'; return; } var g = MP.out ? Math.pow(10, (MP.out.rep.lufs - MP.ref.lufs) / 20) : 1, mo = MasterPro.mono(MP.ref.L, MP.ref.R); for (var i = 0; i < mo.length; i++) mo[i] *= g; dwStop(true); playBuf(mo, MP.ref.sr); el.textContent = 'Ascolti il RIFERIMENTO allo stesso volume del tuo master (confronto onesto).'; }
+      if (b.id === 'dw-mp-save') { if (!MP.out) { el.textContent = 'Prima premi "Crea il master".'; return; } await saveFile((cur().title || 'canzone').replace(/\W+/g, '-') + '-master.wav', wavStereo(MP.out.L, MP.out.R, MP.out.sr), el, 'Master WAV stereo salvato.'); }
+      if (b.id === 'dw-mp-stems') {
+        var names = { drums: 'batteria', bass: 'basso', chords: 'accordi', arp: 'arpeggio', lead: 'melodia', pad: 'atmosfera', voice: 'voce' }, saved = 0, solo0 = DW.solo, mute0 = DW.mute;
+        for (var k in names) { if (k === 'voice' && !voiceTake()) continue; DW.solo = {}; DW.solo[k] = true; DW.mute = {}; el.textContent = 'Salvo la traccia ' + names[k] + '…'; var r = await dwRender(k === 'voice', true); var e2 = 0; for (var j = 0; j < r.L.length; j += 64) e2 += Math.abs(r.L[j]); if (e2 < 1e-3) continue; await saveFile((cur().title || 'canzone').replace(/\W+/g, '-') + '-' + names[k] + '.wav', wavStereo(r.L, r.R, r.sr), el, ''); saved++; }
+        DW.solo = solo0; DW.mute = mute0; el.textContent = saved + ' tracce separate salvate (WAV stereo, con il mixer, senza master).';
+      }
+    } catch (err) { el.textContent = 'Non riuscito: ' + (err && err.message || 'errore'); }
+  });
   // ---------- Designer suoni: synth, 808, effetti di transizione ----------
   function synthRegister(r) {
     Instruments.registerCustom(r.id, { id: r.id, nome: r.nome, fam: 'synth', fonte: 'Creato da te', tipo: 'sostenuto', range: [24, 100], ruoli: ['melodia', 'accordi', 'pad', 'arpeggio'], come: 'Synth wavetable creato nel Designer.', combina: '', perche: '', stili: [] },
@@ -11312,13 +11463,13 @@ details.card[open]>summary{margin-bottom:8px}
     clearTimeout(MIXUI.t); MIXUI.t = setTimeout(persist, 400);
   });
   // salvataggio in stereo con la stessa catena del mixer (OfflineAudioContext)
-  async function dwRender(withVoice) {
+  async function dwRender(withVoice, raw) {
     var b = await dwBase(), bufs = dwBuffers(b), sr = b.sampleRate, t = withVoice ? voiceTake() : null;
     var len = Math.ceil((b.duration + 2.5) * sr), oc = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(2, len, sr);
     var use = {}; for (var k in bufs) if (k !== 'voice' || t) use[k] = bufs[k];
     var wasRec = DW.recording; DW.recording = false; dwGraph(oc, oc.destination, use, b, 0, 0, null); DW.recording = wasRec;
     var out = await oc.startRendering(), L = out.getChannelData(0), R = out.getChannelData(1), mp = cur().prod.master || 'standard';
-    if (mp !== 'off' && Master.PRESETS[mp]) { L = Master.process(L, sr, mp).samples; R = Master.process(R, sr, mp).samples; }
+    if (!raw && mp !== 'off' && Master.PRESETS[mp]) { L = Master.process(L, sr, mp).samples; R = Master.process(R, sr, mp).samples; }
     return { L: L, R: R, sr: sr };
   }
   function wavStereo(L, R, sr) {
@@ -11529,7 +11680,7 @@ details.card[open]>summary{margin-bottom:8px}
     learnUse(pl); el.textContent = 'Base nuova creata dai tuoi gusti (' + pl.from + ' che ti piacciono' + (pl.avoid ? ', ' + pl.avoid + ' da evitare' : '') + '): ' + (Arranger.STYLES[pl.genre] ? Arranger.STYLES[pl.genre].label : pl.genre) + ', ' + pl.bpm + ' BPM, cassa sui passi ' + pl.groove.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + '. Premi Play.';
   });
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
-  SHOW.daw = function () { dwFill(); mixRender(); clipsRender(); dsRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+  SHOW.daw = function () { dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {
