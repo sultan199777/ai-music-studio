@@ -318,3 +318,4 @@ details.card[open]>summary{margin-bottom:8px}
 .dw-help{margin-left:8px;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted);font-weight:700;font-size:.75rem;padding:0;flex:none}
 .dw-ph{gap:6px}.dw-ph .tag{margin-left:auto}
 .dw-panel{margin-bottom:12px}
+.dw-lyrsug{display:block;margin:6px 0;padding:6px 8px;border-left:2px solid #e3c48f;color:var(--text)!important;font-style:italic}

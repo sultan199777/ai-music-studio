@@ -69,9 +69,11 @@
   </section>
 
   <section class="dw-panel" id="dw-p-talk" data-ws="testo base">
-    <div class="dw-ph"><h3>Parla con lo Studio</h3><span class="tag m">Modifica davvero</span></div>
+    <div class="dw-ph"><h3>Agenti</h3><span class="tag m">Modifica davvero</span></div>
     <p class="small muted">Scrivi cosa vuoi cambiare: mixer, 808, melodia, effetti, voce, master, velocità, tonalità, stile. La modifica si sente subito; se non ti piace premi Annulla.</p>
-    <div class="row"><input id="dw-talk-in" placeholder="es. 808 più lungo e più distorto" autocomplete="off" style="flex:1;min-width:0"><button class="btn pri" id="dw-talk-go">Invia</button></div>
+    <div class="row"><select id="dw-ai-engine"><option value="regole">Regole (subito)</option><option value="significato">IA che capisce (gratis, anche iPhone)</option><option value="browser">IA che scrive nel browser (computer)</option><option value="ollama">IA Ollama sul Mac (gratis)</option></select><select id="dw-ai-model"></select><button class="btn sm" id="dw-ai-test">Prova collegamento</button></div>
+    <p class="small muted" id="dw-ai-info"></p>
+    <div class="row"><input id="dw-talk-in" placeholder="es. base triste e scura per questo testo, 808 forte" autocomplete="off" style="flex:1;min-width:0"><button class="btn pri" id="dw-talk-go">Invia</button></div>
     <div id="dw-talk-log"></div>
   </section>
 

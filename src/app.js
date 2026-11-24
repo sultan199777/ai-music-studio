@@ -1291,21 +1291,62 @@
   function talkRender() {
     $('#dw-talk-log').innerHTML = TALK.slice(-6).map(function (h, i, a) {
       var last = i === a.length - 1 && h.state === 'attesa';
-      return '<div class="dw-prop"><div><b>Tu: ' + esc(h.text) + '</b><small>' + esc(h.reply) + (h.state === 'annullato' ? ' (annullato)' : (h.state === 'accettato' ? ' ✓' : '')) + '</small></div>' +
+      return '<div class="dw-prop"><div><b>Tu: ' + esc(h.text) + '</b><small>' + esc(h.reply) + (h.state === 'annullato' ? ' (annullato)' : (h.state === 'accettato' ? ' ✓' : '')) + '</small>' + (h.lyrics && h.lyrics.length ? '<small class="dw-lyrsug">' + h.lyrics.map(esc).join('<br>') + '</small><button class="btn sm" data-tkl="' + (TALK.length - a.length + i) + '">Aggiungi al testo</button>' : '') + '</div>' +
         (last ? '<button class="btn sm pri" data-tk="ok">Accetta</button><button class="btn sm" data-tk="undo">Annulla</button>' : '') + '</div>';
     }).join('') || '<p class="small muted">Esempi: ' + StudioAgent.EXAMPLES.map(esc).join(' · ') + '</p>';
   }
+  function aiSet() { var a = LIB.settings.ai; if (!a || typeof a !== 'object') a = LIB.settings.ai = { engine: 'regole', model: '', url: 'http://localhost:11434' }; return a; }
+  function aiRender() {
+    var a = aiSet(), eng = a.engine;
+    $('#dw-ai-engine').value = eng;
+    var models = LocalAI.MODELS[eng] || {};
+    $('#dw-ai-model').hidden = eng === 'regole'; $('#dw-ai-test').hidden = eng !== 'ollama';
+    $('#dw-ai-model').innerHTML = Object.keys(models).map(function (k) { return '<option value="' + k + '"' + (k === a.model ? ' selected' : '') + '>' + esc(models[k].nome) + '</option>'; }).join('');
+    if (eng !== 'regole' && !models[a.model]) { a.model = Object.keys(models)[0]; $('#dw-ai-model').value = a.model; }
+    $('#dw-ai-info').innerHTML = eng === 'regole' ? 'Capisce le frasi dell\'elenco, subito e senza scaricare niente.' : eng === 'significato' ? 'Capisce frasi libere in italiano e le collega ai comandi dello Studio. Scarica 118 MB la prima volta; va anche su iPhone.' : (eng === 'browser' ? 'Il modello gira dentro la pagina: la prima volta scarica ' + (LocalAI.MODELS.browser[a.model] || {}).mb + ' MB. Consigliato sul computer.' :
+      'Sul Mac: installa Ollama (ollama.com), poi nel Terminale: <span class="mono">ollama pull ' + esc(a.model || 'qwen2.5:7b') + '</span> e avvia con <span class="mono">OLLAMA_ORIGINS="' + esc(location.origin) + '" ollama serve</span>.');
+  }
+  $('#dw-ai-engine').addEventListener('change', function () { aiSet().engine = this.value; aiSet().model = ''; persist(); aiRender(); });
+  $('#dw-ai-model').addEventListener('change', function () { aiSet().model = this.value; persist(); aiRender(); });
+  $('#dw-ai-test').addEventListener('click', async function () { var m = await LocalAI.pingOllama(aiSet().url); $('#dw-ai-info').textContent = m ? 'Ollama collegato. Modelli presenti: ' + (m.join(', ') || 'nessuno (scaricane uno)') + '.' : 'Ollama non risponde: è acceso sul Mac con OLLAMA_ORIGINS impostato? (Dall\'iPhone non si raggiunge il Mac.)'; });
+  // esegue comandi dello Studio (frasi) su una copia dello stato; ritorna cosa è cambiato
+  function runCommands(list, st) {
+    var said = [], extra = { variant: false, fromText: false };
+    list.forEach(function (cmd) {
+      if (/nuova variante/i.test(cmd)) { st.prod.seed = (st.prod.seed || 1) + 1; said.push('nuova variante'); extra.variant = true; return; }
+      if (/crea la base dal testo|base dal testo/i.test(cmd)) { extra.fromText = true; said.push('base dal testo'); return; }
+      var r = StudioAgent.interpret(cmd, st), pa = ProducerActions.interpret(cmd, st.prod);
+      if (pa.understood) { ['bpm', 'mode', 'bassStyle', 'reverb', 'levels', 'sec', 'tonic', 'genre', 'tune'].forEach(function (k) { if (pa.state[k] !== undefined) st.prod[k] = pa.state[k]; }); said = said.concat(pa.notes); }
+      said = said.concat(r.changes);
+    });
+    var seen = {}; said = said.map(function (x) { return String(x).replace(/\.+$/, ''); }).filter(function (x) { if (seen[x]) return false; seen[x] = 1; return true; });
+    return { said: said, extra: extra };
+  }
+  function talkState() {
+    var s = cur(), b = SESSION.base;
+    return { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())), ctx: { sections: b && b.sections ? b.sections.map(function (x) { return { name: x.name, startBar: x.startBar }; }) : [], leadNotes: b && b.events ? b.events.lead.filter(function (n) { return n.bar != null; }).map(function (n) { return { bar: n.bar, step: n.step, len: Math.max(1, Math.round(n.len || 2)), midi: Math.round(n.midi) }; }) : [] } };
+  }
   async function talkGo(text) {
     text = (text || '').trim(); if (!text) return;
-    var s = cur(), b = SESSION.base, before = { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())) };
-    var st = { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())), ctx: { sections: b && b.sections ? b.sections.map(function (x) { return { name: x.name, startBar: x.startBar }; }) : [], leadNotes: b && b.events ? b.events.lead.filter(function (n) { return n.bar != null; }).map(function (n) { return { bar: n.bar, step: n.step, len: Math.max(1, Math.round(n.len || 2)), midi: Math.round(n.midi) }; }) : [] } };
-    var r = StudioAgent.interpret(text, st), pa = ProducerActions.interpret(text, st.prod), said = r.changes.slice();
-    if (pa.understood) { ['bpm', 'mode', 'bassStyle', 'reverb', 'levels', 'sec', 'tonic', 'genre', 'tune'].forEach(function (k) { if (pa.state[k] !== undefined) st.prod[k] = pa.state[k]; }); said = said.concat(pa.notes); }
-    if (!r.understood && !pa.understood) { TALK.push({ text: text, reply: 'Non l\'ho capito, quindi non ho cambiato niente. Prova: ' + StudioAgent.EXAMPLES.slice(0, 4).join(' · '), state: 'nulla' }); talkRender(); return; }
+    var s = cur(), a = aiSet(), before = { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())) }, st = talkState(), reply = '', lyr = [];
+    var cmds = [text];
+    if (a.engine !== 'regole') {
+      TALK.push({ text: text, reply: 'Ci penso…', state: 'pensa' }); talkRender();
+      try {
+        var p = cur().prod, lk = learnList().filter(function (r) { return r.vote > 0; }).map(function (r) { return (r.artist || '') + ' ' + r.prof.bpm + ' BPM'; }).slice(0, 4).join(', ');
+        var res = await LocalAI.think(text, { summary: (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode, lyrics: s.lyrics || '', taste: lk },
+          { engine: a.engine, model: a.model, url: a.url, wasmPaths: new URL('tf/', location.href).href, onProgress: function (x, y) { TALK[TALK.length - 1].reply = 'Scarico il modello: ' + Math.round(x / 1048576) + ' di ' + Math.round(y / 1048576) + ' MB (solo la prima volta)…'; talkRender(); } });
+        TALK.pop(); reply = res.reply; cmds = res.commands; lyr = res.lyrics;
+      } catch (e) { TALK.pop(); TALK.push({ text: text, reply: 'L\'IA locale non ha risposto (' + (e && e.message || 'errore') + '). Uso le regole.', state: 'nulla' }); talkRender(); cmds = [text]; }
+    }
+    var run = runCommands(cmds, st);
+    if (a.engine !== 'regole' && !run.said.length) { st = talkState(); run = runCommands([text], st); if (run.said.length) reply = (reply ? reply + ' ' : '') + '(Ho usato le regole sulla tua frase.)'; }
+    if (!run.said.length && !lyr.length) { TALK.push({ text: text, reply: (reply ? reply + ' ' : '') + (a.engine === 'regole' ? 'Non l\'ho capito, quindi non ho cambiato niente. Prova: ' + StudioAgent.EXAMPLES.slice(0, 4).join(' · ') : 'Nessuna modifica alla base.'), state: 'nulla' }); talkRender(); return; }
     s.prod = st.prod; LIB.settings.mic = st.mic; persist();
-    TALK.push({ text: text, reply: 'Fatto: ' + said.map(function (x) { return String(x).replace(/\.+$/, ''); }).join('; ') + '. Ascolta: se non ti piace, Annulla.', state: 'attesa', before: before, mic: !!st.micChanged }); talkRender();
+    TALK.push({ text: text, reply: (reply ? reply + ' ' : '') + (run.said.length ? 'Fatto: ' + run.said.join('; ') + '. Se non ti piace, Annulla.' : ''), lyrics: lyr, state: run.said.length ? 'attesa' : 'nulla', before: before, mic: !!st.micChanged }); talkRender();
     coachRec('change', coachCtx(), { role: 'chat', from: null, to: text.slice(0, 40) });
-    await talkApply(!!st.micChanged);
+    if (run.extra.fromText && (s.lyrics || '').trim()) $('#dw-fromtext').click();
+    if (run.said.length) await talkApply(!!st.micChanged);
   }
   async function talkApply(micToo) {
     dwFill(); fillBase(); mixRender(); micRender(); dsRender(); mpRender(); SESSION.baseKey = ''; DW.bufKey = '';
@@ -1314,6 +1355,7 @@
   $('#dw-talk-go').addEventListener('click', function () { var t = $('#dw-talk-in'); talkGo(t.value); t.value = ''; });
   $('#dw-talk-in').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('#dw-talk-go').click(); } });
   $('#dw-talk-log').addEventListener('click', async function (e) {
+    var lb = e.target.closest('[data-tkl]'); if (lb) { var hh = TALK[+lb.getAttribute('data-tkl')], s1 = cur(); s1.lyrics = (s1.lyrics ? s1.lyrics.replace(/\s+$/, '') + '\n' : '') + hh.lyrics.join('\n'); persist(); dwFill(); dwChanged(true); lb.textContent = 'Aggiunte ✓'; lb.disabled = true; return; }
     var b = e.target.closest('[data-tk]'); if (!b) return; var h = TALK[TALK.length - 1]; if (!h || h.state !== 'attesa') return;
     if (b.getAttribute('data-tk') === 'ok') { h.state = 'accettato'; coachRec('like', coachCtx()); talkRender(); return; }
     cur().prod = h.before.prod; LIB.settings.mic = h.before.mic; persist(); h.state = 'annullato'; coachRec('dislike', coachCtx()); talkRender(); await talkApply(h.mic);
@@ -1928,7 +1970,7 @@
   document.body.appendChild($('#dw-set'));
   // spiegazioni nascoste: un "?" in ogni pannello le mostra
   $$('#v-daw .dw-panel .dw-ph').forEach(function (ph) { var b = document.createElement('button'); b.className = 'dw-help'; b.type = 'button'; b.textContent = '?'; b.setAttribute('aria-label', 'Spiegazione'); b.addEventListener('click', function () { ph.parentElement.classList.toggle('show-help'); }); ph.appendChild(b); });
-  SHOW.daw = function () { dwWs(dwWsName()); projLine(); verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+  SHOW.daw = function () { dwWs(dwWsName()); projLine(); aiRender(); verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {

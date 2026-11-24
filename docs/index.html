@@ -322,6 +322,7 @@ details.card[open]>summary{margin-bottom:8px}
 .dw-help{margin-left:8px;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted);font-weight:700;font-size:.75rem;padding:0;flex:none}
 .dw-ph{gap:6px}.dw-ph .tag{margin-left:auto}
 .dw-panel{margin-bottom:12px}
+.dw-lyrsug{display:block;margin:6px 0;padding:6px 8px;border-left:2px solid #e3c48f;color:var(--text)!important;font-style:italic}
 
 /* ===== VOICE LAB (stile Cosmo: usa le variabili del tema) ===== */
 .vl .vl-auto{font-size:1.25rem;min-height:60px;margin:8px 0 4px;letter-spacing:.04em}
@@ -490,9 +491,11 @@ details.card[open]>summary{margin-bottom:8px}
   </section>
 
   <section class="dw-panel" id="dw-p-talk" data-ws="testo base">
-    <div class="dw-ph"><h3>Parla con lo Studio</h3><span class="tag m">Modifica davvero</span></div>
+    <div class="dw-ph"><h3>Agenti</h3><span class="tag m">Modifica davvero</span></div>
     <p class="small muted">Scrivi cosa vuoi cambiare: mixer, 808, melodia, effetti, voce, master, velocità, tonalità, stile. La modifica si sente subito; se non ti piace premi Annulla.</p>
-    <div class="row"><input id="dw-talk-in" placeholder="es. 808 più lungo e più distorto" autocomplete="off" style="flex:1;min-width:0"><button class="btn pri" id="dw-talk-go">Invia</button></div>
+    <div class="row"><select id="dw-ai-engine"><option value="regole">Regole (subito)</option><option value="significato">IA che capisce (gratis, anche iPhone)</option><option value="browser">IA che scrive nel browser (computer)</option><option value="ollama">IA Ollama sul Mac (gratis)</option></select><select id="dw-ai-model"></select><button class="btn sm" id="dw-ai-test">Prova collegamento</button></div>
+    <p class="small muted" id="dw-ai-info"></p>
+    <div class="row"><input id="dw-talk-in" placeholder="es. base triste e scura per questo testo, 808 forte" autocomplete="off" style="flex:1;min-width:0"><button class="btn pri" id="dw-talk-go">Invia</button></div>
     <div id="dw-talk-log"></div>
   </section>
 
@@ -610,7 +613,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 19:48</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 20:07</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -961,7 +964,7 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">286 test automatici superati su 286 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">289 test automatici superati su 289 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -7282,6 +7285,111 @@ details.card[open]>summary{margin-bottom:8px}
 });
 
 /*
+ * Intelligenza artificiale LOCALE e gratuita per gli agenti dello Studio (niente abbonamenti, niente chiavi).
+ * Due motori:
+ *  - "ollama": Ollama sul Mac (https://ollama.com), modello consigliato qwen2.5:7b (buon italiano).
+ *              L'app chiama http://localhost:11434. Va avviato con OLLAMA_ORIGINS impostato al sito (vedi guida nell'app).
+ *  - "browser": il modello gira dentro la pagina con transformers.js (Qwen2.5 Instruct, licenza Apache-2.0).
+ *              1.5B per il computer (scheda grafica), 0.5B per prove. Pesante per l'iPhone.
+ * L'IA NON tocca l'audio da sola: traduce la tua richiesta in COMANDI dello Studio (gli stessi che capisce
+ * "Parla con lo Studio"), che l'app esegue davvero e che puoi annullare. Può anche proporre righe di testo.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.LocalAI = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  var G = typeof self !== 'undefined' ? self : globalThis;
+  var MODELS = { significato: { 'minilm': { nome: 'Capisce il significato (118 MB, anche iPhone)', mb: 118 } }, browser: { 'qwen-1.5b': { id: 'onnx-community/Qwen2.5-1.5B-Instruct', nome: 'Qwen 2.5 1.5B (computer)', mb: 1220 } },
+    ollama: { 'qwen2.5:7b': { nome: 'Qwen 2.5 7B (consigliato sul Mac)' }, 'llama3.1:8b': { nome: 'Llama 3.1 8B' }, 'qwen2.5:3b': { nome: 'Qwen 2.5 3B (Mac con poca memoria)' } } };
+  var S = { gen: {}, lib: null };
+
+  var COMANDI = ['808 più lungo', '808 più corto', '808 più distorto', '808 con più colpo', 'voce più riverbero', 'voce più brillante', 'voce più scura', 'voce con autotune robot', 'voce con autotune naturale', 'voce con vocoder', 'voce più eco', 'voce senza eco', 'alza l\'808', 'alza la voce', 'abbassa la voce',
+    'alza la melodia', 'abbassa gli accordi', 'melodia un\'ottava sopra', 'arpeggio a destra', 'pad più scuro', 'batteria più compressa', 'riser prima del ritornello', 'impact sul ritornello',
+    'più energia', 'più emozionante', 'più cinematografica', 'basso più profondo', 'a 140 bpm', 'in La minore', 'stile trap', 'stile drill', 'stile melodico', 'stile epico', 'più lenta', 'più veloce',
+    'hi-hat più fitti', 'hi-hat più radi', 'senza batteria', 'master per spotify', 'master più forte', 'nuova variante', 'crea la base dal testo'];
+  /** Il prompt: chi è l'agente, cosa può fare, in che formato rispondere. */
+  function messages(user, ctx) {
+    var sys = 'Sei il produttore musicale dentro lo studio "Sultan Sound" (rap, trap, drill italiani). Rispondi SEMPRE in italiano, breve e concreto.\n' +
+      'Non hai accesso diretto all\'audio: per cambiare la base scrivi COMANDI scelti da questo elenco (puoi cambiare numeri e nomi di note): ' + COMANDI.join('; ') + '.\n' +
+      'Formato OBBLIGATORIO della risposta:\nRISPOSTA: una o due frasi su cosa fai e perché.\nCOMANDI:\n- comando\n- comando\n' +
+      'Se la persona chiede righe di testo, aggiungi alla fine:\nTESTO:\nriga\nriga\n' +
+      'Non copiare testi di altri artisti. Non promettere successo. Se non serve nessun comando scrivi "COMANDI:" vuoto.';
+    var c = 'Progetto: ' + ctx.summary + (ctx.lyrics ? '\nTesto attuale (inizio):\n' + ctx.lyrics.slice(0, 600) : '\nTesto: vuoto') + (ctx.taste ? '\nGusti imparati: ' + ctx.taste : '');
+    return [{ role: 'system', content: sys },
+      { role: 'user', content: 'Progetto: Trap · 140 BPM · La minore\nTesto: vuoto\n\nRichiesta: voglio una base più cupa e un 808 che si sente di più' },
+      { role: 'assistant', content: 'RISPOSTA: Rendo la base più scura e metto l\'808 in primo piano, più lungo e distorto.\nCOMANDI:\n- pad più scuro\n- 808 più lungo\n- 808 più distorto\n- basso più profondo' },
+      { role: 'user', content: c + '\n\nRichiesta: ' + user }];
+  }
+  /** Legge la risposta dell'IA: {reply, commands:[...], lyrics:[...]} (robusto: accetta anche risposte un po' storte). */
+  function parse(text) {
+    var t = String(text || ''), out = { reply: '', commands: [], lyrics: [] }, mode = '';
+    t.split(/\r?\n/).forEach(function (raw) {
+      var l = raw.trim(); if (!l) return;
+      var m = /^\**\s*(RISPOSTA|COMANDI|TESTO)\s*:?\s*\**\s*:?\s*(.*)$/i.exec(l);
+      if (m) { mode = m[1].toUpperCase(); if (mode === 'RISPOSTA' && m[2]) out.reply += m[2] + ' '; else if (m[2] && mode === 'COMANDI') out.commands.push(m[2]); return; }
+      if (mode === 'COMANDI') { var c = l.replace(/^(?:[-*•]\s*|\d+[.)]\s*)/, '').replace(/[".]+$/g, '').trim(); if (c && c.length < 80) out.commands.push(c); }
+      else if (mode === 'TESTO') out.lyrics.push(l.replace(/^[-*•]\s*/, ''));
+      else if (mode === 'RISPOSTA' || !mode) out.reply += l + ' ';
+    });
+    var seen = {}; out.reply = out.reply.split(/(?<=[.!?])\s+/).filter(function (x) { var k = x.trim().toLowerCase(); if (!k || seen[k]) return false; seen[k] = 1; return true; }).join(' ').trim().slice(0, 320); out.commands = out.commands.slice(0, 8); out.lyrics = out.lyrics.slice(0, 16);
+    return out;
+  }
+  async function askOllama(msgs, o) {
+    var r = await fetch((o.url || 'http://localhost:11434') + '/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: o.model || 'qwen2.5:7b', messages: msgs, stream: false, options: { temperature: 0.4 } }) });
+    if (!r.ok) throw new Error('Ollama risponde ' + r.status + (r.status === 404 ? ' (modello non scaricato: ollama pull ' + (o.model || 'qwen2.5:7b') + ')' : ''));
+    var j = await r.json(); return j.message && j.message.content || '';
+  }
+  async function pingOllama(url) { try { var r = await fetch((url || 'http://localhost:11434') + '/api/tags'); if (!r.ok) return null; var j = await r.json(); return (j.models || []).map(function (m) { return m.name; }); } catch (e) { return null; } }
+  async function askBrowser(msgs, o) {
+    var key = MODELS.browser[o.model] ? o.model : 'qwen-1.5b', M = MODELS.browser[key];
+    if (!S.lib) S.lib = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2/dist/transformers.min.js');
+    var T = S.lib;
+    if (!S.gen[key]) {
+      T.env.allowLocalModels = false; if (o.wasmPaths) T.env.backends.onnx.wasm.wasmPaths = o.wasmPaths;
+      T.env.backends.onnx.wasm.numThreads = G.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency || 2) : 1;
+      var gpu = false; try { gpu = !!(navigator.gpu && await navigator.gpu.requestAdapter()); } catch (e) {}
+      var files = {};
+      S.gen[key] = await T.pipeline('text-generation', M.id, { device: gpu ? 'webgpu' : 'wasm', dtype: gpu ? 'q4f16' : 'int8',
+        progress_callback: function (p) { if (p && p.status === 'progress' && p.file) { files[p.file] = [p.loaded || 0, p.total || 0]; var a = 0, b = 0; for (var k in files) { a += files[k][0]; b += files[k][1]; } if (o.onProgress) o.onProgress(a, b); } } });
+    }
+    var out = await S.gen[key](msgs, { max_new_tokens: 180, do_sample: false, repetition_penalty: 1.25, no_repeat_ngram_size: 4 });
+    var g = out[0].generated_text; return Array.isArray(g) ? g[g.length - 1].content : String(g);
+  }
+  // ---------- motore "significato" (browser, anche iPhone): embedding multilingue, niente testo generato ----------
+  var EXTRA = ['più malinconica', 'più luminosa', 'più triste', 'più cupa e scura', 'più aggressiva', 'più calma', 'più lenta', 'più veloce', 'il ritornello deve esplodere', 'metti l\'eco sulla voce', 'più spazio e atmosfera'];
+  async function embedder(o) {
+    if (!S.lib) S.lib = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2/dist/transformers.min.js');
+    var T = S.lib;
+    if (!S.emb) { T.env.allowLocalModels = false; if (o.wasmPaths) T.env.backends.onnx.wasm.wasmPaths = o.wasmPaths; var files = {};
+      S.emb = await T.pipeline('feature-extraction', 'Xenova/paraphrase-multilingual-MiniLM-L12-v2', { dtype: 'q8', progress_callback: function (p) { if (p && p.status === 'progress' && p.file) { files[p.file] = [p.loaded || 0, p.total || 0]; var a = 0, b = 0; for (var k in files) { a += files[k][0]; b += files[k][1]; } if (o.onProgress) o.onProgress(a, b); } } }); }
+    return S.emb;
+  }
+  var SEM_MAP = { 'il ritornello deve esplodere': ['riser prima del ritornello', 'impact sul ritornello', 'più energia'], 'metti l\'eco sulla voce': ['voce più eco'], 'più spazio e atmosfera': ['voce più riverbero', 'pad più scuro'], 'più triste': ['più malinconica', 'pad più scuro'], 'più cupa e scura': ['pad più scuro', 'basso più profondo'], 'più aggressiva': ['808 più distorto', 'batteria più compressa', 'più energia'], 'più calma': ['più lenta', 'hi-hat più radi'] };
+  async function semantic(user, o) {
+    var emb = await embedder(o), cmds = COMANDI.concat(EXTRA).filter(function (c) { return !/crea la base dal testo/.test(c); });
+    if (!S.cmdVec) { var v = await emb(cmds, { pooling: 'mean', normalize: true }); S.cmdVec = v.tolist(); }
+    var parts = String(user).toLowerCase().split(/,|;|\.| e poi | poi | e (?=(?:la|il|lo|l'|un|una|più|meno|voce|808|basso|batteria|melodia|accordi|pad|hi)\b)/).map(function (x) { return x.trim(); }).filter(function (x) { return x.length > 2; });
+    if (!parts.length) parts = [String(user)];
+    var pv = (await emb(parts, { pooling: 'mean', normalize: true })).tolist(), picked = [];
+    pv.forEach(function (q, i) {
+      var sc = S.cmdVec.map(function (c, k) { var d = 0; for (var j = 0; j < c.length; j++) d += c[j] * q[j]; return [d, k]; }).sort(function (a, b) { return b[0] - a[0]; });
+      if (sc[0][0] < 0.5) return;
+      var c = cmds[sc[0][1]]; (SEM_MAP[c] || [c]).forEach(function (x) { if (picked.indexOf(x) < 0) picked.push(x); });
+      if (sc[1] && sc[1][0] > 0.8 && sc[0][0] - sc[1][0] < 0.03) { var c2 = cmds[sc[1][1]]; (SEM_MAP[c2] || [c2]).forEach(function (x) { if (picked.indexOf(x) < 0) picked.push(x); }); }
+    });
+    return { reply: picked.length ? 'Ho capito: ' + picked.join(', ') + '.' : 'Non ho trovato un comando vicino a quello che chiedi.', commands: picked, lyrics: [] };
+  }
+  /** Chiede all'IA. o = {engine:'ollama'|'browser', model, url, wasmPaths, onProgress}. */
+  async function think(user, ctx, o) {
+    o = o || {}; if (o.engine === 'significato') return semantic(user, o);
+    var msgs = messages(user, ctx), raw = o.engine === 'ollama' ? await askOllama(msgs, o) : await askBrowser(msgs, o);
+    var p = parse(raw); p.raw = raw; return p;
+  }
+  return { semantic: semantic, EXTRA: EXTRA, MODELS: MODELS, COMANDI: COMANDI, messages: messages, parse: parse, think: think, pingOllama: pingOllama };
+});
+
+/*
  * Scheda di stile: misura caratteristiche GENERICHE di una canzone di riferimento
  * (tempo, peso del basso, luminosità, densità ritmica, crescita di energia)
  * e le trasforma in parametri per l'arrangiatore. Si possono mescolare più schede.
@@ -11504,21 +11612,62 @@ details.card[open]>summary{margin-bottom:8px}
   function talkRender() {
     $('#dw-talk-log').innerHTML = TALK.slice(-6).map(function (h, i, a) {
       var last = i === a.length - 1 && h.state === 'attesa';
-      return '<div class="dw-prop"><div><b>Tu: ' + esc(h.text) + '</b><small>' + esc(h.reply) + (h.state === 'annullato' ? ' (annullato)' : (h.state === 'accettato' ? ' ✓' : '')) + '</small></div>' +
+      return '<div class="dw-prop"><div><b>Tu: ' + esc(h.text) + '</b><small>' + esc(h.reply) + (h.state === 'annullato' ? ' (annullato)' : (h.state === 'accettato' ? ' ✓' : '')) + '</small>' + (h.lyrics && h.lyrics.length ? '<small class="dw-lyrsug">' + h.lyrics.map(esc).join('<br>') + '</small><button class="btn sm" data-tkl="' + (TALK.length - a.length + i) + '">Aggiungi al testo</button>' : '') + '</div>' +
         (last ? '<button class="btn sm pri" data-tk="ok">Accetta</button><button class="btn sm" data-tk="undo">Annulla</button>' : '') + '</div>';
     }).join('') || '<p class="small muted">Esempi: ' + StudioAgent.EXAMPLES.map(esc).join(' · ') + '</p>';
   }
+  function aiSet() { var a = LIB.settings.ai; if (!a || typeof a !== 'object') a = LIB.settings.ai = { engine: 'regole', model: '', url: 'http://localhost:11434' }; return a; }
+  function aiRender() {
+    var a = aiSet(), eng = a.engine;
+    $('#dw-ai-engine').value = eng;
+    var models = LocalAI.MODELS[eng] || {};
+    $('#dw-ai-model').hidden = eng === 'regole'; $('#dw-ai-test').hidden = eng !== 'ollama';
+    $('#dw-ai-model').innerHTML = Object.keys(models).map(function (k) { return '<option value="' + k + '"' + (k === a.model ? ' selected' : '') + '>' + esc(models[k].nome) + '</option>'; }).join('');
+    if (eng !== 'regole' && !models[a.model]) { a.model = Object.keys(models)[0]; $('#dw-ai-model').value = a.model; }
+    $('#dw-ai-info').innerHTML = eng === 'regole' ? 'Capisce le frasi dell\'elenco, subito e senza scaricare niente.' : eng === 'significato' ? 'Capisce frasi libere in italiano e le collega ai comandi dello Studio. Scarica 118 MB la prima volta; va anche su iPhone.' : (eng === 'browser' ? 'Il modello gira dentro la pagina: la prima volta scarica ' + (LocalAI.MODELS.browser[a.model] || {}).mb + ' MB. Consigliato sul computer.' :
+      'Sul Mac: installa Ollama (ollama.com), poi nel Terminale: <span class="mono">ollama pull ' + esc(a.model || 'qwen2.5:7b') + '</span> e avvia con <span class="mono">OLLAMA_ORIGINS="' + esc(location.origin) + '" ollama serve</span>.');
+  }
+  $('#dw-ai-engine').addEventListener('change', function () { aiSet().engine = this.value; aiSet().model = ''; persist(); aiRender(); });
+  $('#dw-ai-model').addEventListener('change', function () { aiSet().model = this.value; persist(); aiRender(); });
+  $('#dw-ai-test').addEventListener('click', async function () { var m = await LocalAI.pingOllama(aiSet().url); $('#dw-ai-info').textContent = m ? 'Ollama collegato. Modelli presenti: ' + (m.join(', ') || 'nessuno (scaricane uno)') + '.' : 'Ollama non risponde: è acceso sul Mac con OLLAMA_ORIGINS impostato? (Dall\'iPhone non si raggiunge il Mac.)'; });
+  // esegue comandi dello Studio (frasi) su una copia dello stato; ritorna cosa è cambiato
+  function runCommands(list, st) {
+    var said = [], extra = { variant: false, fromText: false };
+    list.forEach(function (cmd) {
+      if (/nuova variante/i.test(cmd)) { st.prod.seed = (st.prod.seed || 1) + 1; said.push('nuova variante'); extra.variant = true; return; }
+      if (/crea la base dal testo|base dal testo/i.test(cmd)) { extra.fromText = true; said.push('base dal testo'); return; }
+      var r = StudioAgent.interpret(cmd, st), pa = ProducerActions.interpret(cmd, st.prod);
+      if (pa.understood) { ['bpm', 'mode', 'bassStyle', 'reverb', 'levels', 'sec', 'tonic', 'genre', 'tune'].forEach(function (k) { if (pa.state[k] !== undefined) st.prod[k] = pa.state[k]; }); said = said.concat(pa.notes); }
+      said = said.concat(r.changes);
+    });
+    var seen = {}; said = said.map(function (x) { return String(x).replace(/\.+$/, ''); }).filter(function (x) { if (seen[x]) return false; seen[x] = 1; return true; });
+    return { said: said, extra: extra };
+  }
+  function talkState() {
+    var s = cur(), b = SESSION.base;
+    return { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())), ctx: { sections: b && b.sections ? b.sections.map(function (x) { return { name: x.name, startBar: x.startBar }; }) : [], leadNotes: b && b.events ? b.events.lead.filter(function (n) { return n.bar != null; }).map(function (n) { return { bar: n.bar, step: n.step, len: Math.max(1, Math.round(n.len || 2)), midi: Math.round(n.midi) }; }) : [] } };
+  }
   async function talkGo(text) {
     text = (text || '').trim(); if (!text) return;
-    var s = cur(), b = SESSION.base, before = { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())) };
-    var st = { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())), ctx: { sections: b && b.sections ? b.sections.map(function (x) { return { name: x.name, startBar: x.startBar }; }) : [], leadNotes: b && b.events ? b.events.lead.filter(function (n) { return n.bar != null; }).map(function (n) { return { bar: n.bar, step: n.step, len: Math.max(1, Math.round(n.len || 2)), midi: Math.round(n.midi) }; }) : [] } };
-    var r = StudioAgent.interpret(text, st), pa = ProducerActions.interpret(text, st.prod), said = r.changes.slice();
-    if (pa.understood) { ['bpm', 'mode', 'bassStyle', 'reverb', 'levels', 'sec', 'tonic', 'genre', 'tune'].forEach(function (k) { if (pa.state[k] !== undefined) st.prod[k] = pa.state[k]; }); said = said.concat(pa.notes); }
-    if (!r.understood && !pa.understood) { TALK.push({ text: text, reply: 'Non l\'ho capito, quindi non ho cambiato niente. Prova: ' + StudioAgent.EXAMPLES.slice(0, 4).join(' · '), state: 'nulla' }); talkRender(); return; }
+    var s = cur(), a = aiSet(), before = { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())) }, st = talkState(), reply = '', lyr = [];
+    var cmds = [text];
+    if (a.engine !== 'regole') {
+      TALK.push({ text: text, reply: 'Ci penso…', state: 'pensa' }); talkRender();
+      try {
+        var p = cur().prod, lk = learnList().filter(function (r) { return r.vote > 0; }).map(function (r) { return (r.artist || '') + ' ' + r.prof.bpm + ' BPM'; }).slice(0, 4).join(', ');
+        var res = await LocalAI.think(text, { summary: (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode, lyrics: s.lyrics || '', taste: lk },
+          { engine: a.engine, model: a.model, url: a.url, wasmPaths: new URL('tf/', location.href).href, onProgress: function (x, y) { TALK[TALK.length - 1].reply = 'Scarico il modello: ' + Math.round(x / 1048576) + ' di ' + Math.round(y / 1048576) + ' MB (solo la prima volta)…'; talkRender(); } });
+        TALK.pop(); reply = res.reply; cmds = res.commands; lyr = res.lyrics;
+      } catch (e) { TALK.pop(); TALK.push({ text: text, reply: 'L\'IA locale non ha risposto (' + (e && e.message || 'errore') + '). Uso le regole.', state: 'nulla' }); talkRender(); cmds = [text]; }
+    }
+    var run = runCommands(cmds, st);
+    if (a.engine !== 'regole' && !run.said.length) { st = talkState(); run = runCommands([text], st); if (run.said.length) reply = (reply ? reply + ' ' : '') + '(Ho usato le regole sulla tua frase.)'; }
+    if (!run.said.length && !lyr.length) { TALK.push({ text: text, reply: (reply ? reply + ' ' : '') + (a.engine === 'regole' ? 'Non l\'ho capito, quindi non ho cambiato niente. Prova: ' + StudioAgent.EXAMPLES.slice(0, 4).join(' · ') : 'Nessuna modifica alla base.'), state: 'nulla' }); talkRender(); return; }
     s.prod = st.prod; LIB.settings.mic = st.mic; persist();
-    TALK.push({ text: text, reply: 'Fatto: ' + said.map(function (x) { return String(x).replace(/\.+$/, ''); }).join('; ') + '. Ascolta: se non ti piace, Annulla.', state: 'attesa', before: before, mic: !!st.micChanged }); talkRender();
+    TALK.push({ text: text, reply: (reply ? reply + ' ' : '') + (run.said.length ? 'Fatto: ' + run.said.join('; ') + '. Se non ti piace, Annulla.' : ''), lyrics: lyr, state: run.said.length ? 'attesa' : 'nulla', before: before, mic: !!st.micChanged }); talkRender();
     coachRec('change', coachCtx(), { role: 'chat', from: null, to: text.slice(0, 40) });
-    await talkApply(!!st.micChanged);
+    if (run.extra.fromText && (s.lyrics || '').trim()) $('#dw-fromtext').click();
+    if (run.said.length) await talkApply(!!st.micChanged);
   }
   async function talkApply(micToo) {
     dwFill(); fillBase(); mixRender(); micRender(); dsRender(); mpRender(); SESSION.baseKey = ''; DW.bufKey = '';
@@ -11527,6 +11676,7 @@ details.card[open]>summary{margin-bottom:8px}
   $('#dw-talk-go').addEventListener('click', function () { var t = $('#dw-talk-in'); talkGo(t.value); t.value = ''; });
   $('#dw-talk-in').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('#dw-talk-go').click(); } });
   $('#dw-talk-log').addEventListener('click', async function (e) {
+    var lb = e.target.closest('[data-tkl]'); if (lb) { var hh = TALK[+lb.getAttribute('data-tkl')], s1 = cur(); s1.lyrics = (s1.lyrics ? s1.lyrics.replace(/\s+$/, '') + '\n' : '') + hh.lyrics.join('\n'); persist(); dwFill(); dwChanged(true); lb.textContent = 'Aggiunte ✓'; lb.disabled = true; return; }
     var b = e.target.closest('[data-tk]'); if (!b) return; var h = TALK[TALK.length - 1]; if (!h || h.state !== 'attesa') return;
     if (b.getAttribute('data-tk') === 'ok') { h.state = 'accettato'; coachRec('like', coachCtx()); talkRender(); return; }
     cur().prod = h.before.prod; LIB.settings.mic = h.before.mic; persist(); h.state = 'annullato'; coachRec('dislike', coachCtx()); talkRender(); await talkApply(h.mic);
@@ -12141,7 +12291,7 @@ details.card[open]>summary{margin-bottom:8px}
   document.body.appendChild($('#dw-set'));
   // spiegazioni nascoste: un "?" in ogni pannello le mostra
   $$('#v-daw .dw-panel .dw-ph').forEach(function (ph) { var b = document.createElement('button'); b.className = 'dw-help'; b.type = 'button'; b.textContent = '?'; b.setAttribute('aria-label', 'Spiegazione'); b.addEventListener('click', function () { ph.parentElement.classList.toggle('show-help'); }); ph.appendChild(b); });
-  SHOW.daw = function () { dwWs(dwWsName()); projLine(); verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+  SHOW.daw = function () { dwWs(dwWsName()); projLine(); aiRender(); verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {
