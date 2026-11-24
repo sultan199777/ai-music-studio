@@ -1,2 +1,0 @@
-onnxruntime-web 1.22.0 (Microsoft), licenza MIT: https://github.com/microsoft/onnxruntime/blob/main/LICENSE
-File copiati senza modifiche da npm onnxruntime-web@1.22.0/dist.
