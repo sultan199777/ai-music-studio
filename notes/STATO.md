@@ -62,3 +62,10 @@ Regola della persona: andare avanti un passo alla volta, senza rianalizzare tutt
 ## 2026-11-24 Risparmio di token
 - `notes/MAPPA.md` (generata con `node tools/mappa.js`): mappa di file, scopo e funzioni. Leggerla prima dei sorgenti. Rigenerare dopo cambi grandi.
 - Graphify e Ponytail non installati (rete per pacchetti spenta; Ponytail non verificato).
+
+## 2026-11-24 Basi: 808, hi-hat con rullate, groove per stile (fatto, testato)
+- 808 (sintetizzato): glide logaritmico dalla nota precedente (trap 70 ms, drill 130 ms e più frequente), saturazione per avere armoniche (si sente anche dal telefono), coda fino a 2,2 s, salti d'ottava (drill di più). Misurato: fattore di cresta 1,31-1,36 contro 1,41 di una sinusoide pura.
+- Hi-hat: rullate 1/32, terzine, 1/48, 1/64 con velocità crescente/calante e tono che sale/scende; rullata grande a fine sezione nei ritornelli. Trap e drill sì, melodico raramente, epico/estate no. "Hi-hat più fitti" aumenta anche le rullate.
+- Cassa: pattern di 2 battute per stile (scelto dal seme, diverso tra strofa e ritornello) ripetuto, variazione ogni 4ª battuta. Prima era casuale battuta per battuta.
+- Nuovi dati: events.kick, events.hat, events.bass[].slideFrom. Test 123/123.
+- Ancora da fare: strumenti melodici con campioni CC0, 808 da campione vero, mix per traccia.
