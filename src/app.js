@@ -608,6 +608,9 @@
   $('#v-tonic').innerHTML = NOTES.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
   var sh = ''; for (var i = -12; i <= 12; i++) sh += '<option value="' + i + '"' + (i === 0 ? ' selected' : '') + '>' + (i === 0 ? 'Nessuno spostamento' : (i > 0 ? '+' : '') + i + ' semitoni') + '</option>'; $('#v-shift').innerHTML = sh;
   $('#v-str').addEventListener('input', function () { $('#v-sv').textContent = this.value + '%'; });
+  function setAT(str, ret, vib) { $('#v-str').value = str; $('#v-ret').value = ret; $('#v-vib').value = vib; $('#v-sv').textContent = str + '%'; $('#v-rv').textContent = RET(ret); $('#v-vibv').textContent = vib + '%'; }
+  $('#v-p-nat').addEventListener('click', function () { setAT(60, 80, 70); });
+  $('#v-p-trap').addEventListener('click', function () { setAT(100, 0, 0); });
   $('#v-ret').addEventListener('input', function () { $('#v-rv').textContent = RET(+this.value); });
   $('#v-vib').addEventListener('input', function () { $('#v-vibv').textContent = this.value + '%'; });
   $('#v-gain').addEventListener('input', function () { $('#v-gv').textContent = this.value + '%'; });
@@ -672,7 +675,7 @@
   function recUi(on) { $('#rec-go').hidden = on; $('#rec-stop').hidden = !on; $('#rec-meter').hidden = !on; }
   $('#rec-go').addEventListener('click', async function () {
     var msg = $('#rec-msg'); msg.className = 'status'; if (REC) return;
-    if (!micOk()) { msg.textContent = 'Il microfono non è disponibile in questa pagina (dentro Claude è bloccato). Apri la versione app, oppure registra con Memo Vocali e importa in Voce.'; msg.className = 'status err'; return; }
+    if (!micOk()) { msg.textContent = 'Il microfono non è disponibile in questa pagina (dentro Claude è bloccato). Apri il sito: https://sultan199777.github.io/ai-music-studio/ (da Safari), oppure registra con Memo Vocali e importa in Voce.'; msg.className = 'status err'; return; }
     var ctx = getCtx(); if (!ctx || !ctx.createScriptProcessor) { msg.textContent = 'Questo browser non supporta la registrazione.'; msg.className = 'status err'; return; }
     if (!lyricLines(cur().lyrics).length) { msg.textContent = 'Nota: qui non c\'è ancora il testo di questa canzone. Incollalo nel campo "Testo" in alto in questa pagina per vederlo scorrere mentre canti. Chiedo il microfono…'; } else msg.textContent = 'Chiedo il permesso del microfono…';
     var stream;
