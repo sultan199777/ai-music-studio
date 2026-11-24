@@ -82,6 +82,10 @@
 
     // impronta del testo: piccolo spostamento deterministico, così testi diversi non danno lo stesso stile
     GENRES.forEach(function (g, i) { score[g] += ((((h >>> (i * 3)) & 7) / 7) * 0.9) + ((((variant * 2654435761) >>> (i * 2)) & 3) / 3) * (variant ? 0.5 : 0); });
+    if (opt.profile && opt.profile.styleScore) {
+      GENRES.forEach(function (g) { score[g] += 2 * (opt.profile.styleScore[g] || 0); });
+      why.push('Sto seguendo il tuo modello artisti (' + (opt.profile.names || 'profilo') + '): ' + opt.profile.mood);
+    }
     var order = GENRES.slice().sort(function (a, b) { return score[b] - score[a]; });
     var genre = order[0];
     why.push('Stile scelto: ' + NAMES[genre] + (order[1] ? ' (secondo: ' + NAMES[order[1]] + ')' : '') + '.');
@@ -99,5 +103,16 @@
     return { genre: genre, label: NAMES[genre], bpm: bpm, mode: mode, tonic: tonic, seed: seed, bassStyle: bassStyle, sounds: 'campioni', scene: scene, scenes: scenes, scores: score, why: why, second: order[1] };
   }
 
-  return { plan: plan, hash: hash, NAMES: NAMES, GENRES: GENRES, LEX: LEX };
+  /** Punteggio di stile da una distribuzione di scene (quote 0-1) e dalla forma: serve ai profili artista. */
+  function styleScores(shares, avgSyll, rep) {
+    var sc = {}; GENRES.forEach(function (g) { sc[g] = 0; });
+    Object.keys(shares).forEach(function (k) { if (VOTE[k]) Object.keys(VOTE[k]).forEach(function (g) { sc[g] += shares[k] * VOTE[k][g]; }); });
+    if (avgSyll >= 12) { sc.boombap += 0.4; sc.street += 0.3; } else if (avgSyll > 0 && avgSyll <= 8) { sc.drill += 0.3; sc.clubtrap += 0.3; sc.trap += 0.2; }
+    if (rep >= 0.25) { sc.clubtrap += 0.3; sc.trap += 0.2; }
+    var mx = 0; GENRES.forEach(function (g) { if (sc[g] > mx) mx = sc[g]; });
+    if (mx > 0) GENRES.forEach(function (g) { sc[g] = Math.round(sc[g] / mx * 100) / 100; });
+    return sc;
+  }
+
+  return { plan: plan, styleScores: styleScores, words: words, BASE_BPM: BASE_BPM, hash: hash, NAMES: NAMES, GENRES: GENRES, LEX: LEX };
 });

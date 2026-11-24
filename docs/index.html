@@ -536,7 +536,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 16:12</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 16:48</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -828,6 +828,25 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="card"><h3>Fonti e licenze</h3><p class="small muted">Campioni registrati: VSCO 2 Community Edition e VCSL di Versilian Studios, licenza CC0 1.0 (pubblico dominio, uso libero anche commerciale). Convertiti in mono 22 kHz compressi (ADPCM 4 bit): qualità buona ma inferiore agli originali. Chitarre: sintetizzate dal programma (Karplus-Strong). Ogni nota è stata misurata: l'altezza corrisponde entro ±0,3 semitoni.</p></div>
 </main>
 
+<!-- CARTELLE ARTISTA -->
+<main class="view" id="v-artisti" hidden>
+  <div class="head"><div class="eyebrow">Sultan Sound</div><h1>Cartelle artista</h1></div>
+  <div class="card"><div class="card-head"><h3>Impara lo stile da un artista</h3><span class="tag m">Solo statistiche</span></div>
+    <p class="small muted">Crea una cartella per artista e caricaci dei testi (file .txt o testo incollato). L'app misura sillabe, rime, ripetizioni, umore e associazioni, poi <b>butta via il testo</b> e tiene solo i numeri. Servono per capire lo stile e per guidare i tuoi testi e le tue basi. Non copia versi e non imita voci.</p>
+    <label class="f"><span>Nome della cartella (es. Sfera Ebbasta)</span><input id="ar-name" type="text" autocomplete="off" placeholder="Nome artista"></label>
+    <label class="f"><span>File di testo (.txt), anche più insieme</span><input id="ar-files" type="file" accept=".txt,text/plain" multiple></label>
+    <label class="f"><span>Oppure incolla un testo (più brani separati da una riga con ---)</span><textarea id="ar-text" rows="5" placeholder="Incolla qui"></textarea></label>
+    <div class="row"><button class="btn pri" id="ar-add">Aggiungi alla cartella</button></div>
+    <div class="status" id="ar-msg"></div>
+  </div>
+  <div id="ar-list"></div>
+  <div class="card"><div class="card-head"><h3>Il mio modello</h3><span class="tag a">Mescola gli artisti spuntati</span></div>
+    <div id="ar-model" class="small muted">Spunta una o più cartelle: il modello è la loro media.</div>
+    <div class="row" style="margin-top:8px"><button class="btn sm pri" id="ar-cmp">Confronta il testo della canzone aperta</button></div>
+    <div id="ar-adv"></div>
+  </div>
+</main>
+
 <main class="view" id="v-libreria" hidden>
   <div class="head"><div class="eyebrow">Libreria dei contenuti</div><h1>Materiali</h1></div>
   <div id="l-out"></div>
@@ -851,7 +870,7 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">227 test automatici superati su 227 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">233 test automatici superati su 233 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -2747,6 +2766,10 @@ details.card[open]>summary{margin-bottom:8px}
     { id: 'naturale', label: 'Naturale', desc: 'Voce tua, solo ripulita e intonata piano.', macros: { intensity: 55, robotic: 15, natural: 85, timbre: 50, space: 20 }, p: { comp: { ratio: 3, peakDb: 0 } } },
     { id: 'melodico', label: 'Melodico', desc: 'Intonata e cantabile, con un po\' di spazio.', macros: { intensity: 75, robotic: 40, natural: 70, timbre: 52, space: 40 }, p: { doubles: { on: true, count: 1, gainDb: -12 } } },
     { id: 'robotico', label: 'Trap duro (robot)', desc: 'Intonazione a gradino, voce da robot.', macros: { intensity: 100, robotic: 100, natural: 0, timbre: 50, space: 25 }, p: { tune: { vibrato: 0, vibratoDepth: 0 }, sat: { drive: 0.35 }, comp: { ratio: 6 } } },
+    { id: 'trapscura', label: 'Trap scura pesante', desc: 'Intonazione quasi a gradino, doppie larghe, eco a tempo e riverbero lungo e scuro (catena da trap: compressione, poi autotune, poi eco e spazio).', macros: { intensity: 100, robotic: 96, natural: 0, timbre: 45, space: 55 }, p: { tune: { retuneMs: 3, humanize: 0, flexCents: 0, vibrato: 0, vibratoDepth: 0 }, comp: { ratio: 5, thresholdDb: -22 }, sat: { drive: 0.45, mix: 0.4 }, eq: { presenceDb: 3.5, lowDb: 1.5 }, doubles: { on: true, count: 2, gainDb: -11, modMs: 1.5 }, delay: { on: true, sync: true, feedback: 0.18, mix: 0.2 }, reverb: { mix: 0.22, decaySec: 2.4, highCutHz: 4500, lowCutHz: 300 } } },
+    { id: 'malinconico', label: 'Trap malinconica', desc: 'Correzione veloce ma non robotica, un po\' di vibrato tuo, spazio e un eco morbido: umore dolente.', macros: { intensity: 90, robotic: 55, natural: 40, timbre: 50, space: 65 }, p: { tune: { retuneMs: 14, humanize: 0.25, flexCents: 0, vibrato: 0.5 }, comp: { ratio: 4 }, eq: { presenceDb: 2, darkHz: 9500 }, doubles: { on: true, count: 1, gainDb: -12 }, delay: { on: true, sync: true, feedback: 0.2, mix: 0.15 }, reverb: { mix: 0.25, decaySec: 2.2 } } },
+    { id: 'adlib', label: 'Ad-lib duro', desc: 'Più duro della voce principale (velocità 0), brillante, con eco: per urla e riempitivi.', macros: { intensity: 100, robotic: 100, natural: 0, timbre: 55, space: 50 }, p: { tune: { retuneMs: 0, humanize: 0, vibrato: 0 }, eq: { presenceDb: 5, airDb: 3 }, doubles: { on: true, count: 1, gainDb: -8 }, delay: { on: true, sync: true, feedback: 0.3, mix: 0.3 }, reverb: { mix: 0.2, decaySec: 1.8 } } },
+    { id: 'drillfreddo', label: 'Drill freddo', desc: 'Voce asciutta e stretta, correzione secca, riverbero corto e scuro.', macros: { intensity: 95, robotic: 68, natural: 10, timbre: 40, space: 20 }, p: { tune: { retuneMs: 6, humanize: 0, vibrato: 0.1 }, comp: { ratio: 6, thresholdDb: -24 }, sat: { drive: 0.4, mix: 0.35 }, eq: { presenceDb: 3, lowDb: -1 }, reverb: { mix: 0.12, decaySec: 1.0, highCutHz: 4500 } } },
     { id: 'scuro', label: 'Scuro e profondo', desc: 'Voce più grande, calda e cupa.', macros: { intensity: 70, robotic: 45, natural: 55, timbre: 20, space: 30 }, p: { eq: { lowDb: 3, airDb: -2, darkHz: 9500 }, deess: { amount: 0.3 } } },
     { id: 'ruvido', label: 'Ruvido e distorto', desc: 'Voce sporca, aggressiva.', macros: { intensity: 70, robotic: 55, natural: 40, timbre: 45, space: 15 }, p: { dist: { on: true, amount: 0.45, mix: 0.35 }, sat: { drive: 0.6 }, comp: { ratio: 6 } } },
     { id: 'brillante', label: 'Brillante', desc: 'Voce chiara, avanti, con aria.', macros: { intensity: 75, robotic: 45, natural: 65, timbre: 75, space: 30 }, p: { eq: { presenceDb: 4.5, airDb: 3.5 }, deess: { amount: 0.75 } } },
@@ -4123,6 +4146,10 @@ details.card[open]>summary{margin-bottom:8px}
 
     // impronta del testo: piccolo spostamento deterministico, così testi diversi non danno lo stesso stile
     GENRES.forEach(function (g, i) { score[g] += ((((h >>> (i * 3)) & 7) / 7) * 0.9) + ((((variant * 2654435761) >>> (i * 2)) & 3) / 3) * (variant ? 0.5 : 0); });
+    if (opt.profile && opt.profile.styleScore) {
+      GENRES.forEach(function (g) { score[g] += 2 * (opt.profile.styleScore[g] || 0); });
+      why.push('Sto seguendo il tuo modello artisti (' + (opt.profile.names || 'profilo') + '): ' + opt.profile.mood);
+    }
     var order = GENRES.slice().sort(function (a, b) { return score[b] - score[a]; });
     var genre = order[0];
     why.push('Stile scelto: ' + NAMES[genre] + (order[1] ? ' (secondo: ' + NAMES[order[1]] + ')' : '') + '.');
@@ -4140,7 +4167,128 @@ details.card[open]>summary{margin-bottom:8px}
     return { genre: genre, label: NAMES[genre], bpm: bpm, mode: mode, tonic: tonic, seed: seed, bassStyle: bassStyle, sounds: 'campioni', scene: scene, scenes: scenes, scores: score, why: why, second: order[1] };
   }
 
-  return { plan: plan, hash: hash, NAMES: NAMES, GENRES: GENRES, LEX: LEX };
+  /** Punteggio di stile da una distribuzione di scene (quote 0-1) e dalla forma: serve ai profili artista. */
+  function styleScores(shares, avgSyll, rep) {
+    var sc = {}; GENRES.forEach(function (g) { sc[g] = 0; });
+    Object.keys(shares).forEach(function (k) { if (VOTE[k]) Object.keys(VOTE[k]).forEach(function (g) { sc[g] += shares[k] * VOTE[k][g]; }); });
+    if (avgSyll >= 12) { sc.boombap += 0.4; sc.street += 0.3; } else if (avgSyll > 0 && avgSyll <= 8) { sc.drill += 0.3; sc.clubtrap += 0.3; sc.trap += 0.2; }
+    if (rep >= 0.25) { sc.clubtrap += 0.3; sc.trap += 0.2; }
+    var mx = 0; GENRES.forEach(function (g) { if (sc[g] > mx) mx = sc[g]; });
+    if (mx > 0) GENRES.forEach(function (g) { sc[g] = Math.round(sc[g] / mx * 100) / 100; });
+    return sc;
+  }
+
+  return { plan: plan, styleScores: styleScores, words: words, BASE_BPM: BASE_BPM, hash: hash, NAMES: NAMES, GENRES: GENRES, LEX: LEX };
+});
+
+/*
+ * Cartelle artista: impara lo STILE da testi che carichi tu, con SOLO statistiche.
+ *
+ * Di ogni testo si misurano numeri (sillabe per riga, rime, ripetizioni, ricchezza delle parole, quali "mondi" ricorrono
+ * e quali stanno insieme nella stessa riga). Il testo NON viene conservato: restano solo i conteggi.
+ * Servono a tre cose: 1) capire l'umore dell'artista, 2) confrontare i TUOI testi e dirti cosa cambiare,
+ * 3) orientare lo stile della base (Cervello Sultan). Non copia versi e non imita voci.
+ * Sono misure (Misurato) e interpretazioni (Ipotesi): non garantiscono il successo di nessuno.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./lyrics-engine.js'), require('./sultan-brain.js'));
+  else root.ArtistLab = factory(root.LyricsEngine, root.SultanBrain);
+})(typeof self !== 'undefined' ? self : this, function (LE, SB) {
+  'use strict';
+
+  var SCENE_IT = { strada: 'strada', soldi: 'soldi e successo', rabbia: 'rabbia', dolore: 'dolore e solitudine', amore: 'amore', festa: 'festa e notte', nostalgia: 'nostalgia', epico: 'sogni e grandezza' };
+  var SKEYS = Object.keys(SB.LEX), SET = {};
+  SKEYS.forEach(function (k) { SET[k] = {}; SB.LEX[k].forEach(function (w) { SET[k][w] = 1; }); });
+  function r2(v) { return Math.round(v * 100) / 100; }
+
+  function newAcc() { return { songs: 0, lines: 0, syll: 0, rhymed: 0, repLines: 0, words: 0, types: 0, wlen: 0, scenes: {}, pairs: {}, sceneLines: 0 }; }
+
+  /** Misura un testo (stringa). Restituisce solo numeri. */
+  function measure(text) {
+    var an = LE.analyze(text), lines = [], m = newAcc();
+    String(text || '').split('\n').forEach(function (l) { l = l.trim(); if (l && !/^\[.*\]$/.test(l)) lines.push(l); });
+    if (!lines.length || !an || !an.counts) return m;
+    var ws = SB.words(text), seen = {};
+    ws.forEach(function (w) { seen[w] = 1; m.wlen += w.length; });
+    m.songs = 1; m.lines = lines.length; m.syll = an.syllables.average * lines.length;
+    var rl = 0; an.stanzas.forEach(function (s) { rl += s.rhymedLines || 0; });
+    m.rhymed = rl; m.repLines = (an.repetitionShare || 0) * lines.length;
+    m.words = ws.length; m.types = Object.keys(seen).length;
+    lines.forEach(function (l) {
+      var lw = SB.words(l), hit = [];
+      SKEYS.forEach(function (k) { if (lw.some(function (w) { return SET[k][w]; })) hit.push(k); });
+      if (hit.length) m.sceneLines++;
+      hit.forEach(function (k) { m.scenes[k] = (m.scenes[k] || 0) + 1; });
+      for (var i = 0; i < hit.length; i++) for (var j = i + 1; j < hit.length; j++) { var key = [hit[i], hit[j]].sort().join('+'); m.pairs[key] = (m.pairs[key] || 0) + 1; }
+    });
+    return m;
+  }
+  function merge(acc, m) {
+    acc = acc || newAcc();
+    ['songs', 'lines', 'syll', 'rhymed', 'repLines', 'words', 'types', 'wlen', 'sceneLines'].forEach(function (k) { acc[k] += m[k] || 0; });
+    ['scenes', 'pairs'].forEach(function (g) { Object.keys(m[g] || {}).forEach(function (k) { acc[g][k] = (acc[g][k] || 0) + m[g][k]; }); });
+    return acc;
+  }
+  function describe(P) {
+    var sc = P.top.slice(0, 3).map(function (t) { return SCENE_IT[t.scene] + ' ' + Math.round(t.share * 100) + '%'; });
+    var tone = P.top.length ? 'umore: ' + sc.join(', ') : 'poche parole riconosciute, serve più materiale';
+    var gen = SB.NAMES[P.styleTop] || '';
+    return tone + (gen ? ' → base che gli sta meglio: ' + gen + ', circa ' + P.bpm + ' BPM' : '');
+  }
+  /** Da somme a profilo leggibile. */
+  function finalize(acc) {
+    if (!acc || !acc.lines) return null;
+    var P = { songs: acc.songs, lines: acc.lines, avgSyll: r2(acc.syll / acc.lines), rhyme: r2(acc.rhymed / acc.lines), rep: r2(acc.repLines / acc.lines), richness: acc.words ? r2(acc.types / acc.words) : 0, wordLen: acc.words ? r2(acc.wlen / acc.words) : 0 };
+    var tot = 0; SKEYS.forEach(function (k) { tot += acc.scenes[k] || 0; });
+    P.sceneShare = {}; SKEYS.forEach(function (k) { P.sceneShare[k] = tot ? r2((acc.scenes[k] || 0) / tot) : 0; });
+    P.top = SKEYS.filter(function (k) { return P.sceneShare[k] > 0; }).sort(function (a, b) { return P.sceneShare[b] - P.sceneShare[a]; }).map(function (k) { return { scene: k, share: P.sceneShare[k] }; });
+    P.coverage = r2(acc.sceneLines / acc.lines);
+    P.pairs = Object.keys(acc.pairs).map(function (k) { return { pair: k, lines: acc.pairs[k], share: r2(acc.pairs[k] / Math.max(1, acc.sceneLines)) }; }).sort(function (a, b) { return b.lines - a.lines; }).slice(0, 5);
+    P.styleScore = SB.styleScores(P.sceneShare, P.avgSyll, P.rep);
+    P.styleTop = SB.GENRES.slice().sort(function (a, b) { return P.styleScore[b] - P.styleScore[a]; })[0];
+    P.bpm = Math.round(SB.BASE_BPM[P.styleTop] + (P.avgSyll >= 12 ? -6 : (P.avgSyll <= 8 ? 5 : 0)));
+    P.mood = describe(P);
+    P.enough = acc.lines >= 20;
+    return P;
+  }
+  /** Media pesata (per righe) di più profili: "il nostro stile" nato da più artisti. */
+  function blend(list, names) {
+    list = (list || []).filter(Boolean); if (!list.length) return null;
+    var W = 0, out = { avgSyll: 0, rhyme: 0, rep: 0, richness: 0, wordLen: 0, sceneShare: {}, lines: 0, songs: 0 };
+    SKEYS.forEach(function (k) { out.sceneShare[k] = 0; });
+    list.forEach(function (p) { var w = Math.max(1, Math.sqrt(p.lines)); W += w; ['avgSyll', 'rhyme', 'rep', 'richness', 'wordLen'].forEach(function (k) { out[k] += p[k] * w; }); SKEYS.forEach(function (k) { out.sceneShare[k] += p.sceneShare[k] * w; }); out.lines += p.lines; out.songs += p.songs; });
+    ['avgSyll', 'rhyme', 'rep', 'richness', 'wordLen'].forEach(function (k) { out[k] = r2(out[k] / W); });
+    SKEYS.forEach(function (k) { out.sceneShare[k] = r2(out.sceneShare[k] / W); });
+    out.top = SKEYS.filter(function (k) { return out.sceneShare[k] > 0; }).sort(function (a, b) { return out.sceneShare[b] - out.sceneShare[a]; }).map(function (k) { return { scene: k, share: out.sceneShare[k] }; });
+    out.pairs = [];
+    out.styleScore = SB.styleScores(out.sceneShare, out.avgSyll, out.rep);
+    out.styleTop = SB.GENRES.slice().sort(function (a, b) { return out.styleScore[b] - out.styleScore[a]; })[0];
+    out.bpm = Math.round(SB.BASE_BPM[out.styleTop] + (out.avgSyll >= 12 ? -6 : (out.avgSyll <= 8 ? 5 : 0)));
+    out.mood = describe(out); out.names = (names || []).join(' + ');
+    return out;
+  }
+  /** Confronta un tuo testo con un profilo e dice cosa cambiare (con numeri). */
+  function compare(text, P) {
+    var m = finalize(measure(text)), out = [];
+    if (!m) return [{ tag: 'Misurato', text: 'Scrivi prima almeno qualche riga di testo.' }];
+    if (!P) return [{ tag: 'Misurato', text: 'Scegli prima un modello artisti.' }];
+    var d = m.avgSyll - P.avgSyll;
+    out.push({ tag: 'Misurato', text: 'Sillabe per riga: tu ' + m.avgSyll + ', modello ' + P.avgSyll + '. ' + (Math.abs(d) < 1.2 ? 'Siete vicini.' : (d < 0 ? 'Le tue righe sono più corte: prova a riempire di più il metro o a rallentare la base.' : 'Le tue righe sono più lunghe: taglia parole o parla più veloce (base più rapida).')) });
+    var dr = m.rhyme - P.rhyme;
+    out.push({ tag: 'Misurato', text: 'Righe in rima: tu ' + Math.round(m.rhyme * 100) + '%, modello ' + Math.round(P.rhyme * 100) + '%. ' + (Math.abs(dr) < 0.12 ? 'In linea.' : (dr < 0 ? 'Aggiungi rime o assonanze a fine riga e a metà riga.' : 'Hai più rime del modello: puoi lasciare qualche riga libera per respirare.')) });
+    var dp = m.rep - P.rep;
+    out.push({ tag: 'Misurato', text: 'Ripetizioni: tu ' + Math.round(m.rep * 100) + '%, modello ' + Math.round(P.rep * 100) + '%. ' + (Math.abs(dp) < 0.1 ? 'Gancio simile.' : (dp < 0 ? 'Il modello ripete di più: rendi il ritornello più ripetibile (frase corta che torna).' : 'Ripeti più del modello: varia qualche riga per non annoiare.')) });
+    var dw = m.richness - P.richness;
+    out.push({ tag: 'Misurato', text: 'Varietà di parole: tu ' + Math.round(m.richness * 100) + '%, modello ' + Math.round(P.richness * 100) + '%.' + (dw < -0.1 ? ' Prova sinonimi e immagini nuove.' : '') });
+    var gaps = SKEYS.map(function (k) { return { k: k, d: (P.sceneShare[k] || 0) - (m.sceneShare[k] || 0) }; }).sort(function (a, b) { return b.d - a.d; });
+    if (gaps[0].d > 0.12) out.push({ tag: 'Ipotesi', text: 'Il modello parla molto di ' + SCENE_IT[gaps[0].k] + ' (' + Math.round((P.sceneShare[gaps[0].k] || 0) * 100) + '%), nel tuo testo poco (' + Math.round((m.sceneShare[gaps[0].k] || 0) * 100) + '%). Se vuoi quell\'umore, aggiungi immagini di quel mondo.' });
+    var tm = m.top[0];
+    if (tm) out.push({ tag: 'Misurato', text: 'Il tuo testo ora ha soprattutto: ' + SCENE_IT[tm.scene] + ' (' + Math.round(tm.share * 100) + '%).' });
+    out.push({ tag: 'Ipotesi', text: 'Con questo modello la base che gli sta meglio è ' + SB.NAMES[P.styleTop] + ' a circa ' + P.bpm + ' BPM.' });
+    return out;
+  }
+
+  return { measure: measure, merge: merge, finalize: finalize, blend: blend, compare: compare, newAcc: newAcc, SCENE_IT: SCENE_IT };
 });
 
 /*
@@ -8967,13 +9115,13 @@ details.card[open]>summary{margin-bottom:8px}
   var AI_RULES = 'Rispondi in italiano, in modo concreto e breve (massimo 150 parole). Distingui chiaramente ciò che è un\'ipotesi da ciò che è un fatto. Non promettere successo, hit o effetti emotivi garantiti. Non citare né copiare testi di altri autori.';
 
   /* ================= Navigazione ================= */
-  var VIEWS = ['daw', 'home', 'menu', 'canzoni', 'studio', 'strumenti', 'producer', 'voce', 'video', 'marketing', 'social', 'libreria', 'impostazioni', 'beatlab' /* Beat Lab */];
+  var VIEWS = ['daw', 'home', 'menu', 'canzoni', 'studio', 'strumenti', 'producer', 'voce', 'video', 'marketing', 'social', 'libreria', 'impostazioni', 'artisti', 'beatlab' /* Beat Lab */];
   var MENU = [
     ['home', 'Home e Dashboard', 'Il tuo percorso', 'i-home'], ['canzoni', 'Le mie canzoni', 'Schede e versioni', 'i-disc'],
     ['studio', 'Testo e Base', 'Scrivi, crea la base, canta', 'i-sliders'], ['strumenti', 'Strumentario', '29 strumenti veri e guida', 'i-sliders'], ['beatlab', 'Beat Lab', 'Fai le tue basi', 'i-note'] /* Beat Lab */, ['producer', 'AI Producer', 'Comandi a parole', 'i-spark'],
     ['voce', 'Vocal Studio', 'Voce e autotune', 'i-mic'], ['video', 'AI Video Studio', 'Clip a tempo', 'i-film'],
     ['marketing', 'Marketing AI', 'Piano a 30 giorni', 'i-mega'], ['social', 'Social Media Manager', 'Calendario', 'i-cal'],
-    ['libreria', 'Libreria contenuti', 'Materiali', 'i-folder'], ['impostazioni', 'Impostazioni', 'Aspetto e dati', 'i-gear']
+    ['artisti', 'Cartelle artista', 'Impara lo stile (solo numeri)', 'i-disc'], ['libreria', 'Libreria contenuti', 'Materiali', 'i-folder'], ['impostazioni', 'Impostazioni', 'Aspetto e dati', 'i-gear']
   ];
   var SHOW = {};
   function route() {
@@ -9281,13 +9429,57 @@ details.card[open]>summary{margin-bottom:8px}
       return mx;
     } catch (e) { st.textContent = 'Non sono riuscito a creare la base. Prova con meno battute.'; return null; }
   }
+  /* ===== Cartelle artista: stile misurato dai testi caricati (solo numeri) ===== */
+  function arStore() { LIB.settings.artists = LIB.settings.artists || {}; return LIB.settings.artists; }
+  function arModel() {
+    var st = arStore(), names = Object.keys(st).filter(function (n) { return st[n].on; });
+    if (!names.length) return null;
+    return ArtistLab.blend(names.map(function (n) { return ArtistLab.finalize(st[n].acc); }), names);
+  }
+  function arBars(P) { return P.top.slice(0, 5).map(function (t) { return '<div class="small">' + esc(ArtistLab.SCENE_IT[t.scene]) + ' <b>' + Math.round(t.share * 100) + '%</b><div style="height:6px;border-radius:3px;background:var(--line,#333);overflow:hidden"><i style="display:block;height:100%;width:' + Math.round(t.share * 100) + '%;background:var(--acc,#8b5cf6)"></i></div></div>'; }).join(''); }
+  function arRender() {
+    var st = arStore(), names = Object.keys(st);
+    $('#ar-list').innerHTML = names.map(function (n) {
+      var P = ArtistLab.finalize(st[n].acc); if (!P) return '';
+      return '<div class="card"><div class="card-head"><h3>' + esc(n) + '</h3><span class="tag m">' + P.songs + ' brani · ' + P.lines + ' righe</span></div>' +
+        '<div class="sw"><label for="ar-on-' + esc(n) + '">Usa nel mio modello</label><input type="checkbox" data-aron="' + esc(n) + '" id="ar-on-' + esc(n) + '"' + (st[n].on ? ' checked' : '') + '></div>' +
+        '<p class="small"><b>Umore:</b> ' + esc(P.mood) + '</p>' + arBars(P) +
+        '<ul class="clean small"><li>Sillabe per riga: <b>' + P.avgSyll + '</b> <span class="tag m">Misurato</span></li><li>Righe in rima: <b>' + Math.round(P.rhyme * 100) + '%</b></li><li>Ripetizioni: <b>' + Math.round(P.rep * 100) + '%</b></li><li>Varietà di parole: <b>' + Math.round(P.richness * 100) + '%</b></li>' +
+        (P.pairs.length ? '<li>Mondi che stanno insieme: ' + P.pairs.slice(0, 3).map(function (q) { return esc(q.pair.split('+').map(function (k) { return ArtistLab.SCENE_IT[k]; }).join(' + ')) + ' (' + q.lines + ' righe)'; }).join('; ') + '</li>' : '') + '</ul>' +
+        (P.enough ? '' : '<p class="small muted">Pochi dati (meno di 20 righe): le misure sono ancora instabili. Aggiungi altri brani.</p>') +
+        '<div class="row"><button class="btn sm" data-ardel="' + esc(n) + '">Elimina cartella</button></div></div>';
+    }).join('') || '<div class="card"><p class="small muted">Nessuna cartella ancora. Creane una qui sopra.</p></div>';
+    var M = arModel();
+    $('#ar-model').innerHTML = M ? '<p><b>' + esc(M.names) + '</b></p><p class="small">' + esc(M.mood) + '</p><ul class="clean small"><li>Sillabe per riga: ' + M.avgSyll + '</li><li>Rime: ' + Math.round(M.rhyme * 100) + '% · Ripetizioni: ' + Math.round(M.rep * 100) + '%</li></ul><p class="small muted">Il bottone "Cervello Sultan" in Testo e Base ora segue questo modello.</p>' : 'Spunta una o più cartelle: il modello è la loro media.';
+  }
+  SHOW.artisti = arRender;
+  async function arAdd() {
+    var nm = ($('#ar-name').value || '').trim(), m = $('#ar-msg'); m.className = 'status';
+    if (!nm) { m.textContent = 'Scrivi il nome della cartella (es. un artista).'; return; }
+    var texts = [], f = $('#ar-files').files;
+    for (var i = 0; i < f.length; i++) { try { texts.push(await f[i].text()); } catch (e) {} }
+    var pasted = ($('#ar-text').value || '').trim(); if (pasted) pasted.split(/\n\s*---+\s*\n/).forEach(function (t) { if (t.trim()) texts.push(t); });
+    if (!texts.length) { m.textContent = 'Carica un file .txt o incolla un testo.'; return; }
+    var st = arStore(), rec = st[nm] || (st[nm] = { acc: ArtistLab.newAcc(), on: false }), added = 0;
+    texts.forEach(function (t) { var me = ArtistLab.measure(t); if (me.lines) { rec.acc = ArtistLab.merge(rec.acc, me); added++; } });
+    if (!added) { m.textContent = 'Non ho trovato righe di testo da misurare.'; if (!rec.acc.lines) delete st[nm]; return; }
+    persist(); $('#ar-files').value = ''; $('#ar-text').value = '';
+    m.textContent = 'Aggiunti ' + added + ' brani a "' + nm + '". Ho tenuto solo i numeri, non il testo.'; arRender();
+  }
+  $('#ar-add').addEventListener('click', arAdd);
+  $('#ar-list').addEventListener('change', function (e) { var n = e.target.getAttribute('data-aron'); if (n && arStore()[n]) { arStore()[n].on = e.target.checked; persist(); arRender(); } });
+  $('#ar-list').addEventListener('click', function (e) { var n = e.target.getAttribute('data-ardel'); if (n) { delete arStore()[n]; persist(); arRender(); } });
+  $('#ar-cmp').addEventListener('click', function () {
+    var M = arModel(), s = cur(); if (!M) { $('#ar-adv').innerHTML = '<p class="small">Spunta prima almeno una cartella.</p>'; return; }
+    $('#ar-adv').innerHTML = '<ul class="clean small">' + ArtistLab.compare(s.lyrics, M).map(function (x) { return '<li><span class="tag ' + (x.tag === 'Misurato' ? 'm' : 'i') + '">' + x.tag + '</span> ' + esc(x.text) + '</li>'; }).join('') + '</ul>';
+  });
   /* ===== Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti) ===== */
   var BANNED_INST = { flute: 1, ocarina: 1, harmonica: 1, clarinet: 1, kalimba: 0 };
   async function runBrain(again) {
     var s = cur(), p = s.prod, m = $('#sb-msg');
     if (!s.lyrics.trim()) { m.textContent = 'Scrivi o incolla prima il testo (in alto): il cervello parte da quello.'; return; }
     s.brainV = again ? (s.brainV || 0) + 1 : 0;
-    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV });
+    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel() });
     p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
     var res = Coach.suggest(coachState(), coachCands(p.genre), { emotion: pl.scene, seed: pl.seed }), R = Instruments.RECIPES[p.genre] || {};
     ['melodia', 'accordi', 'pad'].forEach(function (role) { if (BANNED_INST[res.inst[role]]) res.inst[role] = (R[role] || ['piano'])[0]; });

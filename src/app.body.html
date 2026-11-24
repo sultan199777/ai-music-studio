@@ -421,6 +421,25 @@
   <div class="card"><h3>Fonti e licenze</h3><p class="small muted">Campioni registrati: VSCO 2 Community Edition e VCSL di Versilian Studios, licenza CC0 1.0 (pubblico dominio, uso libero anche commerciale). Convertiti in mono 22 kHz compressi (ADPCM 4 bit): qualità buona ma inferiore agli originali. Chitarre: sintetizzate dal programma (Karplus-Strong). Ogni nota è stata misurata: l'altezza corrisponde entro ±0,3 semitoni.</p></div>
 </main>
 
+<!-- CARTELLE ARTISTA -->
+<main class="view" id="v-artisti" hidden>
+  <div class="head"><div class="eyebrow">Sultan Sound</div><h1>Cartelle artista</h1></div>
+  <div class="card"><div class="card-head"><h3>Impara lo stile da un artista</h3><span class="tag m">Solo statistiche</span></div>
+    <p class="small muted">Crea una cartella per artista e caricaci dei testi (file .txt o testo incollato). L'app misura sillabe, rime, ripetizioni, umore e associazioni, poi <b>butta via il testo</b> e tiene solo i numeri. Servono per capire lo stile e per guidare i tuoi testi e le tue basi. Non copia versi e non imita voci.</p>
+    <label class="f"><span>Nome della cartella (es. Sfera Ebbasta)</span><input id="ar-name" type="text" autocomplete="off" placeholder="Nome artista"></label>
+    <label class="f"><span>File di testo (.txt), anche più insieme</span><input id="ar-files" type="file" accept=".txt,text/plain" multiple></label>
+    <label class="f"><span>Oppure incolla un testo (più brani separati da una riga con ---)</span><textarea id="ar-text" rows="5" placeholder="Incolla qui"></textarea></label>
+    <div class="row"><button class="btn pri" id="ar-add">Aggiungi alla cartella</button></div>
+    <div class="status" id="ar-msg"></div>
+  </div>
+  <div id="ar-list"></div>
+  <div class="card"><div class="card-head"><h3>Il mio modello</h3><span class="tag a">Mescola gli artisti spuntati</span></div>
+    <div id="ar-model" class="small muted">Spunta una o più cartelle: il modello è la loro media.</div>
+    <div class="row" style="margin-top:8px"><button class="btn sm pri" id="ar-cmp">Confronta il testo della canzone aperta</button></div>
+    <div id="ar-adv"></div>
+  </div>
+</main>
+
 <main class="view" id="v-libreria" hidden>
   <div class="head"><div class="eyebrow">Libreria dei contenuti</div><h1>Materiali</h1></div>
   <div id="l-out"></div>

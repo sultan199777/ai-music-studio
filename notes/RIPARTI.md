@@ -35,3 +35,10 @@ Lo studio più completo possibile, ORIGINALE (non copie: i campioni sono materia
 
 ## Piano tecnico dello studio professionale
 Documento con ricerca, fonti, licenze, architettura e fasi: https://claude.ai/artifact/QH4k4tg4uf8kRHfPYMpvD2 (leggerlo con Artifact read, solo se serve).
+
+## Cervello Sultan (24/11/2026, chat "voce/autotune/cervello")
+- `src/sultan-brain.js`: dal testo sceglie stile (boombap, street, trapdark, clubtrap + trap, drill, melodico, estate, epico), BPM, scala, tonalità, seme; bottone "Cervello Sultan" in Testo e Base. Testi diversi = basi diverse. Regole misurabili, NON un modello di linguaggio.
+- `src/artist-lab.js` + vista #artisti: cartelle artista, si caricano testi, si tengono SOLO numeri (sillabe, rime, ripetizioni, umore, associazioni). Modello = media delle cartelle spuntate; confronto con il testo aperto; il cervello lo segue.
+- 4 stili nuovi in `arranger.js` + ricette in `instruments.js`; 4 nuovi caratteri vocali; Mic 1/Mic 2 (autotune dal vivo con 2 prove); accordatura base (refCents).
+- Ricerca: `notes/RICERCA-D-ai-gratuite-e-autotune-pesante.md`.
+- Da fare: collegare il cervello al Beat Lab; imparare da video/basi (altra chat: "Impara da una base"); AI locale opzionale (WebLLM) solo dopo prova su iPhone.
