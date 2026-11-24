@@ -168,7 +168,13 @@
     <label class="f"><span>Velocità del testo</span><select id="kar-speed2"><option value="auto" selected>Automatica (segue le sillabe)</option><option value="1">Veloce (1 battuta per riga)</option><option value="2">Media (2 battute)</option><option value="4">Lenta (4 battute)</option><option value="8">Molto lenta (8 battute)</option></select></label>
     <div class="karaoke" id="rec-kar"><div><b>Premi Registra: parte la base e vedi la riga</b><small>Usa le cuffie</small></div></div>
     <div class="meter-bar" id="rec-meter" hidden><i></i></div>
-    <div class="row"><button class="btn pri" id="rec-go">Registra con la base</button><button class="btn" id="rec-stop" hidden>Fine registrazione</button></div>
+    <div class="row"><button class="btn pri" id="rec-go">Mic 1 · Registra pulito</button><button class="btn pri" id="rec-live">Mic 2 · Autotune dal vivo</button><button class="btn" id="rec-stop" hidden>Fine registrazione</button></div>
+    <p class="small muted"><b>Mic 1</b>: registra la voce pulita, poi l'autotune lo applichi e lo modifichi sotto. <b>Mic 2</b>: senti l'autotune in cuffia mentre canti e ottieni <b>due prove</b>: quella con autotune come l'hai sentita e quella pulita, da rifinire sotto senza perdere l'originale. Servono cuffie con filo.</p>
+    <div id="rec-live-box" class="grid2">
+      <label class="f"><span>Stile dal vivo</span><select id="rec-live-st"><option value="60,40">Naturale</option><option value="80,15" selected>Pop</option><option value="100,0">Trap duro (robot)</option><option value="100,6">Melodico veloce</option></select></label>
+      <label class="f"><span>Scala</span><select id="rec-live-m"><option value="cromatica">Tutte le note</option><option value="maggiore">Maggiore</option><option value="minore">Minore</option></select></label>
+      <label class="f"><span>Nota di partenza</span><select id="rec-live-t"></select></label>
+    </div>
     <div class="status" id="rec-msg"></div>
     <p class="small muted">La voce finisce tra le prove in Voce, dove applichi autotune e mix. Le prove restano salvate sul telefono (nella versione app).</p>
   </div>

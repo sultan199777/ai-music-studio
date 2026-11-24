@@ -293,7 +293,7 @@
   /* ====================== parametri ====================== */
   var DEFAULTS = {
     clean: { on: true, hp: 90, denoiseDb: 0 },
-    tune: { on: true, key: 'auto', tonic: 0, mode: 'maggiore', strength: 0.8, retuneMs: 25, humanize: 0.3, flexCents: 0, classic: false, vibrato: 0.7, drift: 0.3, vibratoDepth: 0, vibratoRate: 5.6, formantSemitones: 0 },
+    tune: { on: true, key: 'auto', tonic: 0, mode: 'maggiore', strength: 0.8, retuneMs: 25, humanize: 0.3, flexCents: 0, classic: false, vibrato: 0.7, drift: 0.3, vibratoDepth: 0, vibratoRate: 5.6, formantSemitones: 0, refCents: 0 },
     eq: { on: true, boxyDb: -2, presenceDb: 2.5, airDb: 2, lowDb: 0, darkHz: 0 },
     deess: { on: true, freq: 6500, amount: 0.5 },
     comp: { on: true, thresholdDb: -20, ratio: 4, attackMs: 5, releaseMs: 250, peakDb: -8, makeupDb: 0 },
@@ -322,6 +322,7 @@
     ['tune.drift', 'num', 0, 1, 'Deriva lenta', 'Quanto delle lente oscillazioni dentro la nota resta.'],
     ['tune.vibratoDepth', 'num', 0, 80, 'Vibrato aggiunto (cent)', 'Aggiunge un vibrato finto sulle note lunghe. 0 = nessuno.'],
     ['tune.vibratoRate', 'num', 3, 9, 'Velocità vibrato (Hz)', 'Quante oscillazioni al secondo ha il vibrato aggiunto.'],
+    ['tune.refCents', 'num', -50, 50, 'Accordatura della base (cent)', 'Se la base non è intonata a LA 440 Hz (succede con campioni e basi scaricate) sposta qui di quanto è calante (-) o crescente (+): l\'autotune userà le note della base, non quelle "teoriche".'],
     ['tune.formantSemitones', 'num', -6, 6, 'Timbro (semitoni)', 'Voce più scura (-) o più chiara (+) senza cambiare nota.'],
     ['eq.on', 'bool', 0, 1, 'Equalizzatore', 'Dà forma al suono.'],
     ['eq.boxyDb', 'num', -8, 3, 'Meno "scatola" (dB)', 'Taglio sui medio-bassi contro il suono chiuso.'],
@@ -534,7 +535,7 @@
     function add(name, label, fn) { st.push({ name: name, label: label, fn: fn }); }
     if (p.clean.on) add('clean', 'Pulizia', function (S) { S.x = stageClean(S.x, S.sr, p.clean, S.rep); });
     if (p.tune.on) add('tune', 'Intonazione', function (S) {
-      var t = p.tune, o = { strength: t.strength, retuneMs: t.retuneMs, humanize: t.humanize, flexCents: t.flexCents, classic: t.classic, vibrato: t.vibrato, drift: t.drift, vibratoDepth: t.vibratoDepth, vibratoRate: t.vibratoRate, formantSemitones: t.formantSemitones, maxSeconds: 600, track: S.track };
+      var t = p.tune, o = { strength: t.strength, retuneMs: t.retuneMs, humanize: t.humanize, flexCents: t.flexCents, classic: t.classic, vibrato: t.vibrato, drift: t.drift, vibratoDepth: t.vibratoDepth, vibratoRate: t.vibratoRate, formantSemitones: t.formantSemitones, refCents: t.refCents, maxSeconds: 600, track: S.track };
       if (t.key === 'auto') o.key = 'auto'; else { o.tonic = t.tonic; o.mode = t.mode; }
       var r = Autotune.correct(S.x, S.sr, o); S.x = r.samples; S.rep.tune = r.stats;
       S.ctx.tonic = r.stats.tonic; S.ctx.mode = r.stats.mode; S.ctx.scaleKnown = r.stats.mode !== 'cromatica';

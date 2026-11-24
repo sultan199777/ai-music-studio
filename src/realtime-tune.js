@@ -23,7 +23,7 @@
 
   function createCore(sr, opts) {
     var STEPS = { maggiore: [0, 2, 4, 5, 7, 9, 11], minore: [0, 2, 3, 5, 7, 8, 10] };
-    var P = { enabled: true, strength: 0.8, retuneMs: 30, tonic: 0, mode: 'cromatica', grainMs: 28 };
+    var P = { enabled: true, strength: 0.8, retuneMs: 30, tonic: 0, mode: 'cromatica', grainMs: 28, refCents: 0 };
     var mask = [], i;
     function setParams(q) {
       if (!q) return;
@@ -71,7 +71,7 @@
     function control() {
       var f0 = detect();
       if (f0 > 0) {
-        unv = 0; var m = 69 + 12 * Math.log(f0 / 440) / Math.LN2;
+        unv = 0; var m = 69 + 12 * Math.log(f0 / 440) / Math.LN2 - Math.max(-50, Math.min(50, +P.refCents || 0)) / 100;
         hist.push(m); if (hist.length > 5) hist.shift();
         var med = hist.slice().sort(function (p, q) { return p - q; })[hist.length >> 1];
         var q = quant(med);

@@ -947,8 +947,11 @@
     renderTakes();
   }
   function recUi(on) { $('#rec-go').hidden = on; $('#rec-stop').hidden = !on; $('#rec-meter').hidden = !on; }
-  $('#rec-go').addEventListener('click', async function () {
+  $('#rec-go').addEventListener('click', function () { startRec(false); });
+  $('#rec-live').addEventListener('click', function () { startRec(true); });
+  async function startRec(live) {
     var msg = $('#rec-msg'); msg.className = 'status'; if (REC) return;
+    $('#rec-live-box').hidden = !live && $('#rec-live-box').hidden;
     if (!micOk()) { msg.textContent = 'Il microfono non è disponibile in questa pagina (se hai toccato un link dentro Claude, copialo e aprilo in Safari) (dentro Claude è bloccato). Apri il sito: https://sultan199777.github.io/ai-music-studio/ (da Safari), oppure registra con Memo Vocali e importa in Voce.'; msg.className = 'status err'; return; }
     var ctx = getCtx(); if (!ctx || !ctx.createScriptProcessor) { msg.textContent = 'Questo browser non supporta la registrazione.'; msg.className = 'status err'; return; }
     if (!lyricLines(cur().lyrics).length) { msg.textContent = 'Nota: qui non c\'è ancora il testo di questa canzone. Incollalo nel campo "Testo" in alto in questa pagina per vederlo scorrere mentre canti. Chiedo il microfono…'; } else msg.textContent = 'Chiedo il permesso del microfono…';
@@ -971,18 +974,31 @@
       proc.onaudioprocess = function (ev) { chunks.push(new Float32Array(ev.inputBuffer.getChannelData(0))); };
       mic.connect(proc); proc.connect(mute); mute.connect(ctx.destination);
     }
+    if (live) {
+      if (!window.VoiceLab || !rmime) { msg.textContent = 'Mic 2 non è disponibile su questo browser: uso la registrazione pulita.'; }
+      else {
+        try { R.live = await VoiceLab.liveAttach(ctx, mic); } catch (e) { R.live = null; }
+        if (R.live) {
+          R.wchunks = []; R.wmr = new MediaRecorder(R.live.wetStream, { mimeType: rmime, audioBitsPerSecond: 256000 });
+          R.wmr.ondataavailable = function (e) { if (e.data && e.data.size) R.wchunks.push(e.data); };
+          R.wStopped = new Promise(function (res) { R.wmr.onstop = res; }); R.wmr.start();
+        } else msg.textContent = 'Non riesco ad accendere l\'autotune dal vivo: registro solo la voce pulita.';
+      }
+    }
     REC = R; recUi(true);
     var kt = karaokeTick(mx.bpm, '#rec-kar');
     var ok = playBuf(mx.samples, mx.sr, function (t) { kt(t); R.an.getFloatTimeDomainData(R.abuf); var m = 0; for (var ai = 0; ai < R.abuf.length; ai++) { var av = R.abuf[ai] < 0 ? -R.abuf[ai] : R.abuf[ai]; if (av > m) m = av; } R.level = m; $('#orb').style.setProperty('--lvl', Math.min(1, m * 1.6).toFixed(2)); $('#rec-meter i').style.width = Math.min(100, Math.round(m * 140)) + '%'; $('#rec-meter').classList.toggle('hot', m > 0.95); }, function () { finishRec(); });
     R.delta = Math.max(0, (player.t0 || R.started) - (R.recAt != null ? R.recAt : R.started)); R.lat = (ctx.baseLatency || 0) + (ctx.outputLatency || 0);
     if (!ok) { finishRec(); return; }
-    msg.textContent = 'Registro. Usa le cuffie, altrimenti la base entra nel microfono.';
-  });
+    msg.textContent = live && R.live ? 'Registro con autotune dal vivo (' + (R.live.mode === 'worklet' ? 'AudioWorklet' : 'modo di riserva') + ', ritardo di calcolo circa ' + Math.round(R.live.latencyMs) + ' ms). Cuffie con filo!' : 'Registro. Usa le cuffie, altrimenti la base entra nel microfono.';
+  }
   $('#rec-stop').addEventListener('click', stopPlay);
   async function finishRec() {
     var R = REC; if (!R) return; REC = null;
     var msg = $('#rec-msg'), mono, sr;
     if (R.mr) { try { if (R.mr.state !== 'inactive') R.mr.stop(); await R.mrStopped; } catch (e) {} }
+    if (R.wmr) { try { if (R.wmr.state !== 'inactive') R.wmr.stop(); await R.wStopped; } catch (e) {} }
+    if (R.live) { try { R.live.stop(); } catch (e) {} }
     try { R.mic.disconnect(); if (R.proc) { R.proc.disconnect(); R.mute.disconnect(); R.proc.onaudioprocess = null; } } catch (e) {}
     R.stream.getTracks().forEach(function (t) { t.stop(); }); recUi(false);
     $('#rec-kar').innerHTML = '<div><b>Registrazione finita</b></div>'; $('#orb').style.setProperty('--lvl', 0);
@@ -1000,7 +1016,15 @@
     if (pk > 0.003 && pk < 0.3) { var gk = 0.7 / pk; for (var q = 0; q < n; q++) mono[q] *= gk; boosted = true; }
     msg.textContent = 'Analizzo la registrazione…'; await tick();
     var name = 'Registrazione ' + new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-    var t = await addTake(mono, sr, name, false); t.lat = R.delta + R.lat; t.at = Date.now();
+    if (R.wchunks && R.wchunks.length) {
+      try {
+        var wd = await decode(new Blob(R.wchunks, { type: R.mime })), wm = wd.mono, wp = 0; for (var wi = 0; wi < wm.length; wi += 7) { var wv = wm[wi] < 0 ? -wm[wi] : wm[wi]; if (wv > wp) wp = wv; }
+        if (wp > 0.003 && wp < 0.3) { var wg = 0.7 / wp; for (var wq = 0; wq < wm.length; wq++) wm[wq] *= wg; }
+        var wt = await addTake(wm, wd.sr, name + ' · Mic 2 live', false); wt.lat = R.delta + R.lat; wt.at = Date.now();
+        dbTake('put', { id: wt.id, name: wt.name, mono: wt.mono, sr: wt.sr, lat: wt.lat, at: wt.at }).then(function (ok) { wt.saved = !!ok; });
+      } catch (e) {}
+    }
+    var t = await addTake(mono, sr, name + (R.wchunks ? ' · pulita' : ''), false); t.lat = R.delta + R.lat; t.at = Date.now();
     dbTake('put', { id: t.id, name: t.name, mono: t.mono, sr: t.sr, lat: t.lat, at: t.at }).then(function (ok) { t.saved = !!ok; });
     var s = cur(); if (['idea', 'testo', 'base'].indexOf(s.status) !== -1) { s.status = 'voce'; persist(); }
     selectTake(t.id);
