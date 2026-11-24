@@ -16,3 +16,10 @@ test('stessa melSeed = stessa melodia; note in pentatonica/seconda minore e regi
   assert.ok(b.events.lead.length > 8);
   b.events.lead.forEach((e) => { assert.ok(ok.includes((((Math.round(e.midi) - 9) % 12) + 12) % 12), 'nota ' + e.midi); assert.ok(e.midi >= 57 && e.midi <= 91, 'registro ' + e.midi); });
 });
+test('heavy: melodia più bassa e cambio melSeed cambia anche gli accordi', () => {
+  const g = (h, ms) => A.generate({ sampleRate: SR, genre: 'trapdark', bars: 16, tonic: 9, mode: 'minore', seed: 5, melSeed: ms, heavy: h });
+  const avg = (b) => b.events.lead.reduce((a, e) => a + e.midi, 0) / b.events.lead.length;
+  assert.ok(avg(g(true, 1)) < avg(g(false, 1)) - 6, 'più grave');
+  const ch = (b) => b.progression.join('-');
+  assert.ok(new Set([0, 1, 2, 3, 4].map((m) => ch(g(false, m)))).size >= 2, 'accordi diversi');
+});

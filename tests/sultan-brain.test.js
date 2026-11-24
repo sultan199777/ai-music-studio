@@ -48,3 +48,11 @@ test('umore voluto: dark e euforico spingono stile e scala in direzioni opposte'
   assert.ok(['trap', 'boombap', 'melodico'].includes(m.genre), 'malinconico ' + m.genre);
   assert.equal(d.moodTarget, 'dark'); assert.ok(B.plan(STRADA, null).moodTarget);
 });
+
+test('stile scritto a parole: trap dark, drill malinconica, boom bap', () => {
+  const S = require('../src/sultan-brain.js'), t = 'Sono nato in strada con la fame addosso, ogni giorno una guerra';
+  const a = S.plan(t, null, { styleText: 'trap dark' }), b = S.plan(t, null, { styleText: 'drill malinconica' }), c = S.plan(t, null, { styleText: 'boom bap' });
+  assert.equal(a.genre, 'trapdark'); assert.ok(a.heavy);
+  assert.equal(b.genre, 'drill'); assert.equal(b.moodTarget, 'malinconico');
+  assert.equal(c.genre, 'boombap');
+});
