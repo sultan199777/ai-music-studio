@@ -20,7 +20,7 @@
 
   var COMANDI = ['808 più lungo', '808 più corto', '808 più distorto', '808 con più colpo', 'voce più riverbero', 'voce più brillante', 'voce più scura', 'voce con autotune robot', 'voce con autotune naturale', 'voce con vocoder', 'voce più eco', 'voce senza eco', 'alza l\'808', 'alza la voce', 'abbassa la voce',
     'alza la melodia', 'abbassa gli accordi', 'melodia un\'ottava sopra', 'arpeggio a destra', 'pad più scuro', 'batteria più compressa', 'riser prima del ritornello', 'impact sul ritornello',
-    'più energia', 'più emozionante', 'più cinematografica', 'basso più profondo', 'a 140 bpm', 'in La minore', 'stile trap', 'stile drill', 'stile melodico', 'stile epico', 'più lenta', 'più veloce',
+    'più energia', 'più emozionante', 'più cinematografica', 'basso più profondo', 'a 140 bpm', 'in La minore', 'stile trap', 'stile drill', 'stile drill di brooklyn', 'stile melodico', 'stile epico', 'più lenta', 'più veloce',
     'hi-hat più fitti', 'hi-hat più radi', 'senza batteria', 'master per spotify', 'master più forte', 'nuova variante', 'crea la base dal testo'];
   /** Il prompt: chi è l'agente, cosa può fare, in che formato rispondere. */
   function messages(user, ctx) {

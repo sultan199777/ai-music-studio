@@ -674,7 +674,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 20:56</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 21:01</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -1034,7 +1034,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">294 test automatici superati su 294 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">296 test automatici superati su 296 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -4133,6 +4133,8 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
       spiega: 'Batteria polverosa e larga, piano o piano elettrico che ripete un giro, basso rotondo. Come nel rap italiano classico: pesante ma senza fretta.' },
     street: { nome: 'Street pesante', melodia: ['piano', 'pro:bell', 'horn', 'pizz'], accordi: ['pro:stab', 'piano', 'organ', 'cellos'], pad: ['pro:darkpad', 'cellos', 'violins'], arpeggio: ['pizz', 'pro:mallet'], kit: 'drill',
       spiega: 'Colpi di piano e archi scuri, rullante forte sul 2 e 4, 808 grosso. Atmosfera da strada e da sfida, tempo medio.' },
+    brooklyn: { nome: 'Drill di Brooklyn', melodia: ['pro:choir', 'violins', 'pro:bell', 'piano'], accordi: ['pizz', 'pro:stab', 'piano'], pad: ['pro:choir', 'pro:darkpad', 'cellos'], arpeggio: ['pizz', 'pro:bell'], kit: 'drill',
+      spiega: 'Il drill di New York: 808 enormi che scivolano a lungo e saltano d\'ottava, cassa a colpi spezzati, rullante sul 3 con un colpo in ritardo, hi-hat a terzine. Sopra: cori e archi cupi, poche note, tanta tensione. Voce davanti e dura, poco autotune.' },
     trapdark: { nome: 'Trap scura pesante', melodia: ['pro:bell', 'bells', 'pizz', 'piano'], accordi: ['pizz', 'pro:epfm', 'piano', 'organ'], pad: ['pro:darkpad', 'pro:choir', 'cellos', 'organ'], arpeggio: ['pro:glassbell', 'pizz'], kit: 'trap',
       spiega: '808 che scivola, hi-hat a terzine, campane e pizzicati cupi. Poche note, molto peso.' },
     clubtrap: { nome: 'Club (dembow trap)', melodia: ['pro:mallet', 'kalimba', 'marimba', 'pro:lead'], accordi: ['pro:supersaw', 'nylon', 'clavi', 'piano'], pad: ['pro:pad', 'organ'], arpeggio: ['pro:pluck', 'marimba'], kit: 'club',
@@ -5434,6 +5436,15 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
       kickPats: [[[0, 10], [0, 7, 11]], [[0, 6, 10], [0, 3, 10, 14]], [[0, 11], [0, 7, 10, 13]]],
       chord: 'pluck', chordPat: [0, 6, 10], arp: false, pad: 'warm', lead: 'bell', duck: 0.35
     },
+    // Drill di Brooklyn (scena di New York, quella di Pop Smoke): caratteristiche di genere, nessuna base copiata.
+    // 808 enormi che scivolano a lungo e saltano d'ottava, cassa sincopata, rullante sul 3 con un colpo in ritardo
+    // ogni due battute, hi-hat a terzine con rullate, cori e archi cupi, poche note.
+    brooklyn: {
+      label: 'Drill di Brooklyn', bpm: 143, swing: 0, kick: [0], kickExtra: [3, 7, 11, 14], snare: [8], snareAlt: [8, 14], clap: true,
+      hat: 'drill', bass: '808', slide: 0.9, glide: 0.2, drive: 2.8, rolls: 0.5,
+      kickPats: [[[0, 7], [0, 3, 10]], [[0, 10], [0, 6, 11]], [[0, 3, 7], [0, 10, 13]]],
+      chord: 'pluck', chordPat: [0, 6], arp: false, pad: 'choir', lead: 'dark', duck: 0.35
+    },
     drill: {
       label: 'Drill', bpm: 142, swing: 0, kick: [0], kickExtra: [7, 10, 13], snare: [8], clap: false,
       hat: 'drill', bass: '808', slide: 0.7, glide: 0.13, drive: 2.4, rolls: 0.55,
@@ -5494,7 +5505,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     levare: { per: 8, seq: [-1, 2, -1, 3, -1, 2, -1, 4] },
     lento: { per: 4, seq: [0, 2, 3, 4] }
   };
-  var ARP_STYLE = { trap: ['lento', 'terzine'], drill: ['ottavi', 'terzine'], epico: ['ottavi', 'sedicesimi'], melodico: ['lento', 'spezzato'], estate: ['levare', 'spezzato'], boombap: ['lento', 'spezzato'], street: ['lento', 'spezzato'], trapdark: ['ottavi', 'terzine'], clubtrap: ['levare', 'ottavi'] };
+  var ARP_STYLE = { trap: ['lento', 'terzine'], drill: ['ottavi', 'terzine'], epico: ['ottavi', 'sedicesimi'], melodico: ['lento', 'spezzato'], estate: ['levare', 'spezzato'], boombap: ['lento', 'spezzato'], street: ['lento', 'spezzato'], trapdark: ['ottavi', 'terzine'], brooklyn: ['ottavi', 'terzine'], clubtrap: ['levare', 'ottavi'] };
 
   // Come suona ogni sezione (livelli 0-1). riserEnd = riser nell'ultima battuta; gap = respiro prima del drop.
   var SEC = {
@@ -5586,7 +5597,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     // batteria a passi scritta a mano (16 passi, uguale in ogni battuta dove la batteria suona)
     var okS = function (a) { return Array.isArray(a) ? a.filter(function (x) { return x >= 0 && x < 16; }) : null; };
     var DP = p.drumPat && typeof p.drumPat === 'object' ? { kick: okS(p.drumPat.kick), snare: okS(p.drumPat.snare), hat: okS(p.drumPat.hat), rolls: p.drumPat.rolls !== false } : null;
-    var LEADS = { trap: ['synth', 'keys', 'bell'], drill: ['dark', 'keys', 'bell'], epico: ['strings', 'synth', 'keys'], melodico: ['keys', 'synth', 'pluck'], boombap: ['keys', 'pluck', 'bell'], street: ['keys', 'bell', 'synth'], trapdark: ['dark', 'bell', 'keys'], clubtrap: ['bell', 'synth', 'marimba'], estate: ['marimba', 'keys', 'synth'] };
+    var LEADS = { trap: ['synth', 'keys', 'bell'], drill: ['dark', 'keys', 'bell'], epico: ['strings', 'synth', 'keys'], melodico: ['keys', 'synth', 'pluck'], boombap: ['keys', 'pluck', 'bell'], street: ['keys', 'bell', 'synth'], trapdark: ['dark', 'bell', 'keys'], brooklyn: ['dark', 'strings', 'bell'], clubtrap: ['bell', 'synth', 'marimba'], estate: ['marimba', 'keys', 'synth'] };
     // Strumenti veri scelti per ruolo (p.inst = {melodia, accordi, pad}); se non caricati si usa la sintesi.
     var pin = p.inst || {};
     function pickInst(role) { var id = pin[role]; return id && Inst && Inst.has(id) ? id : null; }
@@ -5956,7 +5967,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
           }
         }
         if (cfg.snare && !(cfg.gap && lastBar && !cfg.roll)) {
-          ((DP && DP.snare) || style.snare).forEach(function (s) {
+          ((DP && DP.snare) || (style.snareAlt && k % 2 === 1 ? style.snareAlt : style.snare)).forEach(function (s) {
             if (cfg.roll && lastBar) return;
             add('snare', at(bar, s), snareBuf(), 0.55 * cfg.snare);
             if (style.clap) add('snare', at(bar, s), clapBuf(), 0.7 * cfg.snare);
@@ -5979,7 +5990,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
           bs.forEach(function (s, bi2) {
             var next = bi2 + 1 < bs.length ? bs[bi2 + 1] : 16, dur = Math.min((next - s) * stepSec * 1.0, bassKind === '808' ? 2.2 : 1.6);
             var midi = rootM, r2 = rand();
-            var octP = bassKind === '808' ? (genreKey === 'drill' ? 0.4 : 0.22) : 0.12;
+            var octP = bassKind === '808' ? (genreKey === 'drill' ? 0.4 : (genreKey === 'brooklyn' ? 0.45 : 0.22)) : 0.12;
             if (s !== 0) midi = r2 < 0.18 ? fifthM : (r2 < 0.18 + octP ? rootM + 12 : rootM);
             var buf, sl = false;
             if (bassKind === '808') {
@@ -6822,6 +6833,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
       voice: { low: -3, mid: -1.5, midHz: 400, high: 3, comp: 0.55, rev: 0.18, dly: 0.12 }
     },
     trap: { bass: { sat: 0.55, duck: 0.5 }, drums: { comp: 0.35, sat: 0.2 }, lead: { dly: 0.3 } },
+    brooklyn: { bass: { sat: 0.7, duck: 0.45, low: 3 }, drums: { comp: 0.4, sat: 0.2 }, pad: { rev: 0.55, low: -6 }, lead: { rev: 0.35 }, voice: { comp: 0.65, rev: 0.12, dly: 0.08, high: 3 } },
     drill: { bass: { sat: 0.6, duck: 0.4 }, pad: { rev: 0.6 }, lead: { rev: 0.35 } },
     melodico: { bass: { sat: 0.15, duck: 0.3 }, chords: { rev: 0.35 }, voice: { rev: 0.28, dly: 0.18 } },
     epico: { pad: { rev: 0.7 }, chords: { rev: 0.45 }, drums: { comp: 0.45 } },
@@ -7380,6 +7392,8 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     p.mix = p.mix || {}; p.levels = p.levels || {};
     parts.forEach(function (s) {
       var ls = lanesIn(s), hit = false;
+      // stile Drill di Brooklyn (la scena di Pop Smoke): caratteristiche di genere, non copie
+      if (/pop ?smoke|brooklyn|drill (di |de )?(new york|ny)|ny drill/.test(s)) { p.genre = 'brooklyn'; p.bpm = 143; p.mode = 'minore'; p.tune = null; p.groove = null; p.prog = null; changes.push('stile Drill di Brooklyn (143 BPM, minore, 808 che scivolano)'); hit = true; }
       // 808 del designer
       if (/\b808\b/.test(s) && /(lung|cort|colpo|click)/.test(s)) {
         p.b808 = Object.assign({ decay: 1.2, punch: 0.6, drive: 0.5, tone: 0.6, click: 0.3 }, p.b808 || {}); p.bassStyle = '808';
@@ -7431,7 +7445,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     });
     return { understood: changes.length > 0, changes: changes };
   }
-  var EXAMPLES = ['808 più lungo e più distorto', 'voce più riverbero e più brillante', 'abbassa gli accordi, alza la melodia', 'melodia un\'ottava sopra', 'riser prima del ritornello', 'voce con autotune robot', 'arpeggio a destra, pad più scuro', 'master per spotify'];
+  var EXAMPLES = ['base tipo Pop Smoke', '808 più lungo e più distorto', 'voce più riverbero e più brillante', 'abbassa gli accordi, alza la melodia', 'melodia un\'ottava sopra', 'riser prima del ritornello', 'voce con autotune robot', 'arpeggio a destra, pad più scuro', 'master per spotify'];
   return { interpret: interpret, EXAMPLES: EXAMPLES };
 });
 
@@ -7501,7 +7515,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
 
   var COMANDI = ['808 più lungo', '808 più corto', '808 più distorto', '808 con più colpo', 'voce più riverbero', 'voce più brillante', 'voce più scura', 'voce con autotune robot', 'voce con autotune naturale', 'voce con vocoder', 'voce più eco', 'voce senza eco', 'alza l\'808', 'alza la voce', 'abbassa la voce',
     'alza la melodia', 'abbassa gli accordi', 'melodia un\'ottava sopra', 'arpeggio a destra', 'pad più scuro', 'batteria più compressa', 'riser prima del ritornello', 'impact sul ritornello',
-    'più energia', 'più emozionante', 'più cinematografica', 'basso più profondo', 'a 140 bpm', 'in La minore', 'stile trap', 'stile drill', 'stile melodico', 'stile epico', 'più lenta', 'più veloce',
+    'più energia', 'più emozionante', 'più cinematografica', 'basso più profondo', 'a 140 bpm', 'in La minore', 'stile trap', 'stile drill', 'stile drill di brooklyn', 'stile melodico', 'stile epico', 'più lenta', 'più veloce',
     'hi-hat più fitti', 'hi-hat più radi', 'senza batteria', 'master per spotify', 'master più forte', 'nuova variante', 'crea la base dal testo'];
   /** Il prompt: chi è l'agente, cosa può fare, in che formato rispondere. */
   function messages(user, ctx) {
@@ -11932,14 +11946,14 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     var run = runCommands(cmds, st);
     if (a.engine !== 'regole' && !run.said.length) { st = talkState(); run = runCommands([text], st); if (run.said.length) reply = (reply ? reply + ' ' : '') + '(Ho usato le regole sulla tua frase.)'; }
     if (!run.said.length && !lyr.length) { TALK.push({ text: text, reply: (reply ? reply + ' ' : '') + (a.engine === 'regole' ? 'Non l\'ho capito, quindi non ho cambiato niente. Prova: ' + StudioAgent.EXAMPLES.slice(0, 4).join(' · ') : 'Nessuna modifica alla base.'), state: 'nulla' }); talkRender(); return; }
-    s.prod = st.prod; LIB.settings.mic = st.mic; persist();
+    s.prod = st.prod; LIB.settings.mic = st.mic; if (before.prod.genre !== s.prod.genre && Arranger.STYLES[s.prod.genre]) { s.prod.mix = null; applyRecipe(s.prod.genre); } persist();
     TALK.push({ text: text, reply: (reply ? reply + ' ' : '') + (run.said.length ? 'Fatto: ' + run.said.join('; ') + '. Se non ti piace, Annulla.' : ''), lyrics: lyr, state: run.said.length ? 'attesa' : 'nulla', before: before, mic: !!st.micChanged }); talkRender();
     coachRec('change', coachCtx(), { role: 'chat', from: null, to: text.slice(0, 40) });
     if (run.extra.fromText && (s.lyrics || '').trim()) $('#dw-fromtext').click();
     if (run.said.length) await talkApply(!!st.micChanged);
   }
   async function talkApply(micToo) {
-    dwFill(); fillBase(); mixRender(); micRender(); dsRender(); mpRender(); SESSION.baseKey = ''; DW.bufKey = '';
+    dwFill(); fillBase(); mixRender(); micRender(); dsRender(); mpRender(); projLine(); SESSION.baseKey = ''; DW.bufKey = '';
     dwStop(true); await dwRefresh(); if (micToo && voiceTake()) await micApply(true); prDraw();
   }
   $('#dw-talk-go').addEventListener('click', function () { var t = $('#dw-talk-in'); talkGo(t.value); t.value = ''; });

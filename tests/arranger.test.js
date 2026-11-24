@@ -230,3 +230,10 @@ test('accordi per battuta scelti a mano: la battuta cambia accordo e il basso lo
   const b1 = g.events.bass.filter(e => Math.floor(e.start / 2) === 1)[0]; assert.strictEqual(b1.midi % 12, 5, 'basso sulla radice');
   const h = A.generate(Object.assign({}, base, { arp: false })); assert.strictEqual(h.events.arp.length, 0);
 });
+
+test('Drill di Brooklyn: 808 che scivola molto, rullante in ritardo ogni due battute, cassa sincopata', () => {
+  assert.ok(A.STYLES.brooklyn && A.STYLES.brooklyn.bpm >= 140);
+  const g = A.generate({ sampleRate: 8000, genre: 'brooklyn', bars: 8, seed: 5, sounds: 'sint', bassStyle: '808', plan: [['strofa', 8]] });
+  assert.ok(g.events.bass.filter(e => e.slideFrom != null).length >= 2, 'glide frequenti');
+  const ks = g.events.kick.filter(e => e.bar === 0).map(e => e.step); assert.ok(ks.some(s => s !== 0 && s % 4 !== 0), 'cassa sincopata ' + ks);
+});

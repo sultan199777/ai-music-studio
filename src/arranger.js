@@ -30,6 +30,15 @@
       kickPats: [[[0, 10], [0, 7, 11]], [[0, 6, 10], [0, 3, 10, 14]], [[0, 11], [0, 7, 10, 13]]],
       chord: 'pluck', chordPat: [0, 6, 10], arp: false, pad: 'warm', lead: 'bell', duck: 0.35
     },
+    // Drill di Brooklyn (scena di New York, quella di Pop Smoke): caratteristiche di genere, nessuna base copiata.
+    // 808 enormi che scivolano a lungo e saltano d'ottava, cassa sincopata, rullante sul 3 con un colpo in ritardo
+    // ogni due battute, hi-hat a terzine con rullate, cori e archi cupi, poche note.
+    brooklyn: {
+      label: 'Drill di Brooklyn', bpm: 143, swing: 0, kick: [0], kickExtra: [3, 7, 11, 14], snare: [8], snareAlt: [8, 14], clap: true,
+      hat: 'drill', bass: '808', slide: 0.9, glide: 0.2, drive: 2.8, rolls: 0.5,
+      kickPats: [[[0, 7], [0, 3, 10]], [[0, 10], [0, 6, 11]], [[0, 3, 7], [0, 10, 13]]],
+      chord: 'pluck', chordPat: [0, 6], arp: false, pad: 'choir', lead: 'dark', duck: 0.35
+    },
     drill: {
       label: 'Drill', bpm: 142, swing: 0, kick: [0], kickExtra: [7, 10, 13], snare: [8], clap: false,
       hat: 'drill', bass: '808', slide: 0.7, glide: 0.13, drive: 2.4, rolls: 0.55,
@@ -90,7 +99,7 @@
     levare: { per: 8, seq: [-1, 2, -1, 3, -1, 2, -1, 4] },
     lento: { per: 4, seq: [0, 2, 3, 4] }
   };
-  var ARP_STYLE = { trap: ['lento', 'terzine'], drill: ['ottavi', 'terzine'], epico: ['ottavi', 'sedicesimi'], melodico: ['lento', 'spezzato'], estate: ['levare', 'spezzato'], boombap: ['lento', 'spezzato'], street: ['lento', 'spezzato'], trapdark: ['ottavi', 'terzine'], clubtrap: ['levare', 'ottavi'] };
+  var ARP_STYLE = { trap: ['lento', 'terzine'], drill: ['ottavi', 'terzine'], epico: ['ottavi', 'sedicesimi'], melodico: ['lento', 'spezzato'], estate: ['levare', 'spezzato'], boombap: ['lento', 'spezzato'], street: ['lento', 'spezzato'], trapdark: ['ottavi', 'terzine'], brooklyn: ['ottavi', 'terzine'], clubtrap: ['levare', 'ottavi'] };
 
   // Come suona ogni sezione (livelli 0-1). riserEnd = riser nell'ultima battuta; gap = respiro prima del drop.
   var SEC = {
@@ -182,7 +191,7 @@
     // batteria a passi scritta a mano (16 passi, uguale in ogni battuta dove la batteria suona)
     var okS = function (a) { return Array.isArray(a) ? a.filter(function (x) { return x >= 0 && x < 16; }) : null; };
     var DP = p.drumPat && typeof p.drumPat === 'object' ? { kick: okS(p.drumPat.kick), snare: okS(p.drumPat.snare), hat: okS(p.drumPat.hat), rolls: p.drumPat.rolls !== false } : null;
-    var LEADS = { trap: ['synth', 'keys', 'bell'], drill: ['dark', 'keys', 'bell'], epico: ['strings', 'synth', 'keys'], melodico: ['keys', 'synth', 'pluck'], boombap: ['keys', 'pluck', 'bell'], street: ['keys', 'bell', 'synth'], trapdark: ['dark', 'bell', 'keys'], clubtrap: ['bell', 'synth', 'marimba'], estate: ['marimba', 'keys', 'synth'] };
+    var LEADS = { trap: ['synth', 'keys', 'bell'], drill: ['dark', 'keys', 'bell'], epico: ['strings', 'synth', 'keys'], melodico: ['keys', 'synth', 'pluck'], boombap: ['keys', 'pluck', 'bell'], street: ['keys', 'bell', 'synth'], trapdark: ['dark', 'bell', 'keys'], brooklyn: ['dark', 'strings', 'bell'], clubtrap: ['bell', 'synth', 'marimba'], estate: ['marimba', 'keys', 'synth'] };
     // Strumenti veri scelti per ruolo (p.inst = {melodia, accordi, pad}); se non caricati si usa la sintesi.
     var pin = p.inst || {};
     function pickInst(role) { var id = pin[role]; return id && Inst && Inst.has(id) ? id : null; }
@@ -552,7 +561,7 @@
           }
         }
         if (cfg.snare && !(cfg.gap && lastBar && !cfg.roll)) {
-          ((DP && DP.snare) || style.snare).forEach(function (s) {
+          ((DP && DP.snare) || (style.snareAlt && k % 2 === 1 ? style.snareAlt : style.snare)).forEach(function (s) {
             if (cfg.roll && lastBar) return;
             add('snare', at(bar, s), snareBuf(), 0.55 * cfg.snare);
             if (style.clap) add('snare', at(bar, s), clapBuf(), 0.7 * cfg.snare);
@@ -575,7 +584,7 @@
           bs.forEach(function (s, bi2) {
             var next = bi2 + 1 < bs.length ? bs[bi2 + 1] : 16, dur = Math.min((next - s) * stepSec * 1.0, bassKind === '808' ? 2.2 : 1.6);
             var midi = rootM, r2 = rand();
-            var octP = bassKind === '808' ? (genreKey === 'drill' ? 0.4 : 0.22) : 0.12;
+            var octP = bassKind === '808' ? (genreKey === 'drill' ? 0.4 : (genreKey === 'brooklyn' ? 0.45 : 0.22)) : 0.12;
             if (s !== 0) midi = r2 < 0.18 ? fifthM : (r2 < 0.18 + octP ? rootM + 12 : rootM);
             var buf, sl = false;
             if (bassKind === '808') {

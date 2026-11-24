@@ -30,6 +30,7 @@
       voice: { low: -3, mid: -1.5, midHz: 400, high: 3, comp: 0.55, rev: 0.18, dly: 0.12 }
     },
     trap: { bass: { sat: 0.55, duck: 0.5 }, drums: { comp: 0.35, sat: 0.2 }, lead: { dly: 0.3 } },
+    brooklyn: { bass: { sat: 0.7, duck: 0.45, low: 3 }, drums: { comp: 0.4, sat: 0.2 }, pad: { rev: 0.55, low: -6 }, lead: { rev: 0.35 }, voice: { comp: 0.65, rev: 0.12, dly: 0.08, high: 3 } },
     drill: { bass: { sat: 0.6, duck: 0.4 }, pad: { rev: 0.6 }, lead: { rev: 0.35 } },
     melodico: { bass: { sat: 0.15, duck: 0.3 }, chords: { rev: 0.35 }, voice: { rev: 0.28, dly: 0.18 } },
     epico: { pad: { rev: 0.7 }, chords: { rev: 0.45 }, drums: { comp: 0.45 } },

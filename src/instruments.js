@@ -147,6 +147,8 @@
       spiega: 'Batteria polverosa e larga, piano o piano elettrico che ripete un giro, basso rotondo. Come nel rap italiano classico: pesante ma senza fretta.' },
     street: { nome: 'Street pesante', melodia: ['piano', 'pro:bell', 'horn', 'pizz'], accordi: ['pro:stab', 'piano', 'organ', 'cellos'], pad: ['pro:darkpad', 'cellos', 'violins'], arpeggio: ['pizz', 'pro:mallet'], kit: 'drill',
       spiega: 'Colpi di piano e archi scuri, rullante forte sul 2 e 4, 808 grosso. Atmosfera da strada e da sfida, tempo medio.' },
+    brooklyn: { nome: 'Drill di Brooklyn', melodia: ['pro:choir', 'violins', 'pro:bell', 'piano'], accordi: ['pizz', 'pro:stab', 'piano'], pad: ['pro:choir', 'pro:darkpad', 'cellos'], arpeggio: ['pizz', 'pro:bell'], kit: 'drill',
+      spiega: 'Il drill di New York: 808 enormi che scivolano a lungo e saltano d\'ottava, cassa a colpi spezzati, rullante sul 3 con un colpo in ritardo, hi-hat a terzine. Sopra: cori e archi cupi, poche note, tanta tensione. Voce davanti e dura, poco autotune.' },
     trapdark: { nome: 'Trap scura pesante', melodia: ['pro:bell', 'bells', 'pizz', 'piano'], accordi: ['pizz', 'pro:epfm', 'piano', 'organ'], pad: ['pro:darkpad', 'pro:choir', 'cellos', 'organ'], arpeggio: ['pro:glassbell', 'pizz'], kit: 'trap',
       spiega: '808 che scivola, hi-hat a terzine, campane e pizzicati cupi. Poche note, molto peso.' },
     clubtrap: { nome: 'Club (dembow trap)', melodia: ['pro:mallet', 'kalimba', 'marimba', 'pro:lead'], accordi: ['pro:supersaw', 'nylon', 'clavi', 'piano'], pad: ['pro:pad', 'organ'], arpeggio: ['pro:pluck', 'marimba'], kit: 'club',

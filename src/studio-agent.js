@@ -32,6 +32,8 @@
     p.mix = p.mix || {}; p.levels = p.levels || {};
     parts.forEach(function (s) {
       var ls = lanesIn(s), hit = false;
+      // stile Drill di Brooklyn (la scena di Pop Smoke): caratteristiche di genere, non copie
+      if (/pop ?smoke|brooklyn|drill (di |de )?(new york|ny)|ny drill/.test(s)) { p.genre = 'brooklyn'; p.bpm = 143; p.mode = 'minore'; p.tune = null; p.groove = null; p.prog = null; changes.push('stile Drill di Brooklyn (143 BPM, minore, 808 che scivolano)'); hit = true; }
       // 808 del designer
       if (/\b808\b/.test(s) && /(lung|cort|colpo|click)/.test(s)) {
         p.b808 = Object.assign({ decay: 1.2, punch: 0.6, drive: 0.5, tone: 0.6, click: 0.3 }, p.b808 || {}); p.bassStyle = '808';
@@ -83,6 +85,6 @@
     });
     return { understood: changes.length > 0, changes: changes };
   }
-  var EXAMPLES = ['808 più lungo e più distorto', 'voce più riverbero e più brillante', 'abbassa gli accordi, alza la melodia', 'melodia un\'ottava sopra', 'riser prima del ritornello', 'voce con autotune robot', 'arpeggio a destra, pad più scuro', 'master per spotify'];
+  var EXAMPLES = ['base tipo Pop Smoke', '808 più lungo e più distorto', 'voce più riverbero e più brillante', 'abbassa gli accordi, alza la melodia', 'melodia un\'ottava sopra', 'riser prima del ritornello', 'voce con autotune robot', 'arpeggio a destra, pad più scuro', 'master per spotify'];
   return { interpret: interpret, EXAMPLES: EXAMPLES };
 });

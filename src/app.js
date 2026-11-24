@@ -1416,14 +1416,14 @@
     var run = runCommands(cmds, st);
     if (a.engine !== 'regole' && !run.said.length) { st = talkState(); run = runCommands([text], st); if (run.said.length) reply = (reply ? reply + ' ' : '') + '(Ho usato le regole sulla tua frase.)'; }
     if (!run.said.length && !lyr.length) { TALK.push({ text: text, reply: (reply ? reply + ' ' : '') + (a.engine === 'regole' ? 'Non l\'ho capito, quindi non ho cambiato niente. Prova: ' + StudioAgent.EXAMPLES.slice(0, 4).join(' · ') : 'Nessuna modifica alla base.'), state: 'nulla' }); talkRender(); return; }
-    s.prod = st.prod; LIB.settings.mic = st.mic; persist();
+    s.prod = st.prod; LIB.settings.mic = st.mic; if (before.prod.genre !== s.prod.genre && Arranger.STYLES[s.prod.genre]) { s.prod.mix = null; applyRecipe(s.prod.genre); } persist();
     TALK.push({ text: text, reply: (reply ? reply + ' ' : '') + (run.said.length ? 'Fatto: ' + run.said.join('; ') + '. Se non ti piace, Annulla.' : ''), lyrics: lyr, state: run.said.length ? 'attesa' : 'nulla', before: before, mic: !!st.micChanged }); talkRender();
     coachRec('change', coachCtx(), { role: 'chat', from: null, to: text.slice(0, 40) });
     if (run.extra.fromText && (s.lyrics || '').trim()) $('#dw-fromtext').click();
     if (run.said.length) await talkApply(!!st.micChanged);
   }
   async function talkApply(micToo) {
-    dwFill(); fillBase(); mixRender(); micRender(); dsRender(); mpRender(); SESSION.baseKey = ''; DW.bufKey = '';
+    dwFill(); fillBase(); mixRender(); micRender(); dsRender(); mpRender(); projLine(); SESSION.baseKey = ''; DW.bufKey = '';
     dwStop(true); await dwRefresh(); if (micToo && voiceTake()) await micApply(true); prDraw();
   }
   $('#dw-talk-go').addEventListener('click', function () { var t = $('#dw-talk-in'); talkGo(t.value); t.value = ''; });

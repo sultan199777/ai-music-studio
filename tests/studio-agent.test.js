@@ -13,3 +13,4 @@ test('frasi → modifiche vere al progetto', () => {
   s = st(); SA.interpret('master per spotify', s); assert.strictEqual(s.prod.mpro.target, 'streaming');
 });
 test('quello che non capisce non lo fa', () => { const s = st(), r = SA.interpret('fammi un caffè', s); assert.strictEqual(r.understood, false); assert.deepStrictEqual(s.prod.mix, {}); });
+test('stile Pop Smoke / Drill di Brooklyn a parole', () => { const s = st(); assert.ok(SA.interpret('fammi una base tipo Pop Smoke', s).understood); assert.strictEqual(s.prod.genre, 'brooklyn'); assert.strictEqual(s.prod.bpm, 143); });
