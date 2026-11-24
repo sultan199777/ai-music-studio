@@ -536,7 +536,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 17:03</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 17:15</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -608,6 +608,7 @@ details.card[open]>summary{margin-bottom:8px}
     <label class="f"><span>Battute <b id="b-barsv">8</b></span><input type="range" id="b-bars" min="4" max="64" step="1" value="8"></label>
     <h3 style="margin-top:12px">Strumenti</h3>
     <div id="b-levels"></div>
+    <label class="f"><span>Umore voluto</span><select id="sb-mood"><option value="">Lo decide il testo</option><option value="malinconico">Malinconico</option><option value="dark">Dark</option><option value="euforico">Euforico</option><option value="aggressivo">Aggressivo</option><option value="romantico">Romantico</option><option value="nostalgico">Nostalgico</option></select></label>
     <div class="row" style="margin-top:10px">
       <button class="btn" id="ear-go">Orecchio di Sultan · ascolta</button>
       <button class="btn pri" id="sb-make">Cervello Sultan · crea dal testo</button>
@@ -743,7 +744,7 @@ details.card[open]>summary{margin-bottom:8px}
       <label class="f"><span>Aggiusta di <b id="v-offv">0 ms</b></span><input type="range" id="v-off" min="-300" max="300" step="10" value="0"></label>
       <div class="row" style="margin-top:10px"><button class="btn" id="v-mkbase">Crea la base sulla mia voce</button></div>
       <p class="small muted">Usa la tonalità scelta sopra e la durata della tua registrazione. Il tempo (BPM) lo scegli tu in Studio.</p>
-      <div class="row" style="margin-top:10px"><button class="btn pri" id="v-mix"><svg><use href="#i-play"/></svg>Voce + base</button><button class="btn" id="v-save">Salva la voce</button><button class="btn" id="v-savemix">Salva il mix</button></div>
+      <div class="row" style="margin-top:10px"><button class="btn" id="v-automix">Mix automatico (Orecchio)</button><button class="btn pri" id="v-mix"><svg><use href="#i-play"/></svg>Voce + base</button><button class="btn" id="v-save">Salva la voce</button><button class="btn" id="v-savemix">Salva il mix</button></div>
       <div class="status" id="v-mixmsg"></div>
     </div>
   </div>
@@ -859,6 +860,7 @@ details.card[open]>summary{margin-bottom:8px}
 <main class="view" id="v-beatlab" hidden>
   <div class="card"><div class="card-head"><h3>Cervello Sultan</h3><span class="tag a">Dal testo</span></div>
     <p class="small muted">Legge il testo della canzone aperta (e il tuo modello artisti, se ne hai spuntato uno) e imposta qui stile, velocità, tonalità e batteria. Un altro testo, un'altra base.</p>
+    <label class="f"><span>Umore voluto</span><select id="bl-mood"><option value="">Lo decide il testo</option><option value="malinconico">Malinconico</option><option value="dark">Dark</option><option value="euforico">Euforico</option><option value="aggressivo">Aggressivo</option><option value="romantico">Romantico</option><option value="nostalgico">Nostalgico</option></select></label>
     <div class="row"><button class="btn pri" id="bl-brain">Crea la base dal testo</button><button class="btn" id="bl-brain2">Altra versione</button></div>
     <div class="status" id="bl-brain-msg"></div></div>
   <div id="bl-root"></div></main>
@@ -877,7 +879,7 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">240 test automatici superati su 240 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">244 test automatici superati su 244 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -3131,7 +3133,7 @@ details.card[open]>summary{margin-bottom:8px}
       '<h4 class="vl-h">Ascolta Prima / Dopo</h4>' +
       '<div class="row vl-row"><button class="btn" id="vl-a"><svg><use href="#i-play"/></svg>Prima</button><button class="btn" id="vl-b"><svg><use href="#i-play"/></svg>Dopo</button><button class="btn" id="vl-ab">Alterna A/B</button><button class="btn" id="vl-stop" aria-label="Ferma"><svg><use href="#i-stop"/></svg></button></div>' +
       '<div class="sw"><label for="vl-eq">Stesso volume (pareggia prima e dopo)</label><input type="checkbox" id="vl-eq" checked></div><div class="small muted" id="vl-abinfo"></div>' +
-      '<div id="vl-chart"></div><div id="vl-meas"></div><ul class="clean small" id="vl-notes"></ul>' +
+      '<div id="vl-chart"></div><div id="vl-meas"></div><ul class="clean small" id="vl-notes"></ul><div id="vl-ear"></div>' +
       '<details class="vl-adv" id="vl-adv"><summary>Avanzato: tutti i parametri</summary><div id="vl-advbody"></div></details>' +
       '</div>';
   }
@@ -3233,7 +3235,7 @@ details.card[open]>summary{margin-bottom:8px}
   function f1(v) { return String(Math.round(v * 10) / 10).replace('.', ','); }
   function renderResult(t) {
     var meas = $('#vl-meas'), notes = $('#vl-notes'); if (!meas) return;
-    if (!t || !t.vl) { meas.innerHTML = ''; notes.innerHTML = ''; drawChart(null); keyUI(null); abInfo(); return; }
+    if (!t || !t.vl) { meas.innerHTML = ''; notes.innerHTML = ''; drawChart(null); keyUI(null); abInfo(); earVoice(t && t.mono ? t : null); return; }
     var v = t.vl, r = v.report, h = '<div class="meters">';
     if (isFinite(v.before.centerCents) && isFinite(v.after.centerCents)) h += api.meter('Errore sulle note', 'misurato', Math.round(v.before.centerCents) + ' → ' + Math.round(v.after.centerCents) + ' cent', v.mask.every(Boolean) ? 'Distanza dalla nota più vicina (vibrato escluso), prima e dopo.' : 'Distanza dalla nota di scala più vicina (vibrato escluso), prima e dopo.');
     h += api.meter('Picco', 'misurato', f1(r.outputPeakDb) + ' dB', 'Il limitatore tiene il picco sotto ' + f1(v.params.out.ceilingDb) + ' dB.');
@@ -3247,7 +3249,29 @@ details.card[open]>summary{margin-bottom:8px}
     if (r.tune && r.tune.meanShiftCents != null && v.params.tune.on) ns.push('Spostamento medio dell\'altezza: ' + Math.round(r.tune.meanShiftCents) + ' cent, massimo ' + Math.round(r.tune.maxShiftCents) + ' cent (misurato).');
     ns.push('Non posso ascoltare: i numeri dicono cosa è cambiato, il suono lo giudichi tu.');
     notes.innerHTML = ns.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('');
-    keyUI(t); drawChart(t); abInfo();
+    keyUI(t); drawChart(t); abInfo(); earVoice(t);
+  }
+
+  /* ---------- Orecchio voce: misure su registrazione e risultato ---------- */
+  var EAR_FIX = null;
+  function earVoice(t) {
+    var box = $('#vl-ear'); if (!box) return; EAR_FIX = null;
+    if (!t || !root.Ear || !t.mono) { box.innerHTML = ''; return; }
+    var a, b = null;
+    try { a = root.Ear.listenVoice(t.mono, t.sr); if (t.final) b = root.Ear.listenVoice(t.final, t.sr); } catch (e) { box.innerHTML = ''; return; }
+    var m = a.metrics, line = function (r, nm) { var q = r.metrics; return '<li><b>' + nm + '</b>: ' + q.lufs + ' LUFS · picco ' + q.peakDb + ' dB · rumore di fondo ' + q.noiseFloorDb + ' dB (voce sopra di ' + q.snrDb + ' dB) · S taglienti ' + Math.round(q.sibilance * 100) + '% · scatola ' + Math.round(q.mud * 100) + '% · presenza ' + Math.round(q.presence * 100) + '%</li>'; };
+    var fix = {}, has = false;
+    a.findings.forEach(function (f) { if (f.fix && f.fix.adv) { Object.keys(f.fix.adv).forEach(function (g) { fix[g] = fix[g] || {}; Object.keys(f.fix.adv[g]).forEach(function (k) { fix[g][k] = f.fix.adv[g][k]; has = true; }); }); } });
+    if (has) EAR_FIX = fix;
+    box.innerHTML = '<div class="note"><b>Orecchio di Sultan · voce</b> <span class="tag m">Misurato</span> · registrazione: <b>' + esc(a.verdict) + '</b>' +
+      '<ul class="clean small">' + line(a, 'Registrazione') + (b ? line(b, 'Dopo il Voice Lab') : '') + '</ul>' +
+      (a.findings.length ? '<ul class="clean small">' + a.findings.map(function (f) { return '<li><span class="tag ' + (f.level === 'errore' ? 'soon' : 'm') + '">' + (f.level === 'errore' ? 'Errore' : 'Misurato') + '</span> ' + esc(f.text) + '</li>'; }).join('') + '</ul>' : '<p class="small">Nessun problema misurabile nella ripresa.</p>') +
+      (has ? '<div class="row"><button class="btn sm pri" id="vl-ear-fix">Applica i consigli e rifai la voce</button></div>' : '') + '</div>';
+  }
+  function earVoiceFix() {
+    var t = api.activeTake(); if (!t || !EAR_FIX) return;
+    Object.keys(EAR_FIX).forEach(function (g) { st.advanced[g] = st.advanced[g] || {}; Object.keys(EAR_FIX[g]).forEach(function (k) { st.advanced[g][k] = EAR_FIX[g][k]; }); });
+    save(); buildAdvanced(); renderSliders(); applyTake(t, {});
   }
 
   /* ---------- parametri avanzati (generati dall'elenco SPEC) ---------- */
@@ -3417,6 +3441,7 @@ details.card[open]>summary{margin-bottom:8px}
 
   /* ---------- eventi ---------- */
   function wire() {
+    document.addEventListener('click', function (e) { if (e.target && e.target.id === 'vl-ear-fix') earVoiceFix(); });
     $('#vl-auto').addEventListener('click', function () { var t = api.activeTake(); if (!t) { setStatus('Prima registra o importa una voce.'); return; } st.macros = {}; st.advanced = {}; save(); renderSliders(); applyTake(t, { reanalyze: true }); });
     $('#vl-apply').addEventListener('click', function () { var t = api.activeTake(); if (t) applyTake(t, {}); });
     $('#vl-reset').addEventListener('click', function () { st.macros = {}; st.advanced = {}; save(); renderSliders(); buildAdvanced(); var t = api.activeTake(); if (t) schedule(200); });
@@ -4109,6 +4134,16 @@ details.card[open]>summary{margin-bottom:8px}
     nostalgia: { boombap: 3, melodico: 2, trap: 0.5 },
     epico: { epico: 3, street: 1.5, trapdark: 1 }
   };
+  // Umori voluti: spingono stile, scala e velocità (Ipotesi di mestiere, da tarare a orecchio)
+  var MOOD = {
+    malinconico: { votes: { trap: 2, boombap: 1.2, melodico: 1, street: 0.4 }, mode: 'minore', bpm: -6 },
+    dark: { votes: { trapdark: 2.5, drill: 1.5, street: 1 }, mode: 'minore', bpm: 0 },
+    euforico: { votes: { clubtrap: 2.5, estate: 1.5, melodico: 1 }, mode: 'maggiore', bpm: 4 },
+    aggressivo: { votes: { drill: 2.5, trapdark: 1.5, street: 1 }, mode: 'minore', bpm: 4 },
+    romantico: { votes: { melodico: 2, clubtrap: 1, trap: 0.5 }, mode: 'maggiore', bpm: -2 },
+    nostalgico: { votes: { boombap: 2.5, melodico: 1.5, trap: 0.4 }, mode: 'minore', bpm: -6 }
+  };
+  var SCENE_MOOD = { strada: 'dark', rabbia: 'aggressivo', dolore: 'malinconico', festa: 'euforico', amore: 'romantico', nostalgia: 'nostalgico', soldi: 'euforico', epico: 'euforico' };
   var GENRES = ['boombap', 'street', 'trapdark', 'drill', 'trap', 'clubtrap', 'melodico', 'estate', 'epico'];
   var BASE_BPM = { boombap: 90, street: 96, trapdark: 144, drill: 142, trap: 138, clubtrap: 98, melodico: 94, estate: 100, epico: 84 };
   var MAJOR_OK = { melodico: 1, estate: 1, clubtrap: 1 };
@@ -4153,6 +4188,11 @@ details.card[open]>summary{margin-bottom:8px}
 
     // impronta del testo: piccolo spostamento deterministico, così testi diversi non danno lo stesso stile
     GENRES.forEach(function (g, i) { score[g] += ((((h >>> (i * 3)) & 7) / 7) * 0.9) + ((((variant * 2654435761) >>> (i * 2)) & 3) / 3) * (variant ? 0.5 : 0); });
+    var moodWanted = opt.mood && MOOD[opt.mood] ? opt.mood : null, moodAuto = top[0] ? SCENE_MOOD[top[0]] : null, moodTarget = moodWanted || moodAuto || null;
+    if (moodWanted) {
+      Object.keys(MOOD[moodWanted].votes).forEach(function (g) { score[g] += MOOD[moodWanted].votes[g] * 1.6; });
+      why.push('Umore voluto: ' + moodWanted + ' → spingo verso ' + Object.keys(MOOD[moodWanted].votes).slice(0, 2).map(function (g) { return NAMES[g]; }).join(' e ') + '.');
+    }
     if (opt.profile && opt.profile.styleScore) {
       GENRES.forEach(function (g) { score[g] += 2 * (opt.profile.styleScore[g] || 0); });
       why.push('Sto seguendo il tuo modello artisti (' + (opt.profile.names || 'profilo') + '): ' + opt.profile.mood);
@@ -4167,11 +4207,12 @@ details.card[open]>summary{margin-bottom:8px}
     bpm = Math.max(lo, Math.min(150, Math.round(bpm)));
     var bright = scenes.festa + scenes.amore + scenes.epico > scenes.dolore + scenes.rabbia + scenes.strada;
     var mode = MAJOR_OK[genre] && bright ? 'maggiore' : 'minore';
+    if (moodWanted) { var mm = MOOD[moodWanted].mode; mode = mm === 'maggiore' ? (MAJOR_OK[genre] ? 'maggiore' : 'minore') : 'minore'; bpm += MOOD[moodWanted].bpm; bpm = Math.max(lo, Math.min(150, bpm)); }
     var tonic = (h >>> 9) % 12; if (variant) tonic = (tonic + variant * 5) % 12;
     var seed = ((h >>> 1) % 90000) + 1 + variant * 17;
     var bassStyle = /boombap|melodico|estate/.test(genre) ? null : '808';
     why.push('Velocità ' + bpm + ' BPM, ' + mode + ', tonalità ' + ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'][tonic] + ': nascono dall\'impronta di questo testo, un altro testo darà un\'altra base.');
-    return { genre: genre, label: NAMES[genre], bpm: bpm, mode: mode, tonic: tonic, seed: seed, bassStyle: bassStyle, sounds: 'campioni', scene: scene, scenes: scenes, scores: score, why: why, second: order[1] };
+    return { moodTarget: moodTarget, genre: genre, label: NAMES[genre], bpm: bpm, mode: mode, tonic: tonic, seed: seed, bassStyle: bassStyle, sounds: 'campioni', scene: scene, scenes: scenes, scores: score, why: why, second: order[1] };
   }
 
   /** Punteggio di stile da una distribuzione di scene (quote 0-1) e dalla forma: serve ai profili artista. */
@@ -4185,7 +4226,7 @@ details.card[open]>summary{margin-bottom:8px}
     return sc;
   }
 
-  return { plan: plan, styleScores: styleScores, words: words, BASE_BPM: BASE_BPM, hash: hash, NAMES: NAMES, GENRES: GENRES, LEX: LEX };
+  return { MOOD: MOOD, plan: plan, styleScores: styleScores, words: words, BASE_BPM: BASE_BPM, hash: hash, NAMES: NAMES, GENRES: GENRES, LEX: LEX };
 });
 
 /*
@@ -4406,7 +4447,7 @@ details.card[open]>summary{margin-bottom:8px}
     o = o || {};
     var x = mono(input), L = levels(x, sr), sp = spectrum(x, sr), sh = bandShares(sp, sr), cen = centroid(sp), hits = lowHits(x, sr, o.bpm);
     var low = sh.sub + sh.basso, M = {
-      peakDb: L.peakDb, rmsDb: L.rmsDb, crestDb: L.crestDb, swingDb: L.swingDb, clipped: L.clipped, centroidHz: Math.round(cen),
+      lufs: lufs(x, sr), peakDb: L.peakDb, rmsDb: L.rmsDb, crestDb: L.crestDb, swingDb: L.swingDb, clipped: L.clipped, centroidHz: Math.round(cen),
       lowShare: Math.round(low * 100) / 100, shares: {}, lowHitsPerBar: hits.perBar, lowHits: hits.hits, seconds: r1(x.length / sr)
     };
     BANDS.forEach(function (b) { M.shares[b[0]] = Math.round(sh[b[0]] * 1000) / 1000; });
@@ -4430,7 +4471,63 @@ details.card[open]>summary{margin-bottom:8px}
     return { metrics: M, findings: F, verdict: bad ? 'da correggere' : (warn ? 'migliorabile' : 'in ordine') };
   }
 
-  return { listen: listen, spectrum: spectrum, BANDS: BANDS, REF: REF };
+
+  /* ---------- loudness (stimata secondo lo schema ITU-R BS.1770: filtro K, finestre da 400 ms, doppio gate) ---------- */
+  function biquad(type, f0, q, gainDb, sr) {
+    var A = Math.pow(10, gainDb / 40), w = 2 * Math.PI * f0 / sr, c = Math.cos(w), sn = Math.sin(w), al = sn / (2 * q), b0, b1, b2, a0, a1, a2;
+    if (type === 'hs') { var sq = 2 * Math.sqrt(A) * al; b0 = A * ((A + 1) + (A - 1) * c + sq); b1 = -2 * A * ((A - 1) + (A + 1) * c); b2 = A * ((A + 1) + (A - 1) * c - sq); a0 = (A + 1) - (A - 1) * c + sq; a1 = 2 * ((A - 1) - (A + 1) * c); a2 = (A + 1) - (A - 1) * c - sq; }
+    else { b0 = (1 + c) / 2; b1 = -(1 + c); b2 = (1 + c) / 2; a0 = 1 + al; a1 = -2 * c; a2 = 1 - al; }
+    return { b0: b0 / a0, b1: b1 / a0, b2: b2 / a0, a1: a1 / a0, a2: a2 / a0 };
+  }
+  function runBq(x, c) { var y = new Float32Array(x.length), x1 = 0, x2 = 0, y1 = 0, y2 = 0; for (var i = 0; i < x.length; i++) { var v = c.b0 * x[i] + c.b1 * x1 + c.b2 * x2 - c.a1 * y1 - c.a2 * y2; y[i] = v; x2 = x1; x1 = x[i]; y2 = y1; y1 = v; } return y; }
+  function lufs(input, sr) {
+    var x = mono(input); if (!x.length) return -120;
+    var k = runBq(runBq(x, biquad('hs', 1681.97, 0.7072, 4.0, sr)), biquad('hp', 38.1355, 0.5003, 0, sr));
+    var blk = Math.round(sr * 0.4), step = Math.round(sr * 0.1), E = [];
+    for (var i = 0; i + blk <= k.length; i += step) { var s = 0; for (var j = 0; j < blk; j++) s += k[i + j] * k[i + j]; E.push(s / blk); }
+    if (!E.length) { var t = 0; for (var q = 0; q < k.length; q++) t += k[q] * k[q]; return -0.691 + 10 * Math.log(t / k.length + 1e-12) / Math.LN10; }
+    var lk = function (e) { return -0.691 + 10 * Math.log(e + 1e-12) / Math.LN10; };
+    var g1 = E.filter(function (e) { return lk(e) > -70; }); if (!g1.length) return -120;
+    var m1 = g1.reduce(function (a, b) { return a + b; }, 0) / g1.length, g2 = g1.filter(function (e) { return lk(e) > lk(m1) - 10; });
+    if (!g2.length) return r1(lk(m1));
+    return r1(lk(g2.reduce(function (a, b) { return a + b; }, 0) / g2.length));
+  }
+
+  /* ---------- voce registrata o intonata ---------- */
+  function bandRatio(sp, lo, hi, tlo, thi, nyq) { var e = 0, t = 0, df = sp.df, i; hi = Math.min(hi, nyq); thi = Math.min(thi, nyq); for (i = Math.floor(lo / df); i <= Math.floor(hi / df); i++) e += sp.P[i] || 0; for (i = Math.floor(tlo / df); i <= Math.floor(thi / df); i++) t += sp.P[i] || 0; return t > 0 ? e / t : 0; }
+  function listenVoice(input, sr) {
+    var x = mono(input), n = x.length, i, win = Math.round(sr * 0.05), fr = [];
+    for (i = 0; i + win <= n; i += win) { var s = 0; for (var k = 0; k < win; k += 2) s += x[i + k] * x[i + k]; fr.push(db(Math.sqrt(s / (win / 2)))); }
+    var srt = fr.slice().sort(function (a, b) { return a - b; }), noise = srt.length ? srt[Math.floor(srt.length * 0.1)] : -120, speech = srt.length ? srt[Math.floor(srt.length * 0.9)] : -120;
+    var L = levels(x, sr), sp = spectrum(x, sr), tot = 0; for (i = 1; i < sp.P.length; i++) tot += sp.P[i];
+    var share = function (lo, hi) { var e = 0, nyq = sr / 2; for (var q = Math.floor(lo / sp.df); q <= Math.floor(Math.min(hi, nyq) / sp.df); q++) e += sp.P[q] || 0; return tot > 0 ? e / tot : 0; };
+    var M = { peakDb: L.peakDb, rmsDb: L.rmsDb, lufs: lufs(x, sr), noiseFloorDb: r1(noise), speechDb: r1(speech), snrDb: r1(speech - noise), rumble: Math.round(share(20, 80) * 1000) / 1000, mud: Math.round(share(200, 400) * 1000) / 1000, presence: Math.round(share(2000, 5000) * 1000) / 1000, sibilance: Math.round(bandRatio(sp, 5500, 10000, 1000, 5000, sr / 2) * 1000) / 1000, clipped: L.clipped, seconds: r1(n / sr) };
+    var F = [];
+    if (L.peakDb < -50) return { metrics: M, findings: [{ level: 'errore', id: 'vuota', text: 'Quasi silenzio: la registrazione non ha segnale. Controlla il microfono.', fix: null }], verdict: 'vuota' };
+    if (L.clipped > 4) F.push({ level: 'errore', id: 'clip', text: 'La voce è distorta (' + L.clipped + ' campioni al massimo): in registrazione il livello era troppo alto. Rifai la ripresa un po\' più lontano dal microfono: la distorsione non si toglie bene dopo.', fix: null });
+    if (M.snrDb < 25) F.push({ level: 'avviso', id: 'rumore', text: 'Rumore di fondo alto: la voce supera il fruscio solo di ' + M.snrDb + ' dB (meglio sopra 30). Registra in una stanza più silenziosa o attiva la riduzione rumore.', fix: { adv: { clean: { denoiseDb: M.snrDb < 18 ? 14 : 9 } } } });
+    if (M.rumble > 0.04) F.push({ level: 'avviso', id: 'rimbombo', text: 'Rimbombi e botti sotto 80 Hz (' + Math.round(M.rumble * 100) + '% dell\'energia): P e B sparati sul microfono o vibrazioni. Alzo il taglio dei bassi.', fix: { adv: { clean: { hp: 120 } } } });
+    if (M.sibilance > 0.45) F.push({ level: 'avviso', id: 'sibilanti', text: 'Le "S" sono taglienti (energia 5,5-10 kHz pari al ' + Math.round(M.sibilance * 100) + '% dei medi-alti). Aumento il de-esser.', fix: { adv: { deess: { on: true, amount: 0.8 } } } });
+    if (M.mud > 0.3) F.push({ level: 'avviso', id: 'scatola', text: 'Voce "scatolosa": troppa energia tra 200 e 400 Hz (' + Math.round(M.mud * 100) + '%). Tolgo qualche dB lì.', fix: { adv: { eq: { boxyDb: -4.5 } } } });
+    if (M.presence < 0.05) F.push({ level: 'info', id: 'poca-presenza', text: 'Poca presenza tra 2 e 5 kHz (' + Math.round(M.presence * 100) + '%): la voce rischia di perdersi sopra una base pesante.', fix: { adv: { eq: { presenceDb: 4.5 } } } });
+    if (M.lufs < -26) F.push({ level: 'avviso', id: 'piano', text: 'Voce molto bassa (' + M.lufs + ' LUFS): in mix andrà alzata molto e porterà con sé il rumore.', fix: null });
+    var bad = F.filter(function (f) { return f.level === 'errore'; }).length, warn = F.filter(function (f) { return f.level === 'avviso'; }).length;
+    return { metrics: M, findings: F, verdict: bad ? 'da rifare/correggere' : (warn ? 'migliorabile' : 'pulita') };
+  }
+
+  /* ---------- umore della base (stimato dai numeri) e coerenza con l'umore voluto ---------- */
+  var MOODS = { malinconico: 'malinconico', dark: 'dark', euforico: 'euforico', aggressivo: 'aggressivo', romantico: 'romantico', nostalgico: 'nostalgico' };
+  function moodOf(m) { // m: { mode, bpm, centroidHz, lowShare, crestDb }
+    var sc = { malinconico: 0, dark: 0, euforico: 0, aggressivo: 0, romantico: 0, nostalgico: 0 }, minor = m.mode !== 'maggiore', bpm = m.bpm || 100, cen = m.centroidHz || 800, low = m.lowShare || 0.5;
+    if (minor) { sc.malinconico += 1.5; sc.dark += 1.5; sc.nostalgico += 0.8; sc.aggressivo += 0.8; } else { sc.euforico += 2; sc.romantico += 1.5; sc.nostalgico += 0.5; }
+    if (bpm < 95) { sc.malinconico += 1; sc.nostalgico += 1; sc.romantico += 0.8; } else if (bpm >= 135) { sc.aggressivo += 1.2; sc.dark += 0.6; sc.euforico += 0.6; } else { sc.euforico += 0.4; sc.dark += 0.4; }
+    if (cen < 700) { sc.dark += 1.4; sc.aggressivo += 0.4; } else if (cen > 1100) { sc.euforico += 0.8; sc.romantico += 0.8; sc.malinconico += 0.3; }
+    if (low > 0.75) { sc.dark += 0.8; sc.aggressivo += 0.6; }
+    var order = Object.keys(sc).sort(function (a, b) { return sc[b] - sc[a]; });
+    return { top: order[0], second: order[1], scores: sc };
+  }
+
+  return { lufs: lufs, listenVoice: listenVoice, moodOf: moodOf, MOODS: MOODS, listen: listen, spectrum: spectrum, BANDS: BANDS, REF: REF };
 });
 
 /*
@@ -9636,7 +9733,7 @@ details.card[open]>summary{margin-bottom:8px}
     if (!s.lyrics.trim()) { m.textContent = 'Scrivi prima il testo in Testo e Base: il cervello parte da quello.'; return; }
     if (!window.BeatLabUI || !window.BeatLabUI.state.project) { m.textContent = 'Il Beat Lab si sta caricando: riprova tra un secondo.'; return; }
     s.brainBL = again ? (s.brainBL || 0) + 1 : 0;
-    var pl = SultanBrain.plan(s.lyrics, analysisOf(s), { variant: s.brainBL, profile: arModel() }), r = window.BeatLabUI.applyBrain(pl);
+    var pl = SultanBrain.plan(s.lyrics, analysisOf(s), { variant: s.brainBL, profile: arModel(), mood: $('#bl-mood').value || null }), r = window.BeatLabUI.applyBrain(pl);
     m.innerHTML = '<b>' + esc(pl.label) + '</b> → stile Beat Lab "' + esc(r.style) + '" · ' + r.bpm + ' BPM · ' + NOTES[pl.tonic] + ' ' + (pl.mode === 'maggiore' ? 'maggiore' : 'minore') + '<br>' + pl.why.slice(0, 3).map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Premi "Suona". Se non ti piace: "Altra versione".';
   }
   $('#bl-brain').addEventListener('click', function () { blBrain(false); });
@@ -9658,12 +9755,18 @@ details.card[open]>summary{margin-bottom:8px}
       '<li>Centro di gravità ' + M.centroidHz + ' Hz · colpi nel grave ' + (M.lowHitsPerBar == null ? '–' : M.lowHitsPerBar + ' a battuta') + '</li></ul>' +
       (r.findings.length ? '<ul class="clean small">' + r.findings.map(function (f) { return '<li><span class="tag ' + (f.level === 'errore' ? 'soon' : (f.tag === 'Ipotesi' ? 'i' : 'm')) + '">' + (f.level === 'errore' ? 'Errore' : (f.tag || 'Misurato')) + '</span> ' + esc(f.text) + '</li>'; }).join('') + '</ul>' : '<p class="small">Nessun problema misurabile.</p>') + '</div>';
   }
+  function earMoodNote(r) {
+    var s = cur(), p = s.prod, want = s.moodTarget; if (!want || SESSION.useImported) return '';
+    var m = Ear.moodOf({ mode: p.mode, bpm: p.bpm, centroidHz: r.metrics.centroidHz, lowShare: r.metrics.lowShare });
+    var ok = m.top === want || m.second === want;
+    return '<p class="small"><span class="tag i">Ipotesi</span> Umore voluto: <b>' + esc(want) + '</b>. La base misurata suona soprattutto <b>' + esc(m.top) + '</b> (poi ' + esc(m.second) + '). ' + (ok ? 'Coincidono.' : 'Non coincidono: scegli l\'umore in alto e premi "Altra versione dal testo", oppure cambia scala e velocità.') + '</p>';
+  }
   async function earRun(auto) {
     var out = $('#ear-out'); out.innerHTML = '<p class="small muted">Ascolto la base con gli strumenti di misura…</p>'; await tick();
     try {
       var r = earMeasure(), fixed = [];
       if (auto) for (var i = 0; i < 2; i++) { var ch = r.findings.some(function (f) { return f.fix && f.fix.levels; }) ? earApply(r) : []; if (!ch.length) break; fixed = fixed.concat(ch); await tick(); r = earMeasure(); }
-      out.innerHTML = earHtml(r) + (fixed.length ? '<p class="small"><b>Ho corretto da solo i volumi:</b> ' + esc(fixed.join(', ')) + '.</p>' : '') + (!auto && r.findings.some(function (f) { return f.fix && f.fix.levels; }) ? '<div class="row"><button class="btn sm pri" id="ear-fix">Applica i consigli</button></div>' : '');
+      out.innerHTML = earHtml(r) + earMoodNote(r) + (fixed.length ? '<p class="small"><b>Ho corretto da solo i volumi:</b> ' + esc(fixed.join(', ')) + '.</p>' : '') + (!auto && r.findings.some(function (f) { return f.fix && f.fix.levels; }) ? '<div class="row"><button class="btn sm pri" id="ear-fix">Applica i consigli</button></div>' : '');
       return r;
     } catch (e) { out.innerHTML = '<p class="small">Non sono riuscito a misurare la base.</p>'; return null; }
   }
@@ -9675,7 +9778,7 @@ details.card[open]>summary{margin-bottom:8px}
     var s = cur(), p = s.prod, m = $('#sb-msg');
     if (!s.lyrics.trim()) { m.textContent = 'Scrivi o incolla prima il testo (in alto): il cervello parte da quello.'; return; }
     s.brainV = again ? (s.brainV || 0) + 1 : 0;
-    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel() });
+    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel(), mood: $('#sb-mood').value || null }); s.moodTarget = pl.moodTarget; persist();
     p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
     var res = Coach.suggest(coachState(), coachCands(p.genre), { emotion: pl.scene, seed: pl.seed }), R = Instruments.RECIPES[p.genre] || {};
     ['melodia', 'accordi', 'pad'].forEach(function (role) { if (BANNED_INST[res.inst[role]]) res.inst[role] = (R[role] || ['piano'])[0]; });
@@ -9685,6 +9788,8 @@ details.card[open]>summary{margin-bottom:8px}
     await makeAndPlay(false);
     earRun(true);
   }
+  $('#sb-mood').addEventListener('change', function () { $('#bl-mood').value = this.value; });
+  $('#bl-mood').addEventListener('change', function () { $('#sb-mood').value = this.value; });
   $('#sb-make').addEventListener('click', function () { runBrain(false); });
   $('#sb-again').addEventListener('click', function () { runBrain(true); });
   $('#b-play').addEventListener('click', function () { makeAndPlay(false); });
@@ -10852,6 +10957,20 @@ details.card[open]>summary{margin-bottom:8px}
   $('#v-orig').addEventListener('click', function () { var t = activeTake(); if (t) playBuf(t.mono, t.sr); });
   $('#v-fix').addEventListener('click', function () { var t = activeTake(); if (t && t.final) playBuf(t.final, t.sr); });
   $('#v-stop').addEventListener('click', stopPlay);
+  /* Mix automatico: l'Orecchio misura voce e base (LUFS) e regola il volume della voce; poi misura il mix finale. */
+  $('#v-automix').addEventListener('click', async function () {
+    var t = activeTake(), m = $('#v-mixmsg'); if (!t) { m.textContent = 'Prima registra o importa una voce.'; return; }
+    m.textContent = 'Misuro voce e base…'; await tick();
+    try {
+      var base = buildMix({ voice: false }), vox = t.final || t.mono, bl = Ear.lufs(base.samples, base.sr), vl = Ear.lufs(vox, t.sr);
+      if (vl < -60 || bl < -60) { m.textContent = 'Non riesco a misurare: voce o base quasi silenziose.'; return; }
+      var wantDb = 1.0, gain = Math.pow(10, (bl + wantDb - vl) / 20), sv = Math.max(20, Math.min(160, Math.round(gain * 100)));
+      $('#v-gain').value = sv; $('#v-gv').textContent = sv + '%'; await tick();
+      var mx = buildMix({ voice: true }), r = Ear.listen(mx.samples, mx.sr, { bpm: cur().prod.bpm }), notes = r.findings.filter(function (f) { return f.id === 'clip' || f.id === 'picco' || f.id === 'schiacciato'; }).map(function (f) { return f.text; });
+      var fl = r.metrics.lufs, adv = fl > -9 ? 'più forte dello streaming: le piattaforme lo abbassano (circa -14 LUFS)' : (fl < -16 ? 'più basso dello standard streaming (circa -14 LUFS): usa il master "Forte"' : 'vicino allo standard streaming (circa -14 LUFS)');
+      m.innerHTML = '<span class="tag m">Misurato</span> Base ' + bl + ' LUFS · voce ' + vl + ' LUFS → ho messo il volume voce al <b>' + sv + '%</b> (voce circa 1 LU sopra la base: <span class="tag i">Ipotesi</span> di mestiere, regola a orecchio)' + (Math.round(gain * 100) > 160 ? ' <b>Limite massimo raggiunto</b>: la voce è molto bassa, scegli un carattere più potente o registra più forte.' : '') + ' Mix finale: <b>' + fl + ' LUFS</b>, picco ' + r.metrics.peakDb + ' dB: ' + esc(adv) + '.' + (notes.length ? ' Attenzione: ' + esc(notes.join(' ')) : '');
+    } catch (e) { m.textContent = 'Non sono riuscito a misurare il mix.'; }
+  });
   $('#v-mix').addEventListener('click', async function () {
     var t = activeTake(), m = $('#v-mixmsg'); if (!t) return; m.textContent = 'Preparo il mix…'; await tick();
     try {

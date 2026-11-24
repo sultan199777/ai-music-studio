@@ -106,7 +106,7 @@
     o = o || {};
     var x = mono(input), L = levels(x, sr), sp = spectrum(x, sr), sh = bandShares(sp, sr), cen = centroid(sp), hits = lowHits(x, sr, o.bpm);
     var low = sh.sub + sh.basso, M = {
-      peakDb: L.peakDb, rmsDb: L.rmsDb, crestDb: L.crestDb, swingDb: L.swingDb, clipped: L.clipped, centroidHz: Math.round(cen),
+      lufs: lufs(x, sr), peakDb: L.peakDb, rmsDb: L.rmsDb, crestDb: L.crestDb, swingDb: L.swingDb, clipped: L.clipped, centroidHz: Math.round(cen),
       lowShare: Math.round(low * 100) / 100, shares: {}, lowHitsPerBar: hits.perBar, lowHits: hits.hits, seconds: r1(x.length / sr)
     };
     BANDS.forEach(function (b) { M.shares[b[0]] = Math.round(sh[b[0]] * 1000) / 1000; });
@@ -130,5 +130,61 @@
     return { metrics: M, findings: F, verdict: bad ? 'da correggere' : (warn ? 'migliorabile' : 'in ordine') };
   }
 
-  return { listen: listen, spectrum: spectrum, BANDS: BANDS, REF: REF };
+
+  /* ---------- loudness (stimata secondo lo schema ITU-R BS.1770: filtro K, finestre da 400 ms, doppio gate) ---------- */
+  function biquad(type, f0, q, gainDb, sr) {
+    var A = Math.pow(10, gainDb / 40), w = 2 * Math.PI * f0 / sr, c = Math.cos(w), sn = Math.sin(w), al = sn / (2 * q), b0, b1, b2, a0, a1, a2;
+    if (type === 'hs') { var sq = 2 * Math.sqrt(A) * al; b0 = A * ((A + 1) + (A - 1) * c + sq); b1 = -2 * A * ((A - 1) + (A + 1) * c); b2 = A * ((A + 1) + (A - 1) * c - sq); a0 = (A + 1) - (A - 1) * c + sq; a1 = 2 * ((A - 1) - (A + 1) * c); a2 = (A + 1) - (A - 1) * c - sq; }
+    else { b0 = (1 + c) / 2; b1 = -(1 + c); b2 = (1 + c) / 2; a0 = 1 + al; a1 = -2 * c; a2 = 1 - al; }
+    return { b0: b0 / a0, b1: b1 / a0, b2: b2 / a0, a1: a1 / a0, a2: a2 / a0 };
+  }
+  function runBq(x, c) { var y = new Float32Array(x.length), x1 = 0, x2 = 0, y1 = 0, y2 = 0; for (var i = 0; i < x.length; i++) { var v = c.b0 * x[i] + c.b1 * x1 + c.b2 * x2 - c.a1 * y1 - c.a2 * y2; y[i] = v; x2 = x1; x1 = x[i]; y2 = y1; y1 = v; } return y; }
+  function lufs(input, sr) {
+    var x = mono(input); if (!x.length) return -120;
+    var k = runBq(runBq(x, biquad('hs', 1681.97, 0.7072, 4.0, sr)), biquad('hp', 38.1355, 0.5003, 0, sr));
+    var blk = Math.round(sr * 0.4), step = Math.round(sr * 0.1), E = [];
+    for (var i = 0; i + blk <= k.length; i += step) { var s = 0; for (var j = 0; j < blk; j++) s += k[i + j] * k[i + j]; E.push(s / blk); }
+    if (!E.length) { var t = 0; for (var q = 0; q < k.length; q++) t += k[q] * k[q]; return -0.691 + 10 * Math.log(t / k.length + 1e-12) / Math.LN10; }
+    var lk = function (e) { return -0.691 + 10 * Math.log(e + 1e-12) / Math.LN10; };
+    var g1 = E.filter(function (e) { return lk(e) > -70; }); if (!g1.length) return -120;
+    var m1 = g1.reduce(function (a, b) { return a + b; }, 0) / g1.length, g2 = g1.filter(function (e) { return lk(e) > lk(m1) - 10; });
+    if (!g2.length) return r1(lk(m1));
+    return r1(lk(g2.reduce(function (a, b) { return a + b; }, 0) / g2.length));
+  }
+
+  /* ---------- voce registrata o intonata ---------- */
+  function bandRatio(sp, lo, hi, tlo, thi, nyq) { var e = 0, t = 0, df = sp.df, i; hi = Math.min(hi, nyq); thi = Math.min(thi, nyq); for (i = Math.floor(lo / df); i <= Math.floor(hi / df); i++) e += sp.P[i] || 0; for (i = Math.floor(tlo / df); i <= Math.floor(thi / df); i++) t += sp.P[i] || 0; return t > 0 ? e / t : 0; }
+  function listenVoice(input, sr) {
+    var x = mono(input), n = x.length, i, win = Math.round(sr * 0.05), fr = [];
+    for (i = 0; i + win <= n; i += win) { var s = 0; for (var k = 0; k < win; k += 2) s += x[i + k] * x[i + k]; fr.push(db(Math.sqrt(s / (win / 2)))); }
+    var srt = fr.slice().sort(function (a, b) { return a - b; }), noise = srt.length ? srt[Math.floor(srt.length * 0.1)] : -120, speech = srt.length ? srt[Math.floor(srt.length * 0.9)] : -120;
+    var L = levels(x, sr), sp = spectrum(x, sr), tot = 0; for (i = 1; i < sp.P.length; i++) tot += sp.P[i];
+    var share = function (lo, hi) { var e = 0, nyq = sr / 2; for (var q = Math.floor(lo / sp.df); q <= Math.floor(Math.min(hi, nyq) / sp.df); q++) e += sp.P[q] || 0; return tot > 0 ? e / tot : 0; };
+    var M = { peakDb: L.peakDb, rmsDb: L.rmsDb, lufs: lufs(x, sr), noiseFloorDb: r1(noise), speechDb: r1(speech), snrDb: r1(speech - noise), rumble: Math.round(share(20, 80) * 1000) / 1000, mud: Math.round(share(200, 400) * 1000) / 1000, presence: Math.round(share(2000, 5000) * 1000) / 1000, sibilance: Math.round(bandRatio(sp, 5500, 10000, 1000, 5000, sr / 2) * 1000) / 1000, clipped: L.clipped, seconds: r1(n / sr) };
+    var F = [];
+    if (L.peakDb < -50) return { metrics: M, findings: [{ level: 'errore', id: 'vuota', text: 'Quasi silenzio: la registrazione non ha segnale. Controlla il microfono.', fix: null }], verdict: 'vuota' };
+    if (L.clipped > 4) F.push({ level: 'errore', id: 'clip', text: 'La voce è distorta (' + L.clipped + ' campioni al massimo): in registrazione il livello era troppo alto. Rifai la ripresa un po\' più lontano dal microfono: la distorsione non si toglie bene dopo.', fix: null });
+    if (M.snrDb < 25) F.push({ level: 'avviso', id: 'rumore', text: 'Rumore di fondo alto: la voce supera il fruscio solo di ' + M.snrDb + ' dB (meglio sopra 30). Registra in una stanza più silenziosa o attiva la riduzione rumore.', fix: { adv: { clean: { denoiseDb: M.snrDb < 18 ? 14 : 9 } } } });
+    if (M.rumble > 0.04) F.push({ level: 'avviso', id: 'rimbombo', text: 'Rimbombi e botti sotto 80 Hz (' + Math.round(M.rumble * 100) + '% dell\'energia): P e B sparati sul microfono o vibrazioni. Alzo il taglio dei bassi.', fix: { adv: { clean: { hp: 120 } } } });
+    if (M.sibilance > 0.45) F.push({ level: 'avviso', id: 'sibilanti', text: 'Le "S" sono taglienti (energia 5,5-10 kHz pari al ' + Math.round(M.sibilance * 100) + '% dei medi-alti). Aumento il de-esser.', fix: { adv: { deess: { on: true, amount: 0.8 } } } });
+    if (M.mud > 0.3) F.push({ level: 'avviso', id: 'scatola', text: 'Voce "scatolosa": troppa energia tra 200 e 400 Hz (' + Math.round(M.mud * 100) + '%). Tolgo qualche dB lì.', fix: { adv: { eq: { boxyDb: -4.5 } } } });
+    if (M.presence < 0.05) F.push({ level: 'info', id: 'poca-presenza', text: 'Poca presenza tra 2 e 5 kHz (' + Math.round(M.presence * 100) + '%): la voce rischia di perdersi sopra una base pesante.', fix: { adv: { eq: { presenceDb: 4.5 } } } });
+    if (M.lufs < -26) F.push({ level: 'avviso', id: 'piano', text: 'Voce molto bassa (' + M.lufs + ' LUFS): in mix andrà alzata molto e porterà con sé il rumore.', fix: null });
+    var bad = F.filter(function (f) { return f.level === 'errore'; }).length, warn = F.filter(function (f) { return f.level === 'avviso'; }).length;
+    return { metrics: M, findings: F, verdict: bad ? 'da rifare/correggere' : (warn ? 'migliorabile' : 'pulita') };
+  }
+
+  /* ---------- umore della base (stimato dai numeri) e coerenza con l'umore voluto ---------- */
+  var MOODS = { malinconico: 'malinconico', dark: 'dark', euforico: 'euforico', aggressivo: 'aggressivo', romantico: 'romantico', nostalgico: 'nostalgico' };
+  function moodOf(m) { // m: { mode, bpm, centroidHz, lowShare, crestDb }
+    var sc = { malinconico: 0, dark: 0, euforico: 0, aggressivo: 0, romantico: 0, nostalgico: 0 }, minor = m.mode !== 'maggiore', bpm = m.bpm || 100, cen = m.centroidHz || 800, low = m.lowShare || 0.5;
+    if (minor) { sc.malinconico += 1.5; sc.dark += 1.5; sc.nostalgico += 0.8; sc.aggressivo += 0.8; } else { sc.euforico += 2; sc.romantico += 1.5; sc.nostalgico += 0.5; }
+    if (bpm < 95) { sc.malinconico += 1; sc.nostalgico += 1; sc.romantico += 0.8; } else if (bpm >= 135) { sc.aggressivo += 1.2; sc.dark += 0.6; sc.euforico += 0.6; } else { sc.euforico += 0.4; sc.dark += 0.4; }
+    if (cen < 700) { sc.dark += 1.4; sc.aggressivo += 0.4; } else if (cen > 1100) { sc.euforico += 0.8; sc.romantico += 0.8; sc.malinconico += 0.3; }
+    if (low > 0.75) { sc.dark += 0.8; sc.aggressivo += 0.6; }
+    var order = Object.keys(sc).sort(function (a, b) { return sc[b] - sc[a]; });
+    return { top: order[0], second: order[1], scores: sc };
+  }
+
+  return { lufs: lufs, listenVoice: listenVoice, moodOf: moodOf, MOODS: MOODS, listen: listen, spectrum: spectrum, BANDS: BANDS, REF: REF };
 });

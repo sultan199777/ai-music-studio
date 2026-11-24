@@ -201,6 +201,7 @@
     <label class="f"><span>Battute <b id="b-barsv">8</b></span><input type="range" id="b-bars" min="4" max="64" step="1" value="8"></label>
     <h3 style="margin-top:12px">Strumenti</h3>
     <div id="b-levels"></div>
+    <label class="f"><span>Umore voluto</span><select id="sb-mood"><option value="">Lo decide il testo</option><option value="malinconico">Malinconico</option><option value="dark">Dark</option><option value="euforico">Euforico</option><option value="aggressivo">Aggressivo</option><option value="romantico">Romantico</option><option value="nostalgico">Nostalgico</option></select></label>
     <div class="row" style="margin-top:10px">
       <button class="btn" id="ear-go">Orecchio di Sultan · ascolta</button>
       <button class="btn pri" id="sb-make">Cervello Sultan · crea dal testo</button>
@@ -336,7 +337,7 @@
       <label class="f"><span>Aggiusta di <b id="v-offv">0 ms</b></span><input type="range" id="v-off" min="-300" max="300" step="10" value="0"></label>
       <div class="row" style="margin-top:10px"><button class="btn" id="v-mkbase">Crea la base sulla mia voce</button></div>
       <p class="small muted">Usa la tonalità scelta sopra e la durata della tua registrazione. Il tempo (BPM) lo scegli tu in Studio.</p>
-      <div class="row" style="margin-top:10px"><button class="btn pri" id="v-mix"><svg><use href="#i-play"/></svg>Voce + base</button><button class="btn" id="v-save">Salva la voce</button><button class="btn" id="v-savemix">Salva il mix</button></div>
+      <div class="row" style="margin-top:10px"><button class="btn" id="v-automix">Mix automatico (Orecchio)</button><button class="btn pri" id="v-mix"><svg><use href="#i-play"/></svg>Voce + base</button><button class="btn" id="v-save">Salva la voce</button><button class="btn" id="v-savemix">Salva il mix</button></div>
       <div class="status" id="v-mixmsg"></div>
     </div>
   </div>
@@ -452,6 +453,7 @@
 <main class="view" id="v-beatlab" hidden>
   <div class="card"><div class="card-head"><h3>Cervello Sultan</h3><span class="tag a">Dal testo</span></div>
     <p class="small muted">Legge il testo della canzone aperta (e il tuo modello artisti, se ne hai spuntato uno) e imposta qui stile, velocità, tonalità e batteria. Un altro testo, un'altra base.</p>
+    <label class="f"><span>Umore voluto</span><select id="bl-mood"><option value="">Lo decide il testo</option><option value="malinconico">Malinconico</option><option value="dark">Dark</option><option value="euforico">Euforico</option><option value="aggressivo">Aggressivo</option><option value="romantico">Romantico</option><option value="nostalgico">Nostalgico</option></select></label>
     <div class="row"><button class="btn pri" id="bl-brain">Crea la base dal testo</button><button class="btn" id="bl-brain2">Altra versione</button></div>
     <div class="status" id="bl-brain-msg"></div></div>
   <div id="bl-root"></div></main>

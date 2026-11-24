@@ -562,7 +562,7 @@
     if (!s.lyrics.trim()) { m.textContent = 'Scrivi prima il testo in Testo e Base: il cervello parte da quello.'; return; }
     if (!window.BeatLabUI || !window.BeatLabUI.state.project) { m.textContent = 'Il Beat Lab si sta caricando: riprova tra un secondo.'; return; }
     s.brainBL = again ? (s.brainBL || 0) + 1 : 0;
-    var pl = SultanBrain.plan(s.lyrics, analysisOf(s), { variant: s.brainBL, profile: arModel() }), r = window.BeatLabUI.applyBrain(pl);
+    var pl = SultanBrain.plan(s.lyrics, analysisOf(s), { variant: s.brainBL, profile: arModel(), mood: $('#bl-mood').value || null }), r = window.BeatLabUI.applyBrain(pl);
     m.innerHTML = '<b>' + esc(pl.label) + '</b> → stile Beat Lab "' + esc(r.style) + '" · ' + r.bpm + ' BPM · ' + NOTES[pl.tonic] + ' ' + (pl.mode === 'maggiore' ? 'maggiore' : 'minore') + '<br>' + pl.why.slice(0, 3).map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Premi "Suona". Se non ti piace: "Altra versione".';
   }
   $('#bl-brain').addEventListener('click', function () { blBrain(false); });
@@ -584,12 +584,18 @@
       '<li>Centro di gravità ' + M.centroidHz + ' Hz · colpi nel grave ' + (M.lowHitsPerBar == null ? '–' : M.lowHitsPerBar + ' a battuta') + '</li></ul>' +
       (r.findings.length ? '<ul class="clean small">' + r.findings.map(function (f) { return '<li><span class="tag ' + (f.level === 'errore' ? 'soon' : (f.tag === 'Ipotesi' ? 'i' : 'm')) + '">' + (f.level === 'errore' ? 'Errore' : (f.tag || 'Misurato')) + '</span> ' + esc(f.text) + '</li>'; }).join('') + '</ul>' : '<p class="small">Nessun problema misurabile.</p>') + '</div>';
   }
+  function earMoodNote(r) {
+    var s = cur(), p = s.prod, want = s.moodTarget; if (!want || SESSION.useImported) return '';
+    var m = Ear.moodOf({ mode: p.mode, bpm: p.bpm, centroidHz: r.metrics.centroidHz, lowShare: r.metrics.lowShare });
+    var ok = m.top === want || m.second === want;
+    return '<p class="small"><span class="tag i">Ipotesi</span> Umore voluto: <b>' + esc(want) + '</b>. La base misurata suona soprattutto <b>' + esc(m.top) + '</b> (poi ' + esc(m.second) + '). ' + (ok ? 'Coincidono.' : 'Non coincidono: scegli l\'umore in alto e premi "Altra versione dal testo", oppure cambia scala e velocità.') + '</p>';
+  }
   async function earRun(auto) {
     var out = $('#ear-out'); out.innerHTML = '<p class="small muted">Ascolto la base con gli strumenti di misura…</p>'; await tick();
     try {
       var r = earMeasure(), fixed = [];
       if (auto) for (var i = 0; i < 2; i++) { var ch = r.findings.some(function (f) { return f.fix && f.fix.levels; }) ? earApply(r) : []; if (!ch.length) break; fixed = fixed.concat(ch); await tick(); r = earMeasure(); }
-      out.innerHTML = earHtml(r) + (fixed.length ? '<p class="small"><b>Ho corretto da solo i volumi:</b> ' + esc(fixed.join(', ')) + '.</p>' : '') + (!auto && r.findings.some(function (f) { return f.fix && f.fix.levels; }) ? '<div class="row"><button class="btn sm pri" id="ear-fix">Applica i consigli</button></div>' : '');
+      out.innerHTML = earHtml(r) + earMoodNote(r) + (fixed.length ? '<p class="small"><b>Ho corretto da solo i volumi:</b> ' + esc(fixed.join(', ')) + '.</p>' : '') + (!auto && r.findings.some(function (f) { return f.fix && f.fix.levels; }) ? '<div class="row"><button class="btn sm pri" id="ear-fix">Applica i consigli</button></div>' : '');
       return r;
     } catch (e) { out.innerHTML = '<p class="small">Non sono riuscito a misurare la base.</p>'; return null; }
   }
@@ -601,7 +607,7 @@
     var s = cur(), p = s.prod, m = $('#sb-msg');
     if (!s.lyrics.trim()) { m.textContent = 'Scrivi o incolla prima il testo (in alto): il cervello parte da quello.'; return; }
     s.brainV = again ? (s.brainV || 0) + 1 : 0;
-    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel() });
+    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel(), mood: $('#sb-mood').value || null }); s.moodTarget = pl.moodTarget; persist();
     p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
     var res = Coach.suggest(coachState(), coachCands(p.genre), { emotion: pl.scene, seed: pl.seed }), R = Instruments.RECIPES[p.genre] || {};
     ['melodia', 'accordi', 'pad'].forEach(function (role) { if (BANNED_INST[res.inst[role]]) res.inst[role] = (R[role] || ['piano'])[0]; });
@@ -611,6 +617,8 @@
     await makeAndPlay(false);
     earRun(true);
   }
+  $('#sb-mood').addEventListener('change', function () { $('#bl-mood').value = this.value; });
+  $('#bl-mood').addEventListener('change', function () { $('#sb-mood').value = this.value; });
   $('#sb-make').addEventListener('click', function () { runBrain(false); });
   $('#sb-again').addEventListener('click', function () { runBrain(true); });
   $('#b-play').addEventListener('click', function () { makeAndPlay(false); });
@@ -1778,6 +1786,20 @@
   $('#v-orig').addEventListener('click', function () { var t = activeTake(); if (t) playBuf(t.mono, t.sr); });
   $('#v-fix').addEventListener('click', function () { var t = activeTake(); if (t && t.final) playBuf(t.final, t.sr); });
   $('#v-stop').addEventListener('click', stopPlay);
+  /* Mix automatico: l'Orecchio misura voce e base (LUFS) e regola il volume della voce; poi misura il mix finale. */
+  $('#v-automix').addEventListener('click', async function () {
+    var t = activeTake(), m = $('#v-mixmsg'); if (!t) { m.textContent = 'Prima registra o importa una voce.'; return; }
+    m.textContent = 'Misuro voce e base…'; await tick();
+    try {
+      var base = buildMix({ voice: false }), vox = t.final || t.mono, bl = Ear.lufs(base.samples, base.sr), vl = Ear.lufs(vox, t.sr);
+      if (vl < -60 || bl < -60) { m.textContent = 'Non riesco a misurare: voce o base quasi silenziose.'; return; }
+      var wantDb = 1.0, gain = Math.pow(10, (bl + wantDb - vl) / 20), sv = Math.max(20, Math.min(160, Math.round(gain * 100)));
+      $('#v-gain').value = sv; $('#v-gv').textContent = sv + '%'; await tick();
+      var mx = buildMix({ voice: true }), r = Ear.listen(mx.samples, mx.sr, { bpm: cur().prod.bpm }), notes = r.findings.filter(function (f) { return f.id === 'clip' || f.id === 'picco' || f.id === 'schiacciato'; }).map(function (f) { return f.text; });
+      var fl = r.metrics.lufs, adv = fl > -9 ? 'più forte dello streaming: le piattaforme lo abbassano (circa -14 LUFS)' : (fl < -16 ? 'più basso dello standard streaming (circa -14 LUFS): usa il master "Forte"' : 'vicino allo standard streaming (circa -14 LUFS)');
+      m.innerHTML = '<span class="tag m">Misurato</span> Base ' + bl + ' LUFS · voce ' + vl + ' LUFS → ho messo il volume voce al <b>' + sv + '%</b> (voce circa 1 LU sopra la base: <span class="tag i">Ipotesi</span> di mestiere, regola a orecchio)' + (Math.round(gain * 100) > 160 ? ' <b>Limite massimo raggiunto</b>: la voce è molto bassa, scegli un carattere più potente o registra più forte.' : '') + ' Mix finale: <b>' + fl + ' LUFS</b>, picco ' + r.metrics.peakDb + ' dB: ' + esc(adv) + '.' + (notes.length ? ' Attenzione: ' + esc(notes.join(' ')) : '');
+    } catch (e) { m.textContent = 'Non sono riuscito a misurare il mix.'; }
+  });
   $('#v-mix').addEventListener('click', async function () {
     var t = activeTake(), m = $('#v-mixmsg'); if (!t) return; m.textContent = 'Preparo il mix…'; await tick();
     try {
