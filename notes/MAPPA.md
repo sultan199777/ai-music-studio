@@ -7,10 +7,10 @@ Leggi questo file PRIMA di aprire i sorgenti: dice dove sta ogni cosa.
 | File | Righe | Scopo | Esporta |
 |---|---|---|---|
 | ai-separator.js | 63 | Separazione AI (gratuita, open source, tutto sul telefono/computer): modello HTDemucs v4 di Meta (MIT) eseguito con onnxruntime-web (MIT) dentro un worker (ort/sep-worker.js): la pagina resta usabile. Divide in 4 tracce: |  |
-| app.body.html | 486 |  |  |
+| app.body.html | 491 |  |  |
 | app.css | 307 |  |  |
-| app.js | 2123 | ================= Dati e salvataggio ================= |  |
-| app.shell.html | 49 |  |  |
+| app.js | 2137 | ================= Dati e salvataggio ================= |  |
+| app.shell.html | 50 |  |  |
 | app.template.html | 1169 |  |  |
 | arranger.js | 644 | Arrangiatore: costruisce basi ORIGINALI con una struttura vera (intro, strofa, pre, ritornello, bridge, outro) e direzioni di stile diverse. Tutto è sintetizzato dal programma (nessun campione, nessun brano altrui). | generate: generate, planStructure: planStructure, STYLES: STYLES, SECTIONS: SEC, ARP: ARP, ARP_STYLE: ARP_STYLE |
 | artist-lab.js | 110 | Cartelle artista: impara lo STILE da testi che carichi tu, con SOLO statistiche. Di ogni testo si misurano numeri (sillabe per riga, rime, ripetizioni, ricchezza delle parole, quali "mondi" ricorrono e quali stanno insie | measure: measure, merge: merge, finalize: finalize, blend: blend, compare: compare, newAcc: newAcc, SCENE_IT: SCENE_IT |
@@ -58,6 +58,7 @@ Leggi questo file PRIMA di aprire i sorgenti: dice dove sta ogni cosa.
 | voice-chain.js | 618 | Catena vocale modulare (Voice Lab, tappa 2). Codice PURO (nessun DOM, nessun Web Audio): gira in Node e nel browser, quindi si può misurare con test numerici. Lavora su una registrazione già fatta (qualità massima, non t |  |
 | voice-lab.css | 21 |  |  |
 | voice-lab.js | 423 | Voice Lab: interfaccia semplice per autotune e catena vocale (tappa 3). Solo browser (usa il DOM). Lavora sul FILE registrato (qualità massima) con VoiceChain; in più offre un monitor in cuffia SPERIMENTALE (RtTune). Il  |  |
+| word-bank.js | 61 | Dizionario personale per le rime: nessun dizionario di terzi, quindi nessun problema di licenza. Le parole arrivano da tre posti: un piccolo elenco scritto per questo progetto (parole comuni del rap), le parole dei TUOI  | newBank: newBank, learn: learn, rhymes: rhymes, seeded: seeded, SEED: SEED |
 
 ## src/app.js: sezioni (riga: titolo)
 
@@ -71,33 +72,34 @@ Leggi questo file PRIMA di aprire i sorgenti: dice dove sta ogni cosa.
 - 325: Studio: testo
 - 381: Guida alla voce: canta / parla / allunga
 - 412: Studio: base
-- 515: Cartelle artista: stile misurato dai testi caricati (solo numeri)
-- 559: Cervello Sultan nel Beat Lab
-- 570: Orecchio di Sultan: ascolto con strumenti di misura
-- 604: Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti)
-- 629: Strumenti veri
-- 811: Coach
-- 897: Studio (DAW): tracce, trasporto, testo, agenti
-- 1043: registrazione nello Studio
-- 1084: scelta strumento (foglio)
-- 1113: agenti
-- 1220: comandi
-- 1267: Microfono nello Studio: pulito o autotune, tutto modificabile
-- 1317: Impara da una base
-- 1483: AI Producer
-- 1542: Vocal Studio
-- 1575: Registrazione con il microfono vero (solo nella versione app; dentro Claude il microfono è bloccato)
-- 1907: VOICE LAB (cablaggio): il codice sta in src/voice-chain.js, src/voice-lab.js, src/realtime-tune.js
-- 1911: fine VOICE LAB
-- 1913: Video
-- 2003: Marketing e Social
-- 2068: Libreria
-- 2083: Impostazioni
-- 2115: Avvio
+- 515: Rime dal dizionario personale
+- 529: Cartelle artista: stile misurato dai testi caricati (solo numeri)
+- 573: Cervello Sultan nel Beat Lab
+- 584: Orecchio di Sultan: ascolto con strumenti di misura
+- 618: Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti)
+- 643: Strumenti veri
+- 825: Coach
+- 911: Studio (DAW): tracce, trasporto, testo, agenti
+- 1057: registrazione nello Studio
+- 1098: scelta strumento (foglio)
+- 1127: agenti
+- 1234: comandi
+- 1281: Microfono nello Studio: pulito o autotune, tutto modificabile
+- 1331: Impara da una base
+- 1497: AI Producer
+- 1556: Vocal Studio
+- 1589: Registrazione con il microfono vero (solo nella versione app; dentro Claude il microfono è bloccato)
+- 1921: VOICE LAB (cablaggio): il codice sta in src/voice-chain.js, src/voice-lab.js, src/realtime-tune.js
+- 1925: fine VOICE LAB
+- 1927: Video
+- 2017: Marketing e Social
+- 2082: Libreria
+- 2097: Impostazioni
+- 2129: Avvio
 
 ## Funzioni principali di app.js (riga: nome)
 
-esc:5, fmt:6, cap:7, tick:8, sleep:9, tag:13, today:14, uid:15, defaultProd:23, newSong:26, cur:29, persist:38, flush:44, sanitize:52, load:64, getCtx:93, makeBuffer:98, stopPlay:103, playBuf:110, getDl:127, saveFile:128, wavBlob:140, saveAudio:148, toMono:165, decode:171, initSample:184, ask:188, songContext:192, route:210, applyMood:233, lyricLines:268, analysisOf:269, topMood:270, songCard:273, inFolder:279, renderAnalysis:327, meter:355, renderGuide:383, followBars:414, fillBase:419, syncKar:431, songMap:452, getBase:457, activeTake:462, buildMix:464, karaokeTick:483, makeAndPlay:497, arStore:516, arModel:517, arBars:522, arRender:523, arAdd:539, blBrain:560, earMeasure:571, earApply:572, earHtml:579, earMoodNote:587, earRun:593, runBrain:606, instName:631, noteNm:632, labRec:633, loadInst:634, ensureInst:641, instOptions:647, refreshInstSelects:660, instInfo:663, fillInst:668, applyRecipe:676, previewInst:687, labOptions:699, labCurrent:704, labSet:710, renderKnobs:716, labPlayRec:722, renderLab:727, lyricHtml:802, coachState:812, coachCtx:813, coachRec:817, coachName:818, coachCands:826, coachMeasure:848, coachCheck:866, coachFix:881, renderCoach:891, lvl:909, dwFill:910, dwLyInfo:924, dwSteps:928, dwBase:933, voiceTake:937, dwBuffers:938, gainFor:954, dwGains:960, dwStop:961, dwPlay:968, dwPos:996, dwDraw:1004, dwRefresh:1039, dwChanged:1041, dwRecord:1044, dwRecStop:1061, sheetOpen:1086, sheetRender:1087, agentsRender:1115, agentTecnico:1132, agentAscoltatore:1149, coachSummary:1158, wait:1159, agentsRun:1160, dwExport:1255, micSet:1268, micRender:1275, micApply:1289, learnList:1319, decodeStereo:1320, learnBar:1328, sepMode:1329, sepInfo:1330, stMono:1340, sepAi:1341, sepFast:1353, profLine:1385, learnRender:1386, learnPlan:1412, learnUse:1413, renderRefs:1450, chatPush:1485, renderChat:1486, renderHist:1490, snapshot:1494, producerGo:1495, localAdvice:1518, setAT:1547, addTake:1555, micOk:1577, tdb:1578, dbTake:1589, restoreTakes:1599, recUi:1611, startRec:1614, finishRec:1660, renderTakes:1701, selectTake:1715, renderTakeAnalysis:1727, cssv:1745, drawPitch:1746, noteName:1816, geom:1817, drawNotes:1824, renderNotes:1851, playTone:1861, noteAtX:1867, ptr:1868, endDrag:1879, rescale:1892, filterPhoto:1915, soon:1930, wrap:1933, drawClip:1934, clipMix:1957, renderIdeas:1983, copyText:2005, post:2010, findItem:2017, postEvents:2018, genPlan:2026, renderPlan:2036, refreshSocial:2049, applyTheme:2084, renderSettings:2089, start:2116
+esc:5, fmt:6, cap:7, tick:8, sleep:9, tag:13, today:14, uid:15, defaultProd:23, newSong:26, cur:29, persist:38, flush:44, sanitize:52, load:64, getCtx:93, makeBuffer:98, stopPlay:103, playBuf:110, getDl:127, saveFile:128, wavBlob:140, saveAudio:148, toMono:165, decode:171, initSample:184, ask:188, songContext:192, route:210, applyMood:233, lyricLines:268, analysisOf:269, topMood:270, songCard:273, inFolder:279, renderAnalysis:327, meter:355, renderGuide:383, followBars:414, fillBase:419, syncKar:431, songMap:452, getBase:457, activeTake:462, buildMix:464, karaokeTick:483, makeAndPlay:497, wbStore:516, wbLearnSongs:517, rhChips:518, arStore:530, arModel:531, arBars:536, arRender:537, arAdd:553, blBrain:574, earMeasure:585, earApply:586, earHtml:593, earMoodNote:601, earRun:607, runBrain:620, instName:645, noteNm:646, labRec:647, loadInst:648, ensureInst:655, instOptions:661, refreshInstSelects:674, instInfo:677, fillInst:682, applyRecipe:690, previewInst:701, labOptions:713, labCurrent:718, labSet:724, renderKnobs:730, labPlayRec:736, renderLab:741, lyricHtml:816, coachState:826, coachCtx:827, coachRec:831, coachName:832, coachCands:840, coachMeasure:862, coachCheck:880, coachFix:895, renderCoach:905, lvl:923, dwFill:924, dwLyInfo:938, dwSteps:942, dwBase:947, voiceTake:951, dwBuffers:952, gainFor:968, dwGains:974, dwStop:975, dwPlay:982, dwPos:1010, dwDraw:1018, dwRefresh:1053, dwChanged:1055, dwRecord:1058, dwRecStop:1075, sheetOpen:1100, sheetRender:1101, agentsRender:1129, agentTecnico:1146, agentAscoltatore:1163, coachSummary:1172, wait:1173, agentsRun:1174, dwExport:1269, micSet:1282, micRender:1289, micApply:1303, learnList:1333, decodeStereo:1334, learnBar:1342, sepMode:1343, sepInfo:1344, stMono:1354, sepAi:1355, sepFast:1367, profLine:1399, learnRender:1400, learnPlan:1426, learnUse:1427, renderRefs:1464, chatPush:1499, renderChat:1500, renderHist:1504, snapshot:1508, producerGo:1509, localAdvice:1532, setAT:1561, addTake:1569, micOk:1591, tdb:1592, dbTake:1603, restoreTakes:1613, recUi:1625, startRec:1628, finishRec:1674, renderTakes:1715, selectTake:1729, renderTakeAnalysis:1741, cssv:1759, drawPitch:1760, noteName:1830, geom:1831, drawNotes:1838, renderNotes:1865, playTone:1875, noteAtX:1881, ptr:1882, endDrag:1893, rescale:1906, filterPhoto:1929, soon:1944, wrap:1947, drawClip:1948, clipMix:1971, renderIdeas:1997, copyText:2019, post:2024, findItem:2031, postEvents:2032, genPlan:2040, renderPlan:2050, refreshSocial:2063, applyTheme:2098, renderSettings:2103, start:2130
 
 ## tests/
 
@@ -130,6 +132,7 @@ esc:5, fmt:6, cap:7, tick:8, sleep:9, tag:13, today:14, uid:15, defaultProd:23, 
 - style-card.test.js: 8 test
 - sultan-brain.test.js: 7 test
 - voice-chain.test.js: 15 test
+- word-bank.test.js: 5 test
 
 ## Altro
 

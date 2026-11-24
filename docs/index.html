@@ -545,7 +545,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 17:24</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 17:25</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -586,6 +586,11 @@ details.card[open]>summary{margin-bottom:8px}
     <label class="f" style="margin-top:10px"><span>Testo (scrivi o incolla il tuo)</span><textarea id="st-lyrics" rows="8" placeholder="[Strofa]&#10;Cammino da solo sotto la luna&#10;&#10;[Ritornello]&#10;Torna domani..."></textarea></label>
     <div class="row" style="margin-top:10px"><button class="btn sm" id="st-ver">Salva questa versione</button><button class="btn sm" id="st-suggest">Suggerisci la base dal testo</button></div>
     <div class="status" id="st-msg"></div>
+  </div>
+  <div class="card"><div class="card-head"><h3>Rime</h3><span class="tag m">Dalle tue parole</span></div>
+    <p class="small muted">Scrivi una parola (o lascia vuoto per usare l'ultima parola del testo) e trova rime piene e assonanze. Il dizionario cresce con i tuoi testi e con le cartelle artista (solo parole singole, mai frasi). Suggerimenti approssimati: l'accento non è scritto.</p>
+    <div class="row"><input id="rh-word" type="text" autocomplete="off" placeholder="Parola (es. cuore)" style="flex:1;min-width:0"><button class="btn pri" id="rh-go">Trova rime</button></div>
+    <div id="rh-out"></div>
   </div>
   <div class="card" id="st-analysis"></div>
   <div class="card"><div class="card-head"><h3>Guida alla voce</h3><span class="tag i">Ipotesi</span></div>
@@ -888,7 +893,7 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">249 test automatici superati su 249 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">254 test automatici superati su 254 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -4346,6 +4351,67 @@ details.card[open]>summary{margin-bottom:8px}
   }
 
   return { measure: measure, merge: merge, finalize: finalize, blend: blend, compare: compare, newAcc: newAcc, SCENE_IT: SCENE_IT };
+});
+
+/*
+ * Dizionario personale per le rime: nessun dizionario di terzi, quindi nessun problema di licenza.
+ * Le parole arrivano da tre posti: un piccolo elenco scritto per questo progetto (parole comuni del rap),
+ * le parole dei TUOI testi, e le parole delle cartelle artista (solo parole singole con il numero di volte:
+ * l'ordine e le frasi non si conservano, quindi non si può ricostruire nessun testo).
+ * Le rime si trovano con le stesse regole del motore dei testi (rima piena e assonanza). Sono approssimazioni:
+ * l'accento italiano non è scritto, quindi qualche suggerimento può non rimare "a orecchio".
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./lyrics-engine.js'), require('./sultan-brain.js'));
+  else root.WordBank = factory(root.LyricsEngine, root.SultanBrain);
+})(typeof self !== 'undefined' ? self : this, function (LE, SB) {
+  'use strict';
+
+  var SEED = ('notte giorno vita morte amore cuore dolore valore colore sapore rumore calore errore tremore sudore pallore fiore ' +
+    'strada città realtà libertà verità ' + 'faccia traccia minaccia caccia braccia ghiaccia ' + 'sogno bisogno ' + 'anima prima clima rima cima stima ' +
+    'volare parlare cantare sognare ballare passare lasciare restare tornare portare salire uscire dire fare stare andare ' +
+    'passato stato fiato fato mercato peccato soldato sbagliato bruciato lasciato scappato cambiato nato ' + 'cambiata fata data ' +
+    'mia via follia malinconia polizia gelosia energia armonia famiglia ' + 'sera era vera guerra terra ferro cielo ' +
+    'soldi ricordi fuori forti morti porti sorti torti ' + 'fame nome come ' + 'paura cura dura sicura oscura misura ' +
+    'ragazza piazza pazza ' + 'dentro centro ' + 'casa ' + 'mondo fondo profondo secondo tondo ' + 'luna fortuna una ' +
+    'fuoco gioco poco luogo ' + 'tempo vento momento sentimento lamento ' + 'nome come ' + 'oro tesoro lavoro coro ' +
+    'sangue langue ' + 'pioggia ' + 'dio addio mio io ' + 'macchina cantina ' + 'testa festa resta ' + 'giro tiro respiro ' +
+    'male reale normale mortale ' + 'mare amare ' + 'pace tace piace tace ' + 'occhi sogni ' + 'schiena catena pena sera ' + 'ombra ' +
+    'fratello coltello bello quello cervello ' + 'mano lontano piano vano ' + 'solo volo ' + 'buio ' + 'lacrime ' + 'vuoto ' + 'silenzio ' +
+    'palazzo ' + 'quartiere ' + 'ghetto ' + 'banda ' + 'giro ' + 'catene ' + 'collane ' + 'macchine ' + 'strade ' + 'notti ' + 'giorni ' + 'vite ' + 'amici nemici ' + 'sbirri ' +
+    'fumo ' + 'erba ' + 'cash ' + 'gang ' + 'flow ' + 'rap ' + 'trap ' + 'rime ' + 'barre ' + 'palco ' + 'microfono ' + 'cuffie ' + 'studio ' + 'disco ' + 'fama ' + 'fame ' + 'vero falso ' + 'serio ' + 'mistero ' + 'impero ' + 'pensiero ' + 'straniero ' + 'sentiero ' + 'cimitero ' + 'sincero').split(/\s+/);
+
+  function clean(w) { return String(w || '').toLowerCase().replace(/[^a-zàèéìíòóùú]/g, ''); }
+  function newBank() { return { v: 1, w: {} }; }
+  function add(bank, word, n) { var c = clean(word); if (c.length < 3 || c.length > 18) return; bank.w[c] = (bank.w[c] || 0) + (n || 1); }
+  function learn(bank, text) {
+    bank = bank || newBank();
+    SB.words(text).forEach(function (w) { add(bank, w, 1); });
+    var keys = Object.keys(bank.w);
+    if (keys.length > 15000) { keys.sort(function (a, b) { return bank.w[a] - bank.w[b]; }).slice(0, keys.length - 15000).forEach(function (k) { delete bank.w[k]; }); }
+    return bank;
+  }
+  function seeded(bank) {
+    var b = { v: 1, w: {} }; SEED.forEach(function (w) { add(b, w, 1); });
+    Object.keys(SB.LEX).forEach(function (k) { SB.LEX[k].forEach(function (w) { add(b, w, 1); }); });
+    Object.keys((bank && bank.w) || {}).forEach(function (w) { b.w[w] = (b.w[w] || 0) + bank.w[w]; });
+    return b;
+  }
+  /** Rime di una parola: { rhyme: [...], assonance: [...] } ordinate per quanto la parola è usata nei tuoi testi. */
+  function rhymes(bank, word, o) {
+    o = o || {}; var w = clean(word), max = o.max || 24, all = seeded(bank), rh = [], as = [];
+    if (w.length < 2) return { word: w, rhyme: [], assonance: [] };
+    var okKey = function (x) { return LE.rhymeKey(x).length >= 2 || /[àèéìíòóùú]$/.test(x); }, kw = okKey(w);
+    Object.keys(all.w).forEach(function (c) {
+      if (c === w) return;
+      var rel = LE.rhymeRelation(w, c);
+      if (rel === 'perfect') { if (kw && okKey(c)) rh.push(c); } else if (rel === 'assonance') as.push(c);
+    });
+    var by = function (a, b) { return (all.w[b] - all.w[a]) || (a < b ? -1 : 1); };
+    var info = function (c) { return { word: c, syll: LE.countSyllables(c), mine: !!(bank && bank.w && bank.w[c]) }; };
+    return { word: w, syll: LE.countSyllables(w), rhyme: rh.sort(by).slice(0, max).map(info), assonance: as.sort(by).slice(0, max).map(info) };
+  }
+  return { newBank: newBank, learn: learn, rhymes: rhymes, seeded: seeded, SEED: SEED };
 });
 
 /*
@@ -9841,6 +9907,20 @@ details.card[open]>summary{margin-bottom:8px}
       return mx;
     } catch (e) { st.textContent = 'Non sono riuscito a creare la base. Prova con meno battute.'; return null; }
   }
+  /* ===== Rime dal dizionario personale ===== */
+  function wbStore() { LIB.settings.words = LIB.settings.words || WordBank.newBank(); return LIB.settings.words; }
+  function wbLearnSongs() { var b = wbStore(); if (b.songsAt === cur().id + ':' + (cur().lyrics || '').length) return; WordBank.learn(b, cur().lyrics || ''); b.songsAt = cur().id + ':' + (cur().lyrics || '').length; persist(); }
+  function rhChips(list, cls) { return list.map(function (x) { return '<span class="tag ' + cls + '" style="margin:2px;display:inline-block" title="' + x.syll + ' sillabe">' + esc(x.word) + (x.mine ? ' ★' : '') + ' <small>' + x.syll + '</small></span>'; }).join(' '); }
+  $('#rh-go').addEventListener('click', function () {
+    var w = ($('#rh-word').value || '').trim(), out = $('#rh-out');
+    if (!w) { var ls = lyricLines(cur().lyrics); var last = ls.length ? ls[ls.length - 1].replace(/[^\wàèéìíòóùú\s']/gi, ' ').trim().split(/\s+/).pop() : ''; w = last || ''; $('#rh-word').value = w; }
+    if (!w) { out.innerHTML = '<p class="small">Scrivi una parola o prima un po\' di testo.</p>'; return; }
+    wbLearnSongs();
+    var r = WordBank.rhymes(wbStore(), w, { max: 28 });
+    out.innerHTML = (r.rhyme.length ? '<p class="small"><b>Rime piene con "' + esc(r.word) + '"</b> (' + r.syll + ' sillabe) <span class="tag m">Misurato</span></p><div>' + rhChips(r.rhyme, 'm') + '</div>' : '<p class="small">Nessuna rima piena trovata nel dizionario.</p>') +
+      (r.assonance.length ? '<p class="small" style="margin-top:8px"><b>Assonanze</b> (stesse vocali, suono vicino) <span class="tag i">Ipotesi</span></p><div>' + rhChips(r.assonance, 'i') + '</div>' : '') +
+      '<p class="small muted">★ = parola dai tuoi testi. Il numero è quante sillabe ha: ti serve per far stare la riga nel metro.</p>';
+  });
   /* ===== Cartelle artista: stile misurato dai testi caricati (solo numeri) ===== */
   function arStore() { LIB.settings.artists = LIB.settings.artists || {}; return LIB.settings.artists; }
   function arModel() {
@@ -9873,7 +9953,7 @@ details.card[open]>summary{margin-bottom:8px}
     var pasted = ($('#ar-text').value || '').trim(); if (pasted) pasted.split(/\n\s*---+\s*\n/).forEach(function (t) { if (t.trim()) texts.push(t); });
     if (!texts.length) { m.textContent = 'Carica un file .txt o incolla un testo.'; return; }
     var st = arStore(), rec = st[nm] || (st[nm] = { acc: ArtistLab.newAcc(), on: false }), added = 0;
-    texts.forEach(function (t) { var me = ArtistLab.measure(t); if (me.lines) { rec.acc = ArtistLab.merge(rec.acc, me); added++; } });
+    texts.forEach(function (t) { var me = ArtistLab.measure(t); if (me.lines) { rec.acc = ArtistLab.merge(rec.acc, me); added++; WordBank.learn(wbStore(), t); } });
     if (!added) { m.textContent = 'Non ho trovato righe di testo da misurare.'; if (!rec.acc.lines) delete st[nm]; return; }
     persist(); $('#ar-files').value = ''; $('#ar-text').value = '';
     m.textContent = 'Aggiunti ' + added + ' brani a "' + nm + '". Ho tenuto solo i numeri, non il testo.'; arRender();
