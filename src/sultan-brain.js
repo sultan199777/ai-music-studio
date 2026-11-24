@@ -62,6 +62,25 @@
    * @param {object} [an]  risultato di LyricsEngine.analyze (opzionale: sillabe e ripetizioni)
    * @param {{variant?:number}} [opt] variant: numero di "nuova versione" (cambia seme e dettagli)
    */
+  /* Stile scritto a parole ("trap dark", "drill malinconica") -> genere, umore, pesantezza. */
+  function parseStyle(t) {
+    t = String(t || '').toLowerCase(); var o = { genre: null, mood: null, heavy: false };
+    if (!t.trim()) return o;
+    if (/boom\s*bap|boombap|old\s*school/.test(t)) o.genre = 'boombap';
+    else if (/drill/.test(t)) o.genre = 'drill';
+    else if (/club|dembow|tony/.test(t)) o.genre = 'clubtrap';
+    else if (/street|50\s*cent|dogo/.test(t)) o.genre = 'street';
+    else if (/trap/.test(t)) o.genre = /dark|scur|oscur|pesant|cattiv|duro|nero/.test(t) ? 'trapdark' : 'trap';
+    else if (/melodic|rnb|r&b/.test(t)) o.genre = 'melodico';
+    else if (/epic|orchestr|cinema/.test(t)) o.genre = 'epico';
+    if (/malinconic|triste|nostalgi/.test(t)) o.mood = /nostalgi/.test(t) ? 'nostalgico' : 'malinconico';
+    else if (/aggress|rabbi|cattiv|violent/.test(t)) o.mood = 'aggressivo';
+    else if (/euforic|festa|carica/.test(t)) o.mood = 'euforico';
+    else if (/romantic|amore/.test(t)) o.mood = 'romantico';
+    else if (/dark|scur|oscur|nero|buio/.test(t)) o.mood = 'dark';
+    o.heavy = /dark|scur|oscur|pesant|cattiv|duro|nero|buio|drill|aggress|rabbi/.test(t);
+    return o;
+  }
   function plan(text, an, opt) {
     opt = opt || {};
     var ws = words(text), n = ws.length, variant = opt.variant || 0;
@@ -92,6 +111,8 @@
 
     // impronta del testo: piccolo spostamento deterministico, così testi diversi non danno lo stesso stile
     GENRES.forEach(function (g, i) { score[g] += ((((h >>> (i * 3)) & 7) / 7) * 0.9) + ((((variant * 2654435761) >>> (i * 2)) & 3) / 3) * (variant ? 0.5 : 0); });
+    var ps = parseStyle(opt.styleText); if (ps.mood && !opt.mood) opt = Object.assign({}, opt, { mood: ps.mood });
+    if (ps.genre) { score[ps.genre] += 100; why.push('Stile che hai scritto: «' + String(opt.styleText).trim() + '».'); }
     var moodWanted = opt.mood && MOOD[opt.mood] ? opt.mood : null, moodAuto = top[0] ? SCENE_MOOD[top[0]] : null, moodTarget = moodWanted || moodAuto || null;
     if (moodWanted) {
       Object.keys(MOOD[moodWanted].votes).forEach(function (g) { score[g] += MOOD[moodWanted].votes[g] * 1.6; });
@@ -116,7 +137,7 @@
     var seed = ((h >>> 1) % 90000) + 1 + variant * 17;
     var bassStyle = /boombap|melodico|estate/.test(genre) ? null : '808';
     why.push('Velocità ' + bpm + ' BPM, ' + mode + ', tonalità ' + ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'][tonic] + ': nascono dall\'impronta di questo testo, un altro testo darà un\'altra base.');
-    return { moodTarget: moodTarget, genre: genre, label: NAMES[genre], bpm: bpm, mode: mode, tonic: tonic, seed: seed, bassStyle: bassStyle, sounds: 'campioni', scene: scene, scenes: scenes, scores: score, why: why, second: order[1] };
+    return { heavy: ps.heavy || ['dark', 'aggressivo'].indexOf(moodTarget) >= 0 || ['trapdark', 'drill'].indexOf(genre) >= 0, moodTarget: moodTarget, genre: genre, label: NAMES[genre], bpm: bpm, mode: mode, tonic: tonic, seed: seed, bassStyle: bassStyle, sounds: 'campioni', scene: scene, scenes: scenes, scores: score, why: why, second: order[1] };
   }
 
   /** Punteggio di stile da una distribuzione di scene (quote 0-1) e dalla forma: serve ai profili artista. */
@@ -130,5 +151,5 @@
     return sc;
   }
 
-  return { MOOD: MOOD, plan: plan, styleScores: styleScores, words: words, BASE_BPM: BASE_BPM, hash: hash, NAMES: NAMES, GENRES: GENRES, LEX: LEX };
+  return { MOOD: MOOD, parseStyle: parseStyle, plan: plan, styleScores: styleScores, words: words, BASE_BPM: BASE_BPM, hash: hash, NAMES: NAMES, GENRES: GENRES, LEX: LEX };
 });

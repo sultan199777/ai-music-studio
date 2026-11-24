@@ -600,7 +600,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 19:21</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 19:26</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -677,6 +677,7 @@ details.card[open]>summary{margin-bottom:8px}
     <label class="f"><span>Battute <b id="b-barsv">8</b></span><input type="range" id="b-bars" min="4" max="64" step="1" value="8"></label>
     <h3 style="margin-top:12px">Strumenti</h3>
     <div id="b-levels"></div>
+    <label class="f"><span>Scrivi lo stile che vuoi (facoltativo)</span><input type="text" id="sb-style" placeholder="es. trap dark, drill malinconica, boom bap euforico" autocomplete="off"><small class="muted">Il testo resta quello che decide ritmo e righe: qui scegli il genere e l'atmosfera.</small></label>
     <label class="f"><span>Umore voluto</span><select id="sb-mood"><option value="">Lo decide il testo</option><option value="malinconico">Malinconico</option><option value="dark">Dark</option><option value="euforico">Euforico</option><option value="aggressivo">Aggressivo</option><option value="romantico">Romantico</option><option value="nostalgico">Nostalgico</option></select></label>
     <div class="row" style="margin-top:10px">
       <button class="btn" id="ear-go">Orecchio di Sultan · ascolta</button>
@@ -950,7 +951,7 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">283 test automatici superati su 283 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">285 test automatici superati su 285 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -4257,6 +4258,25 @@ details.card[open]>summary{margin-bottom:8px}
    * @param {object} [an]  risultato di LyricsEngine.analyze (opzionale: sillabe e ripetizioni)
    * @param {{variant?:number}} [opt] variant: numero di "nuova versione" (cambia seme e dettagli)
    */
+  /* Stile scritto a parole ("trap dark", "drill malinconica") -> genere, umore, pesantezza. */
+  function parseStyle(t) {
+    t = String(t || '').toLowerCase(); var o = { genre: null, mood: null, heavy: false };
+    if (!t.trim()) return o;
+    if (/boom\s*bap|boombap|old\s*school/.test(t)) o.genre = 'boombap';
+    else if (/drill/.test(t)) o.genre = 'drill';
+    else if (/club|dembow|tony/.test(t)) o.genre = 'clubtrap';
+    else if (/street|50\s*cent|dogo/.test(t)) o.genre = 'street';
+    else if (/trap/.test(t)) o.genre = /dark|scur|oscur|pesant|cattiv|duro|nero/.test(t) ? 'trapdark' : 'trap';
+    else if (/melodic|rnb|r&b/.test(t)) o.genre = 'melodico';
+    else if (/epic|orchestr|cinema/.test(t)) o.genre = 'epico';
+    if (/malinconic|triste|nostalgi/.test(t)) o.mood = /nostalgi/.test(t) ? 'nostalgico' : 'malinconico';
+    else if (/aggress|rabbi|cattiv|violent/.test(t)) o.mood = 'aggressivo';
+    else if (/euforic|festa|carica/.test(t)) o.mood = 'euforico';
+    else if (/romantic|amore/.test(t)) o.mood = 'romantico';
+    else if (/dark|scur|oscur|nero|buio/.test(t)) o.mood = 'dark';
+    o.heavy = /dark|scur|oscur|pesant|cattiv|duro|nero|buio|drill|aggress|rabbi/.test(t);
+    return o;
+  }
   function plan(text, an, opt) {
     opt = opt || {};
     var ws = words(text), n = ws.length, variant = opt.variant || 0;
@@ -4287,6 +4307,8 @@ details.card[open]>summary{margin-bottom:8px}
 
     // impronta del testo: piccolo spostamento deterministico, così testi diversi non danno lo stesso stile
     GENRES.forEach(function (g, i) { score[g] += ((((h >>> (i * 3)) & 7) / 7) * 0.9) + ((((variant * 2654435761) >>> (i * 2)) & 3) / 3) * (variant ? 0.5 : 0); });
+    var ps = parseStyle(opt.styleText); if (ps.mood && !opt.mood) opt = Object.assign({}, opt, { mood: ps.mood });
+    if (ps.genre) { score[ps.genre] += 100; why.push('Stile che hai scritto: «' + String(opt.styleText).trim() + '».'); }
     var moodWanted = opt.mood && MOOD[opt.mood] ? opt.mood : null, moodAuto = top[0] ? SCENE_MOOD[top[0]] : null, moodTarget = moodWanted || moodAuto || null;
     if (moodWanted) {
       Object.keys(MOOD[moodWanted].votes).forEach(function (g) { score[g] += MOOD[moodWanted].votes[g] * 1.6; });
@@ -4311,7 +4333,7 @@ details.card[open]>summary{margin-bottom:8px}
     var seed = ((h >>> 1) % 90000) + 1 + variant * 17;
     var bassStyle = /boombap|melodico|estate/.test(genre) ? null : '808';
     why.push('Velocità ' + bpm + ' BPM, ' + mode + ', tonalità ' + ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'][tonic] + ': nascono dall\'impronta di questo testo, un altro testo darà un\'altra base.');
-    return { moodTarget: moodTarget, genre: genre, label: NAMES[genre], bpm: bpm, mode: mode, tonic: tonic, seed: seed, bassStyle: bassStyle, sounds: 'campioni', scene: scene, scenes: scenes, scores: score, why: why, second: order[1] };
+    return { heavy: ps.heavy || ['dark', 'aggressivo'].indexOf(moodTarget) >= 0 || ['trapdark', 'drill'].indexOf(genre) >= 0, moodTarget: moodTarget, genre: genre, label: NAMES[genre], bpm: bpm, mode: mode, tonic: tonic, seed: seed, bassStyle: bassStyle, sounds: 'campioni', scene: scene, scenes: scenes, scores: score, why: why, second: order[1] };
   }
 
   /** Punteggio di stile da una distribuzione di scene (quote 0-1) e dalla forma: serve ai profili artista. */
@@ -4325,7 +4347,7 @@ details.card[open]>summary{margin-bottom:8px}
     return sc;
   }
 
-  return { MOOD: MOOD, plan: plan, styleScores: styleScores, words: words, BASE_BPM: BASE_BPM, hash: hash, NAMES: NAMES, GENRES: GENRES, LEX: LEX };
+  return { MOOD: MOOD, parseStyle: parseStyle, plan: plan, styleScores: styleScores, words: words, BASE_BPM: BASE_BPM, hash: hash, NAMES: NAMES, GENRES: GENRES, LEX: LEX };
 });
 
 /*
@@ -5422,7 +5444,7 @@ details.card[open]>summary{margin-bottom:8px}
     function pickInst(role) { var id = pin[role]; return id && Inst && Inst.has(id) ? id : null; }
     var LI = pickInst('melodia'), CI = pickInst('accordi'), PI = pickInst('pad'), AI = pickInst('arpeggio');
     function fit(m, id) { var r = (Inst.info(id) || {}).range || [36, 96]; while (m < r[0]) m += 12; while (m > r[1]) m -= 12; return m; }
-    var leadKind = p.lead || (LEADS[genreKey] ? LEADS[genreKey][((p.seed || 1) % 3 + 3) % 3] : style.lead);
+    var leadKind = p.lead || (p.heavy ? 'dark' : null) || (LEADS[genreKey] ? LEADS[genreKey][((p.seed || 1) % 3 + 3) % 3] : style.lead);
 
     function at(bar, step) {
       var sw = (Math.abs(step - Math.round(step)) < 1e-6 && Math.round(step) % 2 === 1) ? style.swing * stepLen : 0;
@@ -5656,6 +5678,7 @@ details.card[open]>summary{margin-bottom:8px}
     var progs = PROGS[mode], pick = [];
     var pa = Math.floor(rand() * progs.length), pb = (pa + 1 + Math.floor(rand() * (progs.length - 1))) % progs.length, pc = (pb + 1) % progs.length;
     if (pc === pa) pc = (pc + 1) % progs.length;
+    if (p.melSeed) { var rq = rng(((p.melSeed * 104729) + (p.seed || 1) * 13 + 5) >>> 0); pa = Math.floor(rq() * progs.length); pb = (pa + 1 + Math.floor(rq() * (progs.length - 1))) % progs.length; pc = (pb + 1) % progs.length; if (pc === pa) pc = (pc + 1) % progs.length; }
     pick = { strofa: progs[pa], intro: progs[pa], pre: progs[pa], ritornello: progs[pb], bridge: progs[pc], outro: progs[pa] };
     // progressione imparata da una base caricata (gradi della scala, 4 accordi): strofa e ritornello la usano, il bridge resta diverso
     if (Array.isArray(p.prog) && p.prog.length === 4 && p.prog.every(function (d) { return d >= 0 && d < 7; })) { pick.strofa = pick.intro = pick.pre = pick.outro = p.prog; pick.ritornello = p.prog; }
@@ -5670,19 +5693,19 @@ details.card[open]>summary{margin-bottom:8px}
     var PENT = mode === 'minore' ? [0, 3, 5, 7, 10] : [0, 2, 4, 7, 9];
     var CONT = [[0, -1, -2, -1], [2, 1, 0, 0], [0, 0, -1, -3], [1, 0, -1, 0, -2], [3, 2, 2, 0], [0, 1, 0, -2], [2, 0, 1, -1, -2], [0, -2, -1, -3]];
     var RHY = [[0, 3, 6, 10], [0, 4, 7, 10, 12], [0, 6, 8, 14], [0, 2, 3, 8, 11], [0, 3, 8, 10], [0, 5, 8, 12], [0, 3, 6, 8, 12], [0, 4, 10]];
-    function pitch(deg, oct) { var n = PENT.length, o = Math.floor(deg / n), d = ((deg % n) + n) % n; var m = 60 + tonic + PENT[d] + 12 * (o + (oct || 0)) + (style.leadShift == null ? 12 : style.leadShift); while (m > 79 + (style.leadShift == null ? 12 : 0)) m -= 12; return m; }
+    function pitch(deg, oct) { var n = PENT.length, o = Math.floor(deg / n), d = ((deg % n) + n) % n; var m = 60 + tonic + PENT[d] + 12 * (o + (oct || 0)) + (p.heavy ? -12 : (style.leadShift == null ? 12 : style.leadShift)); while (m > 79 + (style.leadShift == null ? 12 : 0) - (p.heavy ? 12 : 0)) m -= 12; while (m < 45) m += 12; return m; }
     function makePhrase(progression) {
       var cont = CONT[Math.floor(rm() * CONT.length)], rhy = RHY[Math.floor(rm() * RHY.length)], start = 2 + Math.floor(rm() * 4), phrase = [], bi, k;
-      var dark = HARD && rm() < 0.45 && mode === 'minore';
+      var dark = (HARD || p.heavy) && rm() < (p.heavy ? 0.85 : 0.45) && mode === 'minore';
       for (bi = 0; bi < 4; bi++) {
         var evs = [], rr = rhy.slice(), shiftDeg = bi === 2 ? Math.floor(rm() * 3) - 1 : 0;
         if (bi % 2 === 1 && rr.length > 3 && rm() < 0.6) rr.splice(1 + Math.floor(rm() * (rr.length - 2)), 1); // variazione: una nota in meno
         for (k = 0; k < rr.length; k++) {
           var step = rr[k], nxt = k + 1 < rr.length ? rr[k + 1] : 16, len = Math.max(1, Math.min(nxt - step, 16 - step));
-          if (rm() < 0.18 && k > 0 && bi !== 3) continue; // pausa
+          if (rm() < (p.heavy ? 0.3 : 0.18) && k > 0 && bi !== 3) continue; // pausa
           var deg = start + cont[k % cont.length] + shiftDeg, midi = pitch(deg);
           if (bi === 3 && k === rr.length - 1) { midi = pitch(0, 0); len = Math.max(len, 4); step = Math.min(step, 12); }
-          else if (dark && k === 1 && bi % 2 === 0) midi = 60 + tonic + 1 + (style.leadShift == null ? 12 : style.leadShift); // seconda minore: nota scura
+          else if (dark && k === 1 && bi % 2 === 0) midi = 60 + tonic + 1 + (p.heavy ? -12 : (style.leadShift == null ? 12 : style.leadShift)); // seconda minore: nota scura
           if (bi === 0 && k === 0 && rm() < 0.4) len = Math.min(16 - step, len + 2);
           evs.push({ step: step, len: len, midi: midi });
         }
@@ -10585,8 +10608,8 @@ details.card[open]>summary{margin-bottom:8px}
     return SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {} });
   }
   function getBase() {
-    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
+    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -10751,8 +10774,8 @@ details.card[open]>summary{margin-bottom:8px}
     var s = cur(), p = s.prod, m = $('#sb-msg');
     if (!s.lyrics.trim()) { m.textContent = 'Scrivi o incolla prima il testo (in alto): il cervello parte da quello.'; return; }
     s.brainV = again ? (s.brainV || 0) + 1 : 0; s.brainFor = SultanBrain.hash(s.lyrics.trim()); s.genreManual = false;
-    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel(), mood: $('#sb-mood').value || null }); s.moodTarget = pl.moodTarget; persist();
-    p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
+    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel(), mood: $('#sb-mood').value || null, styleText: ($('#sb-style') || {}).value || '' }); s.moodTarget = pl.moodTarget; persist();
+    p.heavy = !!pl.heavy; p.melSeed = 0; p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
     var res = Coach.suggest(coachState(), coachCands(p.genre), { emotion: pl.scene, seed: pl.seed }), R = Instruments.RECIPES[p.genre] || {};
     ['melodia', 'accordi', 'pad'].forEach(function (role) { if (BANNED_INST[res.inst[role]]) res.inst[role] = (R[role] || ['piano'])[0]; });
     if (res.inst.accordi === res.inst.melodia) { var alt = (R.accordi || []).concat(R.melodia || []).filter(function (id) { return id !== res.inst.melodia && !BANNED_INST[id]; }); if (alt.length) res.inst.accordi = alt[(pl.seed >>> 3) % Math.min(alt.length, 3)]; }
@@ -10771,7 +10794,11 @@ details.card[open]>summary{margin-bottom:8px}
   /* il testo decide la base: se non hai scelto tu il genere a mano, parte il Cervello Sultan (una base diversa per ogni testo) */
   function brainFirst(again) { var s = cur(); if (s.lyrics && s.lyrics.trim() && !s.genreManual && (again || s.brainFor !== SultanBrain.hash(s.lyrics.trim()))) { runBrain(again && s.brainFor === SultanBrain.hash(s.lyrics.trim())); return true; } return false; }
   $('#b-play').addEventListener('click', function () { if (!brainFirst(false)) makeAndPlay(false); });
-  $('#b-mel').addEventListener('click', function () { var p = cur().prod; p.melSeed = (p.melSeed || 0) + 1; persist(); makeAndPlay(false); });
+  $('#b-mel').addEventListener('click', function () { var p = cur().prod; p.melSeed = (p.melSeed || 0) + 1;
+    /* anche gli strumenti della melodia e degli accordi cambiano, così la differenza si sente */
+    var R = Instruments.RECIPES[p.genre] || {}, ok = function (id) { return !BANNED_INST[id]; }, ml = (R.melodia || []).filter(ok), ac = (R.accordi || []).filter(ok);
+    p.inst = Object.assign({}, p.inst || {}); if (ml.length) p.inst.melodia = ml[p.melSeed % ml.length]; if (ac.length) p.inst.accordi = ac[(p.melSeed + 1) % ac.length]; if (p.inst.accordi === p.inst.melodia && ac.length > 1) p.inst.accordi = ac[(p.melSeed + 2) % ac.length];
+    persist(); fillBase(); makeAndPlay(false); });
   $('#b-new').addEventListener('click', function () { if (!brainFirst(true)) makeAndPlay(true); });
   $('#b-stop').addEventListener('click', stopPlay);
   $('#b-save').addEventListener('click', async function () { coachRec('save', coachCtx()); var mx = buildMix({ voice: false }); saveAudio(mx.samples, mx.sr, 'base-' + (cur().title || 'canzone').replace(/\W+/g, '-'), $('#b-status')); });
