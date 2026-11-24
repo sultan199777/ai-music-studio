@@ -423,22 +423,28 @@
     // Ritornello: frase "gancio" generata una volta e ripetuta uguale (i ritornelli devono somigliarsi).
     var scaleM = [];
     for (var d0 = 7; d0 <= 14; d0++) scaleM.push(scaleNote(tonic, mode, d0, 48));
+    /* Melodia nuova: un motivo corto (3-5 note) che si ripete con piccole variazioni e chiude sulla tonica.
+       Note scelte nella pentatonica (con la seconda minore come nota "scura" nei generi duri), contorno spesso discendente,
+       ritmi radi con pause: suona trap/drill/hip hop, non una passeggiata a caso sulla scala. Seme proprio: p.melSeed. */
+    var rm = rng(((p.melSeed || 0) * 7919 + (p.seed || 1) * 31 + 17) >>> 0), HARD = { trap: 1, drill: 1, trapdark: 1, street: 1, boombap: 1, clubtrap: 1, epico: 1 }[genreKey] === 1;
+    var PENT = mode === 'minore' ? [0, 3, 5, 7, 10] : [0, 2, 4, 7, 9];
+    var CONT = [[0, -1, -2, -1], [2, 1, 0, 0], [0, 0, -1, -3], [1, 0, -1, 0, -2], [3, 2, 2, 0], [0, 1, 0, -2], [2, 0, 1, -1, -2], [0, -2, -1, -3]];
+    var RHY = [[0, 3, 6, 10], [0, 4, 7, 10, 12], [0, 6, 8, 14], [0, 2, 3, 8, 11], [0, 3, 8, 10], [0, 5, 8, 12], [0, 3, 6, 8, 12], [0, 4, 10]];
+    function pitch(deg, oct) { var n = PENT.length, o = Math.floor(deg / n), d = ((deg % n) + n) % n; var m = 60 + tonic + PENT[d] + 12 * (o + (oct || 0)) + (style.leadShift == null ? 12 : style.leadShift); while (m > 79 + (style.leadShift == null ? 12 : 0)) m -= 12; return m; }
     function makePhrase(progression) {
-      var phrase = [], idx = 3;
-      for (var bi = 0; bi < 4; bi++) {
-        var chord = [0, 2, 4].map(function (o) { return scaleNote(tonic, mode, progression[bi] + o, 60); });
-        var evs = [], s = 0;
-        while (s < 16) {
-          var l = [2, 2, 3, 4][Math.floor(rand() * 4)];
-          if (rand() < 0.3 && s > 0) { s += l; continue; }
-          idx = Math.max(0, Math.min(scaleM.length - 1, idx + Math.floor(rand() * 5) - 2));
-          var midi = scaleM[idx] + (style.leadShift == null ? 12 : style.leadShift);
-          if (s % 4 === 0 || bi === 3) {
-            var near = chord.reduce(function (a, c) { return Math.abs(c - midi) < Math.abs(a - midi) ? c : a; }, chord[0]);
-            if (Math.abs(near - midi) <= 3) midi = near;
-          }
-          evs.push({ step: s, len: Math.min(l, 16 - s), midi: midi });
-          s += l;
+      var cont = CONT[Math.floor(rm() * CONT.length)], rhy = RHY[Math.floor(rm() * RHY.length)], start = 2 + Math.floor(rm() * 4), phrase = [], bi, k;
+      var dark = HARD && rm() < 0.45 && mode === 'minore';
+      for (bi = 0; bi < 4; bi++) {
+        var evs = [], rr = rhy.slice(), shiftDeg = bi === 2 ? Math.floor(rm() * 3) - 1 : 0;
+        if (bi % 2 === 1 && rr.length > 3 && rm() < 0.6) rr.splice(1 + Math.floor(rm() * (rr.length - 2)), 1); // variazione: una nota in meno
+        for (k = 0; k < rr.length; k++) {
+          var step = rr[k], nxt = k + 1 < rr.length ? rr[k + 1] : 16, len = Math.max(1, Math.min(nxt - step, 16 - step));
+          if (rm() < 0.18 && k > 0 && bi !== 3) continue; // pausa
+          var deg = start + cont[k % cont.length] + shiftDeg, midi = pitch(deg);
+          if (bi === 3 && k === rr.length - 1) { midi = pitch(0, 0); len = Math.max(len, 4); step = Math.min(step, 12); }
+          else if (dark && k === 1 && bi % 2 === 0) midi = 60 + tonic + 1 + (style.leadShift == null ? 12 : style.leadShift); // seconda minore: nota scura
+          if (bi === 0 && k === 0 && rm() < 0.4) len = Math.min(16 - step, len + 2);
+          evs.push({ step: step, len: len, midi: midi });
         }
         phrase.push(evs);
       }
