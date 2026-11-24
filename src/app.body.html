@@ -83,7 +83,12 @@
   <section class="dw-panel" id="dw-p-learn">
     <div class="dw-ph"><h3>Impara da una base</h3><span class="tag a">Solo misure, niente copie</span></div>
     <p class="small muted">Carica una canzone che ti piace (un file dal telefono). La divido in <b>voce</b> e <b>base</b>, le ripulisco e misuro il ritmo: velocità, cassa, rullante, hi-hat, bassi. Dimmi se ti piace o no. Tengo solo i numeri, mai l'audio, e la base nuova è tua e originale.</p>
-    <div class="row"><label class="btn pri" for="dw-learn-file">Carica una canzone</label><input type="file" id="dw-learn-file" accept="audio/*" hidden></div>
+    <div class="dw-modes" id="dw-sep-modes">
+      <button class="dw-mode on" data-sep="veloce"><b>Separazione veloce</b><small>Subito, leggera. Buona per imparare il ritmo; la voce resta un po' sporca.</small></button>
+      <button class="dw-mode" data-sep="ai"><b>Separazione AI (HTDemucs)</b><small>Modello gratuito open source: voce, batteria, basso e resto, puliti. 180 MB da scaricare una volta, più lenta (minuti).</small></button>
+    </div>
+    <p class="small muted" id="dw-sep-info"></p>
+    <div class="row"><label class="btn pri" for="dw-learn-file">Carica una canzone o un video</label><input type="file" id="dw-learn-file" accept="audio/*,video/*,.mov,.mp4,.m4a" hidden></div>
     <div class="dw-prog" id="dw-learn-bar" hidden><i></i></div>
     <div id="dw-learn-cur"></div>
     <h4 style="margin:14px 0 6px">I tuoi gusti</h4>

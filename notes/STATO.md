@@ -134,3 +134,9 @@ Cablaggio minimo: blocchi "VOICE LAB" in app.js (4 righe + init), app.body.html 
 - **Agenti nuovi**: Ascoltatore (base dai tuoi gusti, pronta da ascoltare) e Tecnico voce (misura rumore, saturazione, intonazione, sibilanti e consiglia il microfono).
 - Limiti (Ipotesi): la separazione non è una rete neurale; pad al centro finiscono un po' nella voce. Su iPhone ~3 s di calcolo per minuto sul PC di prova, probabilmente 2-3 volte di più sul telefono.
 - Prossimo: "strumento dalla tua voce" (canti una nota → diventa strumento), autotune che segue gli accordi battuta per battuta.
+
+## Fase 1-2 (piano a 7 fasi): video + separazione AI
+- Backup prima delle fasi: branch `backup-2026-11-24`.
+- Fase 1: "Impara da una base" accetta anche video (MP4/MOV dall'iPhone): l'audio si legge con decodeAudioData (provato con MP4 AAC).
+- Fase 2: **Separazione AI** gratuita, open source, sul dispositivo: HTDemucs v4 (Meta, MIT) via onnxruntime-web 1.22 (MIT) e demucs-web 1.0.2 (MIT, `src/vendor-demucs.js`). Lavora in un worker (`assets/ort/sep-worker.js`), modello da Hugging Face (180 MB, una volta, Cache Storage `msa-models-v1`, protetta dal service worker). Il service worker aggiunge COOP/COEP: con la pagina isolata usa 4 processori (misurato: 10 s di audio in 25 s invece di 45 s, CPU del container). 4 tracce: voce, batteria, basso, resto; il ritmo si misura su batteria+basso. Se fallisce (memoria iPhone) passa da sola alla separazione veloce. Massimo 3 minuti a volta.
+- Da verificare su iPhone (Ipotesi): velocità, memoria, WebGPU nel worker.

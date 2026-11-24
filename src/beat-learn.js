@@ -215,11 +215,14 @@
       var barF = 240 / bp * fps, bestP = 0, bestV = -1;
       // la cassa sull'1 e il rullante sul 3 (metà tempo) o sul 2 e 4: così la battuta parte dal punto giusto
       var at = function (o, p) { var i = Math.round(p), m = 0; for (var d = -1; d <= 1; d++) if ((o[i + d] || 0) > m) m = o[i + d]; return m; };
+      // 1) i punti dove la cassa colpisce forte; 2) tra questi vince quello col rullante sul "3" (metà tempo) o sul "2 e 4"
+      var cand = [], kmax = 0;
       for (var ph = 0; ph < barF; ph += 1) {
-        var kv = 0, s8 = 0, s4 = 0, nb = 0;
-        for (var pos = ph; pos < kO.length; pos += barF) { kv += at(kO, pos); s8 += at(sO, pos + barF / 2); s4 += (at(sO, pos + barF / 4) + at(sO, pos + barF * 3 / 4)) / 2; nb++; }
-        var sv = kv + 0.7 * Math.max(s8, s4); if (sv > bestV) { bestV = sv; bestP = ph; }
+        var kv = 0, s8 = 0, s4 = 0;
+        for (var pos = ph; pos < kO.length; pos += barF) { kv += at(kO, pos); s8 += at(sO, pos + barF / 2); s4 += (at(sO, pos + barF / 4) + at(sO, pos + barF * 3 / 4)) / 2; }
+        cand.push([ph, kv, Math.max(s8, s4)]); if (kv > kmax) kmax = kv;
       }
+      cand.forEach(function (c) { if (c[1] >= kmax * 0.7) { var sv = c[2] + 0.2 * c[1]; if (sv > bestV) { bestV = sv; bestP = c[0]; } } });
       var hg = grid(hO, fps, bp, 16, bestP);
       return { bp: bp, barF: barF, P: bestP, kg: grid(kO, fps, bp, 16, bestP), sg: grid(sO, fps, bp, 16, bestP), hg: hg, h3: grid(hO, fps, bp, 24, bestP), hd: hatDensityOf(hg) };
     }

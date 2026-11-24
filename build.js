@@ -36,7 +36,7 @@ const date = new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'sh
 let html = read('src/app.shell.html');
 const parts = {
   CSS: 'src/app.css', BODY: 'src/app.body.html', LYRICS_ENGINE: 'src/lyrics-engine.js', AUDIO_ANALYSIS: 'src/audio-analysis.js',
-  KEY_DETECT: 'src/key-detect.js', FORMANT: 'src/formant.js' /* VOICE LAB */, VOICE_CHAIN: 'src/voice-chain.js', REALTIME: 'src/realtime-tune.js', VOICE_LAB: 'src/voice-lab.js', VOICE_LAB_CSS: 'src/voice-lab.css', AUTOTUNE: 'src/autotune.js', POLISH: 'src/polish.js', MASTER: 'src/master.js', BACKING: 'src/backing.js', SAMPLES: 'src/samples-data.js', INSTRUMENTS: 'src/instruments.js', SOUND_LAB: 'src/sound-lab.js', COACH: 'src/coach.js', SONG_MAP: 'src/song-map.js', BEAT_LEARN: 'src/beat-learn.js', ARRANGER: 'src/arranger.js', STYLE_CARD: 'src/style-card.js',
+  KEY_DETECT: 'src/key-detect.js', FORMANT: 'src/formant.js' /* VOICE LAB */, VOICE_CHAIN: 'src/voice-chain.js', REALTIME: 'src/realtime-tune.js', VOICE_LAB: 'src/voice-lab.js', VOICE_LAB_CSS: 'src/voice-lab.css', AUTOTUNE: 'src/autotune.js', POLISH: 'src/polish.js', MASTER: 'src/master.js', BACKING: 'src/backing.js', SAMPLES: 'src/samples-data.js', INSTRUMENTS: 'src/instruments.js', SOUND_LAB: 'src/sound-lab.js', COACH: 'src/coach.js', SONG_MAP: 'src/song-map.js', BEAT_LEARN: 'src/beat-learn.js', AI_SEP: 'src/ai-separator.js', ARRANGER: 'src/arranger.js', STYLE_CARD: 'src/style-card.js',
   LYRICS_TO_BASE: 'src/lyrics-to-base.js', CLIP_FX: 'src/clip-fx.js', BASE_ANALYSIS: 'src/base-analysis.js', MANGA: 'src/manga-filter.js',
   PITCH_EDITOR: 'src/pitch-editor.js', VIDEO_IDEAS: 'src/video-ideas.js', PROMO: 'src/promo-plan.js', PRODUCER: 'src/producer-actions.js', APP: 'src/app.js'
 };
@@ -61,8 +61,10 @@ fs.writeFileSync(path.join(pwa, 'manifest.webmanifest'), JSON.stringify({ name: 
 const ver = Date.now().toString(36);
 fs.writeFileSync(path.join(pwa, 'sw.js'), `const V='studio-${ver}';const F=['./','index.html','manifest.webmanifest','icon-192.png','icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(F)).then(()=>self.skipWaiting()))});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==V).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
-self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const c=r.clone();if(new URL(e.request.url).origin===location.origin)caches.open(V).then(x=>x.put(e.request,c));return r}).catch(()=>caches.match(e.request).then(m=>m||caches.match('index.html'))))});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==V&&x.indexOf('msa-')!==0).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
+self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||new URL(e.request.url).origin!==location.origin)return;e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(V).then(x=>x.put(e.request,c));return iso(r)}).catch(()=>caches.match(e.request).then(m=>m?iso(m):caches.match('index.html').then(iso))))});
+// isolamento (COOP/COEP): permette alla separazione AI di usare più processori in parallelo
+function iso(r){if(!r||r.status===0)return r;const h=new Headers(r.headers);h.set('Cross-Origin-Opener-Policy','same-origin');h.set('Cross-Origin-Embedder-Policy','require-corp');h.set('Cross-Origin-Resource-Policy','same-origin');return new Response(r.body,{status:r.status,statusText:r.statusText,headers:h})}
 `);
 fs.writeFileSync(path.join(pwa, '_headers'), '/*\n  X-Content-Type-Options: nosniff\n  X-Frame-Options: DENY\n  Referrer-Policy: no-referrer\n  Permissions-Policy: microphone=(self), camera=(), geolocation=()\n/sw.js\n  Cache-Control: no-cache\n');
 // strumenti a campioni: un file per strumento, caricato a richiesta (inst/<id>.json)
@@ -70,4 +72,9 @@ const instSrc = path.join(root, 'assets', 'inst'), instDst = path.join(pwa, 'ins
 fs.mkdirSync(instDst, { recursive: true });
 let nInst = 0;
 for (const f of fs.readdirSync(instSrc)) { fs.copyFileSync(path.join(instSrc, f), path.join(instDst, f)); nInst++; }
+// separazione AI: motore onnxruntime-web (MIT), caricato solo quando serve (ort/)
+const ortSrc = path.join(root, 'assets', 'ort'), ortDst = path.join(pwa, 'ort');
+fs.mkdirSync(ortDst, { recursive: true });
+for (const f of fs.readdirSync(ortSrc)) fs.copyFileSync(path.join(ortSrc, f), path.join(ortDst, f));
+fs.copyFileSync(path.join(root, 'src', 'vendor-demucs.js'), path.join(ortDst, 'demucs.js'));
 console.log('OK: docs/ (index.html, manifest, sw.js, _headers, ' + nInst + ' strumenti in inst/)');
