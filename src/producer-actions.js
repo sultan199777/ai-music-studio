@@ -55,7 +55,7 @@
   ];
   var SECS = [['intro', /\bintro\b/i], ['strofa', /\bstrof[ae]\b/i], ['pre', /\bpre[\s-]?(ritornello|chorus)?\b/i], ['ritornello', /\britornell[oi]\b/i], ['bridge', /\bbridge\b/i], ['outro', /\b(outro|finale|chiusura)\b/i]];
   var NOTES = { 'do': 0, 're': 2, 'mi': 4, 'fa': 5, 'sol': 7, 'la': 9, 'si': 11 };
-  var STYLE_BPM = { trap: 140, drill: 142, epico: 84, melodico: 96, estate: 100 };
+  var STYLE_BPM = { trap: 140, drill: 142, epico: 84, melodico: 96, estate: 100, boombap: 90, street: 96, trapdark: 144, clubtrap: 98 };
 
   function trackIn(t) { for (var i = 0; i < TRACKS.length; i++) if (TRACKS[i][1].test(t)) return TRACKS[i]; return null; }
   function secsIn(t) { var out = []; SECS.forEach(function (x) { if (x[1].test(t)) out.push(x[0]); }); if (out.indexOf('pre') >= 0 && /pre[\s-]?ritornello|pre[\s-]?chorus/i.test(t) === false && out.indexOf('ritornello') >= 0) out.splice(out.indexOf('pre'), 1); return out; }
@@ -80,9 +80,9 @@
       var ton = (NOTES[m[1].toLowerCase()] + (m[3] ? 1 : 0)) % 12; s.tonic = ton; var out = ['Tonalità: ' + m[1].toUpperCase().slice(0, 1) + m[1].toLowerCase().slice(1) + (m[3] ? '#' : '')];
       if (m[4]) { s.mode = m[4].toLowerCase(); out[0] += ' ' + s.mode; } out[0] += '.'; return { notes: out };
     } },
-    { id: 'style', re: /\b(stile|genere|tipo)?\s*(trap|drill|epico|melodico|estate)\b/i, run: function (s, t) {
-      var g = t.match(/\b(trap|drill|epico|melodico|estate)\b/i)[1].toLowerCase(); s.genre = g; s.bpm = STYLE_BPM[g]; s.tune = null;
-      if (g === 'trap' || g === 'drill' || g === 'epico') s.mode = 'minore'; if (g === 'estate') s.mode = 'maggiore';
+    { id: 'style', re: /\b(stile|genere|tipo)?\s*(trap|drill|epico|melodico|estate|boombap|street|trapdark|clubtrap)\b/i, run: function (s, t) {
+      var g = t.match(/\b(trap|drill|epico|melodico|estate|boombap|street|trapdark|clubtrap)\b/i)[1].toLowerCase(); s.genre = g; s.bpm = STYLE_BPM[g]; s.tune = null;
+      if (['trap', 'drill', 'epico', 'boombap', 'street', 'trapdark', 'clubtrap'].indexOf(g) >= 0) s.mode = 'minore'; if (g === 'estate') s.mode = 'maggiore';
       return { notes: ['Cambio stile in ' + g + ' (' + s.bpm + ' BPM). Rifaccio la base da capo con struttura e suoni di quello stile.'] };
     } },
     { id: 'solo', re: /\bsolo\s+(il |la |lo |l'|gli )?(.+)/i, run: function (s, t) {
