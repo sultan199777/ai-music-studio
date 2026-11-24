@@ -2,3 +2,5 @@ node_modules/
 dist/
 docs/_test_model.onnx
 docs/_models/
+docs/tf/transformers.min.js
+assets/tf/transformers.min.js

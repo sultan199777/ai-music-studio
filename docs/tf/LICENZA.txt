@@ -1,0 +1,1 @@
+transformers.js 4.3.2 (Hugging Face, Apache-2.0) + onnxruntime-web 1.31.0-dev (Microsoft, MIT): file copiati senza modifiche da npm.

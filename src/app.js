@@ -1802,7 +1802,9 @@
       var voice = normOnly(s.voice, s.sr), base = normOnly(s.base, s.sr);
       if (s.stems) for (var k in s.stems) s.stems[k] = normOnly(s.stems[k], s.sr);
       el.textContent = 'Misuro il ritmo…'; learnBar(0.95); await tick();
+      var tuneM = null; if (s.ai) { try { var vm = s.voice.length > s.sr * 60 ? s.voice.subarray(0, s.sr * 60) : s.voice, mz = Autotune.measure(vm, s.sr, {}); if (mz.voicedFrames > 50 && isFinite(mz.rawCents)) tuneM = { cents: Math.round(Math.abs(mz.rawCents)), label: Math.abs(mz.rawCents) < 8 ? 'autotune forte (note quasi perfette)' : (Math.abs(mz.rawCents) < 16 ? 'autotune medio o voce molto intonata' : 'voce naturale, poco o niente autotune') }; } catch (e) {} }
       var prof = BeatLearn.learn(s.rhythm, s.sr, { harm: s.stems ? (function () { var h = new Float32Array(s.stems.other.length); for (var q = 0; q < h.length; q++) h[q] = s.stems.other[q] + s.stems.bass[q]; return h; })() : null });
+      if (tuneM) { prof.tune = tuneM; prof.why.push('Voce: ' + tuneM.label + ' (scarto medio ' + tuneM.cents + ' cent dalla nota).'); }
       LEARN.cur = { name: f.name.replace(/\.[^.]+$/, '').slice(0, 40), prof: prof, voice: voice, base: base, orig: s.orig, stems: s.stems, sr: s.sr, note: s.note, vote: 0, ai: s.ai };
       learnBar(null); el.textContent = s.ai ? 'Fatto. Ascolta le parti separate, poi dimmi se il ritmo ti piace.' : 'Fatto, ma senza AI (' + why + '): voce e base non sono pulite.';
       learnRender(); coachRec('complete', coachCtx()); sepInfo();
@@ -1811,6 +1813,28 @@
       el.textContent = /video|mov|mp4/i.test((f.type || '') + f.name) ? 'Non riesco a leggere l\'audio di questo video. Su iPhone: apri il video in Foto, Condividi > Salva su File, poi riprova.' : 'Non riesco a leggere questo file. Prova un MP3, M4A, WAV o un video MP4/MOV.';
     }
   });
+  // metodo del testo: righe, sillabe, velocità, rime, ripetizioni (si salvano i NUMERI, non le parole)
+  function lyricStats(tr) {
+    var lines = tr.lines.length ? tr.lines : [{ t0: 0, t1: 0, text: tr.text }], txt = lines.map(function (l) { return l.text; }).join('\n'), a = LyricsEngine.analyze(txt);
+    var all = []; (a.stanzas || []).forEach(function (st) { all = all.concat(st.lines); });
+    var syl = all.reduce(function (q, l) { return q + l.syllables; }, 0), dur = lines.reduce(function (q, l) { return q + Math.max(0, (l.t1 || 0) - (l.t0 || 0)); }, 0);
+    var rhymed = all.filter(function (l, i) { return all.some(function (o, j) { return j !== i && Math.abs(j - i) <= 2 && o.rhyme === l.rhyme; }); }).length;
+    return { righe: all.length, sillabeRiga: all.length ? Math.round(syl / all.length * 10) / 10 : 0, sillabeSec: dur > 0 ? Math.round(syl / dur * 10) / 10 : null, rimePct: all.length ? Math.round(rhymed / all.length * 100) : 0, ripetute: Math.round((a.repetitionShare || 0) * 100), schema: all.slice(0, 4).map(function (l) { return l.rhyme; }).join('') };
+  }
+  function trHtml(c) {
+    var st = c.prof.lyr || {}, flow = st.sillabeSec == null ? '' : st.sillabeSec >= 5 ? ' (flow veloce, rap serrato)' : (st.sillabeSec >= 3.2 ? ' (flow medio)' : ' (flow lento/melodico)');
+    return '<ul class="clean small"><li>Righe: ' + st.righe + ' · sillabe per riga: ' + st.sillabeRiga + (st.sillabeSec != null ? ' · <b>' + st.sillabeSec + ' sillabe al secondo</b>' + flow : '') + '</li><li>Righe in rima con una vicina: ' + st.rimePct + '% · schema delle prime righe: ' + esc(st.schema) + '</li><li>Righe ripetute (gancio/ritornello): ' + st.ripetute + '%</li></ul>' +
+      '<details class="small"><summary>Parole trascritte (solo per studiare, non vengono salvate)</summary><p class="muted">' + c.tr.lines.map(function (l) { return esc(l.text); }).join('<br>') + '</p></details>';
+  }
+  $('#dw-learn-cur').addEventListener('click', async function (e) {
+    if (!e.target.closest('#dw-tr-go')) return; var c = LEARN.cur, el = $('#dw-learn-msg'); if (!c) return;
+    var lang = $('#dw-tr-lang').value; el.textContent = 'Preparo Whisper (la prima volta scarico circa 80 MB)…'; learnBar(0.02);
+    try {
+      var tr = await Transcribe.run(c.voice, c.sr, { language: lang, onProgress: function (a, b) { if (b) { el.textContent = 'Scarico Whisper: ' + Math.round(a / 1048576) + ' di ' + Math.round(b / 1048576) + ' MB (solo la prima volta)…'; learnBar(0.02 + 0.4 * a / b); } } });
+      c.tr = tr; c.prof.lyr = lyricStats(tr); learnBar(null);
+      el.textContent = tr.text ? 'Testo studiato: le misure entrano nel profilo quando premi Mi piace / Non mi piace.' : 'Non ho sentito parole chiare in questa voce.'; learnRender();
+    } catch (err) { learnBar(null); el.textContent = 'Trascrizione non riuscita (' + (err && err.message || 'memoria') + ').'; }
+  });
   function profLine(p) { return p.bpm + ' BPM · ' + (p.key ? p.key.name : 'tonalità incerta') + (p.prog ? ' · giro ' + BeatLearn.progName(p.prog, p.key && p.key.mode) : '') + ' · simile a: ' + (Arranger.STYLES[p.style] ? Arranger.STYLES[p.style].label : p.style); }
   function learnRender() {
     var c = LEARN.cur, h = '';
@@ -1818,6 +1842,7 @@
       h = '<div class="dw-agent"><header><span class="dw-dot ok"></span><b>' + esc(c.name) + '</b><span class="st">' + esc(profLine(c.prof)) + '</span></header>' +
         '<ul class="clean small">' + c.prof.why.map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul><p class="small muted">' + esc(c.note) + ' <span class="tag i">Ipotesi</span> la separazione è una stima: giudica tu ascoltando.</p>' +
         '<div class="row"><button class="btn sm" data-lp="voice">▶ Voce</button><button class="btn sm" data-lp="base">▶ Base</button>' + (c.stems ? '<button class="btn sm" data-lp="drums">▶ Batteria</button><button class="btn sm" data-lp="bass">▶ Basso</button><button class="btn sm" data-lp="other">▶ Resto</button>' : '') + '<button class="btn sm" data-lp="orig">▶ Originale</button><button class="btn sm" data-lp="stop">■</button></div>' +
+        '<div class="row"><button class="btn sm pri" id="dw-tr-go">Trascrivi le parole e studia il testo</button><select id="dw-tr-lang"><option value="italian">italiano</option><option value="english">inglese</option><option value="spanish">spagnolo</option><option value="french">francese</option></select></div><div id="dw-tr-out">' + (c.tr ? trHtml(c) : '') + '</div>' +
         '<div class="row"><button class="btn sm" data-ls="voice">Salva la voce (WAV)</button><button class="btn sm" data-ls="base">Salva la base (WAV)</button></div>' +
         '<label class="f" style="margin-top:8px"><span>Cartella (artista o genere)</span><input id="dw-learn-art" list="dw-learn-arts" maxlength="30" placeholder="es. Sfera, Drill UK, Club" value="' + esc(LEARN.lastArt || '') + '"><datalist id="dw-learn-arts">' + learnArtists().map(function (a) { return '<option value="' + esc(a) + '">'; }).join('') + '</datalist></label>' +
         '<div class="row"><button class="btn sm pri" data-lv="1">Mi piace questo ritmo</button><button class="btn sm" data-lv="-1">Non mi piace</button></div></div>';
@@ -1826,7 +1851,10 @@
     var L = learnList(), arts = learnArtists();
     $('#dw-learn-list').innerHTML = L.length ? arts.map(function (a) {
       var items = L.map(function (r, i) { return [r, i]; }).filter(function (x) { return (x[0].artist || 'Senza cartella') === a; }), lk = items.filter(function (x) { return x[0].vote > 0; }).length;
+      var pr = items.map(function (x) { return x[0].prof; }), avg = function (f) { var v = pr.map(f).filter(function (z) { return z != null && isFinite(z); }); return v.length ? Math.round(v.reduce(function (q, z) { return q + z; }, 0) / v.length * 10) / 10 : null; }, sps = avg(function (q) { return q.lyr && q.lyr.sillabeSec; }), cents = avg(function (q) { return q.tune && q.tune.cents; });
+      var sum = 'Media: ' + avg(function (q) { return q.bpm; }) + ' BPM' + (sps != null ? ' · ' + sps + ' sillabe/s' : '') + (cents != null ? ' · scarto voce ' + cents + ' cent' + (cents < 8 ? ' (autotune forte)' : '') : '');
       return '<div class="dw-agent"><header><span class="dw-dot ' + (lk ? 'ok' : '') + '"></span><b>' + esc(a) + '</b><span class="st">' + items.length + (items.length === 1 ? ' canzone · ' : ' canzoni · ') + lk + ' ♥</span></header>' +
+        '<p class="small muted">' + esc(sum) + '</p>' +
         items.map(function (x) { var r = x[0]; return '<div class="dw-prop"><div><b>' + (r.vote > 0 ? '♥ ' : '✕ ') + esc(r.name) + '</b><small>' + esc(profLine(r.prof)) + '</small></div><button class="btn sm" data-lx="' + x[1] + '">Togli</button></div>'; }).join('') +
         (lk ? '<div class="row"><button class="btn sm pri" data-la="' + esc(a) + '">Crea una base nello stile ' + esc(a) + '</button></div>' : '') + '</div>';
     }).join('') : '<p class="small muted">Ancora niente. Carica 2 o 3 canzoni che ti piacciono e una che non ti piace: impara la differenza.</p>';

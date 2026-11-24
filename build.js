@@ -36,7 +36,7 @@ const date = new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'sh
 let html = read('src/app.shell.html');
 const parts = {
   CSS: 'src/app.css', BODY: 'src/app.body.html', LYRICS_ENGINE: 'src/lyrics-engine.js', AUDIO_ANALYSIS: 'src/audio-analysis.js',
-  KEY_DETECT: 'src/key-detect.js', FORMANT: 'src/formant.js' /* VOICE LAB */, VOICE_CHAIN: 'src/voice-chain.js', REALTIME: 'src/realtime-tune.js', VOICE_LAB: 'src/voice-lab.js', VOICE_LAB_CSS: 'src/voice-lab.css', AUTOTUNE: 'src/autotune.js', POLISH: 'src/polish.js', MASTER: 'src/master.js', BACKING: 'src/backing.js', SAMPLES: 'src/samples-data.js', INSTRUMENTS: 'src/instruments.js', SULTAN_BRAIN: 'src/sultan-brain.js', ARTIST_LAB: 'src/artist-lab.js', WORD_BANK: 'src/word-bank.js', TIMING: 'src/timing.js', SING_GUIDE: 'src/sing-guide.js', EAR: 'src/ear.js', SOUND_LAB: 'src/sound-lab.js', COACH: 'src/coach.js', SONG_MAP: 'src/song-map.js', BEAT_LEARN: 'src/beat-learn.js', AI_SEP: 'src/ai-separator.js', MIXER: 'src/mixer.js', CLIPS: 'src/clips.js', VOICE_FX: 'src/voice-fx.js', SYNTH_DESIGN: 'src/synth-design.js', MASTER_PRO: 'src/master-pro.js', STUDIO_AGENT: 'src/studio-agent.js', ARRANGER: 'src/arranger.js', STYLE_CARD: 'src/style-card.js',
+  KEY_DETECT: 'src/key-detect.js', FORMANT: 'src/formant.js' /* VOICE LAB */, VOICE_CHAIN: 'src/voice-chain.js', REALTIME: 'src/realtime-tune.js', VOICE_LAB: 'src/voice-lab.js', VOICE_LAB_CSS: 'src/voice-lab.css', AUTOTUNE: 'src/autotune.js', POLISH: 'src/polish.js', MASTER: 'src/master.js', BACKING: 'src/backing.js', SAMPLES: 'src/samples-data.js', INSTRUMENTS: 'src/instruments.js', SULTAN_BRAIN: 'src/sultan-brain.js', ARTIST_LAB: 'src/artist-lab.js', WORD_BANK: 'src/word-bank.js', TIMING: 'src/timing.js', SING_GUIDE: 'src/sing-guide.js', EAR: 'src/ear.js', SOUND_LAB: 'src/sound-lab.js', COACH: 'src/coach.js', SONG_MAP: 'src/song-map.js', BEAT_LEARN: 'src/beat-learn.js', AI_SEP: 'src/ai-separator.js', MIXER: 'src/mixer.js', CLIPS: 'src/clips.js', VOICE_FX: 'src/voice-fx.js', SYNTH_DESIGN: 'src/synth-design.js', MASTER_PRO: 'src/master-pro.js', STUDIO_AGENT: 'src/studio-agent.js', TRANSCRIBE: 'src/transcribe.js', ARRANGER: 'src/arranger.js', STYLE_CARD: 'src/style-card.js',
   LYRICS_TO_BASE: 'src/lyrics-to-base.js', CLIP_FX: 'src/clip-fx.js', BASE_ANALYSIS: 'src/base-analysis.js', MANGA: 'src/manga-filter.js',
   PITCH_EDITOR: 'src/pitch-editor.js', VIDEO_IDEAS: 'src/video-ideas.js', PROMO: 'src/promo-plan.js', PRODUCER: 'src/producer-actions.js', APP: 'src/app.js'
 };
@@ -74,7 +74,7 @@ fs.mkdirSync(instDst, { recursive: true });
 let nInst = 0;
 for (const f of fs.readdirSync(instSrc)) { fs.copyFileSync(path.join(instSrc, f), path.join(instDst, f)); nInst++; }
 // separazione AI v2: unblend (MIT) + onnxruntime-web 1.26 (MIT), copiati com'erano (solo l'import di ORT reso relativo)
-for (const d of ['unblend', 'ort126']) fs.cpSync(path.join(root, 'assets', d), path.join(pwa, d), { recursive: true });
+for (const d of ['unblend', 'ort126', 'tf']) fs.cpSync(path.join(root, 'assets', d), path.join(pwa, d), { recursive: true });
 console.log('OK: docs/ (index.html, manifest, sw.js, _headers, ' + nInst + ' strumenti in inst/)');
 
 // il numero di versione appare anche nella copia per l'artifact
