@@ -512,6 +512,20 @@
       return mx;
     } catch (e) { st.textContent = 'Non sono riuscito a creare la base. Prova con meno battute.'; return null; }
   }
+  /* ===== Rime dal dizionario personale ===== */
+  function wbStore() { LIB.settings.words = LIB.settings.words || WordBank.newBank(); return LIB.settings.words; }
+  function wbLearnSongs() { var b = wbStore(); if (b.songsAt === cur().id + ':' + (cur().lyrics || '').length) return; WordBank.learn(b, cur().lyrics || ''); b.songsAt = cur().id + ':' + (cur().lyrics || '').length; persist(); }
+  function rhChips(list, cls) { return list.map(function (x) { return '<span class="tag ' + cls + '" style="margin:2px;display:inline-block" title="' + x.syll + ' sillabe">' + esc(x.word) + (x.mine ? ' ★' : '') + ' <small>' + x.syll + '</small></span>'; }).join(' '); }
+  $('#rh-go').addEventListener('click', function () {
+    var w = ($('#rh-word').value || '').trim(), out = $('#rh-out');
+    if (!w) { var ls = lyricLines(cur().lyrics); var last = ls.length ? ls[ls.length - 1].replace(/[^\wàèéìíòóùú\s']/gi, ' ').trim().split(/\s+/).pop() : ''; w = last || ''; $('#rh-word').value = w; }
+    if (!w) { out.innerHTML = '<p class="small">Scrivi una parola o prima un po\' di testo.</p>'; return; }
+    wbLearnSongs();
+    var r = WordBank.rhymes(wbStore(), w, { max: 28 });
+    out.innerHTML = (r.rhyme.length ? '<p class="small"><b>Rime piene con "' + esc(r.word) + '"</b> (' + r.syll + ' sillabe) <span class="tag m">Misurato</span></p><div>' + rhChips(r.rhyme, 'm') + '</div>' : '<p class="small">Nessuna rima piena trovata nel dizionario.</p>') +
+      (r.assonance.length ? '<p class="small" style="margin-top:8px"><b>Assonanze</b> (stesse vocali, suono vicino) <span class="tag i">Ipotesi</span></p><div>' + rhChips(r.assonance, 'i') + '</div>' : '') +
+      '<p class="small muted">★ = parola dai tuoi testi. Il numero è quante sillabe ha: ti serve per far stare la riga nel metro.</p>';
+  });
   /* ===== Cartelle artista: stile misurato dai testi caricati (solo numeri) ===== */
   function arStore() { LIB.settings.artists = LIB.settings.artists || {}; return LIB.settings.artists; }
   function arModel() {
@@ -544,7 +558,7 @@
     var pasted = ($('#ar-text').value || '').trim(); if (pasted) pasted.split(/\n\s*---+\s*\n/).forEach(function (t) { if (t.trim()) texts.push(t); });
     if (!texts.length) { m.textContent = 'Carica un file .txt o incolla un testo.'; return; }
     var st = arStore(), rec = st[nm] || (st[nm] = { acc: ArtistLab.newAcc(), on: false }), added = 0;
-    texts.forEach(function (t) { var me = ArtistLab.measure(t); if (me.lines) { rec.acc = ArtistLab.merge(rec.acc, me); added++; } });
+    texts.forEach(function (t) { var me = ArtistLab.measure(t); if (me.lines) { rec.acc = ArtistLab.merge(rec.acc, me); added++; WordBank.learn(wbStore(), t); } });
     if (!added) { m.textContent = 'Non ho trovato righe di testo da misurare.'; if (!rec.acc.lines) delete st[nm]; return; }
     persist(); $('#ar-files').value = ''; $('#ar-text').value = '';
     m.textContent = 'Aggiunti ' + added + ' brani a "' + nm + '". Ho tenuto solo i numeri, non il testo.'; arRender();
