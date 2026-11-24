@@ -337,3 +337,12 @@ details.card[open]>summary{margin-bottom:8px}
 #v-daw .dw-title .eyebrow{display:none}#v-daw .dw-name{font-size:1.05rem}
 #v-daw .dw-ctrls{gap:8px;margin-top:6px}#v-daw .dw-btn{width:42px;height:42px}#v-daw .dw-btn.dw-play{width:54px;height:54px}
 #v-daw .dw-clock b{font-size:1.25rem}#v-daw .dw-proj{margin-top:8px;padding:7px 10px}
+
+/* Sfondo che segue l'umore (base minima: la nuova schermata può rifinirlo) */
+body[data-mood] { transition: background-color 1.2s ease; background-image: radial-gradient(120% 60% at 50% -10%, var(--mood-glow, transparent), transparent 70%); background-attachment: fixed; }
+body[data-mood="aggressivo"] { --mood-glow: rgba(220, 38, 38, .35); }
+body[data-mood="malinconico"] { --mood-glow: rgba(37, 99, 235, .30); }
+body[data-mood="dark"] { --mood-glow: rgba(124, 58, 237, .32); }
+body[data-mood="euforico"] { --mood-glow: rgba(245, 158, 11, .35); }
+body[data-mood="romantico"] { --mood-glow: rgba(236, 72, 153, .30); }
+body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }

@@ -455,6 +455,7 @@
         }
         phrase.push(evs);
       }
+      if (HARD) phrase[2] = phrase[0].map(function (e) { return { step: e.step, len: e.len, midi: e.midi }; }); // gancio: frase di 2 battute ripetuta (A B A B')
       return phrase;
     }
     var patA = Math.floor(rand() * style.kickPats.length), patB = (patA + 1) % style.kickPats.length;
@@ -552,6 +553,8 @@
             add('snare', at(bar, s), snareBuf(), 0.55 * cfg.snare);
             if (style.clap) add('snare', at(bar, s), clapBuf(), 0.7 * cfg.snare);
           });
+          /* ghost snare: colpi piano tra i principali (tendenza trap), con seme proprio per non cambiare il resto */
+          if (HARD && !lastBar && cfg.snare >= 0.7) { var gs = [5, 7, 13, 15][Math.floor(rm() * 4)]; if (rm() < 0.55) add('snare', at(bar, gs), snareBuf(), 0.13 * cfg.snare); }
         }
         if (cfg.roll && lastBar) { // rullo di rullante crescente
           for (var r = 0; r < 12; r++) add('snare', at(bar, 8 + r * 8 / 12), snareBuf(), 0.15 + 0.5 * r / 12);

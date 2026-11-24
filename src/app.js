@@ -664,14 +664,16 @@
   }
   $('#ear-go').addEventListener('click', function () { earRun(false); });
   $('#ear-out').addEventListener('click', async function (e) { if (e.target.id !== 'ear-fix') return; var r = earMeasure(), ch = earApply(r); $('#ear-out').innerHTML = '<p class="small">' + (ch.length ? 'Ho cambiato: ' + esc(ch.join(', ')) + '. Riascolto…' : 'Niente da cambiare.') + '</p>'; await tick(); await earRun(false); });
+  /* sfondo ed emozione: espone l'umore sul body (la grafica la decide la schermata, in CSS con body[data-mood]) */
+  function applyMoodBg(m) { try { document.body.dataset.mood = m || ''; } catch (e) {} }
   /* ===== Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti) ===== */
   var BANNED_INST = { flute: 1, ocarina: 1, harmonica: 1, clarinet: 1, kalimba: 0 };
-  async function runBrain(again, fixedV) {
+  async function runBrain(again, fixedV, mel) {
     var s = cur(), p = s.prod, m = $('#sb-msg');
     if (!s.lyrics.trim()) { m.textContent = 'Scrivi o incolla prima il testo (in alto): il cervello parte da quello.'; return; }
     s.brainV = fixedV != null ? fixedV : (again ? (s.brainV || 0) + 1 : 0); s.brainFor = SultanBrain.hash(s.lyrics.trim()); s.genreManual = false;
-    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel(), mood: $('#sb-mood').value || null, styleText: ($('#sb-style') || {}).value || '' }); s.moodTarget = pl.moodTarget; persist();
-    p.heavy = !!pl.heavy; p.melSeed = 0; p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
+    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel(), mood: $('#sb-mood').value || null, styleText: ($('#sb-style') || {}).value || '' }); s.moodTarget = pl.moodTarget; applyMoodBg(pl.moodTarget); persist();
+    p.heavy = !!pl.heavy; p.melSeed = mel || 0; p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
     var res = Coach.suggest(coachState(), coachCands(p.genre), { emotion: pl.scene, seed: pl.seed }), R = Instruments.RECIPES[p.genre] || {};
     ['melodia', 'accordi', 'pad'].forEach(function (role) { if (BANNED_INST[res.inst[role]]) res.inst[role] = (R[role] || ['piano'])[0]; });
     if (res.inst.accordi === res.inst.melodia) { var alt = (R.accordi || []).concat(R.melodia || []).filter(function (id) { return id !== res.inst.melodia && !BANNED_INST[id]; }); if (alt.length) res.inst.accordi = alt[(pl.seed >>> 3) % Math.min(alt.length, 3)]; }
@@ -686,17 +688,23 @@
   $('#sb-mood').addEventListener('change', function () { $('#bl-mood').value = this.value; });
   $('#bl-mood').addEventListener('change', function () { $('#sb-mood').value = this.value; });
   $('#sb-make').addEventListener('click', function () { runBrain(false); });
-  /* 6 proposte diverse dallo stesso testo: scegli quella che ti piace e la ascolti */
-  $('#sb-six').addEventListener('click', function () {
+  /* proposte diverse dallo stesso testo, senza limite: ogni "Altre 6" ne aggiunge altre (stile, velocità, tonalità e melodia cambiano) */
+  var SB_N = 0;
+  function sbMore(reset) {
     var s = cur(), box = $('#sb-list'); if (!s.lyrics.trim()) { box.innerHTML = '<p class="small">Scrivi prima il testo.</p>'; return; }
-    var a = analysisOf(s), st = ($('#sb-style') || {}).value || '', seen = {}, h = '';
-    for (var v = 0; v < 12 && Object.keys(seen).length < 6; v++) {
-      var pl = SultanBrain.plan(s.lyrics, a, { variant: v, profile: arModel(), mood: $('#sb-mood').value || null, styleText: st }), k = pl.genre + pl.tonic + pl.mode; if (seen[k]) continue; seen[k] = 1;
-      h += '<li><b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + NOTES[pl.tonic] + ' ' + pl.mode + (pl.heavy ? ' · pesante' : '') + ' <button class="chip" data-sb-v="' + v + '" style="min-height:28px;padding:2px 10px">Ascolta</button></li>';
+    if (reset) { SB_N = 0; box.innerHTML = '<ul class="clean small" id="sb-ul"></ul><div class="row"><button class="btn sm" id="sb-more">Altre 6 proposte</button></div>'; }
+    var a = analysisOf(s), st = ($('#sb-style') || {}).value || '', h = '', i;
+    for (i = SB_N; i < SB_N + 6; i++) {
+      var pl = SultanBrain.plan(s.lyrics, a, { variant: i, profile: arModel(), mood: $('#sb-mood').value || null, styleText: st });
+      h += '<li>' + (i + 1) + '. <b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + NOTES[pl.tonic] + ' ' + pl.mode + (pl.heavy ? ' · pesante' : '') + ' <button class="chip" data-sb-v="' + i + '" style="min-height:28px;padding:2px 10px">Ascolta</button></li>';
     }
-    box.innerHTML = '<ul class="clean small">' + h + '</ul>';
+    SB_N += 6; $('#sb-ul').insertAdjacentHTML('beforeend', h);
+  }
+  $('#sb-six').addEventListener('click', function () { sbMore(true); });
+  $('#sb-list').addEventListener('click', function (e) {
+    if (e.target && e.target.id === 'sb-more') { sbMore(false); return; }
+    var v = e.target && e.target.getAttribute && e.target.getAttribute('data-sb-v'); if (v != null) runBrain(false, +v, +v);
   });
-  $('#sb-list').addEventListener('click', function (e) { var v = e.target && e.target.getAttribute && e.target.getAttribute('data-sb-v'); if (v != null) runBrain(false, +v); });
   $('#sb-again').addEventListener('click', function () { runBrain(true); });
   /* il testo decide la base: se non hai scelto tu il genere a mano, parte il Cervello Sultan (una base diversa per ogni testo) */
   function brainFirst(again) { var s = cur(); if (s.lyrics && s.lyrics.trim() && !s.genreManual && (again || s.brainFor !== SultanBrain.hash(s.lyrics.trim()))) { runBrain(again && s.brainFor === SultanBrain.hash(s.lyrics.trim())); return true; } return false; }
