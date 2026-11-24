@@ -666,10 +666,10 @@
   $('#ear-out').addEventListener('click', async function (e) { if (e.target.id !== 'ear-fix') return; var r = earMeasure(), ch = earApply(r); $('#ear-out').innerHTML = '<p class="small">' + (ch.length ? 'Ho cambiato: ' + esc(ch.join(', ')) + '. Riascolto…' : 'Niente da cambiare.') + '</p>'; await tick(); await earRun(false); });
   /* ===== Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti) ===== */
   var BANNED_INST = { flute: 1, ocarina: 1, harmonica: 1, clarinet: 1, kalimba: 0 };
-  async function runBrain(again) {
+  async function runBrain(again, fixedV) {
     var s = cur(), p = s.prod, m = $('#sb-msg');
     if (!s.lyrics.trim()) { m.textContent = 'Scrivi o incolla prima il testo (in alto): il cervello parte da quello.'; return; }
-    s.brainV = again ? (s.brainV || 0) + 1 : 0; s.brainFor = SultanBrain.hash(s.lyrics.trim()); s.genreManual = false;
+    s.brainV = fixedV != null ? fixedV : (again ? (s.brainV || 0) + 1 : 0); s.brainFor = SultanBrain.hash(s.lyrics.trim()); s.genreManual = false;
     var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel(), mood: $('#sb-mood').value || null, styleText: ($('#sb-style') || {}).value || '' }); s.moodTarget = pl.moodTarget; persist();
     p.heavy = !!pl.heavy; p.melSeed = 0; p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
     var res = Coach.suggest(coachState(), coachCands(p.genre), { emotion: pl.scene, seed: pl.seed }), R = Instruments.RECIPES[p.genre] || {};
@@ -686,6 +686,17 @@
   $('#sb-mood').addEventListener('change', function () { $('#bl-mood').value = this.value; });
   $('#bl-mood').addEventListener('change', function () { $('#sb-mood').value = this.value; });
   $('#sb-make').addEventListener('click', function () { runBrain(false); });
+  /* 6 proposte diverse dallo stesso testo: scegli quella che ti piace e la ascolti */
+  $('#sb-six').addEventListener('click', function () {
+    var s = cur(), box = $('#sb-list'); if (!s.lyrics.trim()) { box.innerHTML = '<p class="small">Scrivi prima il testo.</p>'; return; }
+    var a = analysisOf(s), st = ($('#sb-style') || {}).value || '', seen = {}, h = '';
+    for (var v = 0; v < 12 && Object.keys(seen).length < 6; v++) {
+      var pl = SultanBrain.plan(s.lyrics, a, { variant: v, profile: arModel(), mood: $('#sb-mood').value || null, styleText: st }), k = pl.genre + pl.tonic + pl.mode; if (seen[k]) continue; seen[k] = 1;
+      h += '<li><b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + NOTES[pl.tonic] + ' ' + pl.mode + (pl.heavy ? ' · pesante' : '') + ' <button class="chip" data-sb-v="' + v + '" style="min-height:28px;padding:2px 10px">Ascolta</button></li>';
+    }
+    box.innerHTML = '<ul class="clean small">' + h + '</ul>';
+  });
+  $('#sb-list').addEventListener('click', function (e) { var v = e.target && e.target.getAttribute && e.target.getAttribute('data-sb-v'); if (v != null) runBrain(false, +v); });
   $('#sb-again').addEventListener('click', function () { runBrain(true); });
   /* il testo decide la base: se non hai scelto tu il genere a mano, parte il Cervello Sultan (una base diversa per ogni testo) */
   function brainFirst(again) { var s = cur(); if (s.lyrics && s.lyrics.trim() && !s.genreManual && (again || s.brainFor !== SultanBrain.hash(s.lyrics.trim()))) { runBrain(again && s.brainFor === SultanBrain.hash(s.lyrics.trim())); return true; } return false; }
