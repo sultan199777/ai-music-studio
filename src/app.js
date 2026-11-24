@@ -950,7 +950,7 @@
   }
   function voiceTake() { var t = activeTake(); return t && !t.example ? t : null; }
   function dwBuffers(b) {
-    var t = voiceTake(), key = SESSION.baseKey + '|' + (t ? t.id + (t.final && !DW.raw ? 'f' + (t.finalV || 0) : '') : '');
+    var t = voiceTake(), key = SESSION.baseKey + '|' + vclipKey();
     if (DW.bufKey === key && DW.bufs) return DW.bufs;
     var bufs = {}, N = b.length, sum = new Float32Array(N), i;
     LANES.forEach(function (L) {
@@ -962,7 +962,7 @@
     });
     var pk = 0; for (i = 0; i < N; i++) { var v = sum[i] < 0 ? -sum[i] : sum[i]; if (v > pk) pk = v; }
     DW.k = pk > 0 ? 0.8 / pk : 1;
-    if (t) bufs.voice = { x: (!DW.raw && t.final) || t.mono, sr: t.sr, start: -(t.lat || 0) };
+    var vb = vclipBuffer(b.duration); if (vb) bufs.voice = vb;
     DW.bufs = bufs; DW.bufKey = key; return bufs;
   }
   function gainFor(L) {
@@ -1080,11 +1080,12 @@
       t.lat = R.lat || 0; t.at = Date.now();
       dbTake('put', { id: t.id, name: t.name, mono: t.mono, sr: t.sr, lat: t.lat, at: t.at }).then(function (ok) { t.saved = !!ok; });
       SESSION.takeId = t.id; try { selectTake(t.id); } catch (e) {}
+      cur().vclips = [Clips.whole(t, t.lat || 0)]; CLUI.sel = 0;
       coachRec('record', coachCtx()); DW.bufKey = ''; DW.raw = false;
       $('#dw-msg').textContent = 'Voce registrata. Applico il microfono (' + (micSet().mode === 'autotune' ? 'autotune' : 'pulito') + ')…';
       await micApply(true);
       $('#dw-msg').textContent = 'Voce registrata e regolata. Premi Play per riascoltarla con la base. Il Coach la sta controllando.';
-      await dwRefresh(); agentsRun(true);
+      await dwRefresh(); clipsRender(); agentsRun(true);
     } catch (e) { $('#dw-msg').textContent = 'Non riesco a leggere la registrazione. Riprova.'; }
   }
 
@@ -1258,6 +1259,70 @@
   $('#dw-heads').addEventListener('input', function (e) {
     var id = e.target.getAttribute('data-lv'); if (!id) return;
     var L = LANES.filter(function (x) { return x.id === id; })[0]; cur().prod.levels[L.level] = +e.target.value / 100; persist(); dwGains();
+  });
+  // ---------- Voce: prove e montaggio (clip) ----------
+  function realTakes() { return SESSION.takes.filter(function (t) { return !t.example; }); }
+  function takeById(id) { return SESSION.takes.filter(function (t) { return t.id === id; })[0] || null; }
+  function vclips() {
+    var s = cur();
+    if (Array.isArray(s.vclips)) { s.vclips = s.vclips.filter(function (c) { return takeById(c.take); }); if (s.vclips.length) return s.vclips; }
+    var t = voiceTake(); return t ? [Clips.whole(t, t.lat || 0)] : [];
+  }
+  function vclipKey() { return JSON.stringify(vclips().map(function (c) { var t = takeById(c.take); return [c.take, c.start, c.offset, c.len, c.gain, c.fadeIn, c.fadeOut, t && t.final && !DW.raw ? (t.finalV || 1) : 0]; })); }
+  function vclipBuffer(dur) {
+    var cl = vclips(); if (!cl.length) return null;
+    var map = {}; cl.forEach(function (c) { var t = takeById(c.take); if (t) map[c.take] = { x: (!DW.raw && t.final) || t.mono, sr: t.sr }; });
+    var sr = 44100; return { x: Clips.render(cl, map, sr, Math.max(dur, Clips.end(cl)) + 0.5), sr: sr, start: 0 };
+  }
+  function setClips(cl, msg) { cur().vclips = cl.map(Clips.clip); DW.bufKey = ''; persist(); clipsRender(); if (msg) $('#dw-cl-msg').textContent = msg; var was = DW.playing, at = was ? (getCtx().currentTime - DW.t0 + DW.from) : DW.from; dwStop(true); dwRefresh().then(function () { if (was) dwPlay(at); }); }
+  function fmtS(s) { return Math.floor(s / 60) + ':' + (s % 60).toFixed(1).padStart(4, '0'); }
+  var CLUI = { sel: 0 };
+  function clipsRender() {
+    var tk = realTakes(), cl = vclips(), map = songMap(), lines = map ? map.lines : [];
+    $('#dw-cl-takes').innerHTML = tk.length ? tk.map(function (t, i) { return '<div class="dw-prop"><div><b>Prova ' + (i + 1) + ' · ' + esc(t.name) + '</b><small>' + fmtS(t.mono.length / t.sr) + (t.final ? ' · regolata col microfono' : '') + '</small></div><button class="btn sm" data-ctp="' + t.id + '">▶</button><button class="btn sm pri" data-ctu="' + t.id + '">Usa tutta</button><button class="btn sm" data-ctx="' + t.id + '">Elimina</button></div>'; }).join('') : '<p class="small muted">Nessuna prova: registra con ● in alto. Ogni registrazione diventa una prova, nessuna si perde.</p>';
+    var comp = '';
+    if (lines.length && tk.length >= 2) {
+      var ch = cur().vcomp || {};
+      comp = '<p class="small muted" style="margin:10px 0 4px">Componi la voce: per ogni riga scegli la prova migliore.</p>' + lines.map(function (ln, i) {
+        return '<label class="f dw-compl"><span>' + esc(ln.text.slice(0, 48)) + '</span><select data-cpl="' + i + '"><option value="">— niente —</option>' + tk.map(function (t, k) { return '<option value="' + t.id + '"' + ((ch[i] || tk[tk.length - 1].id) === t.id ? ' selected' : '') + '>Prova ' + (k + 1) + '</option>'; }).join('') + '</select></label>';
+      }).join('') + '<div class="row"><button class="btn sm pri" id="dw-cl-comp">Monta la voce dalle righe scelte</button></div>';
+    } else if (tk.length >= 2) comp = '<p class="small muted">Scrivi il testo per montare la voce riga per riga.</p>';
+    $('#dw-cl-comp-box').innerHTML = comp;
+    CLUI.sel = Math.min(CLUI.sel, Math.max(0, cl.length - 1));
+    $('#dw-cl-list').innerHTML = cl.length ? cl.map(function (c, i) {
+      var t = takeById(c.take), k = realTakes().indexOf(t) + 1;
+      return '<button class="chip' + (i === CLUI.sel ? ' on' : '') + '" data-cls="' + i + '">Clip ' + (i + 1) + ' · prova ' + k + ' · ' + fmtS(c.start) + '–' + fmtS(c.start + c.len) + '</button>';
+    }).join('') : '';
+    var c = cl[CLUI.sel];
+    $('#dw-cl-edit').innerHTML = c ? [
+      ['start', 'Posizione nella canzone', 0, Math.max(30, Clips.end(cl) + 10), 0.01, fmtS(c.start)],
+      ['gain', 'Volume della clip', 0, 2, 0.01, (20 * Math.log10(Math.max(1e-4, c.gain))).toFixed(1) + ' dB'],
+      ['fadeIn', 'Entrata sfumata', 0, 2, 0.01, c.fadeIn.toFixed(2) + ' s'],
+      ['fadeOut', 'Uscita sfumata', 0, 2, 0.01, c.fadeOut.toFixed(2) + ' s']
+    ].map(function (r) { return '<label class="f"><span>' + r[1] + ' <b>' + r[5] + '</b></span><input type="range" min="' + r[2] + '" max="' + r[3] + '" step="' + r[4] + '" value="' + c[r[0]] + '" data-cle="' + r[0] + '"></label>'; }).join('') +
+      '<div class="row"><button class="btn sm" data-clm="-0.05">◀ 50 ms</button><button class="btn sm" data-clm="0.05">50 ms ▶</button><button class="btn sm pri" id="dw-cl-split">Taglia al cursore</button><button class="btn sm" id="dw-cl-del">Togli la clip</button></div>' : '';
+  }
+  $('#dw-p-clips').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var cl = vclips().map(function (x) { return Object.assign({}, x); }), el = $('#dw-cl-msg');
+    if (b.getAttribute('data-ctp')) { var t = takeById(b.getAttribute('data-ctp')); dwStop(true); playBuf((!DW.raw && t.final) || t.mono, t.sr); return; }
+    if (b.getAttribute('data-ctu')) { var t2 = takeById(b.getAttribute('data-ctu')); SESSION.takeId = t2.id; CLUI.sel = 0; setClips([Clips.whole(t2, t2.lat || 0)], 'Ora la voce è tutta la ' + esc(t2.name) + '.'); return; }
+    if (b.getAttribute('data-ctx')) { var id = b.getAttribute('data-ctx'); SESSION.takes = SESSION.takes.filter(function (x) { return x.id !== id; }); dbTake('del', id); if (SESSION.takeId === id) SESSION.takeId = realTakes().length ? realTakes()[realTakes().length - 1].id : null; setClips(vclips().filter(function (x) { return x.take !== id; }), 'Prova eliminata.'); return; }
+    if (b.getAttribute('data-cls') != null) { CLUI.sel = +b.getAttribute('data-cls'); clipsRender(); return; }
+    if (b.id === 'dw-cl-comp') {
+      var map = songMap(), ch = {}; $$('#dw-cl-comp-box select').forEach(function (s) { ch[+s.getAttribute('data-cpl')] = s.value; }); cur().vcomp = ch;
+      var lat = {}; realTakes().forEach(function (x) { lat[x.id] = x.lat || 0; });
+      var res = Clips.compByLines(map.lines, map.lines.map(function (_, i) { return ch[i]; }), realTakes(), lat);
+      CLUI.sel = 0; setClips(res, 'Voce montata: ' + res.length + ' clip, una per riga, con dissolvenze. Premi Play.'); coachRec('change', coachCtx(), { role: 'comp', from: null, to: res.length }); return;
+    }
+    var c = cl[CLUI.sel]; if (!c) return;
+    if (b.getAttribute('data-clm')) { c.start = Math.max(0, c.start + +b.getAttribute('data-clm')); setClips(cl, 'Clip spostata di ' + Math.round(+b.getAttribute('data-clm') * 1000) + ' ms.'); return; }
+    if (b.id === 'dw-cl-split') { var at = DW.playing ? (getCtx().currentTime - DW.t0 + DW.from) : (DW.from || 0), parts = Clips.split(c, at); if (!parts) { el.textContent = 'Metti il cursore dentro la clip (tocca la timeline) e riprova.'; return; } cl.splice(CLUI.sel, 1, parts[0], parts[1]); setClips(cl, 'Clip tagliata a ' + fmtS(at) + '.'); return; }
+    if (b.id === 'dw-cl-del') { cl.splice(CLUI.sel, 1); CLUI.sel = 0; setClips(cl, 'Clip tolta (la prova resta salvata).'); return; }
+  });
+  $('#dw-cl-edit').addEventListener('change', function (e) {
+    var k = e.target.getAttribute('data-cle'); if (!k) return;
+    var cl = vclips().map(function (x) { return Object.assign({}, x); }); cl[CLUI.sel][k] = +e.target.value; setClips(cl, '');
   });
   // ---------- Mixer a canali (stessa catena per ascolto e file salvato) ----------
   var MIX_LANES = ['drums', 'bass', 'chords', 'arp', 'lead', 'pad', 'voice'];
@@ -1501,7 +1566,7 @@
     learnUse(pl); el.textContent = 'Base nuova creata dai tuoi gusti (' + pl.from + ' che ti piacciono' + (pl.avoid ? ', ' + pl.avoid + ' da evitare' : '') + '): ' + (Arranger.STYLES[pl.genre] ? Arranger.STYLES[pl.genre].label : pl.genre) + ', ' + pl.bpm + ' BPM, cassa sui passi ' + pl.groove.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + '. Premi Play.';
   });
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
-  SHOW.daw = function () { dwFill(); mixRender(); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+  SHOW.daw = function () { dwFill(); mixRender(); clipsRender(); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {
