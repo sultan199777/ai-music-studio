@@ -1,0 +1,459 @@
+/*
+ * Arrangiatore: costruisce basi ORIGINALI con una struttura vera
+ * (intro, strofa, pre, ritornello, bridge, outro) e direzioni di stile diverse.
+ *
+ * Tutto è sintetizzato dal programma (nessun campione, nessun brano altrui).
+ * Le "direzioni" non copiano artisti: usano solo caratteristiche generiche
+ * di genere (tempo, densità di batteria, ruolo del basso, tipo di suoni).
+ * Con lo stesso seme si ottiene sempre la stessa base.
+ * Restituisce lo stesso formato di Backing.generate (+ sections), quindi si
+ * mixa con Backing.mix.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.Arranger = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var NAMES = ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'];
+  var STEPS = { maggiore: [0, 2, 4, 5, 7, 9, 11], minore: [0, 2, 3, 5, 7, 8, 10] };
+  var PROGS = {
+    minore: [[0, 5, 2, 6], [0, 3, 5, 4], [0, 6, 5, 6], [5, 6, 0, 0]],
+    maggiore: [[0, 4, 5, 3], [5, 3, 0, 4], [0, 3, 4, 3], [3, 4, 0, 5]]
+  };
+
+  // Direzioni di stile. kick/snare: posizioni sui 16 passi; kickExtra: candidati variabili.
+  var STYLES = {
+    trap: {
+      label: 'Trap', bpm: 140, swing: 0, kick: [0], kickExtra: [3, 6, 7, 10, 11, 13, 14], snare: [8], clap: true,
+      hat: 'trap', bass: '808', slide: 0.25, chord: 'pluck', chordPat: [0, 6, 10], arp: false, pad: 'warm', lead: 'bell', duck: 0.35
+    },
+    drill: {
+      label: 'Drill', bpm: 142, swing: 0, kick: [0], kickExtra: [7, 10, 13], snare: [8], clap: false,
+      hat: 'drill', bass: '808', slide: 0.7, chord: 'pluck', chordPat: [0, 8], arp: true, pad: 'dark', lead: 'bell', duck: 0.3
+    },
+    epico: {
+      label: 'Epico (cinematico)', bpm: 84, swing: 0, kick: [0, 8], kickExtra: [6, 14], snare: [4, 12], clap: true,
+      hat: 'shaker', bass: 'sub', slide: 0, chord: 'ostinato', chordPat: [0, 2, 4, 6, 8, 10, 12, 14], arp: true, pad: 'choir', lead: 'strings', duck: 0.2, taiko: true
+    },
+    melodico: {
+      label: 'Melodico', bpm: 96, swing: 0.08, kick: [0], kickExtra: [6, 10, 11], snare: [4, 12], clap: true,
+      hat: 'soft', bass: 'round', slide: 0.1, chord: 'pluck', chordPat: [0, 3, 6, 10, 12], arp: false, pad: 'warm', lead: 'pluck', duck: 0.25
+    },
+    estate: {
+      label: 'Estate (ritmo latino)', bpm: 100, swing: 0, kick: [0, 4, 8, 12], kickExtra: [], snare: [3, 6, 11, 14], clap: false,
+      hat: 'offbeat', bass: 'round', slide: 0, chord: 'pluck', chordPat: [2, 6, 10, 14], arp: false, pad: 'bright', lead: 'marimba', duck: 0.2
+    }
+  };
+
+  // Come suona ogni sezione (livelli 0-1). riserEnd = riser nell'ultima battuta; gap = respiro prima del drop.
+  var SEC = {
+    intro: { kick: 0, snare: 0, hat: 0.25, bass: 0, chords: 0.7, pad: 0.8, lead: 0.6, riserEnd: true },
+    strofa: { kick: 1, snare: 1, hat: 0.6, bass: 1, chords: 0.45, pad: 0.4, lead: 0, riserEnd: false },
+    pre: { kick: 0.7, snare: 0.8, hat: 1, bass: 0.7, chords: 0.6, pad: 0.7, lead: 0, riserEnd: true, gap: true, roll: true },
+    ritornello: { kick: 1, snare: 1, hat: 1, bass: 1, chords: 1, pad: 1, lead: 1, impact: true },
+    bridge: { kick: 0, snare: 0, hat: 0.3, bass: 0.5, chords: 0.8, pad: 1, lead: 0.9, riserEnd: true, gap: true },
+    outro: { kick: 0, snare: 0, hat: 0.2, bass: 0.3, chords: 0.5, pad: 0.8, lead: 0.4 }
+  };
+
+  function rng(seed) {
+    var s = (seed >>> 0) || 1;
+    return function () { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
+  }
+  function mtof(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+  function scaleNote(tonic, mode, degree, base) {
+    var st = STEPS[mode], oct = Math.floor(degree / 7), d = ((degree % 7) + 7) % 7;
+    return base + tonic + st[d] + 12 * oct;
+  }
+  function chordName(tonic, mode, degree) {
+    var r = scaleNote(tonic, mode, degree, 0), t = scaleNote(tonic, mode, degree + 2, 0) - r, f = scaleNote(tonic, mode, degree + 4, 0) - r;
+    return NAMES[((r % 12) + 12) % 12] + (t === 3 ? (f === 6 ? 'dim' : 'm') : '');
+  }
+
+  /** Ripartisce le battute tra le sezioni: sempre somma esatta = bars. */
+  function planStructure(bars) {
+    var T;
+    if (bars < 4) T = [['ritornello', 1]];
+    else if (bars < 8) T = [['strofa', 2], ['ritornello', 2]];
+    else if (bars < 16) T = [['intro', 1], ['strofa', 3], ['pre', 1], ['ritornello', 3]];
+    else if (bars < 28) T = [['intro', 1], ['strofa', 4], ['pre', 1], ['ritornello', 4], ['outro', 1]];
+    else T = [['intro', 2], ['strofa', 8], ['pre', 2], ['ritornello', 8], ['bridge', 4], ['ritornello', 8], ['outro', 2]];
+    var sum = T.reduce(function (a, t) { return a + t[1]; }, 0), out = T.map(function (t) {
+      var x = bars * t[1] / sum; return { name: t[0], bars: Math.max(1, Math.floor(x)), frac: x - Math.floor(x) };
+    });
+    var tot = out.reduce(function (a, o) { return a + o.bars; }, 0);
+    while (tot < bars) { var bi = 0; out.forEach(function (o, i) { if (o.frac > out[bi].frac) bi = i; }); out[bi].bars++; out[bi].frac = -1; tot++; }
+    while (tot > bars) { var mi = 0; out.forEach(function (o, i) { if (o.bars > out[mi].bars) mi = i; }); out[mi].bars--; tot--; }
+    return out.map(function (o) { return [o.name, o.bars]; });
+  }
+
+  function biquad(x, type, f0, Q, sr) {
+    var w = 2 * Math.PI * Math.min(f0, sr * 0.45) / sr, cw = Math.cos(w), al = Math.sin(w) / (2 * Q), a0 = 1 + al, b0, b1, b2;
+    if (type === 'lp') { b0 = (1 - cw) / 2; b1 = 1 - cw; b2 = b0; } else { b0 = al; b1 = 0; b2 = -al; }
+    var a1 = -2 * cw, a2 = 1 - al, y = new Float32Array(x.length), x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    b0 /= a0; b1 /= a0; b2 /= a0; a1 /= a0; a2 /= a0;
+    for (var i = 0; i < x.length; i++) {
+      var v = b0 * x[i] + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+      x2 = x1; x1 = x[i]; y2 = y1; y1 = v; y[i] = v;
+    }
+    return y;
+  }
+  function blep(t, dt) {
+    if (t < dt) { t /= dt; return t + t - t * t - 1; }
+    if (t > 1 - dt) { t = (t - 1) / dt; return t * t + t + t + 1; }
+    return 0;
+  }
+
+  /**
+   * @param {{sampleRate?:number,bpm?:number,tonic?:number,mode?:string,bars?:number,genre?:string,seed?:number,bassStyle?:string}} p
+   */
+  function generate(p) {
+    p = p || {};
+    var style = STYLES[p.genre] || STYLES.trap, genreKey = STYLES[p.genre] ? p.genre : 'trap';
+    var tune = p.tune || {}, tHat = tune.hat == null ? 1 : tune.hat, tBass = tune.bass == null ? 1 : tune.bass, tLift = tune.lift == null ? 1 : tune.lift, tKick = tune.kickVar == null ? 1 : tune.kickVar;
+    var sr = p.sampleRate || 32000, bpm = p.bpm || style.bpm;
+    var tonic = ((p.tonic || 0) % 12 + 12) % 12, mode = p.mode === 'maggiore' ? 'maggiore' : 'minore';
+    var bars = Math.max(1, Math.min(64, p.bars || 32));
+    var rand = rng(p.seed || 1);
+    var stepSec = 60 / bpm / 4, stepLen = Math.round(stepSec * sr), N = stepLen * 16 * bars;
+    var bassKind = p.bassStyle === '808' ? '808' : (style.bass);
+    var T = { kick: new Float32Array(N), snare: new Float32Array(N), hat: new Float32Array(N), bass: new Float32Array(N), chords: new Float32Array(N), pad: new Float32Array(N), lead: new Float32Array(N), fx: new Float32Array(N) };
+    var events = { bass: [], chords: [], lead: [] }, kickStarts = [];
+
+    function at(bar, step) {
+      var sw = (Math.abs(step - Math.round(step)) < 1e-6 && Math.round(step) % 2 === 1) ? style.swing * stepLen : 0;
+      return Math.round((bar * 16 + step) * stepLen + sw);
+    }
+    function add(tr, start, buf, gain) {
+      if (start < 0) return;
+      var a = T[tr];
+      for (var i = 0; i < buf.length && start + i < N; i++) a[start + i] += buf[i] * gain;
+    }
+    var cache = {};
+    function memo(k, fn) { return cache[k] || (cache[k] = fn()); }
+    function noise() { return rand() * 2 - 1; }
+
+    // ---------- strumenti ----------
+    function kickBuf(big) {
+      return memo('k' + big, function () {
+        var len = Math.round((big ? 0.5 : 0.34) * sr), b = new Float32Array(len), ph = 0;
+        for (var i = 0; i < len; i++) {
+          var t = i / sr, f = 42 + 110 * Math.exp(-t * 45);
+          ph += 2 * Math.PI * f / sr;
+          b[i] = (Math.sin(ph) * Math.exp(-t * (big ? 7 : 10)) + (i < 300 ? 0.25 * noise() * (1 - i / 300) : 0)) * Math.min(1, i / 30);
+        }
+        return b;
+      });
+    }
+    function taikoBuf() {
+      return memo('taiko', function () {
+        var len = Math.round(0.9 * sr), b = new Float32Array(len), ph = 0;
+        for (var i = 0; i < len; i++) {
+          var t = i / sr, f = 58 + 40 * Math.exp(-t * 18);
+          ph += 2 * Math.PI * f / sr;
+          b[i] = (Math.sin(ph) * Math.exp(-t * 3.4) + 0.12 * noise() * Math.exp(-t * 30)) * Math.min(1, i / 40);
+        }
+        return b;
+      });
+    }
+    function snareBuf() {
+      var len = Math.round(0.24 * sr), b = new Float32Array(len);
+      for (var i = 0; i < len; i++) {
+        var t = i / sr;
+        b[i] = noise() * Math.exp(-t * 20) * 0.55 + Math.sin(2 * Math.PI * 190 * t) * Math.exp(-t * 28) * 0.45;
+      }
+      return b;
+    }
+    function clapBuf() {
+      var len = Math.round(0.3 * sr), b = new Float32Array(len), offs = [0, 0.011, 0.022, 0.034];
+      for (var i = 0; i < len; i++) {
+        var t = i / sr, v = 0;
+        for (var k = 0; k < offs.length; k++) if (t >= offs[k]) v += Math.exp(-(t - offs[k]) * (k === 3 ? 18 : 90));
+        b[i] = noise() * v * 0.3;
+      }
+      return biquad(b, 'bp', 1500, 0.8, sr);
+    }
+    function hatBuf(open, vel) {
+      var len = Math.round((open ? 0.2 : 0.05) * sr), b = new Float32Array(len), prev = 0;
+      for (var i = 0; i < len; i++) {
+        var t = i / sr, n = noise();
+        b[i] = (n - prev) * Math.exp(-t * (open ? 20 : 85)) * 0.5 * vel; prev = n;
+      }
+      return b;
+    }
+    function bass808(m, prevM, dur, slide) {
+      return memo('b8' + m + '_' + prevM + '_' + dur.toFixed(2) + slide, function () {
+        var len = Math.round(dur * sr), b = new Float32Array(len), ph = 0, f1 = mtof(m), f0 = prevM == null ? f1 : mtof(prevM);
+        for (var i = 0; i < len; i++) {
+          var t = i / sr, glide = slide && prevM != null ? Math.min(1, t / 0.09) : 1;
+          var f = (f0 + (f1 - f0) * glide) * (1 + 0.5 * Math.exp(-t * 55));
+          ph += 2 * Math.PI * f / sr;
+          var v = Math.tanh(Math.sin(ph) * 1.9) / 1.1 + 0.08 * Math.sin(2 * ph);
+          b[i] = v * Math.exp(-t * 1.7) * Math.min(1, i / 120) * Math.min(1, (len - i) / 500);
+        }
+        return b;
+      });
+    }
+    function bassRound(m, dur, sub) {
+      return memo('br' + m + '_' + dur.toFixed(2) + sub, function () {
+        var len = Math.round(dur * sr), b = new Float32Array(len), ph = 0, f = mtof(m);
+        for (var i = 0; i < len; i++) {
+          var t = i / sr; ph += 2 * Math.PI * f / sr;
+          b[i] = (Math.sin(ph) + (sub ? 0.15 : 0.32) * Math.sin(2 * ph)) * Math.exp(-t * (sub ? 1.4 : 3)) * Math.min(1, i / 200) * Math.min(1, (len - i) / 500);
+        }
+        return b;
+      });
+    }
+    function pluckBuf(m, dur, bright) {
+      return memo('pl' + m + '_' + dur.toFixed(2) + bright, function () {
+        var len = Math.round(dur * sr), b = new Float32Array(len), f = mtof(m), amps = [1, 0.55, 0.3, 0.18, 0.1];
+        for (var i = 0; i < len; i++) {
+          var t = i / sr, v = 0;
+          for (var h = 0; h < amps.length; h++) v += amps[h] * (bright ? 1 : 1 - h * 0.12) * Math.sin(2 * Math.PI * f * (h + 1) * t + h * 0.7) * Math.exp(-t * (2.8 + h * 2.4));
+          b[i] = v * Math.min(1, i / 80) * Math.min(1, (len - i) / 400);
+        }
+        return b;
+      });
+    }
+    function bellBuf(m, dur) {
+      return memo('bl' + m + '_' + dur.toFixed(2), function () {
+        var len = Math.round(dur * sr), b = new Float32Array(len), f = mtof(m);
+        for (var i = 0; i < len; i++) {
+          var t = i / sr, mod = 1.3 * Math.sin(2 * Math.PI * f * 3.5 * t) * Math.exp(-t * 6);
+          b[i] = (Math.sin(2 * Math.PI * f * t + mod) * Math.exp(-t * 2.6) + 0.2 * Math.sin(2 * Math.PI * f * 2 * t) * Math.exp(-t * 5)) * Math.min(1, i / 50) * Math.min(1, (len - i) / 600);
+        }
+        return b;
+      });
+    }
+    function marimbaBuf(m, dur) {
+      return memo('mb' + m + '_' + dur.toFixed(2), function () {
+        var len = Math.round(dur * sr), b = new Float32Array(len), f = mtof(m);
+        for (var i = 0; i < len; i++) {
+          var t = i / sr;
+          b[i] = (Math.sin(2 * Math.PI * f * t) * Math.exp(-t * 6) + 0.4 * Math.sin(2 * Math.PI * f * 4 * t) * Math.exp(-t * 18)) * Math.min(1, i / 40) * Math.min(1, (len - i) / 400);
+        }
+        return b;
+      });
+    }
+    // Archi / cori: più sega leggermente scordate (polyBLEP) + filtro: niente suono da "flautino".
+    function sawStack(midis, dur, dets, lp, atk, rel, formants) {
+      return memo('sw' + midis.join(',') + '_' + dur.toFixed(2) + lp + atk + (formants ? 'f' : ''), function () {
+        var len = Math.round(dur * sr), b = new Float32Array(len), nOsc = midis.length * dets.length;
+        midis.forEach(function (m) {
+          dets.forEach(function (c, di) {
+            var f = mtof(m) * Math.pow(2, c / 1200), dt = f / sr, ph = (di * 0.31 + m * 0.07) % 1;
+            for (var i = 0; i < len; i++) {
+              b[i] += (2 * ph - 1 - blep(ph, dt)) / nOsc;
+              ph += dt; if (ph >= 1) ph -= 1;
+            }
+          });
+        });
+        var y = biquad(b, 'lp', lp, 0.8, sr);
+        if (formants) {
+          var f1 = biquad(y, 'bp', 700, 4, sr), f2 = biquad(y, 'bp', 1150, 5, sr), f3 = biquad(y, 'bp', 2600, 6, sr);
+          for (var k = 0; k < len; k++) y[k] = y[k] * 0.45 + (f1[k] + f2[k] * 0.8 + f3[k] * 0.4) * 1.6;
+        }
+        var A = Math.max(1, atk * sr), R = Math.max(1, rel * sr);
+        for (var j = 0; j < len; j++) y[j] *= Math.min(1, j / A) * Math.min(1, (len - j) / R);
+        return y;
+      });
+    }
+    function leadBuf(kind, m, dur) {
+      if (kind === 'bell') return bellBuf(m, dur);
+      if (kind === 'marimba') return marimbaBuf(m, dur);
+      if (kind === 'strings') return sawStack([m], dur, [-9, 0, 8], 2400, 0.12, 0.2, false);
+      return pluckBuf(m, dur, true);
+    }
+    function riserBuf(dur) {
+      var len = Math.round(dur * sr), b = new Float32Array(len), ph = 0, prev = 0;
+      for (var i = 0; i < len; i++) {
+        var t = i / len, n = noise(), hp = n - prev; prev = n;
+        ph += 2 * Math.PI * (200 + 1800 * t * t) / sr;
+        b[i] = (hp * 0.35 + Math.sin(ph) * 0.25) * t * t * Math.min(1, (len - i) / 200);
+      }
+      return b;
+    }
+    function impactBuf() {
+      var len = Math.round(1.4 * sr), b = new Float32Array(len), ph = 0;
+      for (var i = 0; i < len; i++) {
+        var t = i / sr; ph += 2 * Math.PI * (48 + 40 * Math.exp(-t * 6)) / sr;
+        b[i] = Math.sin(ph) * Math.exp(-t * 2.4) * 0.9 + noise() * Math.exp(-t * 7) * 0.35;
+      }
+      return b;
+    }
+
+    // ---------- piano della canzone ----------
+    var plan = planStructure(bars), sections = [], cursor = 0;
+    plan.forEach(function (s) { sections.push({ name: s[0], startBar: cursor, bars: s[1], startSec: cursor * stepLen * 16 / sr, endSec: (cursor + s[1]) * stepLen * 16 / sr }); cursor += s[1]; });
+    var progs = PROGS[mode], pick = [];
+    var pa = Math.floor(rand() * progs.length), pb = (pa + 1 + Math.floor(rand() * (progs.length - 1))) % progs.length, pc = (pb + 1) % progs.length;
+    if (pc === pa) pc = (pc + 1) % progs.length;
+    pick = { strofa: progs[pa], intro: progs[pa], pre: progs[pa], ritornello: progs[pb], bridge: progs[pc], outro: progs[pa] };
+
+    // Ritornello: frase "gancio" generata una volta e ripetuta uguale (i ritornelli devono somigliarsi).
+    var scaleM = [];
+    for (var d0 = 7; d0 <= 14; d0++) scaleM.push(scaleNote(tonic, mode, d0, 48));
+    function makePhrase(progression) {
+      var phrase = [], idx = 3;
+      for (var bi = 0; bi < 4; bi++) {
+        var chord = [0, 2, 4].map(function (o) { return scaleNote(tonic, mode, progression[bi] + o, 60); });
+        var evs = [], s = 0;
+        while (s < 16) {
+          var l = [2, 2, 3, 4][Math.floor(rand() * 4)];
+          if (rand() < 0.3 && s > 0) { s += l; continue; }
+          idx = Math.max(0, Math.min(scaleM.length - 1, idx + Math.floor(rand() * 5) - 2));
+          var midi = scaleM[idx] + 12;
+          if (s % 4 === 0 || bi === 3) {
+            var near = chord.reduce(function (a, c) { return Math.abs(c - midi) < Math.abs(a - midi) ? c : a; }, chord[0]);
+            if (Math.abs(near - midi) <= 3) midi = near;
+          }
+          evs.push({ step: s, len: Math.min(l, 16 - s), midi: midi });
+          s += l;
+        }
+        phrase.push(evs);
+      }
+      return phrase;
+    }
+    var hook = makePhrase(pick.ritornello), bridgeLine = makePhrase(pick.bridge), introTease = hook;
+    var prevBassMidi = null, arpCount = 0;
+
+    function addHats(bar, lvl, kind, lastBar, secName) {
+      var hits = [], i;
+      if (kind === 'trap') {
+        for (i = 0; i < 16; i += 2) hits.push([i, i % 4 === 0 ? 0.85 : 0.5]);
+        if (lvl >= 0.9 && rand() < 0.6) { var sp = [[2, 3], [2, 4], [1, 2], [2, 6]][Math.floor(rand() * 4)], st0 = [6, 14][Math.floor(rand() * 2)];
+          for (i = 0; i < sp[1]; i++) hits.push([st0 + i * sp[0] / sp[1], 0.4 + 0.5 * i / sp[1]]); }
+      } else if (kind === 'drill') {
+        for (i = 0; i < 12; i++) hits.push([i * 16 / 12, i % 3 === 0 ? 0.85 : 0.45]);
+      } else if (kind === 'shaker') {
+        for (i = 0; i < 16; i += 2) hits.push([i, 0.3 + (i % 4 === 0 ? 0.15 : 0)]);
+      } else if (kind === 'soft') {
+        for (i = 0; i < 16; i++) hits.push([i, i % 4 === 2 ? 0.7 : (i % 2 ? 0.28 : 0.45)]);
+      } else { for (i = 2; i < 16; i += 4) hits.push([i, 0.8]); for (i = 0; i < 16; i += 4) hits.push([i, 0.3]); }
+      var thr = (1 - lvl) * 0.8;
+      hits.forEach(function (h) {
+        if (h[1] < thr) return;
+        var open = (kind === 'offbeat' && h[0] % 4 === 2) || (kind === 'trap' && h[0] === 14 && rand() < 0.3);
+        add('hat', at(bar, h[0]), hatBuf(open, 1), 0.5 * h[1] * (0.9 + 0.2 * rand()));
+      });
+    }
+
+    // ---------- costruzione battuta per battuta ----------
+    sections.forEach(function (sec) {
+      var cfg = Object.assign({}, SEC[sec.name]), prog = pick[sec.name];
+      if (sec.name === 'strofa') { cfg.chords /= tLift; cfg.pad /= tLift; cfg.bass = Math.min(1.3, cfg.bass * tBass); }
+      else if (sec.name === 'ritornello') { cfg.chords = Math.min(1.4, cfg.chords * tLift); cfg.pad = Math.min(1.4, cfg.pad * tLift); cfg.lead = Math.min(1.3, cfg.lead * tLift); cfg.bass = Math.min(1.3, cfg.bass * tBass); }
+      cfg.hat = Math.min(1, cfg.hat * tHat);
+      for (var k = 0; k < sec.bars; k++) {
+        var bar = sec.startBar + k, deg = prog[k % 4], barLen = stepLen * 16;
+        var lastBar = k === sec.bars - 1, firstBar = k === 0;
+        var ch = [0, 2, 4].map(function (o) { return scaleNote(tonic, mode, deg + o, 48); });
+        events.chords.push({ bar: bar, name: chordName(tonic, mode, deg), midis: ch, section: sec.name });
+        var rootM = scaleNote(tonic, mode, deg, 36), fifthM = scaleNote(tonic, mode, deg + 4, 36);
+        var kickSteps = [];
+
+        // batteria
+        if (cfg.kick) {
+          style.kick.forEach(function (s) { kickSteps.push(s); });
+          if (style.kickExtra.length && (k % 4 !== 3 || rand() < 0.5)) {
+            var nx = Math.max(0, Math.round((1 + Math.floor(rand() * 2 * cfg.kick)) * tKick));
+            for (var q = 0; q < nx; q++) { var c = style.kickExtra[Math.floor(rand() * style.kickExtra.length)]; if (kickSteps.indexOf(c) < 0) kickSteps.push(c); }
+          }
+          if (cfg.gap && lastBar) kickSteps = kickSteps.filter(function (s) { return s < 12; });
+          kickSteps.sort(function (a, b) { return a - b; });
+          kickSteps.forEach(function (s) {
+            var big = s === 0 && cfg.kick >= 1 && sec.name === 'ritornello';
+            add('kick', at(bar, s), kickBuf(big || style.taiko), 0.9 * cfg.kick); kickStarts.push(at(bar, s));
+          });
+          if (style.taiko && (sec.name === 'ritornello' || sec.name === 'pre')) {
+            add('kick', at(bar, 0), taikoBuf(), 0.55); if (k % 2 === 1) add('kick', at(bar, 10), taikoBuf(), 0.4);
+          }
+        }
+        if (cfg.snare && !(cfg.gap && lastBar && !cfg.roll)) {
+          style.snare.forEach(function (s) {
+            if (cfg.roll && lastBar) return;
+            add('snare', at(bar, s), snareBuf(), 0.55 * cfg.snare);
+            if (style.clap) add('snare', at(bar, s), clapBuf(), 0.7 * cfg.snare);
+          });
+        }
+        if (cfg.roll && lastBar) { // rullo di rullante crescente
+          for (var r = 0; r < 12; r++) add('snare', at(bar, 8 + r * 8 / 12), snareBuf(), 0.15 + 0.5 * r / 12);
+        } else if (cfg.kick && lastBar && sec.bars >= 4 && sec.name !== 'pre' && rand() < 0.7) { // piccolo fill a fine frase
+          for (var f = 0; f < 4; f++) add('snare', at(bar, 12 + f), snareBuf(), 0.18 + 0.12 * f);
+        }
+        if (cfg.hat) addHats(bar, cfg.hat, style.hat, lastBar, sec.name);
+
+        // basso
+        if (cfg.bass) {
+          var bs = cfg.kick ? kickSteps.slice() : [0, 8];
+          if (!bs.length || bs[0] !== 0) bs.unshift(0);
+          bs = bs.filter(function (s, i2, a) { return a.indexOf(s) === i2; });
+          bs.forEach(function (s, bi2) {
+            var next = bi2 + 1 < bs.length ? bs[bi2 + 1] : 16, dur = Math.min((next - s) * stepSec * 1.0, 1.6);
+            var midi = rootM, r2 = rand();
+            if (s !== 0) midi = r2 < 0.18 ? fifthM : (r2 < 0.3 ? rootM + 12 : rootM);
+            var buf;
+            if (bassKind === '808') {
+              var sl = style.slide > 0 && prevBassMidi != null && prevBassMidi !== midi && rand() < style.slide;
+              buf = bass808(midi, sl ? prevBassMidi : null, dur, sl);
+            } else buf = bassRound(midi, dur, bassKind === 'sub');
+            add('bass', at(bar, s), buf, 0.75 * cfg.bass);
+            events.bass.push({ start: at(bar, s) / sr, midi: midi, dur: dur }); prevBassMidi = midi;
+          });
+        }
+
+        // accordi a colpi / arpeggi
+        if (cfg.chords && style.chordPat.length) {
+          style.chordPat.forEach(function (s, pi) {
+            if (sec.name === 'strofa' && pi % 2 === 1 && style.chord === 'pluck' && genreKey !== 'melodico') return;
+            var notes = style.arp ? [ch[arpCount++ % 3] + (pi % 4 === 3 ? 12 : 0)] : ch.map(function (m) { return m + 12; });
+            var dur = style.chord === 'ostinato' ? stepSec * 1.6 : 1.2;
+            notes.forEach(function (m, ni) { add('chords', at(bar, s) + ni * Math.round(0.012 * sr), style.chord === 'ostinato' ? sawStack([m], dur, [-6, 6], 1800, 0.004, 0.05, false) : pluckBuf(m, dur, genreKey === 'estate'), (style.arp ? 0.3 : 0.2) * cfg.chords); });
+          });
+        }
+
+        // pad / archi / coro: una nota lunga per battuta, legata alla battuta dopo
+        if (cfg.pad) {
+          var kindPad = style.pad, pm = ch.concat([ch[0] + 12]), dur2 = barLen / sr * 1.06;
+          var buf2 = kindPad === 'choir' ? sawStack(pm, dur2, [-10, 0, 9], 2200, 0.25, 0.3, true)
+            : sawStack(pm, dur2, [-8, 0, 7], kindPad === 'dark' ? 900 : (kindPad === 'bright' ? 2600 : 1500), 0.3, 0.35, false);
+          add('pad', bar * barLen, buf2, (kindPad === 'choir' ? 0.5 : 0.42) * cfg.pad);
+        }
+
+        // melodia
+        if (cfg.lead) {
+          var src = sec.name === 'bridge' ? bridgeLine : hook;
+          src[k % 4].forEach(function (n) {
+            var d3 = n.len * stepSec * 0.95, m3 = n.midi;
+            add('lead', at(bar, n.step), leadBuf(style.lead, m3, d3), (style.lead === 'strings' ? 0.32 : 0.36) * cfg.lead);
+            events.lead.push({ start: at(bar, n.step) / sr, midi: m3, dur: d3 });
+          });
+        }
+
+        // effetti
+        if (cfg.riserEnd && lastBar) add('fx', bar * barLen, riserBuf(barLen / sr), 0.7);
+        if (cfg.impact && firstBar) add('fx', bar * barLen, impactBuf(), 0.8);
+        if (cfg.gap && lastBar) { // respiro: ultimi 2 passi muti (tranne fx)
+          var g0 = at(bar, 14), g1 = at(bar + 1, 0);
+          ['kick', 'snare', 'hat', 'bass', 'chords', 'pad', 'lead'].forEach(function (tr) {
+            for (var z = g0; z < g1 && z < N; z++) T[tr][z] *= Math.max(0, 1 - (z - g0) / 200);
+          });
+        }
+      }
+    });
+
+    // "pompaggio": accordi e pad si abbassano a ogni cassa, come in produzione moderna
+    function duck(tr, depth) {
+      var a = T[tr], rel = Math.round(0.16 * sr), span = Math.round(0.35 * sr);
+      kickStarts.forEach(function (s0) {
+        for (var i = 0; i < span && s0 + i < N; i++) a[s0 + i] *= 1 - depth * Math.exp(-i / rel);
+      });
+    }
+    duck('pad', style.duck); duck('chords', style.duck * 0.6);
+
+    return { sampleRate: sr, bpm: bpm, tonic: tonic, mode: mode, bars: bars, genre: genreKey, length: N, duration: N / sr, tracks: T, events: events,
+      sections: sections, progression: events.chords.slice(0, 4).map(function (c) { return c.name; }), arranger: true };
+  }
+
+  return { generate: generate, planStructure: planStructure, STYLES: STYLES, SECTIONS: SEC };
+});

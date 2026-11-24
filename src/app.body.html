@@ -1,0 +1,285 @@
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></symbol>
+<symbol id="i-disc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/><path d="M12 3a9 9 0 0 1 9 9"/></symbol>
+<symbol id="i-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
+<symbol id="i-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></symbol>
+<symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+<symbol id="i-film" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 4v16M16 4v16M3 9h5M16 9h5M3 15h5M16 15h5"/></symbol>
+<symbol id="i-mega" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h3l8 4V6L7 10z"/><path d="M19 9a4 4 0 0 1 0 6"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></symbol>
+<symbol id="i-stop" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></symbol>
+</defs></svg>
+
+<div id="app">
+<header class="top">
+  <a class="brand" href="#home"><span class="logo"><svg><use href="#i-note"/></svg></span>Music Studio AI</a>
+  <a class="chip-song" id="top-song" href="#canzoni">Nessuna canzone</a>
+</header>
+
+<!-- HOME -->
+<main class="view" id="v-home" hidden>
+  <div class="card hero">
+    <div class="eyebrow">La tua canzone</div>
+    <h2 id="h-title">Nuova canzone</h2>
+    <p id="h-sub">Scrivi il testo, crea la base, importa la tua voce e fai il clip.</p>
+    <div class="row" style="margin-top:12px"><a class="btn" href="#studio">Continua a lavorare</a></div>
+  </div>
+  <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
+    <ol class="steps" id="h-steps"></ol></div>
+  <details class="card" open><summary>Come si usa dall'iPhone <svg width="18" height="18"><use href="#i-chev"/></svg></summary>
+    <ol style="padding-left:20px;margin:0">
+      <li><b>Testo.</b> Vai in <a href="#studio">Studio</a>, scrivi o incolla il tuo testo. Usa [Strofa] e [Ritornello] sulle righe di titolo.</li>
+      <li><b>Base.</b> Premi "Crea la base": il programma la compone seguendo il testo. Cambia gli strumenti con i cursori.</li>
+      <li><b>La tua voce.</b> Apri l'app <b>Memo Vocali</b> dell'iPhone e registra mentre canti (meglio con le cuffie sulla base). Tocca la registrazione → ⋯ → <b>Salva su File</b>. Poi in <a href="#voce">Voce</a> premi "Scegli la registrazione" e selezionala da File.</li>
+      <li><b>Autotune e rifinitura.</b> In Voce scegli tonalità e intensità, premi "Applica" e ascolta Originale / Corretta.</li>
+      <li><b>Voce sulla base.</b> Premi "Voce + base" per sentire la canzone completa. Poi salvala.</li>
+      <li><b>Clip.</b> In <a href="#video">Video</a> scegli una tua foto: diventa cartone/manga e si muove a tempo con le parole.</li>
+    </ol>
+    <p class="note">L'app non può accedere al microfono: per questo si registra con Memo Vocali e si importa.</p>
+  </details>
+  <div class="card"><div class="card-head"><h3>Cosa funziona davvero oggi</h3></div><div id="h-status"></div></div>
+</main>
+
+<!-- MENU -->
+<main class="view" id="v-menu" hidden>
+  <div class="head"><div class="eyebrow">Tutte le sezioni</div><h1>Menu</h1></div>
+  <div class="menu" id="menu-grid"></div>
+</main>
+
+<!-- CANZONI -->
+<main class="view" id="v-canzoni" hidden>
+  <div class="head"><div class="eyebrow">Libreria</div><h1>Le mie canzoni</h1><p>Una scheda per ogni canzone: testo, versioni, dati musicali e promozione.</p></div>
+  <div class="row" style="margin-bottom:12px"><button class="btn pri" id="s-new"><svg><use href="#i-plus"/></svg>Nuova canzone</button></div>
+  <div class="chips" id="s-folders" style="margin-bottom:12px"></div>
+  <div id="s-list"></div>
+  <div id="s-detail"></div>
+</main>
+
+<!-- STUDIO -->
+<main class="view" id="v-studio" hidden>
+  <div class="head"><div class="eyebrow">Music Studio</div><h1>Testo e base</h1></div>
+  <div class="card"><div class="card-head"><h3>Il testo</h3><span class="tag info" id="st-count">0 righe</span></div>
+    <label class="f"><span>Titolo</span><input type="text" id="st-title" placeholder="Titolo della canzone" autocomplete="off"></label>
+    <label class="f" style="margin-top:10px"><span>Testo (scrivi o incolla il tuo)</span><textarea id="st-lyrics" rows="8" placeholder="[Strofa]&#10;Cammino da solo sotto la luna&#10;&#10;[Ritornello]&#10;Torna domani..."></textarea></label>
+    <div class="row" style="margin-top:10px"><button class="btn sm" id="st-ver">Salva questa versione</button><button class="btn sm" id="st-suggest">Suggerisci la base dal testo</button></div>
+    <div class="status" id="st-msg"></div>
+  </div>
+  <div class="card" id="st-analysis"></div>
+  <div class="card"><div class="card-head"><h3>Guida alla voce</h3><span class="tag i">Ipotesi</span></div>
+    <p class="small muted">Per ogni riga scegli come la vuoi fare: <b>canta</b> (melodia), <b>parla</b> (rap o parlato) oppure <b>allunga</b> (nota lunga). Compare nel testo che scorre mentre canti.</p>
+    <div class="row" style="margin:6px 0"><button class="btn sm" id="vg-auto">Suggerisci dal testo</button></div>
+    <div id="vg-list"></div><div class="status" id="vg-msg"></div>
+  </div>
+
+  <div class="card"><div class="card-head"><h3>La base</h3><span class="tag soon">Suoni sintetici: bozza</span></div>
+    <div class="grid2">
+      <label class="f"><span>Genere</span><select id="b-genre"></select></label>
+      <label class="f"><span>Velocità (BPM) <button class="chip" id="b-tap" type="button" style="min-height:28px;padding:2px 10px">Batti il tempo</button></span><input type="number" id="b-bpm" min="60" max="180"></label>
+      <label class="f"><span>Nota di partenza</span><select id="b-tonic"></select></label>
+      <label class="f"><span>Scala</span><select id="b-mode"><option value="maggiore">Maggiore</option><option value="minore">Minore</option></select></label>
+    </div>
+    <div class="sw"><label for="b-follow">Una battuta per ogni riga del testo</label><input type="checkbox" id="b-follow"></div>
+    <label class="f"><span>Battute <b id="b-barsv">8</b></span><input type="range" id="b-bars" min="4" max="32" step="1" value="8"></label>
+    <h3 style="margin-top:12px">Strumenti</h3>
+    <div id="b-levels"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn pri" id="b-play"><svg><use href="#i-play"/></svg>Crea e ascolta</button>
+      <button class="btn" id="b-new">Nuova variante</button>
+      <button class="btn" id="b-stop"><svg><use href="#i-stop"/></svg>Stop</button>
+      <button class="btn" id="b-save">Salva la base</button>
+    </div>
+    <div class="status" id="b-status"></div>
+    <div id="b-out"></div>
+  </div>
+
+  <div class="card"><div class="card-head"><h3>Cantare seguendo il testo</h3></div>
+    <div class="karaoke" id="kar"><div><b>Premi "Crea e ascolta" e canta</b><small>Qui vedi la riga giusta a ogni battuta</small></div></div>
+    <p class="small muted">Metti le cuffie, registra con Memo Vocali mentre la base suona (da un altro dispositivo o da questa pagina), poi importa la registrazione in Voce.</p>
+  </div>
+
+  <div class="card"><div class="card-head"><h3>Registra con il microfono</h3></div>
+    <div class="karaoke" id="rec-kar"><div><b>Premi Registra: parte la base e vedi la riga</b><small>Usa le cuffie</small></div></div>
+    <div class="meter-bar" id="rec-meter" hidden><i></i></div>
+    <div class="row"><button class="btn pri" id="rec-go">Registra con la base</button><button class="btn" id="rec-stop" hidden>Fine registrazione</button></div>
+    <div class="status" id="rec-msg"></div>
+    <p class="small muted">La voce finisce tra le prove in Voce, dove applichi autotune e mix. Le prove restano salvate sul telefono (nella versione app).</p>
+  </div>
+
+  <div class="card"><div class="card-head"><h3>Importa una base tua</h3></div>
+    <p class="small muted">Se hai già una base (file audio), il programma stima velocità e tonalità e la usa al posto di quella sintetica.</p>
+    <div class="row"><label class="btn" for="ib-file">Scegli la base</label><input type="file" id="ib-file" accept="audio/*"><button class="btn sm" id="ib-off" hidden>Torna alla base creata</button></div>
+    <div class="status" id="ib-msg"></div><div id="ib-out"></div>
+  </div>
+
+  <div class="card"><div class="card-head"><h3>Stile da canzoni di riferimento</h3></div>
+    <p class="small muted">Carica fino a 3 canzoni che ti piacciono (file tuoi). Il programma misura tempo, peso del basso, densità dei colpi e crescita del ritornello, poi li mescola con i pesi che scegli. Non copia melodie, testi, voci o suoni: legge solo numeri.</p>
+    <div class="row"><label class="btn" for="sc-file">Aggiungi un riferimento</label><input type="file" id="sc-file" accept="audio/*"><button class="btn sm" id="sc-clear" hidden>Svuota</button></div>
+    <div class="status" id="sc-msg"></div><div id="sc-list"></div>
+    <div class="row" id="sc-row" hidden style="margin-top:10px"><button class="btn pri" id="sc-use">Mescola e crea la mia base</button></div>
+    <div id="sc-out"></div>
+  </div>
+</main>
+
+<!-- PRODUCER -->
+<main class="view" id="v-producer" hidden>
+  <div class="head"><div class="eyebrow">AI Producer</div><h1>Dillo a parole</h1><p>Scrivi cosa vuoi cambiare nella base: lo applico, lo ascolti, e puoi annullare.</p></div>
+  <div class="card">
+    <div class="chat" id="p-chat"></div>
+    <div class="chips" style="margin:10px 0" id="p-chips"></div>
+    <div class="row" style="flex-wrap:nowrap"><input type="text" id="p-in" placeholder="Es. Più energia, basso più profondo..." autocomplete="off"><button class="btn pri" id="p-go">Invia</button></div>
+    <div class="status" id="p-msg"></div>
+  </div>
+  <div class="card"><div class="card-head"><h3>Tre alternative</h3></div>
+    <div class="row" id="p-var"></div></div>
+  <div class="card"><div class="card-head"><h3>Cronologia modifiche</h3><button class="btn sm" id="p-undo">Annulla l'ultima</button></div>
+    <div id="p-hist"></div></div>
+  <details class="card"><summary>Cosa so fare adesso <svg width="18" height="18"><use href="#i-chev"/></svg></summary><ul class="clean" id="p-help"></ul>
+    <p class="small muted">Le modifiche sono applicate a tutta la base, non a una singola parte (es. "solo il secondo ritornello" non è ancora possibile).</p></details>
+</main>
+
+<!-- VOCE -->
+<main class="view" id="v-voce" hidden>
+  <div class="head"><div class="eyebrow">Vocal Studio</div><h1>La tua voce</h1></div>
+  <div class="card"><div class="card-head"><h3>1. Importa le registrazioni</h3></div>
+    <p class="small muted">Registra con <b>Memo Vocali</b> → Salva su File → qui. Puoi importare più prove (take) e confrontarle.</p>
+    <div class="row"><label class="btn pri" for="v-file">Scegli la registrazione</label><input type="file" id="v-file" accept="audio/*" multiple><button class="btn" id="v-demo">Prova con un esempio</button></div>
+    <div class="status" id="v-msg"></div>
+    <div id="v-takes"></div>
+  </div>
+  <div id="v-work" hidden>
+    <div class="card"><div class="card-head"><h3>2. Cosa ho misurato</h3></div><div id="v-analysis"></div><div id="v-chart"></div></div>
+    <div class="card"><div class="card-head"><h3>3. Editor delle note</h3><span class="tag m">Misurato</span></div>
+      <p class="small muted">Ogni barra è una nota che hai cantato. La <b>linea</b> è dove l'hai cantata, la <b>barra</b> è dove la porti. Tocca una nota per modificarla.</p>
+      <div class="sw"><label for="n-drag">Trascina le note con il dito (blocca lo scorrimento sul grafico)</label><input type="checkbox" id="n-drag"></div>
+      <canvas class="cv" id="n-cv" height="280" style="touch-action:pan-y"></canvas>
+      <div id="n-panel"></div>
+      <div class="sw"><label for="n-use">Usa queste note nell'autotune</label><input type="checkbox" id="n-use" checked></div>
+      <div class="row"><button class="btn sm" id="n-reset">Ripristina tutte le note</button><button class="btn sm" id="n-redo">Ricalcola le note</button></div>
+      <p class="small muted">La divisione in note è una stima: se una nota è spezzata o unita male, correggila a mano.</p>
+    </div>
+    <div class="card"><div class="card-head"><h3>4. Pulizia e suono</h3></div>
+      <div class="sw"><label for="v-den">Riduci il rumore di fondo</label><input type="checkbox" id="v-den"></div>
+      <label class="f"><span>Equalizzatore, compressore e riverbero</span><select id="v-pol"><option value="nessuna">Nessuno</option><option value="pulita">Voce pulita</option><option value="pop" selected>Pop brillante</option><option value="eco">Con eco</option></select></label>
+    </div>
+    <div class="card"><div class="card-head"><h3>5. Autotune</h3><span class="tag m">Misurabile</span></div>
+      <p class="small" id="v-key"></p>
+      <div class="grid2" style="margin-top:8px">
+        <label class="f"><span>Nota di partenza</span><select id="v-tonic"></select></label>
+        <label class="f"><span>Scala</span><select id="v-mode"><option value="maggiore">Maggiore</option><option value="minore">Minore</option><option value="cromatica">Tutte le note</option></select></label>
+      </div>
+      <label class="f"><span>Intensità <b id="v-sv">80%</b></span><input type="range" id="v-str" min="0" max="100" value="80"></label>
+      <label class="f"><span>Velocità <b id="v-rv">Media</b></span><input type="range" id="v-ret" min="0" max="200" value="60"></label>
+      <label class="f"><span>Vibrato naturale conservato <b id="v-vibv">50%</b></span><input type="range" id="v-vib" min="0" max="100" value="50"></label>
+      <div class="grid2">
+        <label class="f"><span>Armonia</span><select id="v-harm"><option value="0">Nessuna</option><option value="2">Terza sopra</option><option value="4">Quinta sopra</option></select></label>
+        <label class="f"><span>Sposta la voce</span><select id="v-shift"></select></label>
+      </div>
+      <div class="row" style="margin-top:12px"><button class="btn pri" id="v-apply">Applica</button><button class="btn" id="v-orig"><svg><use href="#i-play"/></svg>Originale</button><button class="btn" id="v-fix" disabled><svg><use href="#i-play"/></svg>Elaborata</button><button class="btn" id="v-stop"><svg><use href="#i-stop"/></svg></button></div>
+      <div id="v-result"></div>
+      <div class="note warn">Non ancora disponibili: correzione del tempo (timing) e trasformazione della voce in un'altra voce. La trasformazione richiede un servizio esterno e va provata con tue registrazioni prima di prometterla.</div>
+    </div>
+    <div class="card"><div class="card-head"><h3>6. Voce sulla base</h3></div>
+      <div class="grid2">
+        <label class="f"><span>Volume voce <b id="v-gv">100%</b></span><input type="range" id="v-gain" min="20" max="160" value="100"></label>
+        <label class="f"><span>Entra alla battuta</span><input type="number" id="v-bar" min="0" max="32" value="0"></label>
+      </div>
+      <label class="f"><span>Aggiusta di <b id="v-offv">0 ms</b></span><input type="range" id="v-off" min="-300" max="300" step="10" value="0"></label>
+      <div class="row" style="margin-top:10px"><button class="btn" id="v-mkbase">Crea la base sulla mia voce</button></div>
+      <p class="small muted">Usa la tonalità scelta sopra e la durata della tua registrazione. Il tempo (BPM) lo scegli tu in Studio.</p>
+      <div class="row" style="margin-top:10px"><button class="btn pri" id="v-mix"><svg><use href="#i-play"/></svg>Voce + base</button><button class="btn" id="v-save">Salva la voce</button><button class="btn" id="v-savemix">Salva il mix</button></div>
+      <div class="status" id="v-mixmsg"></div>
+    </div>
+  </div>
+</main>
+
+<!-- VIDEO -->
+<main class="view" id="v-video" hidden>
+  <div class="head"><div class="eyebrow">AI Video Studio</div><h1>Clip a tempo</h1><p>La tua foto diventa cartone, neon o manga e si muove a ritmo con il testo.</p></div>
+  <div class="card">
+    <div class="row"><label class="btn pri" for="m-file">Scegli una foto</label><input type="file" id="m-file" accept="image/*"></div>
+    <div class="grid2" style="margin-top:10px">
+      <label class="f"><span>Stile</span><select id="m-mode"><option value="cartoon">Cartone</option><option value="colore">Fumetto a colori</option><option value="neon">Neon</option><option value="bn">Manga bianco e nero</option></select></label>
+      <label class="f"><span>Dettaglio <b id="m-dv">60%</b></span><input type="range" id="m-det" min="10" max="100" value="60"></label>
+    </div>
+    <div class="status" id="m-msg"></div>
+  </div>
+  <div class="card"><div class="stage"><canvas id="m-cv" width="540" height="960"></canvas></div>
+    <div class="row" style="margin-top:12px;justify-content:center"><button class="btn pri" id="m-play"><svg><use href="#i-play"/></svg>Anteprima</button><button class="btn" id="m-stop"><svg><use href="#i-stop"/></svg></button><button class="btn" id="m-exp">Esporta il clip</button><button class="btn" id="m-png">Salva immagine</button></div>
+    <div class="status" id="m-exmsg" style="text-align:center"></div>
+    <div class="note warn">Questo è un filtro sulla tua foto, non un personaggio animato in 3D. Un vero personaggio manga animato richiede un servizio esterno di immagini/video AI (a pagamento): lo valutiamo insieme dopo.</div>
+  </div>
+  <div class="card"><div class="card-head"><h3>Idee per il tuo videoclip</h3><span class="tag i">Ipotesi</span></div>
+    <p class="small muted">Come girare e montare un clip vero per questa canzone, con tempi in battute e secondi. Si basa su umore, genere e durata.</p>
+    <div class="row"><button class="btn pri" id="vi-go">Crea le idee</button><button class="btn" id="vi-ai" data-needs-ai hidden>Più dettagli da Claude</button></div>
+    <div id="vi-out"></div><div id="vi-ai-out"></div>
+  </div>
+</main>
+
+<!-- MARKETING -->
+<main class="view" id="v-marketing" hidden>
+  <div class="head"><div class="eyebrow">Marketing AI</div><h1>Piano di 30 giorni</h1><p>Calendario di contenuti costruito sulla tua canzone. Niente viene pubblicato da solo.</p></div>
+  <div class="card">
+    <label class="f"><span>Primo giorno della campagna</span><input type="date" id="k-start"></label>
+    <div class="row" style="margin-top:10px"><button class="btn pri" id="k-gen">Crea il piano</button><button class="btn" id="k-ai">Idee in più da Claude</button></div>
+    <div class="status" id="k-msg"></div>
+    <p class="small muted">Gli orari sono suggerimenti da verificare con le statistiche dei tuoi profili. Gli hashtag aiutano la pertinenza, non garantiscono visualizzazioni.</p>
+  </div>
+  <div id="k-ai-out"></div>
+  <div id="k-list"></div>
+</main>
+
+<!-- SOCIAL -->
+<main class="view" id="v-social" hidden>
+  <div class="head"><div class="eyebrow">Social Media Manager</div><h1>Calendario e approvazioni</h1></div>
+  <div class="card"><div class="cal" id="c-grid"></div><p class="small muted" id="c-legend">Tocca un giorno per vedere i contenuti.</p></div>
+  <div id="c-day"></div>
+  <div class="card"><div class="card-head"><h3>Da approvare</h3><span class="tag info" id="c-count"></span></div><div id="c-queue"></div></div>
+  <div class="card"><div class="card-head"><h3>Collegamenti ai social</h3></div>
+    <ul class="clean small">
+      <li>Instagram <span class="tag soon">non collegato</span> — la pubblicazione automatica richiede un account professionale e l'autorizzazione dell'app.</li>
+      <li>TikTok <span class="tag soon">non collegato</span> — l'accesso alla pubblicazione è soggetto ad approvazione di TikTok.</li>
+      <li>YouTube <span class="tag soon">non collegato</span> — serve un'autorizzazione Google.</li>
+    </ul>
+    <p class="small muted">Per ora copi didascalia e hashtag e pubblichi tu. Uno strumento come Metricool può programmare le pubblicazioni: costi e limiti da verificare insieme prima di qualsiasi acquisto.</p>
+    <div class="row"><button class="btn" id="c-csv">Salva il calendario (CSV)</button></div><div class="status" id="c-msg"></div>
+  </div>
+</main>
+
+<!-- LIBRERIA -->
+<main class="view" id="v-libreria" hidden>
+  <div class="head"><div class="eyebrow">Libreria dei contenuti</div><h1>Materiali</h1></div>
+  <div id="l-out"></div>
+</main>
+
+<!-- IMPOSTAZIONI -->
+<main class="view" id="v-impostazioni" hidden>
+  <div class="head"><div class="eyebrow">Impostazioni</div><h1>Le tue preferenze</h1></div>
+  <div class="card"><h3>Aspetto</h3>
+    <div class="chips" style="margin-top:8px" id="x-theme"></div>
+    <label class="f" style="margin-top:12px"><span>Nome d'arte</span><input type="text" id="x-artist" placeholder="Il tuo nome da artista" autocomplete="off"></label>
+  </div>
+  <div class="card"><h3>I tuoi dati</h3><p class="small muted" id="x-store"></p>
+    <div class="row"><button class="btn" id="x-exp">Esporta (JSON)</button><label class="btn" for="x-imp">Importa</label><input type="file" id="x-imp" accept=".json,application/json"></div>
+    <div class="row" style="margin-top:10px"><button class="btn danger" id="x-del">Cancella tutto</button></div>
+    <div class="status" id="x-msg"></div>
+    <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
+  </div>
+  <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">__TEST_SUMMARY__ · versione del __BUILD_DATE__. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+</main>
+</div>
+
+<div class="tabs"><nav id="tabs">
+  <a href="#home" data-r="home"><svg><use href="#i-home"/></svg>Home</a>
+  <a href="#canzoni" data-r="canzoni"><svg><use href="#i-disc"/></svg>Canzoni</a>
+  <a href="#studio" data-r="studio"><svg><use href="#i-sliders"/></svg>Studio</a>
+  <a href="#voce" data-r="voce"><svg><use href="#i-mic"/></svg>Voce</a>
+  <a href="#menu" data-r="menu"><svg><use href="#i-grid"/></svg>Menu</a>
+</nav></div>
