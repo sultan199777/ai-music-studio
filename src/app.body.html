@@ -45,7 +45,7 @@
     <a href="#dw-p-testo" data-step="testo"><i>1</i><span>Testo</span></a>
     <a href="#dw-p-arr" data-step="base"><i>2</i><span>Base</span></a>
     <a href="#dw-p-mic" data-step="voce"><i>3</i><span>Voce</span></a>
-    <a href="#dw-p-mix" data-step="mix"><i>4</i><span>Mix ed export</span></a>
+    <a href="#dw-p-mix" data-step="mix"><i>4</i><span>Mix e salva</span></a>
   </nav>
 
   <section class="dw-panel dw-lyric karaoke" id="dw-kar"><div><b>Scrivi il testo qui sotto, poi premi Play</b><small>La base prende la forma del testo: ogni riga cade sulla sua battuta.</small></div></section>
@@ -82,10 +82,10 @@
 
   <section class="dw-panel" id="dw-p-learn">
     <div class="dw-ph"><h3>Impara da una base</h3><span class="tag a">Solo misure, niente copie</span></div>
-    <p class="small muted">Carica una canzone che ti piace (un file dal telefono). La divido in <b>voce</b> e <b>base</b>, le ripulisco e misuro il ritmo: velocità, cassa, rullante, hi-hat, bassi. Dimmi se ti piace o no. Tengo solo i numeri, mai l'audio, e la base nuova è tua e originale.</p>
+    <p class="small muted">Carica una canzone o un video che ti piace. Mettila in una <b>cartella</b> (un artista o un genere): ogni cartella diventa uno stile da cui creare basi nuove. La divido in <b>voce</b> e <b>base</b>, le ripulisco e misuro il ritmo: velocità, cassa, rullante, hi-hat, bassi. Dimmi se ti piace o no. Tengo solo i numeri, mai l'audio, e la base nuova è tua e originale.</p>
     <div class="dw-modes" id="dw-sep-modes">
-      <button class="dw-mode on" data-sep="veloce"><b>Separazione veloce</b><small>Subito, leggera. Buona per imparare il ritmo; la voce resta un po' sporca.</small></button>
-      <button class="dw-mode" data-sep="ai"><b>Separazione AI (HTDemucs)</b><small>Modello gratuito open source: voce, batteria, basso e resto, puliti. 180 MB da scaricare una volta, più lenta (minuti).</small></button>
+      <button class="dw-mode on" data-sep="rapida"><b>Rapida</b><small>Per il telefono. Modello SCNet (27 MB): voce, batteria, basso e resto.</small></button>
+      <button class="dw-mode" data-sep="studio"><b>Studio</b><small>La voce più pulita (Mel-Band RoFormer, 474 MB). Consigliata sul computer.</small></button>
     </div>
     <p class="small muted" id="dw-sep-info"></p>
     <div class="row"><label class="btn pri" for="dw-learn-file">Carica una canzone o un video</label><input type="file" id="dw-learn-file" accept="audio/*,video/*,.mov,.mp4,.m4a" hidden></div>
@@ -106,14 +106,14 @@
   </section>
 
   <section class="dw-panel" id="dw-p-mix">
-    <div class="dw-ph"><h3>Mix ed export</h3></div>
+    <div class="dw-ph"><h3>Mix e salvataggio</h3></div>
     <div class="grid2">
       <label class="f"><span>Master (suono finale)</span><select id="dw-master"><option value="off">Spento</option><option value="morbido">Morbido</option><option value="standard">Standard</option><option value="forte">Forte</option></select></label>
       <label class="f"><span>Voce: spostamento (ms) <b id="dw-offv">0</b></span><input type="range" id="dw-off" min="-300" max="300" step="5" value="0"></label>
     </div>
-    <div class="row" style="margin-top:8px"><button class="btn pri" id="dw-export">Esporta la canzone (WAV)</button><button class="btn" id="dw-export-base">Solo la base</button></div>
+    <div class="row" style="margin-top:8px"><button class="btn pri" id="dw-export">Salva la canzone (WAV)</button><button class="btn" id="dw-export-base">Solo la base</button></div>
     <div class="status" id="dw-xmsg"></div>
-    <div class="dw-more"><a href="#voce">Voce: autotune e caratteri</a><a href="#strumenti">Strumentario e Laboratorio</a><a href="#beatlab">Beat Lab (batteria a passi, piano roll)</a><a href="#studio">Coach completo e percorso</a></div>
+    <div class="dw-more"><a href="#voce">Voce: autotune e caratteri</a><a href="#strumenti">Strumentario e Laboratorio</a><a href="#beatlab">Laboratorio batteria (batteria a passi, piano roll)</a><a href="#studio">Coach completo e percorso</a></div>
   </section>
 
   <div class="dw-sheet" id="dw-sheet" hidden><div class="dw-sheet-in"><div class="dw-ph"><h3 id="dw-sheet-t">Strumento</h3><button class="btn sm" id="dw-sheet-x">Chiudi</button></div><div class="chips" id="dw-sheet-f"></div><div class="dw-grid" id="dw-sheet-g"></div></div></div>
@@ -352,7 +352,7 @@
     <div class="status" id="m-msg"></div>
   </div>
   <div class="card"><div class="stage"><canvas id="m-cv" width="540" height="960"></canvas></div>
-    <div class="row" style="margin-top:12px;justify-content:center"><button class="btn pri" id="m-play"><svg><use href="#i-play"/></svg>Anteprima</button><button class="btn" id="m-stop"><svg><use href="#i-stop"/></svg></button><button class="btn" id="m-exp">Esporta il clip</button><button class="btn" id="m-png">Salva immagine</button></div>
+    <div class="row" style="margin-top:12px;justify-content:center"><button class="btn pri" id="m-play"><svg><use href="#i-play"/></svg>Anteprima</button><button class="btn" id="m-stop"><svg><use href="#i-stop"/></svg></button><button class="btn" id="m-exp">Salva il video</button><button class="btn" id="m-png">Salva immagine</button></div>
     <div class="status" id="m-exmsg" style="text-align:center"></div>
     <div class="note warn">Questo è un filtro sulla tua foto, non un personaggio animato in 3D. Un vero personaggio manga animato richiede un servizio esterno di immagini/video AI (a pagamento): lo valutiamo insieme dopo.</div>
   </div>
@@ -438,7 +438,7 @@
     <label class="f" style="margin-top:12px"><span>Nome d'arte</span><input type="text" id="x-artist" placeholder="Il tuo nome da artista" autocomplete="off"></label>
   </div>
   <div class="card"><h3>I tuoi dati</h3><p class="small muted" id="x-store"></p>
-    <div class="row"><button class="btn" id="x-exp">Esporta (JSON)</button><label class="btn" for="x-imp">Importa</label><input type="file" id="x-imp" accept=".json,application/json"></div>
+    <div class="row"><button class="btn" id="x-exp">Salva una copia (JSON)</button><label class="btn" for="x-imp">Importa</label><input type="file" id="x-imp" accept=".json,application/json"></div>
     <div class="row" style="margin-top:10px"><button class="btn danger" id="x-del">Cancella tutto</button></div>
     <div class="status" id="x-msg"></div>
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>

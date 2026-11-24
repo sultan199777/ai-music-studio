@@ -1024,7 +1024,7 @@
     var dot = function (st) { return '<span class="dw-dot ' + (st === 'al lavoro' ? 'work' : (st === 'pronto' ? 'ok' : '')) + '"></span>'; };
     var h = '<div class="dw-agent"><header>' + dot(AG.arr.st) + '<b>Arrangiatore</b><span class="st">' + AG.arr.st + '</span></header><p class="small muted">Prepara 3 varianti della tua base partendo da quello che ti è piaciuto. Una è sempre un esperimento.</p>' +
       AG.arr.props.map(function (pr, i) { return '<div class="dw-prop"><div><b>Variante ' + (i + 1) + (pr.explore ? ' · esperimento' : '') + '</b><small>' + esc(pr.desc) + '</small></div><button class="btn sm" data-ap="' + i + '">Ascolta</button><button class="btn sm pri" data-au="' + i + '">Usa</button><button class="btn sm" data-an="' + i + '" aria-label="Non mi piace">✕</button></div>'; }).join('') + '</div>';
-    h += '<div class="dw-agent"><header>' + dot(AG.sd.st) + '<b>Sound designer</b><span class="st">' + AG.sd.st + '</span></header><p class="small muted">Inventa strumenti nuovi mescolando i suoni che preferisci. Se uno ti piace, salvalo: diventa tuo.</p>' +
+    h += '<div class="dw-agent"><header>' + dot(AG.sd.st) + '<b>Inventore di suoni</b><span class="st">' + AG.sd.st + '</span></header><p class="small muted">Inventa strumenti nuovi mescolando i suoni che preferisci. Se uno ti piace, salvalo: diventa tuo.</p>' +
       AG.sd.props.map(function (r, i) { return '<div class="dw-prop"><div><b>' + esc(r.nome) + '</b><small>' + esc(r.descr) + '</small></div><button class="btn sm" data-sp2="' + i + '">Ascolta</button><button class="btn sm pri" data-su2="' + i + '">Usa</button><button class="btn sm" data-ss2="' + i + '">Salva</button></div>'; }).join('') + '</div>';
     h += '<div class="dw-agent"><header>' + dot(AG.co.st) + '<b>Coach</b><span class="st">' + AG.co.st + '</span></header><p class="small muted">Controlla testo, base e voce con misure vere. ' + esc(coachSummary()) + '</p>' +
       (AG.co.lessons.length ? AG.co.lessons.slice(0, 4).map(function (l, i) { return '<div class="dw-prop"><div><b>' + esc(l.title) + '</b><small>' + esc(l.what) + ' ' + esc(l.how) + '</small></div>' + (l.fix ? '<button class="btn sm pri" data-cf="' + i + '">Correggi</button>' : '') + '</div>'; }).join('') : '<div class="dw-prop"><div><small>Niente da correggere per ora.</small></div></div>') + '</div>';
@@ -1168,7 +1168,7 @@
       var mx = buildMix({ voice: withVoice && !!voiceTake() });
       await saveAudio(mx.samples, mx.sr, (cur().title || 'canzone').replace(/\W+/g, '-') + (withVoice ? '' : '-base'), el);
       SESSION.dwExported = true; dwSteps(); coachRec('save', coachCtx());
-    } catch (e) { el.textContent = 'Esportazione non riuscita.'; }
+    } catch (e) { el.textContent = 'Salvataggio non riuscito.'; }
   }
   $('#dw-export').addEventListener('click', function () { dwExport(true); });
   $('#dw-export-base').addEventListener('click', function () { dwExport(false); });
@@ -1234,56 +1234,54 @@
     return { L: L, R: R, sr: a.sampleRate };
   }
   function learnBar(f) { var b = $('#dw-learn-bar'); b.hidden = f == null; if (f != null) b.firstElementChild.style.width = Math.round(f * 100) + '%'; }
-  function sepMode() { return LIB.settings.sepMode === 'ai' ? 'ai' : 'veloce'; }
+  function sepMode() { return LIB.settings.sepMode === 'studio' ? 'studio' : 'rapida'; }
   async function sepInfo() {
     $$('#dw-sep-modes .dw-mode').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-sep') === sepMode()); });
-    var t = '';
-    if (sepMode() === 'ai') {
-      t = ((await AiSeparator.cached()) ? 'Modello AI già scaricato sul dispositivo.' : 'La prima volta scarico il modello (180 MB, meglio con Wi-Fi). Poi resta salvato.') +
-        (window.crossOriginIsolated ? ' Uso più processori insieme.' : ' Se è lento, chiudi e riapri il sito: la volta dopo usa più processori.') + ' Massimo 3 minuti di canzone per volta.';
-    }
-    $('#dw-sep-info').textContent = t;
+    var st = sepMode() === 'studio', have = await AiSeparator.cached(st ? 'melband_roformer_kim' : 'scnet_small'), gpu = false;
+    try { gpu = !!(navigator.gpu && await navigator.gpu.requestAdapter()); } catch (e) {}
+    $('#dw-sep-info').textContent = (have ? 'Modello già sul dispositivo.' : 'La prima volta scarico il modello (' + (st ? '474 + 27' : '27') + ' MB, meglio con Wi-Fi), poi resta salvato.') +
+      (st ? ' Modalità Studio: ' + (gpu ? 'userò la scheda grafica.' : 'senza scheda grafica è lenta, circa 15 minuti per ogni minuto di canzone (misurato).') + ' Consigliata sul computer: sul telefono può finire la memoria.' : ' Circa 2 minuti per ogni minuto di canzone sul processore (misurato).') + ' Massimo 3 minuti per volta.';
   }
   $('#dw-sep-modes').addEventListener('click', function (e) { var b = e.target.closest('[data-sep]'); if (!b) return; LIB.settings.sepMode = b.getAttribute('data-sep'); persist(); sepInfo(); });
   function stMono(st) { var o = new Float32Array(st.left.length); for (var i = 0; i < o.length; i++) o[i] = (st.left[i] + st.right[i]) / 2; return o; }
   async function sepAi(f, el) {
-    el.textContent = 'Preparo il modello AI…'; learnBar(0.01);
-    await AiSeparator.load('./', function (got, tot, mem) { if (!mem) { el.textContent = 'Scarico il modello AI: ' + Math.round(got / 1048576) + ' di ' + Math.round(tot / 1048576) + ' MB (solo la prima volta)…'; learnBar(0.01 + 0.2 * got / tot); } });
+    var mode = sepMode();
+    el.textContent = 'Preparo il modello…'; learnBar(0.01);
     var d = await decodeStereo(f, 44100), max = 44100 * 180;
     if (d.L.length > max) { d.L = d.L.slice(0, max); if (d.R) d.R = d.R.slice(0, max); }
-    el.textContent = 'L\'AI separa voce, batteria, basso e resto (' + Math.round(d.L.length / 44100) + ' s di audio, motore: ' + (AiSeparator.backend() === 'webgpu' ? 'scheda grafica' : 'processore') + '). Resta su questa pagina…';
-    var r = await AiSeparator.separate(d.L, d.R || d.L, function (p) { learnBar(0.22 + p * 0.6); });
+    var secs = Math.round(d.L.length / 44100);
+    var r = await AiSeparator.separate(d.L, d.R || d.L, mode,
+      function (p, txt) { el.textContent = txt + ' (' + secs + ' s di audio, ' + Math.round(p * 100) + '%). Resta su questa pagina…'; learnBar(0.1 + p * 0.75); },
+      function (phase, got, tot, mem) { if (phase === 'download' && !mem) { el.textContent = 'Scarico il modello: ' + Math.round(got / 1048576) + ' di ' + Math.round(tot / 1048576) + ' MB (solo la prima volta)…'; learnBar(0.01 + 0.09 * got / tot); } });
     var st = { drums: stMono(r.drums), bass: stMono(r.bass), other: stMono(r.other) }, voice = stMono(r.vocals), n = voice.length;
     var base = new Float32Array(n), rhythm = new Float32Array(n), orig = new Float32Array(n);
     for (var i = 0; i < n; i++) { base[i] = st.drums[i] + st.bass[i] + st.other[i]; rhythm[i] = st.drums[i] + st.bass[i]; orig[i] = d.R ? (d.L[i] + d.R[i]) / 2 : d.L[i]; }
-    return { sr: 44100, voice: voice, base: base, stems: st, rhythm: rhythm, orig: orig, note: 'Separazione AI (HTDemucs v4 di Meta, open source). Ritmo misurato su batteria e basso separati: più preciso.' };
+    return { sr: 44100, voice: voice, base: base, stems: st, rhythm: rhythm, orig: orig, ai: true,
+      note: (mode === 'studio' ? 'Modalità Studio: voce con Mel-Band RoFormer, base divisa con SCNet.' : 'Modalità Rapida: SCNet.') + ' Modelli open source, tutto sul dispositivo. Ritmo misurato su batteria e basso separati.' };
   }
   async function sepFast(f, el) {
     var d = await decodeStereo(f, 32000), sr = d.sr, i;
-    el.textContent = 'Divido voce e base (' + Math.round(d.L.length / sr) + ' s di audio)…';
     var sep = await BeatLearn.separateAsync(d.L, d.R, sr, {}, function (p) { learnBar(0.05 + p * 0.6); });
     var bm = new Float32Array(sep.baseL.length), mono = new Float32Array(d.L.length);
     for (i = 0; i < bm.length; i++) bm[i] = (sep.baseL[i] + sep.baseR[i]) / 2;
     for (i = 0; i < mono.length; i++) mono[i] = d.R ? (d.L[i] + d.R[i]) / 2 : d.L[i];
-    return { sr: sr, voice: sep.voice, base: bm, stems: null, rhythm: mono, orig: mono, note: sep.report.note };
+    return { sr: sr, voice: sep.voice, base: bm, stems: null, rhythm: mono, orig: mono, ai: false, note: 'ATTENZIONE: l\'AI non è partita su questo dispositivo, ho usato il metodo semplice. Voce e base NON sono pulite: va bene solo per misurare il ritmo.' };
   }
+  function normOnly(x, sr) { return BeatLearn.clean(x, sr, { denoise: 0 }).x; }
   $('#dw-learn-file').addEventListener('change', async function () {
     var f = this.files && this.files[0], el = $('#dw-learn-msg'); this.value = ''; if (!f) return;
     el.textContent = 'Apro "' + f.name + '"…'; learnBar(0.02); await tick(); dwStop(); stopPlay();
     try {
-      var ai = sepMode() === 'ai', s;
-      if (ai) {
-        try { s = await sepAi(f, el); }
-        catch (e) { ai = false; el.textContent = 'La separazione AI non è riuscita qui (' + (e && e.message || 'memoria') + '): uso quella veloce.'; await tick(); s = await sepFast(f, el); }
-      } else s = await sepFast(f, el);
-      el.textContent = 'Ripulisco e amplifico…'; learnBar(0.85); await tick();
-      var voice = BeatLearn.clean(s.voice, s.sr, { denoise: ai ? 0.3 : 0.6 }).x; await tick();
-      var base = BeatLearn.clean(s.base, s.sr, { denoise: ai ? 0.15 : 0.3 }).x; learnBar(0.93); await tick();
-      if (s.stems) for (var k in s.stems) s.stems[k] = BeatLearn.clean(s.stems[k], s.sr, { denoise: 0 }).x;
-      el.textContent = 'Misuro il ritmo…'; await tick();
+      var s, why = '';
+      try { s = await sepAi(f, el); }
+      catch (e) { why = (e && e.message || 'memoria').slice(0, 80); el.textContent = 'L\'AI non è riuscita (' + why + '). Uso il metodo semplice solo per il ritmo…'; await tick(); s = await sepFast(f, el); }
+      el.textContent = 'Porto le tracce al volume giusto…'; learnBar(0.88); await tick();
+      var voice = normOnly(s.voice, s.sr), base = normOnly(s.base, s.sr);
+      if (s.stems) for (var k in s.stems) s.stems[k] = normOnly(s.stems[k], s.sr);
+      el.textContent = 'Misuro il ritmo…'; learnBar(0.95); await tick();
       var prof = BeatLearn.learn(s.rhythm, s.sr);
-      LEARN.cur = { name: f.name.replace(/\.[^.]+$/, '').slice(0, 40), prof: prof, voice: voice, base: base, orig: s.orig, stems: s.stems, sr: s.sr, note: s.note, vote: 0, ai: ai };
-      learnBar(null); el.textContent = 'Fatto. Ascolta le parti separate, poi dimmi se il ritmo ti piace.';
+      LEARN.cur = { name: f.name.replace(/\.[^.]+$/, '').slice(0, 40), prof: prof, voice: voice, base: base, orig: s.orig, stems: s.stems, sr: s.sr, note: s.note, vote: 0, ai: s.ai };
+      learnBar(null); el.textContent = s.ai ? 'Fatto. Ascolta le parti separate, poi dimmi se il ritmo ti piace.' : 'Fatto, ma senza AI (' + why + '): voce e base non sono pulite.';
       learnRender(); coachRec('complete', coachCtx()); sepInfo();
     } catch (e) {
       learnBar(null);
@@ -1298,11 +1296,17 @@
         '<ul class="clean small">' + c.prof.why.map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul><p class="small muted">' + esc(c.note) + ' <span class="tag i">Ipotesi</span> la separazione è una stima: giudica tu ascoltando.</p>' +
         '<div class="row"><button class="btn sm" data-lp="voice">▶ Voce</button><button class="btn sm" data-lp="base">▶ Base</button>' + (c.stems ? '<button class="btn sm" data-lp="drums">▶ Batteria</button><button class="btn sm" data-lp="bass">▶ Basso</button><button class="btn sm" data-lp="other">▶ Resto</button>' : '') + '<button class="btn sm" data-lp="orig">▶ Originale</button><button class="btn sm" data-lp="stop">■</button></div>' +
         '<div class="row"><button class="btn sm" data-ls="voice">Salva la voce (WAV)</button><button class="btn sm" data-ls="base">Salva la base (WAV)</button></div>' +
+        '<label class="f" style="margin-top:8px"><span>Cartella (artista o genere)</span><input id="dw-learn-art" list="dw-learn-arts" maxlength="30" placeholder="es. Sfera, Drill UK, Club" value="' + esc(LEARN.lastArt || '') + '"><datalist id="dw-learn-arts">' + learnArtists().map(function (a) { return '<option value="' + esc(a) + '">'; }).join('') + '</datalist></label>' +
         '<div class="row"><button class="btn sm pri" data-lv="1">Mi piace questo ritmo</button><button class="btn sm" data-lv="-1">Non mi piace</button></div></div>';
     }
     $('#dw-learn-cur').innerHTML = h;
-    var L = learnList();
-    $('#dw-learn-list').innerHTML = L.length ? L.map(function (r, i) { return '<div class="dw-prop"><div><b>' + (r.vote > 0 ? '♥ ' : '✕ ') + esc(r.name) + '</b><small>' + esc(profLine(r.prof)) + '</small></div><button class="btn sm" data-lx="' + i + '" aria-label="Togli">Togli</button></div>'; }).join('') : '<p class="small muted">Ancora niente. Carica 2 o 3 canzoni che ti piacciono e una che non ti piace: impara la differenza.</p>';
+    var L = learnList(), arts = learnArtists();
+    $('#dw-learn-list').innerHTML = L.length ? arts.map(function (a) {
+      var items = L.map(function (r, i) { return [r, i]; }).filter(function (x) { return (x[0].artist || 'Senza cartella') === a; }), lk = items.filter(function (x) { return x[0].vote > 0; }).length;
+      return '<div class="dw-agent"><header><span class="dw-dot ' + (lk ? 'ok' : '') + '"></span><b>' + esc(a) + '</b><span class="st">' + items.length + (items.length === 1 ? ' canzone · ' : ' canzoni · ') + lk + ' ♥</span></header>' +
+        items.map(function (x) { var r = x[0]; return '<div class="dw-prop"><div><b>' + (r.vote > 0 ? '♥ ' : '✕ ') + esc(r.name) + '</b><small>' + esc(profLine(r.prof)) + '</small></div><button class="btn sm" data-lx="' + x[1] + '">Togli</button></div>'; }).join('') +
+        (lk ? '<div class="row"><button class="btn sm pri" data-la="' + esc(a) + '">Crea una base nello stile ' + esc(a) + '</button></div>' : '') + '</div>';
+    }).join('') : '<p class="small muted">Ancora niente. Carica 2 o 3 canzoni che ti piacciono e una che non ti piace: impara la differenza.</p>';
   }
   $('#dw-p-learn').addEventListener('click', async function (e) {
     var b = e.target.closest('button'); if (!b) return;
@@ -1310,14 +1314,18 @@
     if (lp) { dwStop(); if (lp === 'stop') stopPlay(); else if (c) playBuf(c[lp] || (c.stems && c.stems[lp]), c.sr); }
     if (ls && c) await saveAudio(c[ls], c.sr, c.name.replace(/\W+/g, '-') + '-' + (ls === 'voice' ? 'voce' : 'base'), $('#dw-learn-msg'));
     if (lv && c) {
-      var L = learnList(); L.push({ id: uid(), name: c.name, prof: c.prof, vote: +lv, at: Date.now() }); if (L.length > 30) L.shift();
+      var art = (($('#dw-learn-art') || {}).value || '').trim().slice(0, 30) || 'Senza cartella'; LEARN.lastArt = art === 'Senza cartella' ? '' : art;
+      var L = learnList(); L.push({ id: uid(), name: c.name, artist: art, prof: c.prof, vote: +lv, at: Date.now() }); if (L.length > 80) L.shift();
       persist(); LEARN.cur = null; stopPlay();
       $('#dw-learn-msg').textContent = +lv > 0 ? 'Imparato: terrò conto di questo ritmo. Ho cancellato l\'audio, restano solo le misure.' : 'Segnato: eviterò questo tipo di ritmo.';
       learnRender(); agentsRun();
     }
     if (lx != null) { learnList().splice(+lx, 1); persist(); learnRender(); }
+    var la = b.getAttribute('data-la');
+    if (la) { var pl = learnPlan(la); if (pl) { learnUse(pl); $('#dw-learn-msg').textContent = 'Base nuova nello stile "' + la + '" (da ' + pl.from + (pl.from === 1 ? ' canzone' : ' canzoni') + ' della cartella): ' + (Arranger.STYLES[pl.genre] ? Arranger.STYLES[pl.genre].label : pl.genre) + ', ' + pl.bpm + ' BPM. Ogni volta che la premi esce una base diversa. Premi Play.'; } }
   });
-  function learnPlan() { var L = learnList(); return BeatLearn.blend(L.filter(function (r) { return r.vote > 0; }).map(function (r) { return r.prof; }), L.filter(function (r) { return r.vote < 0; }).map(function (r) { return r.prof; })); }
+  function learnArtists() { var seen = {}, out = []; learnList().forEach(function (r) { var a = r.artist || 'Senza cartella'; if (!seen[a]) { seen[a] = 1; out.push(a); } }); return out; }
+  function learnPlan(artist) { var L = learnList().filter(function (r) { return !artist || (r.artist || 'Senza cartella') === artist; }); return BeatLearn.blend(L.filter(function (r) { return r.vote > 0; }).map(function (r) { return r.prof; }), L.filter(function (r) { return r.vote < 0; }).map(function (r) { return r.prof; })); }
   function learnUse(pl) {
     var p = cur().prod; if (!pl) return false;
     if (Arranger.STYLES[pl.genre]) p.genre = pl.genre;
@@ -1984,7 +1992,7 @@
     var t = LIB.settings.theme;
     $('#x-theme').innerHTML = [['studio', 'Studio (elegante)'], ['notte', 'Cosmo (notte)'], ['chiaro', 'Chiaro'], ['auto', 'Automatico']].map(function (x) { return '<button class="chip ' + (t === x[0] ? 'on' : '') + '" data-theme-set="' + x[0] + '">' + x[1] + '</button>'; }).join('');
     $('#x-artist').value = LIB.settings.artist || '';
-    $('#x-store').textContent = store.kind === 'account' ? 'I tuoi testi e piani sono salvati sul tuo account e ti seguono da un dispositivo all\'altro.' : 'Salvataggio solo su questo browser: se cancelli i dati del sito li perdi. Esporta un backup ogni tanto.';
+    $('#x-store').textContent = store.kind === 'account' ? 'I tuoi testi e piani sono salvati sul tuo account e ti seguono da un dispositivo all\'altro.' : 'Salvataggio solo su questo browser: se cancelli i dati del sito li perdi. Salva una copia ogni tanto.';
     $('#x-int').innerHTML = [
       ['ok', 'Salvataggio dati', store.kind === 'account' ? 'sul tuo account' : 'solo in questo browser'], [sampleFn ? 'ok' : 'soon', 'Claude (consigli, idee)', sampleFn ? 'disponibile (chiede il tuo consenso)' : 'non disponibile in questa vista'],
       ['soon', 'Voce clonata / canto AI', 'non collegata: serve un servizio esterno, da valutare'], ['soon', 'Video AI con personaggio', 'non collegato: serve un servizio esterno'], ['soon', 'Instagram · TikTok · YouTube', 'non collegati']

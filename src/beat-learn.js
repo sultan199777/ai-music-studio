@@ -206,7 +206,7 @@
     var maxS = opt.maxSeconds || 90; if (x.length > maxS * sr) x = x.subarray(0, Math.floor(maxS * sr));
     var an = BaseAnalysis.analyze(x, sr, { maxSeconds: maxS }), bpm = an.bpm || 120;
     // le basi rap/trap stanno quasi sempre tra 60 e 160: riporta i doppi/metà nella zona giusta
-    var bpmUse = bpm; while (bpmUse > 165) bpmUse /= 2; while (bpmUse < 62) bpmUse *= 2;
+    var bpmUse = bpm; while (bpmUse > 165) bpmUse /= 2; while (bpmUse < 70) bpmUse *= 2; // sotto 70 è quasi sempre metà tempo
     var hop = Math.round(sr / 200), fps = sr / hop;
     var kE = bandEnv(x, sr, 0, 120, hop), sE = bandEnv(x, sr, 180, 2500, hop), hE = bandEnv(x, sr, 6000, Math.min(sr / 2 - 100, 14000), hop), all = bandEnv(x, sr, 0, sr / 2 - 100, hop);
     var kO = onsets(kE), sO = onsets(sE), hO = onsets(hE);

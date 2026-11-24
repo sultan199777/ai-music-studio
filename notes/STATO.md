@@ -140,3 +140,14 @@ Cablaggio minimo: blocchi "VOICE LAB" in app.js (4 righe + init), app.body.html 
 - Fase 1: "Impara da una base" accetta anche video (MP4/MOV dall'iPhone): l'audio si legge con decodeAudioData (provato con MP4 AAC).
 - Fase 2: **Separazione AI** gratuita, open source, sul dispositivo: HTDemucs v4 (Meta, MIT) via onnxruntime-web 1.22 (MIT) e demucs-web 1.0.2 (MIT, `src/vendor-demucs.js`). Lavora in un worker (`assets/ort/sep-worker.js`), modello da Hugging Face (180 MB, una volta, Cache Storage `msa-models-v1`, protetta dal service worker). Il service worker aggiunge COOP/COEP: con la pagina isolata usa 4 processori (misurato: 10 s di audio in 25 s invece di 45 s, CPU del container). 4 tracce: voce, batteria, basso, resto; il ritmo si misura su batteria+basso. Se fallisce (memoria iPhone) passa da sola alla separazione veloce. Massimo 3 minuti a volta.
 - Da verificare su iPhone (Ipotesi): velocità, memoria, WebGPU nel worker.
+
+## Separazione v2 (misurata) + cartelle artista
+- Motore nuovo: unblend 1.0.1 (MIT) + onnxruntime-web 1.26 (MIT) in `assets/unblend`, `assets/ort126` (solo l'import di ORT reso relativo in workers/onnx-worker.js). Tolto il vecchio demucs-web.
+- Misure su MUSDB18 test (2 brani, 20 s, SDR in dB voce / base, CPU 4 thread):
+  vecchio metodo semplice 0,2-0,9 / 6,8-7,6 · HTDemucs 11,9-13,5 / 17,9-20,9 (~40 s) · **SCNet small 12,7-14,4 / 18,7-21,8 (~37 s, 27 MB) = Rapida** · **Mel-Band RoFormer 14,8-17,5 / 20,8-24,8 (~300 s su CPU, 474 MB) = Studio** (voce RoFormer, base = brano − voce divisa da SCNet).
+- Tolto il filtro anti-fruscio dopo la separazione (era la causa dell'effetto "sgranato"); solo normalizzazione.
+- Se l'AI fallisce l'app lo scrive chiaramente e usa il metodo semplice solo per il ritmo.
+- Cartelle artista/genere: ogni canzone salvata in una cartella; "Crea una base nello stile X" usa solo quella cartella, seme nuovo a ogni pressione.
+- Il service worker non cancella più le cache dei modelli (cancella solo `studio-*`).
+- Licenze pesi: unblend dichiara Mel-Band RoFormer MIT; SCNet e HTDemucs "senza licenza esplicita" (uso per analisi personale).
+- Da verificare su iPhone: Rapida (memoria, tempo). Studio: pensata per il Mac.
