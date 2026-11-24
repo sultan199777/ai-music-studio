@@ -233,6 +233,14 @@
     <div class="row" style="margin-top:10px"><button class="btn sm" id="st-ver">Salva questa versione</button><button class="btn sm" id="st-suggest">Suggerisci la base dal testo</button></div>
     <div class="status" id="st-msg"></div>
   </div>
+  <div class="card" id="ai-card"><div class="card-head"><h3>Assistente testi (AI locale)</h3><span class="tag i">Opzionale</span></div>
+    <p class="small muted">Un piccolo modello gratuito che gira sul tuo telefono e propone righe e punchline nel genere scelto. Si scarica una volta sola (Wi-Fi consigliato) e nessun testo esce dal telefono. Il cervello Sultan resta il maestro: l'AI scrive solo bozze, tu decidi. Serve un iPhone recente (WebGPU).</p>
+    <label class="f"><span>Modello</span><select id="ai-model"></select></label>
+    <div class="row"><button class="btn pri" id="ai-on">Attiva (scarica il modello)</button></div>
+    <div class="status" id="ai-msg"></div>
+    <div class="row"><button class="btn" id="ai-v" disabled>3 versioni della riga</button><button class="btn" id="ai-p" disabled>Punchline</button><button class="btn" id="ai-c" disabled>Riga dopo</button></div>
+    <div id="ai-out"></div>
+  </div>
   <div class="card"><div class="card-head"><h3>Rime</h3><span class="tag m">Dalle tue parole</span></div>
     <p class="small muted">Scrivi una parola (o lascia vuoto per usare l'ultima parola del testo) e trova rime piene e assonanze. Il dizionario cresce con i tuoi testi e con le cartelle artista (solo parole singole, mai frasi). Suggerimenti approssimati: l'accento non è scritto.</p>
     <div class="row"><input id="rh-word" type="text" autocomplete="off" placeholder="Parola (es. cuore)" style="flex:1;min-width:0"><button class="btn pri" id="rh-go">Trova rime</button></div>

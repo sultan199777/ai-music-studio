@@ -515,6 +515,46 @@
   function wbStore() { LIB.settings.words = LIB.settings.words || WordBank.newBank(); return LIB.settings.words; }
   function wbLearnSongs() { var b = wbStore(); if (b.songsAt === cur().id + ':' + (cur().lyrics || '').length) return; WordBank.learn(b, cur().lyrics || ''); b.songsAt = cur().id + ':' + (cur().lyrics || '').length; persist(); }
   function rhChips(list, cls) { return list.map(function (x) { return '<span class="tag ' + cls + '" style="margin:2px;display:inline-block" title="' + x.syll + ' sillabe">' + esc(x.word) + (x.mine ? ' ★' : '') + ' <small>' + x.syll + '</small></span>'; }).join(' '); }
+
+  /* ===== Assistente testi (AI locale, opzionale) ===== */
+  (function () {
+    var sel = $('#ai-model'); if (!sel) return;
+    sel.innerHTML = LocalAI.MODELS.map(function (m) { return '<option value="' + m.id + '">' + m.label + ' · ' + m.note + '</option>'; }).join('');
+    function ready(on) { ['#ai-v', '#ai-p', '#ai-c'].forEach(function (i) { $(i).disabled = !on; }); }
+    var LINE = '';
+    function pickLine() {
+      var ta = $('#st-lyrics'), ls = lyricLines(cur().lyrics), t = ta ? ta.value : cur().lyrics;
+      if (ta && ta.selectionStart != null && ta.selectionEnd > ta.selectionStart) { LINE = t.slice(ta.selectionStart, ta.selectionEnd).trim(); }
+      else { var pos = ta && ta.selectionStart != null ? ta.selectionStart : t.length, a = t.lastIndexOf('\n', pos - 1) + 1, b = t.indexOf('\n', pos); LINE = t.slice(a, b < 0 ? t.length : b).trim(); if (!LINE || /^\[/.test(LINE)) LINE = ls.length ? ls[ls.length - 1] : ''; }
+      return LINE;
+    }
+    $('#ai-on').addEventListener('click', async function () {
+      var m = $('#ai-msg'); if (!LocalAI.supported()) { m.textContent = 'Questo browser non ha WebGPU: l\'assistente AI non può partire qui. Il cervello Sultan funziona lo stesso.'; return; }
+      m.textContent = 'Scarico il modello (solo la prima volta)…'; this.disabled = true;
+      try { await LocalAI.load(sel.value, function (p) { m.textContent = (p && p.text ? p.text : 'Carico…').slice(0, 90) + (p && p.progress != null ? ' ' + Math.round(p.progress * 100) + '%' : ''); }); m.textContent = 'Assistente pronto. Seleziona una riga nel testo e scegli cosa vuoi.'; ready(true); }
+      catch (e) { m.textContent = 'Non è partito: ' + (e && e.message ? e.message : e); this.disabled = false; }
+    });
+    async function go(task) {
+      var line = pickLine(), out = $('#ai-out'); if (!line) { out.innerHTML = '<p class="small">Scrivi o seleziona prima una riga.</p>'; return; }
+      var s = cur(), M = arModel(), last = line.replace(/[^\wàèéìíòóùú\s']/gi, ' ').trim().split(/\s+/).pop(), rh = [];
+      try { wbLearnSongs(); var r = WordBank.rhymes(wbStore(), last, { max: 8 }); rh = (r.rhyme || []).map(function (x) { return x.w || x; }); } catch (e) {}
+      out.innerHTML = '<p class="small">Penso…</p>';
+      try {
+        var res = await LocalAI.ask(task, { line: line, context: lyricLines(s.lyrics).slice(-6).join('\n'), genre: (ALLG[s.prod.genre] || {}).label || s.prod.genre, mood: s.moodTarget || 'dark', syll: (LyricsEngine.lineSyllables(line) || {}).metric || 10, rhymes: rh, artistNote: M ? M.mood : '' });
+        out.innerHTML = res.length ? '<ul class="clean small">' + res.map(function (x, i) { return '<li>' + esc(x) + ' <button class="chip" data-ai-use="' + i + '" style="min-height:28px;padding:2px 10px">Usa</button></li>'; }).join('') + '</ul><p class="small muted"><span class="tag i">Ipotesi</span> Sono bozze di un modello piccolo: controlla senso e rime.</p>' : '<p class="small">Nessuna proposta utile, riprova.</p>';
+        out._res = res; out._line = line; out._task = task;
+      } catch (e) { out.innerHTML = '<p class="small">Errore: ' + esc(e && e.message ? e.message : e) + '</p>'; }
+    }
+    $('#ai-v').addEventListener('click', function () { go('versioni'); });
+    $('#ai-p').addEventListener('click', function () { go('punchline'); });
+    $('#ai-c').addEventListener('click', function () { go('continua'); });
+    $('#ai-out').addEventListener('click', function (e) {
+      var i = e.target && e.target.getAttribute && e.target.getAttribute('data-ai-use'); if (i == null) return;
+      var out = $('#ai-out'), txt = out._res[+i], s = cur(), ta = $('#st-lyrics');
+      s.lyrics = out._task === 'continua' ? s.lyrics.replace(/\s+$/, '') + '\n' + txt : s.lyrics.replace(out._line, txt);
+      if (ta) ta.value = s.lyrics; persist(); out.insertAdjacentHTML('beforeend', '<p class="small">Inserita nel testo.</p>');
+    });
+  })();
   $('#rh-go').addEventListener('click', function () {
     var w = ($('#rh-word').value || '').trim(), out = $('#rh-out');
     if (!w) { var ls = lyricLines(cur().lyrics); var last = ls.length ? ls[ls.length - 1].replace(/[^\wàèéìíòóùú\s']/gi, ' ').trim().split(/\s+/).pop() : ''; w = last || ''; $('#rh-word').value = w; }
@@ -1299,16 +1339,16 @@
   function aiRender() {
     var a = aiSet(), eng = a.engine;
     $('#dw-ai-engine').value = eng;
-    var models = LocalAI.MODELS[eng] || {};
+    var models = StudioAI.MODELS[eng] || {};
     $('#dw-ai-model').hidden = eng === 'regole'; $('#dw-ai-test').hidden = eng !== 'ollama';
     $('#dw-ai-model').innerHTML = Object.keys(models).map(function (k) { return '<option value="' + k + '"' + (k === a.model ? ' selected' : '') + '>' + esc(models[k].nome) + '</option>'; }).join('');
     if (eng !== 'regole' && !models[a.model]) { a.model = Object.keys(models)[0]; $('#dw-ai-model').value = a.model; }
-    $('#dw-ai-info').innerHTML = eng === 'regole' ? 'Capisce le frasi dell\'elenco, subito e senza scaricare niente.' : eng === 'significato' ? 'Capisce frasi libere in italiano e le collega ai comandi dello Studio. Scarica 118 MB la prima volta; va anche su iPhone.' : (eng === 'browser' ? 'Il modello gira dentro la pagina: la prima volta scarica ' + (LocalAI.MODELS.browser[a.model] || {}).mb + ' MB. Consigliato sul computer.' :
+    $('#dw-ai-info').innerHTML = eng === 'regole' ? 'Capisce le frasi dell\'elenco, subito e senza scaricare niente.' : eng === 'significato' ? 'Capisce frasi libere in italiano e le collega ai comandi dello Studio. Scarica 118 MB la prima volta; va anche su iPhone.' : (eng === 'browser' ? 'Il modello gira dentro la pagina: la prima volta scarica ' + (StudioAI.MODELS.browser[a.model] || {}).mb + ' MB. Consigliato sul computer.' :
       'Sul Mac: installa Ollama (ollama.com), poi nel Terminale: <span class="mono">ollama pull ' + esc(a.model || 'qwen2.5:7b') + '</span> e avvia con <span class="mono">OLLAMA_ORIGINS="' + esc(location.origin) + '" ollama serve</span>.');
   }
   $('#dw-ai-engine').addEventListener('change', function () { aiSet().engine = this.value; aiSet().model = ''; persist(); aiRender(); });
   $('#dw-ai-model').addEventListener('change', function () { aiSet().model = this.value; persist(); aiRender(); });
-  $('#dw-ai-test').addEventListener('click', async function () { var m = await LocalAI.pingOllama(aiSet().url); $('#dw-ai-info').textContent = m ? 'Ollama collegato. Modelli presenti: ' + (m.join(', ') || 'nessuno (scaricane uno)') + '.' : 'Ollama non risponde: è acceso sul Mac con OLLAMA_ORIGINS impostato? (Dall\'iPhone non si raggiunge il Mac.)'; });
+  $('#dw-ai-test').addEventListener('click', async function () { var m = await StudioAI.pingOllama(aiSet().url); $('#dw-ai-info').textContent = m ? 'Ollama collegato. Modelli presenti: ' + (m.join(', ') || 'nessuno (scaricane uno)') + '.' : 'Ollama non risponde: è acceso sul Mac con OLLAMA_ORIGINS impostato? (Dall\'iPhone non si raggiunge il Mac.)'; });
   // esegue comandi dello Studio (frasi) su una copia dello stato; ritorna cosa è cambiato
   function runCommands(list, st) {
     var said = [], extra = { variant: false, fromText: false };
@@ -1334,7 +1374,7 @@
       TALK.push({ text: text, reply: 'Ci penso…', state: 'pensa' }); talkRender();
       try {
         var p = cur().prod, lk = learnList().filter(function (r) { return r.vote > 0; }).map(function (r) { return (r.artist || '') + ' ' + r.prof.bpm + ' BPM'; }).slice(0, 4).join(', ');
-        var res = await LocalAI.think(text, { summary: (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode, lyrics: s.lyrics || '', taste: lk },
+        var res = await StudioAI.think(text, { summary: (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode, lyrics: s.lyrics || '', taste: lk },
           { engine: a.engine, model: a.model, url: a.url, wasmPaths: new URL('tf/', location.href).href, onProgress: function (x, y) { TALK[TALK.length - 1].reply = 'Scarico il modello: ' + Math.round(x / 1048576) + ' di ' + Math.round(y / 1048576) + ' MB (solo la prima volta)…'; talkRender(); } });
         TALK.pop(); reply = res.reply; cmds = res.commands; lyr = res.lyrics;
       } catch (e) { TALK.pop(); TALK.push({ text: text, reply: 'L\'IA locale non ha risposto (' + (e && e.message || 'errore') + '). Uso le regole.', state: 'nulla' }); talkRender(); cmds = [text]; }
