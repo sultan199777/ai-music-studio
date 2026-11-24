@@ -58,3 +58,7 @@ Regola della persona: andare avanti un passo alla volta, senza rianalizzare tutt
 ## 2026-11-24 Producer: comandi per strumento e per parte
 - Nuovi comandi: BPM esatti, tonalità, stile (trap/drill/epico/melodico/estate), alza/abbassa/togli/rimetti per strumento, "solo X", per sezione (strofa, ritornello…), hi-hat più fitti/radi. Mix per sezione in Backing.mix. Test 119/119.
 - Limite: un comando con due richieste diverse ne esegue una sola (es. stile + togli 808).
+
+## 2026-11-24 Risparmio di token
+- `notes/MAPPA.md` (generata con `node tools/mappa.js`): mappa di file, scopo e funzioni. Leggerla prima dei sorgenti. Rigenerare dopo cambi grandi.
+- Graphify e Ponytail non installati (rete per pacchetti spenta; Ponytail non verificato).
