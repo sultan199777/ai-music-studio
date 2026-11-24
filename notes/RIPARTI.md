@@ -25,5 +25,7 @@ Percussioni del mondo; poi ricerca e progetto dell'autotune nuovo (vedi direzion
 ## Direzione decisa dall'utente (24/11/2026)
 Obiettivo: lo studio più grande e completo possibile, non un "mini studio". Due parti distinte: Beat Studio (basi, tutti gli strumenti) e un autotune NUOVO di carattere (non solo preset: ci si deve poter lavorare dentro). Ordine: Fase 0 (fondamenta) + metronomo/misura ritardo, poi il resto. Idee per l'autotune nuovo (ipotesi): segue gli accordi della base battuta per battuta, carattere su pad XY per sezione, curva disegnata col dito, effetti legati al testo (rime, fine frase).
 
+Precisazione (24/11, sera): suoni ORIGINALI, non copie: i campioni CC0 sono solo materia prima da rielaborare (Laboratorio suoni: carattere, ibridi, morph). L'app deve migliorare da sola imparando dalle scelte dell'utente ("agenti"/Coach), essere facile e spiegata, e l'utente deve diventare producer autonomo. Autotune: tutte le caratteristiche modificabili + voce e base che si adattano al testo ("più così").
+
 ## Piano tecnico dello studio professionale (nuovo, 24/11/2026)
 Documento con ricerca, fonti, licenze, architettura e fasi: https://claude.ai/artifact/QH4k4tg4uf8kRHfPYMpvD2 (leggerlo con Artifact read, solo se serve). Due studi distinti: Beat Studio e Voice Studio. Fase 0 = progetto in dati + motore Tone.js + mixer per traccia + export WAV. Il codice NON è ancora stato cambiato per questo piano (fatti solo 808/hi-hat/groove nell'arrangiatore attuale); l'utente deve confermare da quale fase partire.
