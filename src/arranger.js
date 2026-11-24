@@ -287,6 +287,7 @@
     // coda lunga fino alla nota dopo e glide (scivolata) logaritmico dalla nota precedente.
     function bass808(m, prevM, dur, slide) {
       var gl = style.glide || 0.08, drive = style.drive || 1.8;
+      if (typeof p.bassRender === 'function') return memo('d8' + m + '_' + prevM + '_' + dur.toFixed(2) + slide, function () { return p.bassRender(m, dur, sr, slide ? prevM : null, gl); });
       return memo('b8' + m + '_' + prevM + '_' + dur.toFixed(2) + slide, function () {
         var len = Math.round(dur * sr), b = new Float32Array(len), ph = 0, f1 = mtof(m), f0 = (slide && prevM != null) ? mtof(prevM) : f1;
         var rel = Math.min(len, Math.round(0.03 * sr));
@@ -646,6 +647,12 @@
       add('bass', at(n.bar, n.step), bassKind === '808' ? bass808(n.midi, sl ? pm2 : null, dur, sl) : bassRound(n.midi, dur, bassKind === 'sub'), 0.75);
       events.bass.push({ start: at(n.bar, n.step) / sr, midi: n.midi, dur: dur, bar: n.bar, step: n.step, len: n.len, slide: sl, edited: true }); pm2 = n.midi;
     }); }
+
+    // effetti di transizione messi a mano (riser, impact, reverse…): {bar, buf, end}
+    if (Array.isArray(p.extraFx)) p.extraFx.forEach(function (f) {
+      if (!f || !f.buf || f.bar == null || f.bar > bars) return;
+      var at0 = f.end ? f.bar * stepLen * 16 - f.buf.length : f.bar * stepLen * 16; add('fx', Math.max(0, at0), f.buf, f.gain == null ? 0.7 : f.gain);
+    });
 
     // "pompaggio": accordi e pad si abbassano a ogni cassa, come in produzione moderna
     function duck(tr, depth) {

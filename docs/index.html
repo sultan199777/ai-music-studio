@@ -528,6 +528,13 @@ details.card[open]>summary{margin-bottom:8px}
     <div class="status" id="dw-pr-msg"></div>
   </section>
 
+  <section class="dw-panel" id="dw-p-design">
+    <div class="dw-ph"><h3>Designer suoni</h3><span class="tag m">Suoni tuoi</span></div>
+    <div class="chips" id="dw-ds-tabs"><button class="chip on" data-dst="synth">Synth</button><button class="chip" data-dst="808">808</button><button class="chip" data-dst="fx">Effetti di passaggio</button></div>
+    <div id="dw-ds-body"></div>
+    <div class="status" id="dw-ds-msg"></div>
+  </section>
+
   <section class="dw-panel" id="dw-p-clips">
     <div class="dw-ph"><h3>Voce: prove e montaggio</h3><span class="tag m">Niente si perde</span></div>
     <div id="dw-cl-takes"></div>
@@ -571,7 +578,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 18:47</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 18:50</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -920,7 +927,7 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">267 test automatici superati su 267 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">271 test automatici superati su 271 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -5424,6 +5431,7 @@ details.card[open]>summary{margin-bottom:8px}
     // coda lunga fino alla nota dopo e glide (scivolata) logaritmico dalla nota precedente.
     function bass808(m, prevM, dur, slide) {
       var gl = style.glide || 0.08, drive = style.drive || 1.8;
+      if (typeof p.bassRender === 'function') return memo('d8' + m + '_' + prevM + '_' + dur.toFixed(2) + slide, function () { return p.bassRender(m, dur, sr, slide ? prevM : null, gl); });
       return memo('b8' + m + '_' + prevM + '_' + dur.toFixed(2) + slide, function () {
         var len = Math.round(dur * sr), b = new Float32Array(len), ph = 0, f1 = mtof(m), f0 = (slide && prevM != null) ? mtof(prevM) : f1;
         var rel = Math.min(len, Math.round(0.03 * sr));
@@ -5783,6 +5791,12 @@ details.card[open]>summary{margin-bottom:8px}
       add('bass', at(n.bar, n.step), bassKind === '808' ? bass808(n.midi, sl ? pm2 : null, dur, sl) : bassRound(n.midi, dur, bassKind === 'sub'), 0.75);
       events.bass.push({ start: at(n.bar, n.step) / sr, midi: n.midi, dur: dur, bar: n.bar, step: n.step, len: n.len, slide: sl, edited: true }); pm2 = n.midi;
     }); }
+
+    // effetti di transizione messi a mano (riser, impact, reverse…): {bar, buf, end}
+    if (Array.isArray(p.extraFx)) p.extraFx.forEach(function (f) {
+      if (!f || !f.buf || f.bar == null || f.bar > bars) return;
+      var at0 = f.end ? f.bar * stepLen * 16 - f.buf.length : f.bar * stepLen * 16; add('fx', Math.max(0, at0), f.buf, f.gain == null ? 0.7 : f.gain);
+    });
 
     // "pompaggio": accordi e pad si abbassano a ogni cassa, come in produzione moderna
     function duck(tr, depth) {
@@ -6707,6 +6721,90 @@ details.card[open]>summary{margin-bottom:8px}
   var FX = { vocoder: { nome: 'Vocoder sugli accordi', fn: vocoder }, metallico: { nome: 'Metallico / robot', fn: metallic }, radio: { nome: 'Radio / telefono', fn: radio } };
   function apply(id, x, sr, opt) { return FX[id] ? FX[id].fn(x, sr, opt) : x; }
   return { FX: FX, apply: apply, vocoder: vocoder, metallic: metallic, radio: radio, carrier: carrier };
+});
+
+/*
+ * Designer di suoni (sintesi calcolata qui, nessun campione):
+ *  - SYNTH wavetable: 4 forme d'onda (sinusoide → dente di sega → quadra → "vocale") e si scorre tra loro con
+ *    "Posizione"; un LFO muove la posizione (movimento), unisono con più voci stonate (larghezza), filtro passa-basso
+ *    con inviluppo, attacco e rilascio. Come Serum/Vital nel principio, scritto da zero.
+ *  - 808 DESIGNER: decadimento, colpo iniziale (caduta di altezza), distorsione, tono (filtro), click.
+ *  - EFFETTI di transizione: riser, downlifter, impact, reverse (crash al contrario).
+ * Ogni synth salvato diventa uno strumento usabile nelle tracce (Instruments.registerCustom).
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.SynthDesign = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  var TS = 256;
+  function mtof(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+  function clamp(v, a, b) { v = +v; if (!isFinite(v)) v = a; return Math.max(a, Math.min(b, v)); }
+  // 4 tavole d'onda a banda limitata (somma di armoniche)
+  var TABLES = (function () {
+    var defs = [function () { return 0; }, function (h) { return 1 / h; }, function (h) { return h % 2 ? 1 / h : 0; }, function (h) { var f = h * 110; return Math.exp(-Math.pow((f - 700) / 250, 2)) + 0.7 * Math.exp(-Math.pow((f - 1200) / 300, 2)) + 0.25 / h; }];
+    return defs.map(function (amp, k) {
+      var t = new Float32Array(TS), H = 24, mx = 0;
+      for (var i = 0; i < TS; i++) { var v = k === 0 ? Math.sin(2 * Math.PI * i / TS) : 0; if (k) for (var h = 1; h <= H; h++) v += amp(h) * Math.sin(2 * Math.PI * h * i / TS); t[i] = v; if (Math.abs(v) > mx) mx = Math.abs(v); }
+      for (i = 0; i < TS; i++) t[i] /= mx; return t;
+    });
+  })();
+  var SYNTH_DEF = { pos: 0.35, lfo: 0.2, lfoHz: 0.5, voices: 3, detune: 12, cutoff: 0.6, res: 0.2, envAmt: 0.4, attack: 0.01, release: 0.25, decay: 0.6, sustain: 0.7 };
+  var SYNTH_PRESETS = {
+    'Pluck lucido': { pos: 0.4, voices: 3, detune: 10, cutoff: 0.35, envAmt: 0.7, attack: 0.002, decay: 0.25, sustain: 0.1, release: 0.2, lfo: 0 },
+    'Pad largo': { pos: 0.55, voices: 7, detune: 22, cutoff: 0.45, envAmt: 0.2, attack: 0.5, decay: 1, sustain: 0.9, release: 1.2, lfo: 0.4, lfoHz: 0.25 },
+    'Bell scura': { pos: 0.15, voices: 2, detune: 5, cutoff: 0.7, envAmt: 0.5, attack: 0.001, decay: 0.8, sustain: 0.2, release: 0.8, lfo: 0.1 },
+    'Lead vocale': { pos: 0.95, voices: 3, detune: 9, cutoff: 0.65, res: 0.4, envAmt: 0.3, attack: 0.03, decay: 0.4, sustain: 0.8, release: 0.3, lfo: 0.3, lfoHz: 5 },
+    'Supersaw trap': { pos: 0.33, voices: 7, detune: 28, cutoff: 0.55, envAmt: 0.35, attack: 0.005, decay: 0.5, sustain: 0.6, release: 0.35 }
+  };
+  function synthParams(o) { var p = {}; for (var k in SYNTH_DEF) p[k] = o && o[k] != null ? +o[k] : SYNTH_DEF[k]; p.pos = clamp(p.pos, 0, 1); p.voices = Math.round(clamp(p.voices, 1, 7)); p.cutoff = clamp(p.cutoff, 0.02, 1); p.res = clamp(p.res, 0, 0.95); return p; }
+  function readTable(pos, ph) {
+    var x = pos * 3, k = Math.min(2, Math.floor(x)), f = x - k, i = ph * TS, j = Math.floor(i), fr = i - j, a = TABLES[k], b = TABLES[k + 1], j2 = (j + 1) % TS;
+    var va = a[j % TS] + (a[j2] - a[j % TS]) * fr, vb = b[j % TS] + (b[j2] - b[j % TS]) * fr; return va + (vb - va) * f;
+  }
+  /** Suona una nota del synth. Ritorna Float32Array. */
+  function synth(params, midi, dur, sr) {
+    var p = synthParams(params), rel = Math.max(0.01, p.release), n = Math.round((dur + rel) * sr), y = new Float32Array(n), f0 = mtof(midi);
+    var ph = [], det = []; for (var v = 0; v < p.voices; v++) { ph.push(v / p.voices); det.push(p.voices === 1 ? 0 : (v / (p.voices - 1) - 0.5) * 2 * p.detune); }
+    var lp1 = 0, lp2 = 0, att = Math.max(1, p.attack * sr), dec = Math.max(1, p.decay * sr), on = dur * sr;
+    for (var i = 0; i < n; i++) {
+      var t = i / sr, env = i < att ? i / att : (i < att + dec ? 1 - (1 - p.sustain) * (i - att) / dec : p.sustain); if (i > on) env *= Math.exp(-(i - on) / (rel * sr / 4));
+      var pos = clamp(p.pos + p.lfo * 0.3 * Math.sin(2 * Math.PI * p.lfoHz * t), 0, 1), s = 0;
+      for (v = 0; v < p.voices; v++) { ph[v] += f0 * Math.pow(2, det[v] / 1200) / sr; ph[v] -= Math.floor(ph[v]); s += readTable(pos, ph[v]); }
+      s /= Math.sqrt(p.voices);
+      var fc = Math.min(0.99, p.cutoff * p.cutoff + p.envAmt * env * 0.5), g = 1 - Math.exp(-2 * Math.PI * Math.min(16000, fc * 16000) / sr);
+      lp1 += g * (s - lp1 - p.res * 2 * (lp2 - lp1)); lp2 += g * (lp1 - lp2);
+      y[i] = lp2 * env * 0.5;
+    }
+    return y;
+  }
+  // ---------- 808 designer ----------
+  var B808_DEF = { decay: 1.2, punch: 0.6, drive: 0.5, tone: 0.6, click: 0.3 };
+  function b808Params(o) { var p = {}; for (var k in B808_DEF) p[k] = clamp(o && o[k] != null ? o[k] : B808_DEF[k], 0, k === 'decay' ? 4 : 1); return p; }
+  function b808(params, midi, dur, sr, fromMidi, glide) {
+    var p = b808Params(params), n = Math.round(dur * sr), y = new Float32Array(n), ph = 0, f1 = mtof(midi), f0 = fromMidi != null ? mtof(fromMidi) : f1, gl = glide || 0.08, drive = 1 + p.drive * 4, lp = 0;
+    var cut = 1 - Math.exp(-2 * Math.PI * (120 + p.tone * 3000) / sr), rel = Math.min(n, Math.round(0.03 * sr));
+    for (var i = 0; i < n; i++) {
+      var t = i / sr, g = f0 === f1 ? 1 : 1 - Math.exp(-t / (gl / 3)), f = f0 * Math.pow(f1 / f0, g) * (1 + p.punch * 1.2 * Math.exp(-t * 40));
+      ph += 2 * Math.PI * f / sr;
+      var env = Math.exp(-t / Math.max(0.1, p.decay)), v = Math.tanh(Math.sin(ph) * drive) / Math.tanh(drive);
+      v += p.click * Math.exp(-t * 300) * Math.sin(ph * 6);
+      lp += cut * (v - lp);
+      y[i] = lp * env * Math.min(1, i / 40) * Math.min(1, (n - i) / rel) * 0.9;
+    }
+    return y;
+  }
+  // ---------- effetti di transizione ----------
+  function noise(seed) { var s = seed || 9; return function () { s = (s * 16807) % 2147483647; return s / 2147483647 * 2 - 1; }; }
+  function riser(sec, sr) { var n = Math.round(sec * sr), y = new Float32Array(n), r = noise(3), lp = 0, ph = 0; for (var i = 0; i < n; i++) { var k = i / n, c = 1 - Math.exp(-2 * Math.PI * (300 + 9000 * k * k) / sr); lp += c * (r() - lp); ph += 2 * Math.PI * (200 + 1800 * k * k) / sr; y[i] = (lp * 0.8 + 0.2 * Math.sin(ph)) * k * k * 0.8; } return y; }
+  function downlifter(sec, sr) { var y = riser(sec, sr); return y.reverse(); }
+  function impact(sr) { var n = Math.round(2.5 * sr), y = new Float32Array(n), r = noise(5), ph = 0, lp = 0; for (var i = 0; i < n; i++) { var t = i / sr; ph += 2 * Math.PI * (45 + 80 * Math.exp(-t * 12)) / sr; lp += 0.08 * (r() - lp); y[i] = Math.sin(ph) * Math.exp(-t * 2.2) * 0.9 + lp * Math.exp(-t * 4) * 0.8 + r() * Math.exp(-t * 30) * 0.3; } return y; }
+  function reverseCrash(sec, sr) { var n = Math.round(sec * sr), y = new Float32Array(n), r = noise(7), hp = 0, prev = 0; for (var i = 0; i < n; i++) { var x = r(); hp = 0.9 * (hp + x - prev); prev = x; y[i] = hp * Math.exp(-(i / sr) * 3) * 0.6; } return y.reverse(); }
+  var FX = { riser: { nome: 'Riser (sale)', make: function (sr, bars, bs) { return riser(bs * (bars || 1), sr); }, end: true },
+    downlifter: { nome: 'Downlifter (scende)', make: function (sr, bars, bs) { return downlifter(bs * (bars || 1), sr); } },
+    impact: { nome: 'Impact (botta)', make: function (sr) { return impact(sr); } },
+    reverse: { nome: 'Reverse (crash al contrario)', make: function (sr, bars, bs) { return reverseCrash(Math.min(2.5, bs), sr); }, end: true } };
+  return { TABLES: TABLES, SYNTH_DEF: SYNTH_DEF, SYNTH_PRESETS: SYNTH_PRESETS, synthParams: synthParams, synth: synth, B808_DEF: B808_DEF, b808Params: b808Params, b808: b808, FX: FX, riser: riser, impact: impact, reverseCrash: reverseCrash, downlifter: downlifter };
 });
 
 /*
@@ -10096,8 +10194,8 @@ details.card[open]>summary{margin-bottom:8px}
     return SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {} });
   }
   function getBase() {
-    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.notes, map && map.plan, Instruments.loaded().length]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, notes: p.notes || undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
+    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -10742,7 +10840,7 @@ details.card[open]>summary{margin-bottom:8px}
     var fams = [['tutte', 'Tutti'], ['orig', 'Originali'], ['mine', 'I tuoi']].concat(Object.keys(Instruments.FAMILIES).map(function (f) { return [f, Instruments.FAMILIES[f]]; }));
     $('#dw-sheet-f').innerHTML = fams.map(function (f) { return '<button class="chip' + (SHEET.fam === f[0] ? ' on' : '') + '" data-sf="' + f[0] + '">' + esc(f[1]) + '</button>'; }).join('');
     var list = [{ id: '', nome: 'Sintetizzato (automatico)', come: 'Suono generato dal programma, cambia con lo stile.' }];
-    var orig = SoundLab.ORIGINALS.map(function (r) { return { id: r.id, nome: r.nome, come: r.descr, o: 1 }; }), mine = (LIB.settings.lab || []).map(function (r) { return { id: r.id, nome: r.nome, come: r.descr || 'Creato da te.', m: 1 }; });
+    var orig = SoundLab.ORIGINALS.map(function (r) { return { id: r.id, nome: r.nome, come: r.descr, o: 1 }; }), mine = (LIB.settings.lab || []).concat(LIB.settings.synths || []).map(function (r) { return { id: r.id, nome: r.nome, come: r.descr || 'Creato da te.', m: 1 }; });
     var cat = Instruments.CATALOG.filter(function (c) { return role === 'arpeggio' ? c.tipo !== 'sostenuto' || c.ruoli.indexOf('accordi') >= 0 : (c.ruoli.indexOf(role) >= 0 || (role === 'pad' && c.tipo === 'sostenuto')); }).map(function (c) { return { id: c.id, nome: c.nome, come: c.come, f: c.fam }; });
     if (SHEET.fam === 'orig') list = orig; else if (SHEET.fam === 'mine') list = mine; else if (SHEET.fam !== 'tutte') list = cat.filter(function (c) { return c.f === SHEET.fam; }); else list = list.concat(orig, mine, cat);
     $('#dw-sheet-g').innerHTML = list.length ? list.map(function (c) { return '<div class="dw-card' + ((c.id || '') === (cur0 || '') ? ' sel' : '') + '"><b>' + esc(c.nome) + '</b><small>' + esc((c.come || '').slice(0, 110)) + '</small><div class="row">' + (c.id ? '<button class="btn sm" data-sp="' + c.id + '">Ascolta</button>' : '') + '<button class="btn sm pri" data-su="' + c.id + '">Usa</button></div></div>'; }).join('') : '<p class="small muted">Niente qui: crea strumenti nel Laboratorio.</p>';
@@ -10904,6 +11002,58 @@ details.card[open]>summary{margin-bottom:8px}
     var id = e.target.getAttribute('data-lv'); if (!id) return;
     var L = LANES.filter(function (x) { return x.id === id; })[0]; cur().prod.levels[L.level] = +e.target.value / 100; persist(); dwGains();
   });
+  // ---------- Designer suoni: synth, 808, effetti di transizione ----------
+  function synthRegister(r) {
+    Instruments.registerCustom(r.id, { id: r.id, nome: r.nome, fam: 'synth', fonte: 'Creato da te', tipo: 'sostenuto', range: [24, 100], ruoli: ['melodia', 'accordi', 'pad', 'arpeggio'], come: 'Synth wavetable creato nel Designer.', combina: '', perche: '', stili: [] },
+      function (midi, dur, sr) { return SynthDesign.synth(r.params, midi, dur, sr); });
+  }
+  var DS = { tab: 'synth', syn: SynthDesign.synthParams(SynthDesign.SYNTH_PRESETS['Pluck lucido']), fxType: 'riser' };
+  var DS_SYN = [['pos', 'Forma d\'onda', 0, 1, 0.01], ['lfo', 'Movimento', 0, 1, 0.01], ['lfoHz', 'Velocità movimento (Hz)', 0.05, 8, 0.05], ['voices', 'Voci (unisono)', 1, 7, 1], ['detune', 'Larghezza (cent)', 0, 40, 1], ['cutoff', 'Filtro (luminosità)', 0.05, 1, 0.01], ['res', 'Risonanza', 0, 0.9, 0.01], ['envAmt', 'Apertura del filtro sul colpo', 0, 1, 0.01], ['attack', 'Attacco (s)', 0.001, 2, 0.001], ['decay', 'Decadimento (s)', 0.02, 2, 0.01], ['sustain', 'Tenuta', 0, 1, 0.01], ['release', 'Rilascio (s)', 0.02, 3, 0.01]];
+  var DS_808 = [['decay', 'Durata', 0.1, 4, 0.05], ['punch', 'Colpo (caduta di nota)', 0, 1, 0.01], ['drive', 'Distorsione', 0, 1, 0.01], ['tone', 'Tono (scuro → brillante)', 0, 1, 0.01], ['click', 'Click d\'attacco', 0, 1, 0.01]];
+  function dsSliders(defs, obj, attr) { return defs.map(function (d) { return '<label class="f"><span>' + d[1] + ' <b>' + (+obj[d[0]]).toFixed(d[4] >= 1 ? 0 : 2) + '</b></span><input type="range" min="' + d[2] + '" max="' + d[3] + '" step="' + d[4] + '" value="' + obj[d[0]] + '" ' + attr + '="' + d[0] + '"></label>'; }).join(''); }
+  function dsRender() {
+    var p = cur().prod, h = '';
+    $$('#dw-ds-tabs .chip').forEach(function (c) { c.classList.toggle('on', c.getAttribute('data-dst') === DS.tab); });
+    if (DS.tab === 'synth') {
+      var mine = LIB.settings.synths || [];
+      h = '<div class="chips">' + Object.keys(SynthDesign.SYNTH_PRESETS).map(function (k) { return '<button class="chip" data-dsp="' + esc(k) + '">' + esc(k) + '</button>'; }).join('') + '</div>' +
+        '<div class="dw-knobs">' + dsSliders(DS_SYN, DS.syn, 'data-dss') + '</div>' +
+        '<div class="row"><button class="btn sm" id="dw-ds-play">▶ Ascolta</button><button class="btn sm pri" id="dw-ds-save">Salva come strumento</button></div>' +
+        (mine.length ? '<p class="small muted" style="margin:8px 0 4px">I tuoi synth (usali dal nome dello strumento sulla traccia):</p><div class="chips">' + mine.map(function (r, i) { return '<button class="chip" data-dsu="' + i + '">' + esc(r.nome) + ' → melodia</button>'; }).join('') + '</div>' : '');
+    } else if (DS.tab === '808') {
+      var b = SynthDesign.b808Params(p.b808 || DS.b8 || {}); DS.b8 = b;
+      h = '<div class="dw-knobs">' + dsSliders(DS_808, b, 'data-ds8') + '</div><div class="row"><button class="btn sm" id="dw-ds-8play">▶ Ascolta (con glide)</button><button class="btn sm pri" id="dw-ds-8use">Usa nella base</button><button class="btn sm" id="dw-ds-8off">Torna all\'808 dello stile</button></div>' +
+        '<p class="small muted">' + (p.b808 ? 'La base usa il TUO 808.' : 'La base usa l\'808 dello stile.') + '</p>';
+    } else {
+      var bars = SESSION.base ? SESSION.base.bars : 16, list = p.fxList || [];
+      h = '<div class="chips">' + Object.keys(SynthDesign.FX).map(function (k) { return '<button class="chip' + (k === DS.fxType ? ' on' : '') + '" data-dsf="' + k + '">' + SynthDesign.FX[k].nome + '</button>'; }).join('') + '</div>' +
+        '<label class="f"><span>Battuta</span><select id="dw-ds-bar">' + Array.from({ length: bars }, function (_, i) { return '<option value="' + i + '">' + (i + 1) + '</option>'; }).join('') + '</select></label>' +
+        '<div class="row"><button class="btn sm" id="dw-ds-fplay">▶ Ascolta</button><button class="btn sm pri" id="dw-ds-fadd">Metti nella base</button></div>' +
+        (list.length ? list.map(function (f, i) { return '<div class="dw-prop"><div><b>' + SynthDesign.FX[f.type].nome + '</b><small>' + (SynthDesign.FX[f.type].end ? 'finisce alla' : 'alla') + ' battuta ' + (f.bar + 1) + '</small></div><button class="btn sm" data-dsx="' + i + '">Togli</button></div>'; }).join('') : '<p class="small muted">Riser e reverse finiscono sulla battuta scelta (preparano l\'entrata); impact e downlifter partono dalla battuta.</p>');
+    }
+    $('#dw-ds-body').innerHTML = h;
+  }
+  $('#dw-p-design').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return; var p = cur().prod, el = $('#dw-ds-msg');
+    if (b.getAttribute('data-dst')) { DS.tab = b.getAttribute('data-dst'); dsRender(); return; }
+    if (b.getAttribute('data-dsp')) { DS.syn = SynthDesign.synthParams(SynthDesign.SYNTH_PRESETS[b.getAttribute('data-dsp')]); dsRender(); el.textContent = 'Preset "' + b.getAttribute('data-dsp') + '": premi Ascolta.'; return; }
+    if (b.id === 'dw-ds-play') { var sr = 32000, seq = [60, 63, 67, 72], out = new Float32Array(Math.round(sr * 2.6)); seq.forEach(function (m, i) { var y = SynthDesign.synth(DS.syn, m + (cur().prod.tonic || 0), 0.35, sr); for (var k = 0; k < y.length && i * 0.4 * sr + k < out.length; k++) out[Math.round(i * 0.4 * sr) + k] += y[k]; }); var ch = SynthDesign.synth(DS.syn, 48 + (p.tonic || 0), 0.6, sr); for (var k2 = 0; k2 < ch.length && 1.7 * sr + k2 < out.length; k2++) out[Math.round(1.7 * sr) + k2] += ch[k2]; dwStop(true); playBuf(out, sr); return; }
+    if (b.id === 'dw-ds-save') { var nm = (prompt('Nome del tuo synth') || '').trim().slice(0, 30); if (!nm) return; var r = { id: 'syn:' + uid(), nome: nm, params: Object.assign({}, DS.syn) }; LIB.settings.synths = (LIB.settings.synths || []).concat([r]); synthRegister(r); persist(); refreshInstSelects(); dsRender(); el.textContent = '"' + nm + '" salvato: ora è uno strumento (lo trovi tra "I tuoi").'; return; }
+    if (b.getAttribute('data-dsu') != null) { var r2 = (LIB.settings.synths || [])[+b.getAttribute('data-dsu')]; p.inst = Object.assign({}, p.inst || {}); p.inst.melodia = r2.id; coachRec('change', coachCtx(), { role: 'melodia', from: null, to: r2.id }); fillInst(); dwChanged(false); el.textContent = '"' + r2.nome + '" suona la melodia. Premi Play.'; return; }
+    if (b.id === 'dw-ds-8play') { var s8 = 32000, a = SynthDesign.b808(DS.b8, 36 + (p.tonic || 0) % 12, 0.7, s8), c = SynthDesign.b808(DS.b8, 43 + (p.tonic || 0) % 12, 1.2, s8, 36 + (p.tonic || 0) % 12, 0.1), o = new Float32Array(a.length + c.length); o.set(a); o.set(c, a.length); dwStop(true); playBuf(o, s8); return; }
+    if (b.id === 'dw-ds-8use') { p.b808 = Object.assign({}, DS.b8); p.bassStyle = '808'; dwChanged(false); dsRender(); el.textContent = 'Il tuo 808 è nella base. Premi Play.'; coachRec('change', coachCtx(), { role: '808', from: null, to: 'designer' }); return; }
+    if (b.id === 'dw-ds-8off') { delete p.b808; dwChanged(false); dsRender(); el.textContent = 'Torna l\'808 dello stile.'; return; }
+    if (b.getAttribute('data-dsf')) { DS.fxType = b.getAttribute('data-dsf'); dsRender(); return; }
+    if (b.id === 'dw-ds-fplay') { var bs = 240 / p.bpm; dwStop(true); playBuf(SynthDesign.FX[DS.fxType].make(32000, 1, bs), 32000); return; }
+    if (b.id === 'dw-ds-fadd') { p.fxList = (p.fxList || []).concat([{ type: DS.fxType, bar: +$('#dw-ds-bar').value }]); dwChanged(false); dsRender(); el.textContent = SynthDesign.FX[DS.fxType].nome + ' messo nella base. Premi Play.'; return; }
+    if (b.getAttribute('data-dsx') != null) { p.fxList.splice(+b.getAttribute('data-dsx'), 1); dwChanged(false); dsRender(); el.textContent = 'Effetto tolto.'; return; }
+  });
+  $('#dw-ds-body').addEventListener('input', function (e) {
+    var k = e.target.getAttribute('data-dss'), k8 = e.target.getAttribute('data-ds8'), v = +e.target.value;
+    if (k) DS.syn[k] = v; else if (k8) { DS.b8[k8] = v; } else return;
+    e.target.previousElementSibling.querySelector('b').textContent = v.toFixed(+e.target.step >= 1 ? 0 : 2);
+  });
+  function extraFxBufs(p) { var bs = 240 / p.bpm; return (p.fxList || []).filter(function (f) { return SynthDesign.FX[f.type]; }).map(function (f) { return { bar: f.bar, end: !!SynthDesign.FX[f.type].end, buf: SynthDesign.FX[f.type].make(32000, 1, bs) }; }); }
   // ---------- Piano roll nello Studio (melodia e basso 808) ----------
   var PR = { tr: 'lead', sel: -1, cw: 14, rh: 12 };
   var PR_RANGE = { lead: [55, 86], bass: [24, 50] };
@@ -11288,7 +11438,7 @@ details.card[open]>summary{margin-bottom:8px}
     learnUse(pl); el.textContent = 'Base nuova creata dai tuoi gusti (' + pl.from + ' che ti piacciono' + (pl.avoid ? ', ' + pl.avoid + ' da evitare' : '') + '): ' + (Arranger.STYLES[pl.genre] ? Arranger.STYLES[pl.genre].label : pl.genre) + ', ' + pl.bpm + ' BPM, cassa sui passi ' + pl.groove.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + '. Premi Play.';
   });
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
-  SHOW.daw = function () { dwFill(); mixRender(); clipsRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+  SHOW.daw = function () { dwFill(); mixRender(); clipsRender(); dsRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {
@@ -11979,7 +12129,7 @@ details.card[open]>summary{margin-bottom:8px}
 
   /* ================= Avvio ================= */
   async function start() {
-    await load(); renderCoach(); (LIB.settings.lab || []).forEach(function (r) { try { SoundLab.install(r); } catch (e) {} }); refreshInstSelects(); applyTheme(); cur(); restoreTakes(); initSample().then(function () { if (!$('#v-impostazioni').hidden) renderSettings(); });
+    await load(); renderCoach(); (LIB.settings.lab || []).forEach(function (r) { try { SoundLab.install(r); } catch (e) {} }); (LIB.settings.synths || []).forEach(function (r) { try { synthRegister(r); } catch (e) {} }); refreshInstSelects(); applyTheme(); cur(); restoreTakes(); initSample().then(function () { if (!$('#v-impostazioni').hidden) renderSettings(); });
     route();
   }
   window.__app = { LIB: function () { return LIB; }, SESSION: SESSION, store: store, addTake: addTake, selectTake: selectTake, buildMix: buildMix, route: route };
