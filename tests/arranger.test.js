@@ -139,3 +139,51 @@ test('suoni veri: stessa struttura, batteria diversa dai sintetici, valori finit
     assert.ok(e > 0 && d > 1, n);
   }
 });
+
+test('hi-hat: rullate veloci (1/32, terzine, 1/48) nella trap, non nell\'estate', () => {
+  let rolls = 0, fine = 0;
+  for (const seed of [1, 2, 3]) {
+    const b = A.generate({ sampleRate: SR, genre: 'trap', bars: 32, seed });
+    const r = b.events.hat.filter((h) => h.roll);
+    rolls += r.length;
+    fine += r.filter((h) => Math.abs(h.step - Math.round(h.step)) > 1e-6).length;
+    r.forEach((h) => assert.ok(h.step >= 0 && h.step < 16 && h.vel > 0 && h.vel <= 1));
+  }
+  assert.ok(rolls > 30, 'rullate: ' + rolls);
+  assert.ok(fine > 15, 'colpi tra un passo e l\'altro: ' + fine);
+  const e = A.generate({ sampleRate: SR, genre: 'estate', bars: 32, seed: 1 });
+  assert.equal(e.events.hat.filter((h) => h.roll).length, 0);
+});
+
+test('808: glide tra note diverse, più frequente nella drill che nella trap', () => {
+  const count = (g) => { let s = 0, n = 0; for (const seed of [1, 2, 3, 4]) { const b = A.generate({ sampleRate: SR, genre: g, bars: 32, seed }); b.events.bass.forEach((e) => { n++; if (e.slideFrom != null) { s++; assert.notEqual(e.slideFrom, e.midi); } }); } return s / n; };
+  const tr = count('trap'), dr = count('drill');
+  assert.ok(tr > 0.03, 'trap glide ' + tr);
+  assert.ok(dr > tr, 'drill ' + dr + ' trap ' + tr);
+  const ep = A.generate({ sampleRate: SR, genre: 'epico', bars: 16, seed: 1 });
+  assert.ok(ep.events.bass.every((e) => e.slideFrom == null));
+});
+
+test('808: coda lunga e armoniche (non è una sinusoide pura)', () => {
+  const b = A.generate({ sampleRate: SR, genre: 'trap', bars: 8, seed: 2, sounds: 'sint' });
+  const x = b.tracks.bass;
+  assert.ok(x.every(Number.isFinite));
+  // armoniche: la forma d'onda saturata ha un fattore di cresta più basso di una sinusoide (1.414)
+  const ev = b.events.bass.find((v) => v.dur > 0.3 && v.slideFrom == null);
+  assert.ok(ev, 'nota lunga');
+  let pk = 0, e = 0, n = 0; const a0 = Math.round((ev.start + 0.1) * SR);
+  for (let i = a0; i < a0 + Math.round(0.04 * SR); i++) { pk = Math.max(pk, Math.abs(x[i])); e += x[i] * x[i]; n++; }
+  assert.ok(pk / Math.sqrt(e / n) < 1.39, 'cresta ' + (pk / Math.sqrt(e / n)).toFixed(2));
+});
+
+test('cassa: pattern dello stile che si ripete (groove), con variazione ogni 4 battute', () => {
+  const b = A.generate({ sampleRate: SR, genre: 'trap', bars: 32, seed: 4 });
+  const s = secOf(b, 'strofa')[0];
+  const sig = (bar) => b.events.kick.filter((k) => k.bar === bar).map((k) => k.step).join(',');
+  assert.equal(sig(s.startBar), sig(s.startBar + 2), 'battute 1 e 3 uguali');
+  assert.equal(sig(s.startBar + 4), sig(s.startBar), 'il groove torna');
+  assert.notEqual(sig(s.startBar + 3), sig(s.startBar + 1), 'variazione alla 4a battuta');
+  const e = A.generate({ sampleRate: SR, genre: 'estate', bars: 16, seed: 1 });
+  const es = secOf(e, 'strofa')[0];
+  assert.equal(e.events.kick.filter((k) => k.bar === es.startBar).map((k) => k.step).join(','), '0,4,8,12');
+});

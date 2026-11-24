@@ -6,17 +6,32 @@ Leggi questo file PRIMA di aprire i sorgenti: dice dove sta ogni cosa.
 
 | File | Righe | Scopo | Esporta |
 |---|---|---|---|
-| app.body.html | 293 |  |  |
+| app.body.html | 302 |  |  |
 | app.css | 195 |  |  |
-| app.js | 1118 | ================= Dati e salvataggio ================= |  |
-| app.shell.html | 29 |  |  |
+| app.js | 1131 | ================= Dati e salvataggio ================= |  |
+| app.shell.html | 40 |  |  |
 | app.template.html | 1169 |  |  |
-| arranger.js | 509 | Arrangiatore: costruisce basi ORIGINALI con una struttura vera (intro, strofa, pre, ritornello, bridge, outro) e direzioni di stile diverse. Tutto è sintetizzato dal programma (nessun campione, nessun brano altrui). | generate: generate, planStructure: planStructure, STYLES: STYLES, SECTIONS: SEC |
+| arranger.js | 566 | Arrangiatore: costruisce basi ORIGINALI con una struttura vera (intro, strofa, pre, ritornello, bridge, outro) e direzioni di stile diverse. Tutto è sintetizzato dal programma (nessun campione, nessun brano altrui). | generate: generate, planStructure: planStructure, STYLES: STYLES, SECTIONS: SEC |
 | audio-analysis.js | 223 | Analisi audio della voce (Modulo 1, solo parte MISURABILE con calcolo diretto). Misura: livello, picco, clipping, dinamica, altezza delle note (pitch), estensione e scostamento dall'intonazione "temperata" (La = 440 Hz). | analyze: analyze, detectPitch: detectPitch, synthExample: synthExample, freqToMidi: freqToMidi, midiToFreq: midiToFreq, midiToName: midiToName |
-| autotune.js | 217 | Autotune (correzione dell'intonazione) con la tecnica PSOLA. 1. Si misura l'altezza della voce nel tempo (AudioAnalysis). 2. Per ogni istante si sceglie la nota "giusta" più vicina nella scala scelta. | correct: correct, scaleMask: scaleMask, quantizeMidi: quantizeMidi, stepUp: stepUp |
+| autotune.js | 407 | Autotune (correzione dell'intonazione) con la tecnica PSOLA. 1. Si misura l'altezza della voce nel tempo (AudioAnalysis). 2. Per ogni istante si sceglie la nota "giusta" più vicina nella scala scelta. | correct: correct, scaleMask: scaleMask, quantizeMidi: quantizeMidi, stepUp: stepUp, track: track, measure: measure, detectKey: detectKey |
 | backing.js | 291 | Generatore di basi musicali ORIGINALI (batteria, basso, accordi, pad, melodia). Tutto è sintetizzato dal programma con onde semplici: non usa registrazioni, campioni o brani di altri. Il risultato è una bozza utile per c | generate: generate, mix: mix, withVoice: withVoice, resampleLinear: resampleLinear, GENRES: GENRES, chordName: chordName, NAMES: NAMES |
 | base-analysis.js | 119 | Analisi di una base musicale importata (audio con più strumenti insieme): velocità (BPM) e tonalità STIMATE. BPM: si misura quanto spesso l'energia sale di colpo (colpi di batteria, accordi) | analyze: analyze, estimateBpm: estimateBpm |
+| beatlab-boot.js | 7 | Beat Lab - avvio: collega i moduli opzionali (campioni, teoria, mixer...) all'interfaccia quando sono presenti. |  |
+| beatlab-engine.js | 451 | Beat Lab - motore (Tappa 1). SCELTA: Web Audio puro, senza Tone.js. Motivi: (1) non serve scaricare nulla (la pagina resta un file solo e funziona offline come PWA); (2) lo stesso identico codice suona in tempo reale e v | PPQ: PPQ, BAR: BAR, LANES: LANES, LANE_IDS: LANE_IDS, ROLLS: ROLLS, KITS: KITS, Voices: Voices, clamp: clamp, newProject: newProject, newDrumTrack: newDrumTrack, newInstTrack: newInstTrack, resize: re |
+| beatlab-midi.js | 78 | Beat Lab - esportazione MIDI (Tappa 4): file standard tipo 1, 96 ticks per quarto (come il motore). Batteria sul canale 10 con la mappa General MIDI; ogni traccia strumento su un canale suo con il programma GM piu' vicin | toMidi: toMidi, parse: parse, DRUM_MAP: DRUM_MAP, progFor: progFor |
+| beatlab-mix.js | 78 | Beat Lab - mix (Tappa 4): valori di partenza degli effetti per stile/strumento ("punto di partenza", dalla ricerca C), misura del volume (LUFS, BS.1770 con pesatura K e gate) e stima del picco reale (true peak, interpola | presetFor: presetFor, applyPresets: applyPresets, resetFx: resetFx, lufs: lufs, peaks: peaks, loudness: loudness, advice: advice, kWeight: kWeight |
+| beatlab-patterns.js | 212 | Beat Lab - pattern di partenza per stile, ORIGINALI (scritti qui, non copiati da brani). Le regole vengono dalle schede di ricerca C (notes/RICERCA-C-produzione.md): half-time, rullante sul 3 (drill: sul 3 poi sul 4), hi | scaleNote: scaleNote, demoNotes: demoNotes, HELD: HELD, BASSY: BASSY, STYLES: STYLES, STYLE_IDS: STYLE_IDS, SCALES: SCALES, applyStyle: applyStyle, randomize: randomize, mulberry: mulberry, velOf: vel |
+| beatlab-sampler.js | 163 | Beat Lab - sampler intonato a piu' campioni (Tappa 2). - Catalogo degli strumenti (sempre presente, anche senza file): nome, gruppo, spiegazione e SINTETIZZATORE DI RIPIEGO. - I campioni (MP3 mono) stanno in samples/ acc | CATALOG: CATALOG, ORDER: ORDER, instrumentList: instrumentList, groupOf: groupOf, Sampler: Sampler, pickSample: pickSample, rateFor: rateFor, firstAbove: firstAbove |
+| beatlab-store.js | 53 | Beat Lab - salvataggio progetti (Tappa 4): IndexedDB (con copia di riserva in localStorage se IndexedDB non c'e'). sanitize() ripulisce/ripara un progetto letto da fuori (file vecchi o rovinati) cosi' non puo' rompere il | sanitize: sanitize, save: save, list: list, load: load, remove: remove |
+| beatlab-theory.js | 101 | Beat Lab - teoria musicale semplice (Tappa 3): nomi delle note (Do Re Mi + lettera), note della scala, blocco sulla scala, accordi e progressioni per atmosfera, quantizzazione, aggiunta/spostamento note. Le progressioni  | IT: IT, EN: EN, noteName: noteName, noteShort: noteShort, noteFull: noteFull, SCALE_NAMES: SCALE_NAMES, SCALE_HELP: SCALE_HELP, inScale: inScale, scaleDegreeOf: scaleDegreeOf, snapToScale: snapToScale |
+| beatlab-ui-edit.js | 229 | Beat Lab - aiuto per chi non e' esperto (Tappa 3): tonalita' e blocco sulla scala, tastiera touch, accordi per atmosfera, piano roll semplice e livello "Impara" con esempi da ascoltare. |  |
+| beatlab-ui-inst.js | 137 | Beat Lab - interfaccia degli strumenti (Tappa 2): elenco per gruppi, "Ascolta", "Aggiungi traccia", scelta dello strumento di una traccia, caricamento dei campioni a richiesta con stato visibile. |  |
+| beatlab-ui-mix.js | 89 | Beat Lab - interfaccia mix e progetti (Tappa 4): effetti per traccia, master, misura del volume, salvataggio dei progetti (IndexedDB), esportazione MIDI. |  |
+| beatlab-ui.js | 255 | Beat Lab - interfaccia (touch, italiano). Costruita senza librerie. Si apre da #beatlab. mount(elemento) disegna tutto; unmount() ferma il suono. Le sezioni sono funzioni separate (render*) e ognuna ridisegna solo la sua |  |
+| beatlab-voices.js | 247 | Beat Lab - suoni. Batteria e strumenti costruiti con Web Audio puro (oscillatori, rumore, filtri). Funzionano sia in tempo reale (AudioContext) sia nell'esportazione (OfflineAudioContext), perche' usano solo l'interfacci | mtof: mtof, velGain: velGain, DRUMS: DRUMS, SYNTHS: SYNTHS, INSTRUMENTS: INSTRUMENTS, noiseBuf: noiseBuf, sat: sat, env: env, adsr: adsr, done: done |
+| beatlab.css | 73 |  |  |
 | clip-fx.js | 41 | Effetti del videoclip a tempo di musica: calcolo puro, senza disegno. Dato il tempo trascorso e i battiti al minuto, dice quanto ingrandire l'immagine, quanto farla vibrare e quale riga del testo mostrare. | beatState: beatState, lyricAt: lyricAt, frame: frame |
+| formant.js | 98 | Formant shift (cambio del TIMBRO senza cambiare la nota) con il metodo del CEPSTRUM. Idea: lo spettro della voce = "inviluppo" (la forma della gola e della bocca: i formanti) x "armoniche" (la nota). Si stima l'inviluppo | shift: shift, fft: fft |
 | key-detect.js | 73 | Riconoscimento della tonalità dalla voce (stima). Metodo: istogramma delle 12 note (senza ottava) pesato sul tempo, confrontato con i profili di Krumhansl-Kessler per le 12 tonalità maggiori e le 12 minori. | detect: detect, fromHistogram: fromHistogram, NAMES: NAMES |
 | lyrics-engine.js | 425 | Motore di analisi dei testi (Modulo 3 e parte del Modulo 4). Tutto qui è calcolato con regole semplici sulla lingua italiana, senza servizi esterni. Sono EURISTICHE: il conteggio delle sillabe può sbagliare | countSyllables: countSyllables, lineSyllables: lineSyllables, rhymeKey: rhymeKey, rhymeRelation: rhymeRelation, tokenize: tokenize, parseStanzas: parseStanzas, analyze: analyze |
 | lyrics-to-base.js | 51 | Dal testo a una base consigliata: genere, scala e velocità. È un'IPOTESI costruita sul tono emotivo (dizionario di parole) e sulla lunghezza delle righe. Serve come punto di partenza, non come verità. | suggest: suggest |
@@ -26,49 +41,64 @@ Leggi questo file PRIMA di aprire i sorgenti: dice dove sta ogni cosa.
 | polish.js | 154 | Rifinitura della voce: filtro dei bassi, equalizzatore, compressore, eco e riverbero. Tutto calcolato dal programma con filtri standard (biquad) e un riverbero a linee di ritardo. Non è un plugin da studio professionale, | process: process, denoise: denoise, highpass: highpass, peaking: peaking, highShelf: highShelf, compress: compress, reverb: reverb, echo: echo, PRESETS: PRESETS |
 | producer-actions.js | 179 | AI Producer: trasforma un comando scritto in italiano in modifiche REALI alla base. Riconosce un elenco limitato di richieste (vedi HELP). Quello che non riconosce non viene eseguito: l'app lo passa a Claude come consigl | interpret: interpret, HELP: HELP, LEVEL_KEYS: LEVEL_KEYS, cloneState: cloneState |
 | promo-plan.js | 125 | Piano di promozione di una canzone (30 giorni), costruito dai dati del brano. Non usa servizi esterni e non pubblica nulla: produce un calendario di contenuti con piattaforma, formato, data, orario suggerito, didascalia  | generate: generate, toCsv: toCsv, TEMPLATE: TEMPLATE |
+| realtime-tune.js | 120 | Autotune LEGGERO in tempo reale (SPERIMENTALE) per il monitor in cuffia. Funziona così: misura l'altezza della voce con la stessa idea di McLeod (autocorrelazione normalizzata, finestra ~37 ms su audio ridotto a ~12 kHz) | createCore: createCore, workletSource: workletSource |
 | samples-data.js | 2 | campioni batteria CC0 codificati | dati |
 | style-card.js | 114 | Scheda di stile: misura caratteristiche GENERICHE di una canzone di riferimento (tempo, peso del basso, luminosità, densità ritmica, crescita di energia) e le trasforma in parametri per l'arrangiatore. Si possono mescola | measure: measure, blend: blend, toParams: toParams, normBpm: normBpm |
 | video-ideas.js | 87 | Idee per il videoclip, costruite sul brano: concetto visivo, struttura a battute (con i secondi calcolati dal tempo), inquadrature da girare con l'iPhone, montaggio e cose da evitare. | generate: generate, MOODS: MOODS |
+| voice-chain.js | 613 | Catena vocale modulare (Voice Lab, tappa 2). Codice PURO (nessun DOM, nessun Web Audio): gira in Node e nel browser, quindi si può misurare con test numerici. Lavora su una registrazione già fatta (qualità massima, non t |  |
+| voice-lab.css | 21 |  |  |
+| voice-lab.js | 340 | Voice Lab: interfaccia semplice per autotune e catena vocale (tappa 3). Solo browser (usa il DOM). Lavora sul FILE registrato (qualità massima) con VoiceChain; in più offre un monitor in cuffia SPERIMENTALE (RtTune). Il  |  |
 
 ## src/app.js: sezioni (riga: titolo)
 
 - 17: Dati e salvataggio
 - 85: Audio
-- 175: Claude (facoltativo)
-- 193: Navigazione
-- 219: Atmosfera: i colori seguono l'emozione del testo
-- 229: Home
-- 261: Canzoni
-- 314: Studio: testo
-- 370: Guida alla voce: canta / parla / allunga
-- 401: Studio: base
-- 549: AI Producer
-- 608: Vocal Studio
-- 641: Registrazione con il microfono vero (solo nella versione app; dentro Claude il microfono è bloccato)
-- 909: Video
-- 999: Marketing e Social
-- 1064: Libreria
-- 1079: Impostazioni
-- 1110: Avvio
+- 176: Claude (facoltativo)
+- 194: Navigazione
+- 224: Atmosfera: i colori seguono l'emozione del testo
+- 234: Home
+- 266: Canzoni
+- 319: Studio: testo
+- 375: Guida alla voce: canta / parla / allunga
+- 406: Studio: base
+- 554: AI Producer
+- 613: Vocal Studio
+- 646: Registrazione con il microfono vero (solo nella versione app; dentro Claude il microfono è bloccato)
+- 916: VOICE LAB (cablaggio): il codice sta in src/voice-chain.js, src/voice-lab.js, src/realtime-tune.js
+- 920: fine VOICE LAB
+- 922: Video
+- 1012: Marketing e Social
+- 1077: Libreria
+- 1092: Impostazioni
+- 1123: Avvio
 
 ## Funzioni principali di app.js (riga: nome)
 
-esc:5, fmt:6, cap:7, tick:8, sleep:9, tag:13, today:14, uid:15, defaultProd:23, newSong:26, cur:29, persist:38, flush:44, sanitize:52, load:58, getCtx:87, makeBuffer:92, stopPlay:97, playBuf:103, getDl:120, saveFile:121, wavBlob:133, saveAudio:141, toMono:158, decode:164, initSample:177, ask:181, songContext:185, route:203, applyMood:222, lyricLines:257, analysisOf:258, topMood:259, songCard:262, inFolder:268, renderAnalysis:316, meter:344, renderGuide:372, followBars:403, fillBase:407, syncKar:419, getBase:439, activeTake:444, buildMix:446, karaokeTick:464, makeAndPlay:474, renderRefs:516, chatPush:551, renderChat:552, renderHist:556, snapshot:560, producerGo:561, localAdvice:584, setAT:613, addTake:621, micOk:643, tdb:644, dbTake:655, restoreTakes:665, recUi:677, finishRec:698, renderTakes:718, selectTake:732, renderTakeAnalysis:743, cssv:761, drawPitch:762, noteName:818, geom:819, drawNotes:826, renderNotes:853, playTone:863, noteAtX:869, ptr:870, endDrag:881, rescale:894, filterPhoto:911, soon:926, wrap:929, drawClip:930, clipMix:953, renderIdeas:979, copyText:1001, post:1006, findItem:1013, postEvents:1014, genPlan:1022, renderPlan:1032, refreshSocial:1045, applyTheme:1080, renderSettings:1084, start:1111
+esc:5, fmt:6, cap:7, tick:8, sleep:9, tag:13, today:14, uid:15, defaultProd:23, newSong:26, cur:29, persist:38, flush:44, sanitize:52, load:58, getCtx:87, makeBuffer:92, stopPlay:97, playBuf:104, getDl:121, saveFile:122, wavBlob:134, saveAudio:142, toMono:159, decode:165, initSample:178, ask:182, songContext:186, route:204, applyMood:227, lyricLines:262, analysisOf:263, topMood:264, songCard:267, inFolder:273, renderAnalysis:321, meter:349, renderGuide:377, followBars:408, fillBase:412, syncKar:424, getBase:444, activeTake:449, buildMix:451, karaokeTick:469, makeAndPlay:479, renderRefs:521, chatPush:556, renderChat:557, renderHist:561, snapshot:565, producerGo:566, localAdvice:589, setAT:618, addTake:626, micOk:648, tdb:649, dbTake:660, restoreTakes:670, recUi:682, finishRec:703, renderTakes:724, selectTake:738, renderTakeAnalysis:750, cssv:768, drawPitch:769, noteName:825, geom:826, drawNotes:833, renderNotes:860, playTone:870, noteAtX:876, ptr:877, endDrag:888, rescale:901, filterPhoto:924, soon:939, wrap:942, drawClip:943, clipMix:966, renderIdeas:992, copyText:1014, post:1019, findItem:1026, postEvents:1027, genPlan:1035, renderPlan:1045, refreshSocial:1058, applyTheme:1093, renderSettings:1097, start:1124
 
 ## tests/
 
-- arranger.test.js: 12 test
+- _voice-synth.js: 0 test
+- arranger.test.js: 16 test
 - audio-analysis.test.js: 8 test
 - autotune-key.test.js: 13 test
+- autotune-voice.test.js: 10 test
 - backing-manga.test.js: 13 test
 - base-analysis.test.js: 2 test
+- beatlab-engine.test.js: 12 test
+- beatlab-mix.test.js: 10 test
+- beatlab-patterns.test.js: 5 test
+- beatlab-sampler.test.js: 6 test
+- beatlab-theory.test.js: 5 test
 - lyrics-base-clip.test.js: 7 test
 - lyrics-engine.test.js: 12 test
 - master.test.js: 6 test
 - pitch-video.test.js: 7 test
 - polish.test.js: 8 test
 - producer-promo.test.js: 16 test
+- realtime-tune.test.js: 4 test
 - style-card.test.js: 8 test
+- voice-chain.test.js: 15 test
 
 ## Altro
 

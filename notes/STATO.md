@@ -97,3 +97,9 @@ Cablaggio minimo: blocchi "VOICE LAB" in app.js (4 righe + init), app.body.html 
 ### Sintesi finale Beat Lab
 - FATTO e provato (Node 157/157 in build + prove Playwright iPhone 13 emulato): motore, batteria a passi con rullate/swing/kit, 7 stili + casuale sensato, WAV, 20 strumenti campionati + sintetizzatori, tastiera con blocco scala, accordi, piano roll, Impara, effetti, master, LUFS, MIDI, progetti.
 - NON FATTO / LIMITI: audio mai ascoltato da me (solo misure di picchi, silenzi, valori finiti); mai provato su un iPhone vero; chitarra e coro non hanno campioni CC0 adatti (sintetici); campane approssimate; il corno ha un salto di 14 semitoni; iOS ferma l'audio a schermo bloccato; la versione `dist/index.html` (artifact Claude) non ha campioni, solo sintetizzatori; BPM predefiniti di boom bap/R&B/pop "non verificati".
+## 2026-11-24 Basi: 808, hi-hat con rullate, groove per stile (fatto, testato)
+- 808 (sintetizzato): glide logaritmico dalla nota precedente (trap 70 ms, drill 130 ms e più frequente), saturazione per avere armoniche (si sente anche dal telefono), coda fino a 2,2 s, salti d'ottava (drill di più). Misurato: fattore di cresta 1,31-1,36 contro 1,41 di una sinusoide pura.
+- Hi-hat: rullate 1/32, terzine, 1/48, 1/64 con velocità crescente/calante e tono che sale/scende; rullata grande a fine sezione nei ritornelli. Trap e drill sì, melodico raramente, epico/estate no. "Hi-hat più fitti" aumenta anche le rullate.
+- Cassa: pattern di 2 battute per stile (scelto dal seme, diverso tra strofa e ritornello) ripetuto, variazione ogni 4ª battuta. Prima era casuale battuta per battuta.
+- Nuovi dati: events.kick, events.hat, events.bass[].slideFrom. Test 123/123.
+- Ancora da fare: strumenti melodici con campioni CC0, 808 da campione vero, mix per traccia.
