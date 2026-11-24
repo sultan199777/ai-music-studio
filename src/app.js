@@ -1283,6 +1283,38 @@
     var id = e.target.getAttribute('data-lv'); if (!id) return;
     var L = LANES.filter(function (x) { return x.id === id; })[0]; cur().prod.levels[L.level] = +e.target.value / 100; persist(); dwGains();
   });
+  // ---------- Parla con lo Studio: frasi → modifiche vere, con Accetta / Annulla ----------
+  var TALK = [];
+  function talkRender() {
+    $('#dw-talk-log').innerHTML = TALK.slice(-6).map(function (h, i, a) {
+      var last = i === a.length - 1 && h.state === 'attesa';
+      return '<div class="dw-prop"><div><b>Tu: ' + esc(h.text) + '</b><small>' + esc(h.reply) + (h.state === 'annullato' ? ' (annullato)' : (h.state === 'accettato' ? ' ✓' : '')) + '</small></div>' +
+        (last ? '<button class="btn sm pri" data-tk="ok">Accetta</button><button class="btn sm" data-tk="undo">Annulla</button>' : '') + '</div>';
+    }).join('') || '<p class="small muted">Esempi: ' + StudioAgent.EXAMPLES.map(esc).join(' · ') + '</p>';
+  }
+  async function talkGo(text) {
+    text = (text || '').trim(); if (!text) return;
+    var s = cur(), b = SESSION.base, before = { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())) };
+    var st = { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())), ctx: { sections: b && b.sections ? b.sections.map(function (x) { return { name: x.name, startBar: x.startBar }; }) : [], leadNotes: b && b.events ? b.events.lead.filter(function (n) { return n.bar != null; }).map(function (n) { return { bar: n.bar, step: n.step, len: Math.max(1, Math.round(n.len || 2)), midi: Math.round(n.midi) }; }) : [] } };
+    var r = StudioAgent.interpret(text, st), pa = ProducerActions.interpret(text, st.prod), said = r.changes.slice();
+    if (pa.understood) { ['bpm', 'mode', 'bassStyle', 'reverb', 'levels', 'sec', 'tonic', 'genre', 'tune'].forEach(function (k) { if (pa.state[k] !== undefined) st.prod[k] = pa.state[k]; }); said = said.concat(pa.notes); }
+    if (!r.understood && !pa.understood) { TALK.push({ text: text, reply: 'Non l\'ho capito, quindi non ho cambiato niente. Prova: ' + StudioAgent.EXAMPLES.slice(0, 4).join(' · '), state: 'nulla' }); talkRender(); return; }
+    s.prod = st.prod; LIB.settings.mic = st.mic; persist();
+    TALK.push({ text: text, reply: 'Fatto: ' + said.map(function (x) { return String(x).replace(/\.+$/, ''); }).join('; ') + '. Ascolta: se non ti piace, Annulla.', state: 'attesa', before: before, mic: !!st.micChanged }); talkRender();
+    coachRec('change', coachCtx(), { role: 'chat', from: null, to: text.slice(0, 40) });
+    await talkApply(!!st.micChanged);
+  }
+  async function talkApply(micToo) {
+    dwFill(); fillBase(); mixRender(); micRender(); dsRender(); mpRender(); SESSION.baseKey = ''; DW.bufKey = '';
+    dwStop(true); await dwRefresh(); if (micToo && voiceTake()) await micApply(true); prDraw();
+  }
+  $('#dw-talk-go').addEventListener('click', function () { var t = $('#dw-talk-in'); talkGo(t.value); t.value = ''; });
+  $('#dw-talk-in').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('#dw-talk-go').click(); } });
+  $('#dw-talk-log').addEventListener('click', async function (e) {
+    var b = e.target.closest('[data-tk]'); if (!b) return; var h = TALK[TALK.length - 1]; if (!h || h.state !== 'attesa') return;
+    if (b.getAttribute('data-tk') === 'ok') { h.state = 'accettato'; coachRec('like', coachCtx()); talkRender(); return; }
+    cur().prod = h.before.prod; LIB.settings.mic = h.before.mic; persist(); h.state = 'annullato'; coachRec('dislike', coachCtx()); talkRender(); await talkApply(h.mic);
+  });
   // ---------- Mastering professionale, riferimento A/B, tracce separate ----------
   var MP = { ref: null, out: null };
   function mpSet() { var p = cur().prod; if (!p.mpro) p.mpro = { target: 'forte', width: 1.1, sat: 0.25, comp: 0.35, match: false }; return p.mpro; }
@@ -1766,7 +1798,7 @@
     learnUse(pl); el.textContent = 'Base nuova creata dai tuoi gusti (' + pl.from + ' che ti piacciono' + (pl.avoid ? ', ' + pl.avoid + ' da evitare' : '') + '): ' + (Arranger.STYLES[pl.genre] ? Arranger.STYLES[pl.genre].label : pl.genre) + ', ' + pl.bpm + ' BPM, cassa sui passi ' + pl.groove.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + '. Premi Play.';
   });
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
-  SHOW.daw = function () { dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+  SHOW.daw = function () { dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {

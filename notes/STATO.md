@@ -157,3 +157,13 @@ Cablaggio minimo: blocchi "VOICE LAB" in app.js (4 righe + init), app.body.html 
 - Lo Studio suona attraverso il mixer (`dwGraph`); il salvataggio usa la STESSA catena in OfflineAudioContext → WAV stereo + master. Provato: file stereo, e il file cambia quando cambi una manopola.
 - Impostazioni salvate in `prod.mix`; cambiando stile si riparte dal preset dello stile.
 - Prossimo: punto 2 (clip audio, tagli, più prove e comping).
+
+## Piano a 7 punti dello studio (tutti fatti e testati nel browser simulato iPhone)
+1. Mixer a canali (`mixer.js`): EQ, compressore, saturazione, sidechain, pan, riverbero, eco; WAV stereo con la stessa catena.
+2. Prove e montaggio (`clips.js`): ogni registrazione è una prova; comping per righe del testo; clip con taglio al cursore, spostamento, volume, dissolvenze.
+3. Piano roll nello Studio: melodia e basso 808 nota per nota (aggiungi, sposta, allunga, ottava, glide 808, solo note della scala); l'arrangiatore usa `p.notes` e lascia identica la batteria.
+4. Voce: autotune che segue gli accordi della base (`chordPull`), vocoder sugli accordi / metallico / radio (`voice-fx.js`), preset voce personali, correzioni nota per nota del Voce passate anche allo Studio.
+5. Designer suoni (`synth-design.js`): synth wavetable salvabile come strumento, 808 designer usato nella base (`p.b808` → `bassRender`), riser/downlifter/impact/reverse sulle battute (`p.fxList` → `extraFx`).
+6. Mastering (`master-pro.js`): multibanda LR4 3 bande, larghezza M/S con bassi mono, saturazione, LUFS bersaglio e limitatore true peak, correlazione di fase, riferimento A/B allo stesso volume, spettro a 10 bande con consigli, "avvicina al riferimento" (EQ max ±3 dB), tracce separate in WAV.
+7. Parla con lo Studio (`studio-agent.js` + ProducerActions): frasi → modifiche vere, Accetta/Annulla, niente modifiche se non capisce.
+Ancora da fare (non fatti): automazioni nel tempo, chorus/flanger/phaser, gate, piano roll per accordi e arpeggio, trascrizione parole (Whisper).
