@@ -215,3 +215,10 @@ test('piano roll: note scritte a mano sostituiscono melodia e basso, il resto re
   let d = 0; for (let i = 0; i < a.tracks.kick.length; i++) d = Math.max(d, Math.abs(a.tracks.kick[i] - b.tracks.kick[i]));
   assert.strictEqual(d, 0, 'la batteria non cambia');
 });
+
+test('batteria a passi: cassa, rullante e hi-hat scritti a mano', () => {
+  const base = { sampleRate: 8000, bpm: 140, genre: 'trap', bars: 4, seed: 3, sounds: 'sint', plan: [['strofa', 4]] };
+  const g = A.generate(Object.assign({}, base, { drumPat: { kick: [0, 7], snare: [8], hat: [0, 4, 8, 12], rolls: false } }));
+  const kb = g.events.kick.filter(e => e.bar === 1).map(e => e.step); assert.deepStrictEqual(kb, [0, 7]);
+  const hb = g.events.hat.filter(e => e.bar === 1); assert.ok(hb.every(e => !e.roll)); assert.ok(hb.every(e => [0, 4, 8, 12].includes(e.step)));
+});

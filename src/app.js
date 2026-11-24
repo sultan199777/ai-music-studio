@@ -455,8 +455,8 @@
     return SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {} });
   }
   function getBase() {
-    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
+    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -1460,7 +1460,21 @@
   function prNotes() { var p = cur().prod; return p.notes && Array.isArray(p.notes[PR.tr]) ? p.notes[PR.tr] : null; }
   function prGenerated() { var b = SESSION.base; if (!b || !b.events) return []; return (b.events[PR.tr] || []).filter(function (n) { return n.bar != null; }).map(function (n) { return { bar: n.bar, step: n.step, len: Math.max(1, Math.round(n.len || 2)), midi: Math.round(n.midi), slide: !!n.slide }; }); }
   function inScale(m) { var p = cur().prod; return (SCALE_ST[p.mode] || SCALE_ST.minore).indexOf(((m - p.tonic) % 12 + 12) % 12) >= 0; }
+  function drumDefault() {
+    var b = SESSION.base, ev = b && b.events, st = b && (b.sections || []).filter(function (x) { return x.name === 'strofa' || x.name === 'ritornello'; })[0], bar = st ? st.startBar : 0;
+    var kick = ev ? ev.kick.filter(function (e) { return e.bar === bar; }).map(function (e) { return e.step; }) : [0, 10];
+    var hat = ev ? ev.hat.filter(function (e) { return e.bar === bar && !e.roll && e.step % 1 === 0; }).map(function (e) { return e.step; }) : [0, 2, 4, 6, 8, 10, 12, 14];
+    var sty = Arranger.STYLES[cur().prod.genre] || {}; return { kick: kick.length ? kick : [0], snare: (sty.snare || [8]).slice(), hat: hat, rolls: true };
+  }
+  function drumDraw() {
+    var p = cur().prod, dp = p.drumPat || drumDefault(), own = !!p.drumPat;
+    $('#dw-pr-drum').innerHTML = [['kick', 'Cassa'], ['snare', 'Rullante'], ['hat', 'Hi-hat']].map(function (r) {
+      return '<div class="dw-drow"><b>' + r[1] + '</b>' + Array.from({ length: 16 }, function (_, i) { return '<button class="dw-step' + (dp[r[0]].indexOf(i) >= 0 ? ' on' : '') + (i % 4 === 0 ? ' beat' : '') + '" data-ds="' + r[0] + ':' + i + '"></button>'; }).join('') + '</div>';
+    }).join('') + '<div class="row"><label class="sw small"><input type="checkbox" id="dw-pr-rolls"' + (dp.rolls !== false ? ' checked' : '') + '> Rullate di hi-hat automatiche</label><button class="btn sm" id="dw-pr-dreset">Torna alla batteria dello stile</button></div><p class="small muted">' + (own ? 'Batteria TUA: vale in ogni battuta dove suona la batteria.' : 'Questa è la batteria dello stile: tocca un passo per renderla tua.') + '</p>';
+  }
   function prDraw() {
+    var isDrum = PR.tr === 'drums'; $('#dw-pr-drum').hidden = !isDrum; $('#dw-pr-snap').parentElement.hidden = isDrum; $('.dw-pr-wrap').hidden = isDrum; $('#dw-pr-edit').hidden = isDrum; $('#dw-pr-reset').hidden = isDrum;
+    if (isDrum) { $$('#dw-pr-tr .chip').forEach(function (c) { c.classList.toggle('on', c.getAttribute('data-prt') === PR.tr); }); $('#dw-pr-tools').hidden = true; $('#dw-pr-info').textContent = ''; drumDraw(); return; }
     var b = SESSION.base, cv = $('#dw-pr-cv'); if (!b || !cv) return;
     var own = prNotes(), notes = own || prGenerated(), r = PR_RANGE[PR.tr], rows = r[1] - r[0] + 1, W = b.bars * 16 * PR.cw, H = rows * PR.rh, dpr = window.devicePixelRatio || 1;
     cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px';
@@ -1481,7 +1495,7 @@
   function prSave(msg) { var p = cur().prod; persist(); SESSION.baseKey = ''; DW.bufKey = ''; prDraw(); if (msg) $('#dw-pr-msg').textContent = msg; clearTimeout(PR.t); PR.t = setTimeout(function () { var was = DW.playing, at = was ? getCtx().currentTime - DW.t0 + DW.from : DW.from; dwStop(true); dwRefresh().then(function () { prDraw(); if (was) dwPlay(at); }); }, 350); }
   function prStepMidi(m, d) { var x = m + d, guard = 0; if ($('#dw-pr-snap').checked) while (!inScale(x) && guard++ < 3) x += d; return x; }
   $('#dw-p-roll').addEventListener('click', function (e) {
-    var b = e.target.closest('button'); if (!b) return;
+    var b = e.target.closest('button'); if (!b || b.closest('#dw-pr-drum')) return;
     var p = cur().prod, own = prNotes(), n = own && own[PR.sel];
     if (b.getAttribute('data-prt')) { PR.tr = b.getAttribute('data-prt'); PR.sel = -1; prDraw(); return; }
     if (b.id === 'dw-pr-edit') { p.notes = Object.assign({}, p.notes || {}); p.notes[PR.tr] = prGenerated(); PR.sel = -1; prSave('Ora le note sono tue: modificale.'); coachRec('change', coachCtx(), { role: 'pianoroll', from: null, to: PR.tr }); return; }
@@ -1498,6 +1512,12 @@
     n.midi = Math.max(PR_RANGE[PR.tr][0], Math.min(PR_RANGE[PR.tr][1], n.midi));
     prSave('');
   });
+  $('#dw-pr-drum').addEventListener('click', function (e) {
+    e.stopPropagation(); var t = e.target.closest('[data-ds]'), p = cur().prod;
+    if (t) { var k = t.getAttribute('data-ds').split(':'), i = +k[1]; p.drumPat = p.drumPat || drumDefault(); var arr = p.drumPat[k[0]], at = arr.indexOf(i); if (at >= 0) arr.splice(at, 1); else { arr.push(i); arr.sort(function (a, c) { return a - c; }); } prSave(''); return; }
+    if (e.target.id === 'dw-pr-dreset') { delete p.drumPat; prSave('Torna la batteria dello stile.'); }
+  });
+  $('#dw-pr-drum').addEventListener('change', function (e) { if (e.target.id !== 'dw-pr-rolls') return; var p = cur().prod; p.drumPat = p.drumPat || drumDefault(); p.drumPat.rolls = e.target.checked; prSave(e.target.checked ? 'Rullate accese.' : 'Rullate spente.'); });
   $('#dw-pr-cv').addEventListener('click', function (e) {
     var own = prNotes(); if (!own) { $('#dw-pr-msg').textContent = 'Premi prima "Modifica le note".'; return; }
     var rc = this.getBoundingClientRect(), x = e.clientX - rc.left, y = e.clientY - rc.top, r = PR_RANGE[PR.tr];

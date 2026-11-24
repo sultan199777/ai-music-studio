@@ -179,6 +179,9 @@
     var events = { bass: [], chords: [], lead: [], kick: [], hat: [], arp: [] }, kickStarts = [];
     function okNotes(a) { return Array.isArray(a) && a.length ? a.filter(function (n) { return n && n.bar >= 0 && n.step >= 0 && n.step < 16 && n.len > 0 && n.midi > 0; }) : null; }
     var NL = okNotes(p.notes && p.notes.lead), NB = okNotes(p.notes && p.notes.bass);
+    // batteria a passi scritta a mano (16 passi, uguale in ogni battuta dove la batteria suona)
+    var okS = function (a) { return Array.isArray(a) ? a.filter(function (x) { return x >= 0 && x < 16; }) : null; };
+    var DP = p.drumPat && typeof p.drumPat === 'object' ? { kick: okS(p.drumPat.kick), snare: okS(p.drumPat.snare), hat: okS(p.drumPat.hat), rolls: p.drumPat.rolls !== false } : null;
     var LEADS = { trap: ['synth', 'keys', 'bell'], drill: ['dark', 'keys', 'bell'], epico: ['strings', 'synth', 'keys'], melodico: ['keys', 'synth', 'pluck'], boombap: ['keys', 'pluck', 'bell'], street: ['keys', 'bell', 'synth'], trapdark: ['dark', 'bell', 'keys'], clubtrap: ['bell', 'synth', 'marimba'], estate: ['marimba', 'keys', 'synth'] };
     // Strumenti veri scelti per ruolo (p.inst = {melodia, accordi, pad}); se non caricati si usa la sintesi.
     var pin = p.inst || {};
@@ -472,6 +475,7 @@
       } else if (kind === 'soft') {
         for (i = 0; i < 16; i++) hits.push([i, i % 4 === 2 ? 0.7 : (i % 2 ? 0.28 : 0.45)]);
       } else { for (i = 2; i < 16; i += 4) hits.push([i, 0.8]); for (i = 0; i < 16; i += 4) hits.push([i, 0.3]); }
+      if (DP && DP.hat) hits = DP.hat.map(function (st) { return [st, st % 4 === 0 ? 0.85 : (st % 2 ? 0.45 : 0.6)]; });
       var rolls = [];
       if (rollAmt > 0 && lvl >= 0.55) {
         var nR = rand() < rollAmt * lvl ? 1 : 0;
@@ -484,6 +488,7 @@
         }
         if (lastBar && lvl >= 0.9) rolls.push({ st: 12, per: 2, len: 4, up: true, big: true }); // rullata di fine frase
       }
+      if (DP && !DP.rolls) rolls = [];
       var thr = (1 - lvl) * 0.8;
       hits.forEach(function (h) {
         if (h[1] < thr) return;
@@ -529,6 +534,7 @@
           } else if (!style.kickExtra.length && k % 4 === 3) kickSteps.push(14);
           if (tKick > 1) { for (var q = 0; q < Math.round((tKick - 1) * 2); q++) { var c2 = style.kickExtra[Math.floor(rand() * style.kickExtra.length)]; if (c2 != null && kickSteps.indexOf(c2) < 0) kickSteps.push(c2); } }
           else if (tKick < 1) kickSteps = kickSteps.filter(function (s) { return s === 0 || rand() < tKick; });
+          if (DP && DP.kick) kickSteps = DP.kick.slice();
           if (cfg.gap && lastBar) kickSteps = kickSteps.filter(function (s) { return s < 12; });
           kickSteps.sort(function (a, b) { return a - b; });
           kickSteps.forEach(function (s) {
@@ -540,7 +546,7 @@
           }
         }
         if (cfg.snare && !(cfg.gap && lastBar && !cfg.roll)) {
-          style.snare.forEach(function (s) {
+          ((DP && DP.snare) || style.snare).forEach(function (s) {
             if (cfg.roll && lastBar) return;
             add('snare', at(bar, s), snareBuf(), 0.55 * cfg.snare);
             if (style.clap) add('snare', at(bar, s), clapBuf(), 0.7 * cfg.snare);

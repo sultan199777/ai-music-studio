@@ -167,3 +167,12 @@ Cablaggio minimo: blocchi "VOICE LAB" in app.js (4 righe + init), app.body.html 
 6. Mastering (`master-pro.js`): multibanda LR4 3 bande, larghezza M/S con bassi mono, saturazione, LUFS bersaglio e limitatore true peak, correlazione di fase, riferimento A/B allo stesso volume, spettro a 10 bande con consigli, "avvicina al riferimento" (EQ max ±3 dB), tracce separate in WAV.
 7. Parla con lo Studio (`studio-agent.js` + ProducerActions): frasi → modifiche vere, Accetta/Annulla, niente modifiche se non capisce.
 Ancora da fare (non fatti): automazioni nel tempo, chorus/flanger/phaser, gate, piano roll per accordi e arpeggio, trascrizione parole (Whisper).
+
+## Lista "cosa manca" (fatta, testata)
+- Effetti voce: chorus, flanger, phaser, gate, exciter (`voice-fx.js`).
+- Automazioni per sezione (volume e filtro per traccia, rampe morbide) nel mixer e nel file salvato; versioni del progetto (salva/apri, max 20).
+- Basi caricate: accordi per battuta, tonalità dagli accordi, giro più usato in gradi → `p.prog` nell'arrangiatore.
+- Suoni: 808 pronti, percussioni del mondo (conga, bongo, cajón, shaker, tabla) per sezione, strumento dalla voce (vocal chop) da prova o voce separata.
+- Whisper (transformers.js 4.3.2 dalla CDN jsdelivr, versione fissa: NON nel repo perché il push protection di GitHub vede una falsa chiave Mistral nel file; wasm ORT 1.31-dev in assets/tf) → metodo del testo (sillabe/s, rime, ripetizioni) + misura autotune dell'artista + medie per cartella.
+- Batteria a passi (cassa, rullante, hi-hat, rullate on/off) nel piano roll → `p.drumPat`.
+Ancora da fare: piano roll accordi/arpeggio, trascinare note voce (stile Melodyne), autotune dal vivo di qualità, conversazione libera (modello locale su Mac o Claude a pagamento).
