@@ -567,6 +567,34 @@
   }
   $('#bl-brain').addEventListener('click', function () { blBrain(false); });
   $('#bl-brain2').addEventListener('click', function () { blBrain(true); });
+  /* ===== Orecchio di Sultan: ascolto con strumenti di misura ===== */
+  function earMeasure() { var p = cur().prod, mx = buildMix({ voice: false }); return Ear.listen(mx.samples, mx.sr, { genre: SESSION.useImported ? null : p.genre, bpm: p.bpm }); }
+  function earApply(r) {
+    var p = cur().prod, ch = [], add = {};
+    r.findings.forEach(function (f) { if (f.fix && f.fix.levels) Object.keys(f.fix.levels).forEach(function (k) { add[k] = (add[k] || 0) + f.fix.levels[k]; }); });
+    Object.keys(add).forEach(function (k) { if (p.levels[k] == null) return; var nv = Math.max(0.1, Math.min(1.8, Math.round((p.levels[k] + Math.max(-0.4, Math.min(0.4, add[k]))) * 100) / 100)); if (nv !== p.levels[k]) { ch.push(LEVEL_NAMES[k] + ' ' + Math.round(p.levels[k] * 100) + '% → ' + Math.round(nv * 100) + '%'); p.levels[k] = nv; } });
+    if (ch.length) { persist(); fillBase(); }
+    return ch;
+  }
+  function earHtml(r) {
+    var M = r.metrics, sh = M.shares;
+    return '<div class="note"><b>Orecchio di Sultan</b> <span class="tag m">Misurato</span> · verdetto: <b>' + esc(r.verdict) + '</b>' +
+      '<ul class="clean small"><li>Livello medio ' + M.rmsDb + ' dB, picco ' + M.peakDb + ' dB, dinamica (crest) ' + M.crestDb + ' dB</li>' +
+      '<li>Grave (sotto 250 Hz) ' + Math.round(M.lowShare * 100) + '% · sub ' + Math.round(sh.sub * 100) + '% · medi ' + Math.round((sh['medio-basso'] + sh.medio) * 100) + '% · presenza ' + Math.round(sh.presenza * 100) + '% · aria ' + Math.round(sh.aria * 100) + '%</li>' +
+      '<li>Centro di gravità ' + M.centroidHz + ' Hz · colpi nel grave ' + (M.lowHitsPerBar == null ? '–' : M.lowHitsPerBar + ' a battuta') + '</li></ul>' +
+      (r.findings.length ? '<ul class="clean small">' + r.findings.map(function (f) { return '<li><span class="tag ' + (f.level === 'errore' ? 'soon' : (f.tag === 'Ipotesi' ? 'i' : 'm')) + '">' + (f.level === 'errore' ? 'Errore' : (f.tag || 'Misurato')) + '</span> ' + esc(f.text) + '</li>'; }).join('') + '</ul>' : '<p class="small">Nessun problema misurabile.</p>') + '</div>';
+  }
+  async function earRun(auto) {
+    var out = $('#ear-out'); out.innerHTML = '<p class="small muted">Ascolto la base con gli strumenti di misura…</p>'; await tick();
+    try {
+      var r = earMeasure(), fixed = [];
+      if (auto) for (var i = 0; i < 2; i++) { var ch = r.findings.some(function (f) { return f.fix && f.fix.levels; }) ? earApply(r) : []; if (!ch.length) break; fixed = fixed.concat(ch); await tick(); r = earMeasure(); }
+      out.innerHTML = earHtml(r) + (fixed.length ? '<p class="small"><b>Ho corretto da solo i volumi:</b> ' + esc(fixed.join(', ')) + '.</p>' : '') + (!auto && r.findings.some(function (f) { return f.fix && f.fix.levels; }) ? '<div class="row"><button class="btn sm pri" id="ear-fix">Applica i consigli</button></div>' : '');
+      return r;
+    } catch (e) { out.innerHTML = '<p class="small">Non sono riuscito a misurare la base.</p>'; return null; }
+  }
+  $('#ear-go').addEventListener('click', function () { earRun(false); });
+  $('#ear-out').addEventListener('click', async function (e) { if (e.target.id !== 'ear-fix') return; var r = earMeasure(), ch = earApply(r); $('#ear-out').innerHTML = '<p class="small">' + (ch.length ? 'Ho cambiato: ' + esc(ch.join(', ')) + '. Riascolto…' : 'Niente da cambiare.') + '</p>'; await tick(); await earRun(false); });
   /* ===== Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti) ===== */
   var BANNED_INST = { flute: 1, ocarina: 1, harmonica: 1, clarinet: 1, kalimba: 0 };
   async function runBrain(again) {
@@ -581,6 +609,7 @@
     p.inst = res.inst; persist(); fillBase();
     m.innerHTML = '<b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + pl.mode + '<br>' + pl.why.map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Strumenti: ' + ['melodia', 'accordi', 'pad'].map(function (r) { return r + ' ' + esc(instName(p.inst[r])); }).join(', ') + '. Se non ti piace premi "Altra versione dal testo".';
     await makeAndPlay(false);
+    earRun(true);
   }
   $('#sb-make').addEventListener('click', function () { runBrain(false); });
   $('#sb-again').addEventListener('click', function () { runBrain(true); });

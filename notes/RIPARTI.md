@@ -42,3 +42,8 @@ Documento con ricerca, fonti, licenze, architettura e fasi: https://claude.ai/ar
 - 4 stili nuovi in `arranger.js` + ricette in `instruments.js`; 4 nuovi caratteri vocali; Mic 1/Mic 2 (autotune dal vivo con 2 prove); accordatura base (refCents).
 - Ricerca: `notes/RICERCA-D-ai-gratuite-e-autotune-pesante.md`.
 - Da fare: collegare il cervello al Beat Lab; imparare da video/basi (altra chat: "Impara da una base"); AI locale opzionale (WebLLM) solo dopo prova su iPhone.
+
+## Orecchio di Sultan (24/11/2026)
+- `src/ear.js`: "ascolto" con misure (livello, crest, bande sub/basso/medio/presenza/aria, centro di gravità, colpi nel grave, clipping, fango, suono sottile "flautino"). Riferimenti per genere = Ipotesi. Bottone "Orecchio di Sultan · ascolta" in Testo e Base; dopo "Cervello Sultan" si ascolta e corregge i volumi da solo (max 2 giri).
+- `node tools/ascolta.js [morbido|standard|forte]` genera basi da 5 testi e stampa le misure: usarlo PRIMA di dire "non sento" e per tarare gli stili. Trovato: la melodia dei stili pesanti stava 1 ottava troppo in alto (centro ~1500 Hz, picco 1760 Hz = effetto flautino): ora `leadShift: 0` in trap/boombap/street/trapdark/clubtrap.
+- Da fare: usare l'Orecchio anche su registrazioni e voce intonata (sibilanti, rumore, livello), e sul Beat Lab.

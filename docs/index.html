@@ -536,7 +536,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 16:51</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 17:03</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -609,6 +609,7 @@ details.card[open]>summary{margin-bottom:8px}
     <h3 style="margin-top:12px">Strumenti</h3>
     <div id="b-levels"></div>
     <div class="row" style="margin-top:10px">
+      <button class="btn" id="ear-go">Orecchio di Sultan · ascolta</button>
       <button class="btn pri" id="sb-make">Cervello Sultan · crea dal testo</button>
       <button class="btn" id="sb-again">Altra versione dal testo</button>
       <button class="btn pri" id="b-play"><svg><use href="#i-play"/></svg>Crea e ascolta</button>
@@ -617,6 +618,7 @@ details.card[open]>summary{margin-bottom:8px}
       <button class="btn" id="b-save">Salva la base</button>
     </div>
     <div class="status" id="sb-msg"></div>
+    <div id="ear-out"></div>
     <div class="status" id="b-status"></div>
     <div id="b-out"></div>
   </div>
@@ -875,7 +877,7 @@ details.card[open]>summary{margin-bottom:8px}
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">234 test automatici superati su 234 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">240 test automatici superati su 240 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -4297,6 +4299,141 @@ details.card[open]>summary{margin-bottom:8px}
 });
 
 /*
+ * Orecchio di Sultan: "ascolto" con strumenti di misura, come fa un fonico con gli analizzatori.
+ *
+ * Io non ho orecchie, ma posso MISURARE il suono: livello, dinamica, quanta energia c'è in basso (sub, 808),
+ * al centro e in alto, dove sta il "centro di gravità" del suono, quante casse/808 ci sono per battuta,
+ * se c'è distorsione (clipping), troppo "fango" o un suono troppo sottile (tipo flautino).
+ * Le misure sono fatti (Misurato). I limiti di riferimento per genere sono punti di partenza di mestiere (Ipotesi):
+ * l'ultima parola resta all'orecchio di chi ascolta, ma almeno ora ci sono numeri su cui discutere.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.Ear = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var BANDS = [['sub', 20, 60], ['basso', 60, 250], ['medio-basso', 250, 500], ['medio', 500, 2000], ['presenza', 2000, 5000], ['aria', 5000, 16000]];
+
+  function mono(x) {
+    if (!Array.isArray(x)) return x;
+    if (x.length === 1) return x[0];
+    var o = new Float32Array(x[0].length); for (var c = 0; c < x.length; c++) for (var i = 0; i < o.length; i++) o[i] += x[c][i] / x.length; return o;
+  }
+  function fft(re, im) { // radix-2 sul posto
+    var n = re.length, i, j = 0, k, t;
+    for (i = 1; i < n; i++) { var bit = n >> 1; for (; j & bit; bit >>= 1) j ^= bit; j ^= bit; if (i < j) { t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; } }
+    for (var len = 2; len <= n; len <<= 1) {
+      var ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
+      for (i = 0; i < n; i += len) {
+        var cr = 1, ci = 0;
+        for (k = 0; k < len / 2; k++) {
+          var a = i + k, b = a + len / 2, xr = re[b] * cr - im[b] * ci, xi = re[b] * ci + im[b] * cr;
+          re[b] = re[a] - xr; im[b] = im[a] - xi; re[a] += xr; im[a] += xi;
+          var nr = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = nr;
+        }
+      }
+    }
+  }
+  function db(v) { return v > 1e-12 ? 20 * Math.log(v) / Math.LN10 : -120; }
+  function r1(v) { return Math.round(v * 10) / 10; }
+
+  /** Spettro medio (Welch, finestra di Hann, 4096 punti): restituisce potenza per riga e frequenza di ogni riga. */
+  function spectrum(x, sr) {
+    var N = 4096, hop = 2048, w = new Float32Array(N), i; for (i = 0; i < N; i++) w[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1));
+    var P = new Float64Array(N / 2), cnt = 0, re = new Float32Array(N), im = new Float32Array(N);
+    var maxFrames = 400, stride = Math.max(hop, Math.floor((x.length - N) / maxFrames));
+    for (var s = 0; s + N <= x.length; s += stride) {
+      for (i = 0; i < N; i++) { re[i] = x[s + i] * w[i]; im[i] = 0; }
+      fft(re, im); for (i = 0; i < N / 2; i++) P[i] += re[i] * re[i] + im[i] * im[i]; cnt++;
+    }
+    if (cnt) for (i = 0; i < P.length; i++) P[i] /= cnt;
+    return { P: P, df: sr / N, frames: cnt };
+  }
+
+  function bandShares(sp, sr) {
+    var out = {}, tot = 0, nyq = sr / 2;
+    BANDS.forEach(function (b) {
+      var lo = Math.floor(b[1] / sp.df), hi = Math.min(sp.P.length - 1, Math.floor(Math.min(b[2], nyq) / sp.df)), e = 0;
+      for (var i = lo; i <= hi; i++) e += sp.P[i]; out[b[0]] = e; tot += e;
+    });
+    var sh = {}; BANDS.forEach(function (b) { sh[b[0]] = tot > 0 ? out[b[0]] / tot : 0; });
+    return sh;
+  }
+  function centroid(sp) { var n = 0, d = 0; for (var i = 1; i < sp.P.length; i++) { n += i * sp.df * sp.P[i]; d += sp.P[i]; } return d > 0 ? n / d : 0; }
+
+  /** Colpi nel grave: inviluppo sotto i ~150 Hz (filtro a una polo) e conteggio dei picchi. */
+  function lowHits(x, sr, bpm) {
+    var a = Math.exp(-2 * Math.PI * 150 / sr), y = 0, hop = Math.round(sr * 0.01), env = [], i, s;
+    for (i = 0; i + hop <= x.length; i += hop) { var m = 0; for (s = 0; s < hop; s++) { y = (1 - a) * x[i + s] + a * y; m += y * y; } env.push(Math.sqrt(m / hop)); }
+    var mx = 0; env.forEach(function (v) { if (v > mx) mx = v; });
+    var hits = 0, last = -99, thr = mx * 0.35;
+    for (i = 0; i < env.length; i++) {
+      var pm = 1e9; for (s = Math.max(0, i - 4); s < i; s++) if (env[s] < pm) pm = env[s]; if (i === 0) pm = 0;
+      if (env[i] > thr && env[i] > pm * 1.4 + mx * 0.02 && env[i] >= (env[i - 1] || 0) && env[i] >= (env[i + 1] || 0) && i - last > 8) { hits++; last = i; }
+    }
+    var bars = bpm ? (x.length / sr) / (240 / bpm) : null;
+    return { hits: hits, perBar: bars ? r1(hits / bars) : null };
+  }
+
+  function levels(x, sr) {
+    var n = x.length, pk = 0, sum = 0, clip = 0, dc = 0, i;
+    for (i = 0; i < n; i++) { var v = x[i], a = v < 0 ? -v : v; if (a > pk) pk = a; sum += v * v; dc += v; if (a >= 0.999) clip++; }
+    var rms = Math.sqrt(sum / Math.max(1, n));
+    // dinamica nel tempo: RMS a finestre di 0,5 s
+    var win = Math.round(sr * 0.5), vals = [];
+    for (i = 0; i + win <= n; i += win) { var s2 = 0; for (var k = 0; k < win; k += 4) s2 += x[i + k] * x[i + k]; vals.push(db(Math.sqrt(s2 / (win / 4)))); }
+    vals.sort(function (p, q) { return p - q; });
+    var loud = vals.length ? vals[Math.floor(vals.length * 0.9)] : -120, quiet = vals.length ? vals[Math.floor(vals.length * 0.1)] : -120;
+    return { peakDb: r1(db(pk)), rmsDb: r1(db(rms)), crestDb: r1(db(pk) - db(rms)), clipped: clip, dc: r1(db(Math.abs(dc / Math.max(1, n)))), swingDb: r1(loud - quiet) };
+  }
+
+  // Finestre di riferimento per genere (Ipotesi): quota di energia sotto 250 Hz, centro di gravità massimo, crest.
+  var REF = {
+    trapdark: { low: [0.55, 0.9], centroid: 1400, crest: [7, 16] }, drill: { low: [0.5, 0.9], centroid: 1500, crest: [7, 16] },
+    trap: { low: [0.45, 0.88], centroid: 1700, crest: [7, 16] }, street: { low: [0.4, 0.85], centroid: 1800, crest: [7, 16] },
+    boombap: { low: [0.3, 0.8], centroid: 2000, crest: [8, 18] }, clubtrap: { low: [0.35, 0.8], centroid: 2000, crest: [7, 15] },
+    melodico: { low: [0.25, 0.75], centroid: 2300, crest: [8, 18] }, estate: { low: [0.2, 0.7], centroid: 2500, crest: [8, 18] }, epico: { low: [0.25, 0.75], centroid: 2300, crest: [8, 20] }
+  };
+
+  /**
+   * @param {Float32Array|Float32Array[]} input  audio
+   * @param {number} sr
+   * @param {{genre?:string,bpm?:number}} [o]
+   * @returns {{metrics:object, findings:Array<{level:string,id:string,text:string,fix:object|null}>, verdict:string}}
+   */
+  function listen(input, sr, o) {
+    o = o || {};
+    var x = mono(input), L = levels(x, sr), sp = spectrum(x, sr), sh = bandShares(sp, sr), cen = centroid(sp), hits = lowHits(x, sr, o.bpm);
+    var low = sh.sub + sh.basso, M = {
+      peakDb: L.peakDb, rmsDb: L.rmsDb, crestDb: L.crestDb, swingDb: L.swingDb, clipped: L.clipped, centroidHz: Math.round(cen),
+      lowShare: Math.round(low * 100) / 100, shares: {}, lowHitsPerBar: hits.perBar, lowHits: hits.hits, seconds: r1(x.length / sr)
+    };
+    BANDS.forEach(function (b) { M.shares[b[0]] = Math.round(sh[b[0]] * 1000) / 1000; });
+    var F = [], ref = REF[o.genre] || null;
+    if (L.peakDb < -60) { F.push({ level: 'errore', id: 'silenzio', text: 'Quasi silenzio: non c\'è segnale da misurare.', fix: null }); return { metrics: M, findings: F, verdict: 'vuoto' }; }
+    if (L.clipped > 8) F.push({ level: 'errore', id: 'clip', text: 'Distorsione digitale: ' + L.clipped + ' campioni al massimo. Abbassa il volume generale o la saturazione.', fix: { master: -2 } });
+    if (L.peakDb > -0.3) F.push({ level: 'avviso', id: 'picco', text: 'Il picco tocca lo 0 dB: poco margine, rischio di distorsione su altoparlanti e conversioni.', fix: { master: -1 } });
+    if (L.rmsDb < -24) F.push({ level: 'avviso', id: 'basso', text: 'Livello medio molto basso (' + L.rmsDb + ' dB): si sentirà debole rispetto agli altri brani.', fix: { master: 3 } });
+    if (L.crestDb < 6) F.push({ level: 'avviso', id: 'schiacciato', text: 'Dinamica molto schiacciata (crest ' + L.crestDb + ' dB): suono "piatto", senza colpi.', fix: null });
+    if (sh['medio-basso'] > 0.2) F.push({ level: 'avviso', id: 'fango', text: 'Troppo "fango" tra 250 e 500 Hz (' + Math.round(sh['medio-basso'] * 100) + '% dell\'energia): suono ovattato, strumenti che si coprono.', fix: { levels: { accordi: -0.15, pad: -0.15 } } });
+    if (sh.aria > 0.12) F.push({ level: 'avviso', id: 'frizzante', text: 'Molta aria sopra i 5 kHz (' + Math.round(sh.aria * 100) + '%): suono sibilante e stancante, hi-hat o arpeggio troppo forti.', fix: { levels: { arpeggio: -0.2 } } });
+    if (cen > 2000 && low < 0.3) F.push({ level: 'avviso', id: 'sottile', text: 'Suono sottile e acuto (centro di gravità ' + Math.round(cen) + ' Hz, grave solo ' + Math.round(low * 100) + '%): rischia di sembrare un flautino. Serve più peso in basso.', fix: { levels: { basso: 0.25, melodia: -0.2 } } });
+    if (hits.perBar != null && hits.perBar < 1) F.push({ level: 'avviso', id: 'pochi-colpi', text: 'Pochi colpi nel grave (' + hits.perBar + ' a battuta): la base non "batte" abbastanza.', fix: { levels: { batteria: 0.15 } } });
+    if (ref) {
+      if (low < ref.low[0]) F.push({ level: 'avviso', id: 'poco-grave', text: 'Per ' + o.genre + ' ci si aspetta più energia sotto 250 Hz: qui ' + Math.round(low * 100) + '% (riferimento ' + Math.round(ref.low[0] * 100) + '-' + Math.round(ref.low[1] * 100) + '%). Alza il basso/808 o abbassa le parti acute.', fix: { levels: { basso: 0.2, melodia: -0.1, arpeggio: -0.1 } }, tag: 'Ipotesi' });
+      else if (low > ref.low[1]) F.push({ level: 'avviso', id: 'troppo-grave', text: 'Il grave è ' + Math.round(low * 100) + '% (massimo ' + Math.round(ref.low[1] * 100) + '%): rischia di coprire la voce. Abbassa un po\' il basso.', fix: { levels: { basso: -0.15 } }, tag: 'Ipotesi' });
+      if (cen > ref.centroid) F.push({ level: 'info', id: 'luminoso', text: 'Il suono è più luminoso del solito per ' + o.genre + ' (centro ' + Math.round(cen) + ' Hz, riferimento fino a ' + ref.centroid + ').', fix: { levels: { melodia: -0.1, arpeggio: -0.1 } }, tag: 'Ipotesi' });
+      if (L.crestDb < ref.crest[0] || L.crestDb > ref.crest[1]) F.push({ level: 'info', id: 'crest', text: 'Dinamica (crest) ' + L.crestDb + ' dB fuori dalla finestra tipica ' + ref.crest[0] + '-' + ref.crest[1] + ' dB.', fix: null, tag: 'Ipotesi' });
+    }
+    var bad = F.filter(function (f) { return f.level === 'errore'; }).length, warn = F.filter(function (f) { return f.level === 'avviso'; }).length;
+    return { metrics: M, findings: F, verdict: bad ? 'da correggere' : (warn ? 'migliorabile' : 'in ordine') };
+  }
+
+  return { listen: listen, spectrum: spectrum, BANDS: BANDS, REF: REF };
+});
+
+/*
  * Laboratorio suoni: crea strumenti NUOVI partendo dai suoni grezzi.
  *
  * Un suono del laboratorio è una "ricetta":
@@ -4755,7 +4892,7 @@ details.card[open]>summary{margin-bottom:8px}
   // Direzioni di stile. kick/snare: posizioni sui 16 passi; kickExtra: candidati variabili.
   var STYLES = {
     trap: {
-      label: 'Trap', bpm: 140, swing: 0, kick: [0], kickExtra: [3, 6, 7, 10, 11, 13, 14], snare: [8], clap: true,
+      label: 'Trap', leadShift: 0, bpm: 140, swing: 0, kick: [0], kickExtra: [3, 6, 7, 10, 11, 13, 14], snare: [8], clap: true,
       hat: 'trap', bass: '808', slide: 0.3, glide: 0.07, drive: 1.8, rolls: 0.7,
       kickPats: [[[0, 10], [0, 7, 11]], [[0, 6, 10], [0, 3, 10, 14]], [[0, 11], [0, 7, 10, 13]]],
       chord: 'pluck', chordPat: [0, 6, 10], arp: false, pad: 'warm', lead: 'bell', duck: 0.35
@@ -4779,25 +4916,25 @@ details.card[open]>summary{margin-bottom:8px}
       chord: 'pluck', chordPat: [0, 3, 6, 10, 12], arp: false, pad: 'warm', lead: 'pluck', duck: 0.25
     },
     boombap: {
-      label: 'Boom bap pesante', bpm: 90, swing: 0.16, kick: [0], kickExtra: [7, 10, 11], snare: [4, 12], clap: false,
+      label: 'Boom bap pesante', leadShift: 0, bpm: 90, swing: 0.16, kick: [0], kickExtra: [7, 10, 11], snare: [4, 12], clap: false,
       hat: 'soft', bass: 'round', slide: 0.08, rolls: 0.05,
       kickPats: [[[0, 10], [0, 7, 10]], [[0, 7], [0, 7, 11]], [[0, 10, 11], [0, 6, 10]]],
       chord: 'pluck', chordPat: [0, 6, 10], arp: false, pad: 'dark', lead: 'pluck', duck: 0.3
     },
     street: {
-      label: 'Street (stile 50 Cent)', bpm: 96, swing: 0.06, kick: [0], kickExtra: [6, 10, 14], snare: [4, 12], clap: true,
+      label: 'Street (stile 50 Cent)', leadShift: 0, bpm: 96, swing: 0.06, kick: [0], kickExtra: [6, 10, 14], snare: [4, 12], clap: true,
       hat: 'soft', bass: '808', slide: 0.2, glide: 0.06, drive: 1.7, rolls: 0.1,
       kickPats: [[[0, 10], [0, 6, 10]], [[0, 7, 10], [0, 3, 10, 14]], [[0, 11], [0, 6, 14]]],
       chord: 'pluck', chordPat: [0, 3, 8, 11], arp: false, pad: 'dark', lead: 'bell', duck: 0.35
     },
     trapdark: {
-      label: 'Trap scura pesante', bpm: 144, swing: 0, kick: [0], kickExtra: [3, 7, 10, 13], snare: [8], clap: true,
+      label: 'Trap scura pesante', leadShift: 0, bpm: 144, swing: 0, kick: [0], kickExtra: [3, 7, 10, 13], snare: [8], clap: true,
       hat: 'drill', bass: '808', slide: 0.6, glide: 0.12, drive: 2.7, rolls: 0.6,
       kickPats: [[[0, 10], [0, 7, 13]], [[0, 6, 11], [0, 3, 10]], [[0, 7, 10], [0, 13]]],
       chord: 'pluck', chordPat: [0, 8], arp: true, pad: 'dark', lead: 'bell', duck: 0.32
     },
     clubtrap: {
-      label: 'Club (dembow trap)', bpm: 98, swing: 0, kick: [0, 4, 8, 12], kickExtra: [], snare: [3, 6, 11, 14], clap: true,
+      label: 'Club (dembow trap)', leadShift: 0, bpm: 98, swing: 0, kick: [0, 4, 8, 12], kickExtra: [], snare: [3, 6, 11, 14], clap: true,
       hat: 'offbeat', bass: '808', slide: 0.15, glide: 0.05, drive: 1.8, rolls: 0.2,
       kickPats: [[[0, 4, 8, 12], [0, 4, 8, 12]]],
       chord: 'pluck', chordPat: [0, 6, 10], arp: false, pad: 'warm', lead: 'bell', duck: 0.28
@@ -5160,7 +5297,7 @@ details.card[open]>summary{margin-bottom:8px}
           var l = [2, 2, 3, 4][Math.floor(rand() * 4)];
           if (rand() < 0.3 && s > 0) { s += l; continue; }
           idx = Math.max(0, Math.min(scaleM.length - 1, idx + Math.floor(rand() * 5) - 2));
-          var midi = scaleM[idx] + 12;
+          var midi = scaleM[idx] + (style.leadShift == null ? 12 : style.leadShift);
           if (s % 4 === 0 || bi === 3) {
             var near = chord.reduce(function (a, c) { return Math.abs(c - midi) < Math.abs(a - midi) ? c : a; }, chord[0]);
             if (Math.abs(near - midi) <= 3) midi = near;
@@ -9504,6 +9641,34 @@ details.card[open]>summary{margin-bottom:8px}
   }
   $('#bl-brain').addEventListener('click', function () { blBrain(false); });
   $('#bl-brain2').addEventListener('click', function () { blBrain(true); });
+  /* ===== Orecchio di Sultan: ascolto con strumenti di misura ===== */
+  function earMeasure() { var p = cur().prod, mx = buildMix({ voice: false }); return Ear.listen(mx.samples, mx.sr, { genre: SESSION.useImported ? null : p.genre, bpm: p.bpm }); }
+  function earApply(r) {
+    var p = cur().prod, ch = [], add = {};
+    r.findings.forEach(function (f) { if (f.fix && f.fix.levels) Object.keys(f.fix.levels).forEach(function (k) { add[k] = (add[k] || 0) + f.fix.levels[k]; }); });
+    Object.keys(add).forEach(function (k) { if (p.levels[k] == null) return; var nv = Math.max(0.1, Math.min(1.8, Math.round((p.levels[k] + Math.max(-0.4, Math.min(0.4, add[k]))) * 100) / 100)); if (nv !== p.levels[k]) { ch.push(LEVEL_NAMES[k] + ' ' + Math.round(p.levels[k] * 100) + '% → ' + Math.round(nv * 100) + '%'); p.levels[k] = nv; } });
+    if (ch.length) { persist(); fillBase(); }
+    return ch;
+  }
+  function earHtml(r) {
+    var M = r.metrics, sh = M.shares;
+    return '<div class="note"><b>Orecchio di Sultan</b> <span class="tag m">Misurato</span> · verdetto: <b>' + esc(r.verdict) + '</b>' +
+      '<ul class="clean small"><li>Livello medio ' + M.rmsDb + ' dB, picco ' + M.peakDb + ' dB, dinamica (crest) ' + M.crestDb + ' dB</li>' +
+      '<li>Grave (sotto 250 Hz) ' + Math.round(M.lowShare * 100) + '% · sub ' + Math.round(sh.sub * 100) + '% · medi ' + Math.round((sh['medio-basso'] + sh.medio) * 100) + '% · presenza ' + Math.round(sh.presenza * 100) + '% · aria ' + Math.round(sh.aria * 100) + '%</li>' +
+      '<li>Centro di gravità ' + M.centroidHz + ' Hz · colpi nel grave ' + (M.lowHitsPerBar == null ? '–' : M.lowHitsPerBar + ' a battuta') + '</li></ul>' +
+      (r.findings.length ? '<ul class="clean small">' + r.findings.map(function (f) { return '<li><span class="tag ' + (f.level === 'errore' ? 'soon' : (f.tag === 'Ipotesi' ? 'i' : 'm')) + '">' + (f.level === 'errore' ? 'Errore' : (f.tag || 'Misurato')) + '</span> ' + esc(f.text) + '</li>'; }).join('') + '</ul>' : '<p class="small">Nessun problema misurabile.</p>') + '</div>';
+  }
+  async function earRun(auto) {
+    var out = $('#ear-out'); out.innerHTML = '<p class="small muted">Ascolto la base con gli strumenti di misura…</p>'; await tick();
+    try {
+      var r = earMeasure(), fixed = [];
+      if (auto) for (var i = 0; i < 2; i++) { var ch = r.findings.some(function (f) { return f.fix && f.fix.levels; }) ? earApply(r) : []; if (!ch.length) break; fixed = fixed.concat(ch); await tick(); r = earMeasure(); }
+      out.innerHTML = earHtml(r) + (fixed.length ? '<p class="small"><b>Ho corretto da solo i volumi:</b> ' + esc(fixed.join(', ')) + '.</p>' : '') + (!auto && r.findings.some(function (f) { return f.fix && f.fix.levels; }) ? '<div class="row"><button class="btn sm pri" id="ear-fix">Applica i consigli</button></div>' : '');
+      return r;
+    } catch (e) { out.innerHTML = '<p class="small">Non sono riuscito a misurare la base.</p>'; return null; }
+  }
+  $('#ear-go').addEventListener('click', function () { earRun(false); });
+  $('#ear-out').addEventListener('click', async function (e) { if (e.target.id !== 'ear-fix') return; var r = earMeasure(), ch = earApply(r); $('#ear-out').innerHTML = '<p class="small">' + (ch.length ? 'Ho cambiato: ' + esc(ch.join(', ')) + '. Riascolto…' : 'Niente da cambiare.') + '</p>'; await tick(); await earRun(false); });
   /* ===== Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti) ===== */
   var BANNED_INST = { flute: 1, ocarina: 1, harmonica: 1, clarinet: 1, kalimba: 0 };
   async function runBrain(again) {
@@ -9518,6 +9683,7 @@ details.card[open]>summary{margin-bottom:8px}
     p.inst = res.inst; persist(); fillBase();
     m.innerHTML = '<b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + pl.mode + '<br>' + pl.why.map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Strumenti: ' + ['melodia', 'accordi', 'pad'].map(function (r) { return r + ' ' + esc(instName(p.inst[r])); }).join(', ') + '. Se non ti piace premi "Altra versione dal testo".';
     await makeAndPlay(false);
+    earRun(true);
   }
   $('#sb-make').addEventListener('click', function () { runBrain(false); });
   $('#sb-again').addEventListener('click', function () { runBrain(true); });
