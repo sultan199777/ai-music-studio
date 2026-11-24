@@ -407,7 +407,7 @@
   function fillBase() {
     var p = cur().prod;
     $('#b-genre').value = p.genre; $('#b-bpm').value = p.bpm; $('#b-tonic').value = p.tonic; $('#b-mode').value = p.mode;
-    $('#b-master').value = p.master || 'standard'; $('#b-sounds').value = p.sounds || 'campioni'; $('#b-bars').value = p.bars; $('#b-barsv').textContent = p.bars; $('#b-follow').checked = !!p.follow;
+    $('#b-master').value = p.master || 'standard'; $('#b-sounds').value = p.sounds || 'campioni'; syncKar(); $('#b-bars').value = p.bars; $('#b-barsv').textContent = p.bars; $('#b-follow').checked = !!p.follow;
     $('#b-levels').innerHTML = Object.keys(LEVEL_NAMES).map(function (k) {
       return '<label class="f"><span>' + LEVEL_NAMES[k] + '<b data-lv="' + k + '">' + Math.round(p.levels[k] * 100) + '%</b></span><input type="range" min="0" max="180" value="' + Math.round(p.levels[k] * 100) + '" data-level="' + k + '"></label>';
     }).join('');
@@ -415,6 +415,8 @@
   $('#b-genre').innerHTML = Object.keys(ALLG).map(function (g) { return '<option value="' + g + '">' + ALLG[g].label + '</option>'; }).join('');
   $('#b-tonic').innerHTML = NOTES.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
   $('#b-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.tune = null; p.bpm = ALLG[this.value].bpm; if (['trap', 'drill', 'epico'].indexOf(this.value) >= 0) { p.mode = 'minore'; $('#b-mode').value = 'minore'; } else if (this.value === 'estate') { p.mode = 'maggiore'; $('#b-mode').value = 'maggiore'; } if (Arranger.STYLES[this.value] && p.bars < 16) { p.bars = 32; $('#b-bars').value = 32; $('#b-barsv').textContent = 32; } $('#b-bpm').value = p.bpm; persist(); });
+  ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.addEventListener('change', function () { cur().prod.karBars = +this.value; persist(); syncKar(); }); });
+  function syncKar() { var v = String(cur().prod.karBars || 2); ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.value = v; }); }
   $('#b-sounds').addEventListener('change', function () { cur().prod.sounds = this.value; persist(); });
   $('#b-master').addEventListener('change', function () { cur().prod.master = this.value; persist(); });
   $('#b-bpm').addEventListener('change', function () { cur().prod.bpm = Math.max(60, Math.min(180, +this.value || 100)); this.value = cur().prod.bpm; persist(); });
@@ -463,9 +465,9 @@
     sel = sel || '#kar';
     var lines = lyricLines(cur().lyrics), barLen = 4 * 60 / bpm;
     return function (t) {
-      var bar = Math.floor(t / barLen);
+      var bar = Math.floor(t / barLen), per = +(cur().prod.karBars || 2), li = Math.floor(bar / per);
       if (!lines.length) { $(sel).innerHTML = '<div><b>Scrivi un testo per vederlo qui</b></div>'; return; }
-      var ln = ClipFx.lyricAt(lines, bar), md = (cur().modes || {})[ln] || 'canta';
+      var ln = ClipFx.lyricAt(lines, li), md = (cur().modes || {})[ln] || 'canta';
       $(sel).innerHTML = '<div><span class="mode">' + md + '</span><br><b>' + esc(ln) + '</b><small>Battuta ' + (bar + 1) + ' · poi: ' + esc(ClipFx.lyricAt(lines, bar + 1)) + '</small></div>';
     };
   }

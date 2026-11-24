@@ -302,6 +302,7 @@ details.card[open]>summary{margin-bottom:8px}
   </div>
 
   <div class="card"><div class="card-head"><h3>Cantare seguendo il testo</h3></div>
+    <label class="f"><span>Velocità del testo</span><select id="kar-speed"><option value="1">Veloce (1 battuta per riga)</option><option value="2" selected>Media (2 battute)</option><option value="4">Lenta (4 battute)</option><option value="8">Molto lenta (8 battute)</option></select></label>
     <div class="karaoke" id="kar"><div><b>Premi "Crea e ascolta" e canta</b><small>Qui vedi la riga giusta a ogni battuta</small></div></div>
     <p class="small muted">Metti le cuffie, registra con Memo Vocali mentre la base suona (da un altro dispositivo o da questa pagina), poi importa la registrazione in Voce.</p>
   </div>
@@ -344,6 +345,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="head"><div class="eyebrow">Vocal Studio</div><h1>La tua voce</h1></div>
   <div class="card"><div class="card-head"><h3>Registra con il microfono</h3></div>
     <div class="orbwrap"><div class="orb" id="orb"></div><div class="orb-cap" id="orb-cap">Emozione del testo: <b>neutra</b></div></div>
+    <label class="f"><span>Velocità del testo</span><select id="kar-speed2"><option value="1">Veloce (1 battuta per riga)</option><option value="2" selected>Media (2 battute)</option><option value="4">Lenta (4 battute)</option><option value="8">Molto lenta (8 battute)</option></select></label>
     <div class="karaoke" id="rec-kar"><div><b>Premi Registra: parte la base e vedi la riga</b><small>Usa le cuffie</small></div></div>
     <div class="meter-bar" id="rec-meter" hidden><i></i></div>
     <div class="row"><button class="btn pri" id="rec-go">Registra con la base</button><button class="btn" id="rec-stop" hidden>Fine registrazione</button></div>
@@ -3851,7 +3853,7 @@ details.card[open]>summary{margin-bottom:8px}
   function fillBase() {
     var p = cur().prod;
     $('#b-genre').value = p.genre; $('#b-bpm').value = p.bpm; $('#b-tonic').value = p.tonic; $('#b-mode').value = p.mode;
-    $('#b-master').value = p.master || 'standard'; $('#b-sounds').value = p.sounds || 'campioni'; $('#b-bars').value = p.bars; $('#b-barsv').textContent = p.bars; $('#b-follow').checked = !!p.follow;
+    $('#b-master').value = p.master || 'standard'; $('#b-sounds').value = p.sounds || 'campioni'; syncKar(); $('#b-bars').value = p.bars; $('#b-barsv').textContent = p.bars; $('#b-follow').checked = !!p.follow;
     $('#b-levels').innerHTML = Object.keys(LEVEL_NAMES).map(function (k) {
       return '<label class="f"><span>' + LEVEL_NAMES[k] + '<b data-lv="' + k + '">' + Math.round(p.levels[k] * 100) + '%</b></span><input type="range" min="0" max="180" value="' + Math.round(p.levels[k] * 100) + '" data-level="' + k + '"></label>';
     }).join('');
@@ -3859,6 +3861,8 @@ details.card[open]>summary{margin-bottom:8px}
   $('#b-genre').innerHTML = Object.keys(ALLG).map(function (g) { return '<option value="' + g + '">' + ALLG[g].label + '</option>'; }).join('');
   $('#b-tonic').innerHTML = NOTES.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
   $('#b-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.tune = null; p.bpm = ALLG[this.value].bpm; if (['trap', 'drill', 'epico'].indexOf(this.value) >= 0) { p.mode = 'minore'; $('#b-mode').value = 'minore'; } else if (this.value === 'estate') { p.mode = 'maggiore'; $('#b-mode').value = 'maggiore'; } if (Arranger.STYLES[this.value] && p.bars < 16) { p.bars = 32; $('#b-bars').value = 32; $('#b-barsv').textContent = 32; } $('#b-bpm').value = p.bpm; persist(); });
+  ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.addEventListener('change', function () { cur().prod.karBars = +this.value; persist(); syncKar(); }); });
+  function syncKar() { var v = String(cur().prod.karBars || 2); ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.value = v; }); }
   $('#b-sounds').addEventListener('change', function () { cur().prod.sounds = this.value; persist(); });
   $('#b-master').addEventListener('change', function () { cur().prod.master = this.value; persist(); });
   $('#b-bpm').addEventListener('change', function () { cur().prod.bpm = Math.max(60, Math.min(180, +this.value || 100)); this.value = cur().prod.bpm; persist(); });
@@ -3907,9 +3911,9 @@ details.card[open]>summary{margin-bottom:8px}
     sel = sel || '#kar';
     var lines = lyricLines(cur().lyrics), barLen = 4 * 60 / bpm;
     return function (t) {
-      var bar = Math.floor(t / barLen);
+      var bar = Math.floor(t / barLen), per = +(cur().prod.karBars || 2), li = Math.floor(bar / per);
       if (!lines.length) { $(sel).innerHTML = '<div><b>Scrivi un testo per vederlo qui</b></div>'; return; }
-      var ln = ClipFx.lyricAt(lines, bar), md = (cur().modes || {})[ln] || 'canta';
+      var ln = ClipFx.lyricAt(lines, li), md = (cur().modes || {})[ln] || 'canta';
       $(sel).innerHTML = '<div><span class="mode">' + md + '</span><br><b>' + esc(ln) + '</b><small>Battuta ' + (bar + 1) + ' · poi: ' + esc(ClipFx.lyricAt(lines, bar + 1)) + '</small></div>';
     };
   }
