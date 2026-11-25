@@ -2011,9 +2011,10 @@
   async function sepAi(f, el) {
     var mode = sepMode();
     el.textContent = 'Leggo l\'audio del file…'; learnBar(0.01);
-    var d = await withTimeout(decodeStereo(f, 44100), 120000, 'il file non si apre (troppo lungo o formato video non letto)'), max = 44100 * 300;
+    var d = await withTimeout(decodeStereo(f, 44100), 120000, 'il file non si apre (troppo lungo o formato video non letto)'), max = 44100 * learnSecs();
     el.textContent = 'Preparo il modello di separazione…'; await tick();
-    if (d.L.length > max) { d.L = d.L.slice(0, max); if (d.R) d.R = d.R.slice(0, max); }
+    // si analizza un pezzo centrale (dove di solito ci sono strofa e ritornello): una canzone intera sul telefono richiede troppo tempo e memoria
+    if (d.L.length > max) { var a0 = Math.max(0, Math.min(d.L.length - max, Math.round(d.L.length * 0.3))); d.L = d.L.slice(a0, a0 + max); if (d.R) d.R = d.R.slice(a0, a0 + max); }
     var secs = Math.round(d.L.length / 44100);
     var last = Date.now(), alive = function () { last = Date.now(); };
     var r = await stallGuard(AiSeparator.separate(d.L, d.R || d.L, mode,
@@ -2025,8 +2026,10 @@
     return { sr: 44100, voice: voice, base: base, stems: st, rhythm: rhythm, orig: orig, ai: true,
       note: (mode === 'studio' ? 'Modalità Studio: voce con Mel-Band RoFormer, base divisa con SCNet.' : 'Modalità Rapida: SCNet.') + ' Modelli open source, tutto sul dispositivo. Ritmo misurato su batteria e basso separati.' };
   }
+  function learnSecs() { var v = +LIB.settings.learnSecs; return v >= 20 && v <= 300 ? v : 40; }
   async function sepFast(f, el) {
-    var d = await decodeStereo(f, 32000), sr = d.sr, i;
+    var d = await decodeStereo(f, 32000), sr = d.sr, i, mx = Math.round(sr * learnSecs());
+    if (d.L.length > mx) { var b0 = Math.max(0, Math.min(d.L.length - mx, Math.round(d.L.length * 0.3))); d.L = d.L.slice(b0, b0 + mx); if (d.R) d.R = d.R.slice(b0, b0 + mx); }
     var sep = await BeatLearn.separateAsync(d.L, d.R, sr, {}, function (p) { learnBar(0.05 + p * 0.6); });
     var bm = new Float32Array(sep.baseL.length), mono = new Float32Array(d.L.length);
     for (i = 0; i < bm.length; i++) bm[i] = (sep.baseL[i] + sep.baseR[i]) / 2;
@@ -2034,6 +2037,8 @@
     return { sr: sr, voice: sep.voice, base: bm, stems: null, rhythm: mono, orig: mono, ai: false, note: 'ATTENZIONE: l\'AI non è partita su questo dispositivo, ho usato il metodo semplice. Voce e base NON sono pulite: va bene solo per misurare il ritmo.' };
   }
   function normOnly(x, sr) { return BeatLearn.clean(x, sr, { denoise: 0 }).x; }
+  (function learnCrashNote() { try { var r = JSON.parse(localStorage.getItem('learnRunning') || 'null'); if (!r) return; localStorage.removeItem('learnRunning'); if (Date.now() - r.at > 3 * 3600e3) return; LIB.settings.learnSecs = Math.max(20, Math.round((r.secs || 40) * 0.6)); persist(); $('#dw-learn-msg').textContent = 'L\'ultima analisi di "' + r.name + '" si è interrotta: il telefono ha chiuso la pagina (memoria o schermo bloccato). Riprova: ora analizzo solo ' + LIB.settings.learnSecs + ' secondi. Tieni lo schermo acceso.'; } catch (e) {} })();
+  $('#dw-learn-secs').value = String(learnSecs()); $('#dw-learn-secs').addEventListener('change', function () { LIB.settings.learnSecs = +this.value; persist(); });
   $('#dw-bt-on').checked = LIB.settings.beatThis !== false; $('#dw-bt-on').addEventListener('change', function () { LIB.settings.beatThis = this.checked; persist(); });
   /* Beat This! (MIT): battiti e inizio battuta con una rete neurale da 10 MB, scaricata una volta sola */
   async function btGrid(x, sr, el) {
@@ -2045,6 +2050,7 @@
   $('#dw-learn-file').addEventListener('change', async function () {
     var f = this.files && this.files[0], el = $('#dw-learn-msg'); this.value = ''; if (!f) return;
     el.textContent = 'Apro "' + f.name + '"…'; learnBar(0.02); await tick(); dwStop(); stopPlay();
+    try { localStorage.setItem('learnRunning', JSON.stringify({ name: f.name, at: Date.now(), secs: learnSecs() })); } catch (e) {}
     try {
       var s, why = '';
       try { s = await sepAi(f, el); }
@@ -2060,6 +2066,7 @@
       if (tuneM) { prof.tune = tuneM; prof.why.push('Voce: ' + tuneM.label + ' (scarto medio ' + tuneM.cents + ' cent dalla nota).'); }
       LEARN.cur = { name: f.name.replace(/\.[^.]+$/, '').slice(0, 40), prof: prof, voice: voice, base: base, orig: s.orig, stems: s.stems, sr: s.sr, note: s.note, vote: 0, ai: s.ai };
       learnBar(null); setTimeout(function () { varMake('', learnSpecs2(prof), '#dw-learn-msg'); }, 50); el.textContent = s.ai ? 'Fatto. Ascolta le parti separate, poi dimmi se il ritmo ti piace.' : 'Fatto, ma senza AI (' + why + '): voce e base non sono pulite.';
+      try { localStorage.removeItem('learnRunning'); } catch (e) {}
       learnRender(); coachRec('complete', coachCtx()); sepInfo();
     } catch (e) {
       learnBar(null);
