@@ -44,6 +44,13 @@
     });
     return out.slice(0, 3);
   }
+  /* Ollama (gratuito, sul tuo computer, http://localhost:11434): modelli più grandi = italiano migliore. Nessuna chiave. */
+  var OLLAMA = 'http://localhost:11434', ollamaModel = null;
+  async function pingOllama(url) {
+    try { var r = await fetch((url || OLLAMA) + '/api/tags'); if (!r.ok) return null; var j = await r.json(), names = (j.models || []).map(function (m) { return m.name; });
+      var best = null; ['qwen2\\.5', 'qwen3', 'gemma', 'llama3', 'mistral'].some(function (k) { var f = names.filter(function (n) { return new RegExp(k, 'i').test(n); }); if (f.length) { best = f[0]; return true; } return false; }); return { models: names, best: best || names[0] || null }; } catch (e) { return null; }
+  }
+  async function useOllama(model) { var p = await pingOllama(); if (!p || !p.models.length) throw new Error('Ollama non risponde su questo computer (serve avviarlo con OLLAMA_ORIGINS impostato al sito) o non ha modelli.'); ollamaModel = model || p.best; return ollamaModel; }
   var engine = null, loadedId = null;
   async function load(modelId, onProgress) {
     if (!supported()) throw new Error('Questo telefono/browser non ha WebGPU: l\'assistente AI non può partire. Il cervello Sultan resta attivo.');
@@ -53,9 +60,13 @@
     loadedId = modelId; return engine;
   }
   async function ask(task, ctx) {
+    if (ollamaModel) {
+      var rr = await fetch(OLLAMA + '/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ollamaModel, stream: false, messages: buildPrompt(task, ctx), options: { temperature: 0.9, top_p: 0.92, num_predict: 200 } }) });
+      if (!rr.ok) throw new Error('Ollama ha risposto ' + rr.status); var jj = await rr.json(); return clean(jj.message && jj.message.content, ctx && ctx.line);
+    }
     if (!engine) throw new Error('Assistente non attivo');
     var r = await engine.chat.completions.create({ messages: buildPrompt(task, ctx), temperature: 0.9, top_p: 0.92, max_tokens: 160 });
     return clean(r.choices[0].message.content, ctx && ctx.line);
   }
-  return { MODELS: MODELS, TASKS: TASKS, supported: supported, buildPrompt: buildPrompt, clean: clean, load: load, ask: ask, LIB_URL: LIB_URL };
+  return { pingOllama: pingOllama, useOllama: useOllama, MODELS: MODELS, TASKS: TASKS, supported: supported, buildPrompt: buildPrompt, clean: clean, load: load, ask: ask, LIB_URL: LIB_URL };
 });

@@ -519,7 +519,7 @@
   /* ===== Assistente testi (AI locale, opzionale) ===== */
   (function () {
     var sel = $('#ai-model'); if (!sel) return;
-    sel.innerHTML = LocalAI.MODELS.map(function (m) { return '<option value="' + m.id + '">' + m.label + ' · ' + m.note + '</option>'; }).join('');
+    sel.innerHTML = '<option value="ollama">Ollama sul computer (migliore, se lo hai)</option>' + LocalAI.MODELS.map(function (m) { return '<option value="' + m.id + '">' + m.label + ' · ' + m.note + '</option>'; }).join('');
     function ready(on) { ['#ai-v', '#ai-p', '#ai-c'].forEach(function (i) { $(i).disabled = !on; }); }
     var LINE = '';
     function lyTa() { var d = $('#dw-lyrics'); return d && d.offsetParent ? d : $('#st-lyrics'); }
@@ -530,7 +530,8 @@
       return LINE;
     }
     $('#ai-on').addEventListener('click', async function () {
-      var m = $('#ai-msg'); if (!LocalAI.supported()) { m.textContent = 'Questo browser non ha WebGPU: l\'assistente AI non può partire qui. Il cervello Sultan funziona lo stesso.'; return; }
+      var m = $('#ai-msg');
+      if (sel.value === 'ollama') { try { var nm = await LocalAI.useOllama(); m.textContent = 'Collegato a Ollama (' + nm + '). Seleziona una riga e scegli cosa vuoi.'; ready(true); } catch (e) { m.textContent = e.message; } return; } if (!LocalAI.supported()) { m.textContent = 'Questo browser non ha WebGPU: l\'assistente AI non può partire qui. Il cervello Sultan funziona lo stesso.'; return; }
       m.textContent = 'Scarico il modello (solo la prima volta)…'; this.disabled = true;
       try { await LocalAI.load(sel.value, function (p) { m.textContent = (p && p.text ? p.text : 'Carico…').slice(0, 90) + (p && p.progress != null ? ' ' + Math.round(p.progress * 100) + '%' : ''); }); m.textContent = 'Assistente pronto. Seleziona una riga nel testo e scegli cosa vuoi.'; ready(true); }
       catch (e) { m.textContent = 'Non è partito: ' + (e && e.message ? e.message : e); this.disabled = false; }
