@@ -2029,10 +2029,13 @@
     // si analizza un pezzo centrale (dove di solito ci sono strofa e ritornello): una canzone intera sul telefono richiede troppo tempo e memoria
     if (d.L.length > max) { var a0 = Math.max(0, Math.min(d.L.length - max, Math.round(d.L.length * 0.3))); d.L = d.L.slice(a0, a0 + max); if (d.R) d.R = d.R.slice(a0, a0 + max); }
     var secs = Math.round(d.L.length / 44100);
-    var last = Date.now(), alive = function () { last = Date.now(); };
+    var last = Date.now(), alive = function () { last = Date.now(); }, full = learnSecs() >= 300, fk = 'k' + f.name + '|' + f.size + '|' + mode + '|';
+    var sopt = full ? { mono: true, load: function (c) { return sepIdb('get', fk + c); }, save: function (c, r) { return sepIdb('put', fk + c, r); } } : null;
+    var wl = await wakeOn(); // schermo sempre acceso finché lavora (Safari 16.4+)
     var r = await stallGuard(AiSeparator.separate(d.L, d.R || d.L, mode,
       function (p, txt) { alive(); el.textContent = txt + ' (' + secs + ' s di audio, ' + Math.round(p * 100) + '%). Resta su questa pagina…'; learnBar(0.1 + p * 0.75); },
-      function (phase, got, tot, mem) { alive(); if (phase === 'download' && !mem) { el.textContent = 'Scarico il modello: ' + Math.round(got / 1048576) + ' di ' + Math.round(tot / 1048576) + ' MB (solo la prima volta)…'; learnBar(0.01 + 0.09 * got / tot); } }), function () { return Date.now() - last; }, 150000);
+      function (phase, got, tot, mem) { alive(); if (phase === 'download' && !mem) { el.textContent = 'Scarico il modello: ' + Math.round(got / 1048576) + ' di ' + Math.round(tot / 1048576) + ' MB (solo la prima volta)…'; learnBar(0.01 + 0.09 * got / tot); } }, sopt), function () { return Date.now() - last; }, 150000).finally(function () { try { if (wl) wl.release(); } catch (e) {} });
+    if (full) { try { await sepIdb('clear'); } catch (e) {} }
     var st = { drums: stMono(r.drums), bass: stMono(r.bass), other: stMono(r.other) }, voice = stMono(r.vocals), n = voice.length;
     var base = new Float32Array(n), rhythm = new Float32Array(n), orig = new Float32Array(n);
     for (var i = 0; i < n; i++) { base[i] = st.drums[i] + st.bass[i] + st.other[i]; rhythm[i] = st.drums[i] + st.bass[i]; orig[i] = d.R ? (d.L[i] + d.R[i]) / 2 : d.L[i]; }
@@ -2040,6 +2043,11 @@
       note: (mode === 'studio' ? 'Modalità Studio: voce con Mel-Band RoFormer, base divisa con SCNet.' : 'Modalità Rapida: SCNet.') + ' Modelli open source, tutto sul dispositivo. Ritmo misurato su batteria e basso separati.' };
   }
   function learnSecs() { var v = +LIB.settings.learnSecs; return v >= 20 && v <= 300 ? v : 40; }
+  /* pezzi già separati, salvati nel telefono (database a parte: non si caricano all'avvio) */
+  var SDB = null;
+  function sepDb() { if (SDB) return SDB; SDB = new Promise(function (res) { try { var rq = indexedDB.open('msa-sep', 1); rq.onupgradeneeded = function () { rq.result.createObjectStore('chunks'); }; rq.onsuccess = function () { res(rq.result); }; rq.onerror = function () { res(null); }; } catch (e) { res(null); } }); return SDB; }
+  async function sepIdb(op, key, val) { var db = await sepDb(); if (!db) return null; return new Promise(function (res) { try { var tx = db.transaction('chunks', op === 'get' ? 'readonly' : 'readwrite'), st = tx.objectStore('chunks'), r = op === 'get' ? st.get(key) : op === 'put' ? st.put(val, key) : op === 'clear' ? st.clear() : st.delete(key); tx.oncomplete = function () { res(op === 'get' ? r.result || null : true); }; tx.onerror = function () { res(null); }; } catch (e) { res(null); } }); }
+  async function wakeOn() { try { if (navigator.wakeLock) return await navigator.wakeLock.request('screen'); } catch (e) {} return null; }
   async function sepFast(f, el) {
     var d = await decodeStereo(f, 32000), sr = d.sr, i, mx = Math.round(sr * learnSecs());
     if (d.L.length > mx) { var b0 = Math.max(0, Math.min(d.L.length - mx, Math.round(d.L.length * 0.3))); d.L = d.L.slice(b0, b0 + mx); if (d.R) d.R = d.R.slice(b0, b0 + mx); }
@@ -2050,7 +2058,7 @@
     return { sr: sr, voice: sep.voice, base: bm, stems: null, rhythm: mono, orig: mono, ai: false, note: 'ATTENZIONE: l\'AI non è partita su questo dispositivo, ho usato il metodo semplice. Voce e base NON sono pulite: va bene solo per misurare il ritmo.' };
   }
   function normOnly(x, sr) { return BeatLearn.clean(x, sr, { denoise: 0 }).x; }
-  (function learnCrashNote() { try { var r = JSON.parse(localStorage.getItem('learnRunning') || 'null'); if (!r) return; localStorage.removeItem('learnRunning'); if (Date.now() - r.at > 3 * 3600e3) return; LIB.settings.learnSecs = Math.max(20, Math.round((r.secs || 40) * 0.6)); persist(); $('#dw-learn-msg').textContent = 'L\'ultima analisi di "' + r.name + '" si è interrotta: il telefono ha chiuso la pagina (memoria o schermo bloccato). Riprova: ora analizzo solo ' + LIB.settings.learnSecs + ' secondi. Tieni lo schermo acceso.'; } catch (e) {} })();
+  (function learnCrashNote() { try { var r = JSON.parse(localStorage.getItem('learnRunning') || 'null'); if (!r) return; localStorage.removeItem('learnRunning'); if (Date.now() - r.at > 3 * 3600e3) return; if ((r.secs || 0) >= 300) { $('#dw-learn-msg').textContent = 'La separazione di "' + r.name + '" si è interrotta (il telefono ha chiuso la pagina). Ricarica lo STESSO file: riparto dai pezzi già finiti, non da capo.'; return; } LIB.settings.learnSecs = Math.max(20, Math.round((r.secs || 40) * 0.6)); persist(); $('#dw-learn-msg').textContent = 'L\'ultima analisi di "' + r.name + '" si è interrotta: il telefono ha chiuso la pagina (memoria o schermo bloccato). Riprova: ora analizzo solo ' + LIB.settings.learnSecs + ' secondi. Tieni lo schermo acceso.'; } catch (e) {} })();
   $('#dw-learn-secs').value = String(learnSecs()); $('#dw-learn-secs').addEventListener('change', function () { LIB.settings.learnSecs = +this.value; persist(); });
   $('#dw-bt-on').checked = LIB.settings.beatThis !== false; $('#dw-bt-on').addEventListener('change', function () { LIB.settings.beatThis = this.checked; persist(); });
   /* Beat This! (MIT): battiti e inizio battuta con una rete neurale da 10 MB, scaricata una volta sola */
