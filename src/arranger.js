@@ -195,6 +195,11 @@
       if (Array.isArray(gv.kickPats) && gv.kickPats.length && gv.kickPats.every(function (pp) { return Array.isArray(pp) && pp.length === 2 && okPat(pp[0]) && okPat(pp[1]); })) st2.kickPats = gv.kickPats;
       if (typeof gv.rolls === 'number') st2.rolls = Math.max(0, Math.min(1, gv.rolls));
       if (typeof gv.swing === 'number') st2.swing = Math.max(0, Math.min(0.3, gv.swing));
+      if (typeof gv.slide === 'number') st2.slide = Math.max(0, Math.min(1, gv.slide));
+      if (typeof gv.drive === 'number') st2.drive = Math.max(0.8, Math.min(3.5, gv.drive));
+      if (typeof gv.glide === 'number') st2.glide = Math.max(0.02, Math.min(0.3, gv.glide));
+      if (typeof gv.duck === 'number') st2.duck = Math.max(0, Math.min(0.7, gv.duck));
+      if (typeof gv.hat === 'string' && ['trap', 'drill', 'soft', 'shaker'].indexOf(gv.hat) >= 0) st2.hat = gv.hat;
       if (okPat(gv.snare)) st2.snare = gv.snare;
       style = st2;
     }
@@ -483,7 +488,7 @@
         if (bi % 2 === 1 && rr.length > 3 && rm() < 0.6) rr.splice(1 + Math.floor(rm() * (rr.length - 2)), 1); // variazione: una nota in meno
         for (k = 0; k < rr.length; k++) {
           var step = rr[k], nxt = k + 1 < rr.length ? rr[k + 1] : 16, len = Math.max(1, Math.min(nxt - step, 16 - step));
-          if (rm() < (p.heavy ? 0.3 : 0.18) && k > 0 && bi !== 3) continue; // pausa
+          if (rm() < (typeof p.leadRest === 'number' ? Math.max(0, Math.min(0.8, p.leadRest)) : (p.heavy ? 0.3 : 0.18)) && k > 0 && bi !== 3) continue; // pausa
           var deg = start + cont[k % cont.length] + shiftDeg, midi = pitch(deg);
           if (bi === 3 && k === rr.length - 1) { midi = pitch(0, 0); len = Math.max(len, 4); step = Math.min(step, 12); }
           else if (dark && k === 1 && bi % 2 === 0) midi = 60 + tonic + 1 + (p.heavy ? -12 : (style.leadShift == null ? 12 : style.leadShift)); // seconda minore: nota scura
