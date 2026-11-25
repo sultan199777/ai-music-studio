@@ -29,29 +29,29 @@
   };
   // quanto ogni scena "vota" ogni stile (0-3)
   var VOTE = {
-    strada: { boombap: 2, street: 2.5, trapdark: 2, drill: 1.5, trap: 1 },
-    soldi: { street: 2.5, trapdark: 1.5, clubtrap: 2, trap: 1.5 },
-    rabbia: { drill: 3, trapdark: 2.5, street: 1.5 },
-    dolore: { trap: 2.5, boombap: 2, melodico: 1.5, trapdark: 1 },
-    amore: { melodico: 2.5, clubtrap: 1.5, trap: 1 },
-    festa: { clubtrap: 3, estate: 2.5, melodico: 0.5 },
-    nostalgia: { boombap: 3, melodico: 2, trap: 0.5 },
-    epico: { epico: 3, street: 1.5, trapdark: 1 }
+    strada: { boombap: 2, street: 2.5, trapdark: 2, drill: 1.5, trap: 1, brooklyn: 2, detroit: 1.5, phonk: 1 },
+    soldi: { street: 2.5, trapdark: 1.5, clubtrap: 2, trap: 1.5, rage: 2, plugg: 2, detroit: 1.5, afrotrap: 1 },
+    rabbia: { drill: 3, trapdark: 2.5, street: 1.5, brooklyn: 2.5, rage: 2.5, phonk: 2 },
+    dolore: { trap: 2.5, boombap: 2, melodico: 1.5, trapdark: 1, emorap: 3, cloud: 2, rnb: 2, lofi: 1.5 },
+    amore: { melodico: 2.5, clubtrap: 1.5, trap: 1, rnb: 2.5, afrotrap: 2, reggaeton: 2, cloud: 1, lofi: 1 },
+    festa: { clubtrap: 3, estate: 2.5, melodico: 0.5, reggaeton: 3, afrotrap: 2.5, jersey: 2, plugg: 1 },
+    nostalgia: { boombap: 3, melodico: 2, trap: 0.5, lofi: 3, cloud: 2, rnb: 1.5 },
+    epico: { epico: 3, street: 1.5, trapdark: 1, rage: 1, cloud: 1, brooklyn: 1 }
   };
   // Umori voluti: spingono stile, scala e velocità (Ipotesi di mestiere, da tarare a orecchio)
   var MOOD = {
-    malinconico: { votes: { trap: 2, boombap: 1.2, melodico: 1, street: 0.4 }, mode: 'minore', bpm: -6 },
-    dark: { votes: { trapdark: 2.5, drill: 1.5, street: 1 }, mode: 'minore', bpm: 0 },
-    euforico: { votes: { clubtrap: 2.5, estate: 1.5, melodico: 1 }, mode: 'maggiore', bpm: 4 },
-    aggressivo: { votes: { drill: 2.5, trapdark: 1.5, street: 1 }, mode: 'minore', bpm: 4 },
-    romantico: { votes: { melodico: 2, clubtrap: 1, trap: 0.5 }, mode: 'maggiore', bpm: -2 },
-    nostalgico: { votes: { boombap: 2.5, melodico: 1.5, trap: 0.4 }, mode: 'minore', bpm: -6 }
+    malinconico: { votes: { trap: 2, boombap: 1.2, melodico: 1, street: 0.4, emorap: 2.5, cloud: 1.5, rnb: 1.2, lofi: 1.2 }, mode: 'minore', bpm: -6 },
+    dark: { votes: { trapdark: 2.5, drill: 1.5, street: 1, brooklyn: 2, phonk: 2, rage: 1 }, mode: 'minore', bpm: 0 },
+    euforico: { votes: { clubtrap: 2.5, estate: 1.5, melodico: 1, reggaeton: 2, afrotrap: 2, jersey: 1.5, plugg: 1.5 }, mode: 'maggiore', bpm: 4 },
+    aggressivo: { votes: { drill: 2.5, trapdark: 1.5, street: 1, brooklyn: 2, rage: 2.5, phonk: 1.5 }, mode: 'minore', bpm: 4 },
+    romantico: { votes: { melodico: 2, clubtrap: 1, trap: 0.5, rnb: 2.5, afrotrap: 1.2, reggaeton: 1 }, mode: 'maggiore', bpm: -2 },
+    nostalgico: { votes: { boombap: 2.5, melodico: 1.5, trap: 0.4, lofi: 2.5, cloud: 1.5 }, mode: 'minore', bpm: -6 }
   };
   var SCENE_MOOD = { strada: 'dark', rabbia: 'aggressivo', dolore: 'malinconico', festa: 'euforico', amore: 'romantico', nostalgia: 'nostalgico', soldi: 'euforico', epico: 'euforico' };
-  var GENRES = ['boombap', 'street', 'trapdark', 'drill', 'trap', 'clubtrap', 'melodico', 'estate', 'epico'];
-  var BASE_BPM = { boombap: 90, street: 96, trapdark: 144, drill: 142, trap: 138, clubtrap: 98, melodico: 94, estate: 100, epico: 84 };
-  var MAJOR_OK = { melodico: 1, estate: 1, clubtrap: 1 };
-  var NAMES = { boombap: 'Boom bap pesante', street: 'Street 50 Cent', trapdark: 'Trap scura pesante', drill: 'Drill', trap: 'Trap', clubtrap: 'Club (dembow trap)', melodico: 'Melodico', estate: 'Estate latina', epico: 'Epico' };
+  var GENRES = ['boombap', 'street', 'trapdark', 'drill', 'trap', 'clubtrap', 'melodico', 'estate', 'epico', 'brooklyn', 'plugg', 'rage', 'jersey', 'afrotrap', 'reggaeton', 'phonk', 'emorap', 'rnb', 'cloud', 'detroit', 'lofi'];
+  var BASE_BPM = { boombap: 90, street: 96, trapdark: 144, drill: 142, trap: 138, clubtrap: 98, melodico: 94, estate: 100, epico: 84, brooklyn: 143, plugg: 150, rage: 158, jersey: 145, afrotrap: 105, reggaeton: 95, phonk: 130, emorap: 144, rnb: 78, cloud: 70, detroit: 98, lofi: 82 };
+  var MAJOR_OK = { melodico: 1, estate: 1, clubtrap: 1, afrotrap: 1, reggaeton: 1, plugg: 1, lofi: 1, jersey: 1 };
+  var NAMES = { boombap: 'Boom bap pesante', street: 'Street 50 Cent', trapdark: 'Trap scura pesante', drill: 'Drill', trap: 'Trap', clubtrap: 'Club (dembow trap)', melodico: 'Melodico', estate: 'Estate latina', epico: 'Epico', brooklyn: 'Drill di Brooklyn', plugg: 'Plugg', rage: 'Rage', jersey: 'Jersey club', afrotrap: 'Afro trap', reggaeton: 'Reggaeton', phonk: 'Phonk', emorap: 'Emo rap', rnb: 'R&B lento', cloud: 'Cloud rap', detroit: 'Detroit', lofi: 'Lo-fi' };
 
   function hash(s) { var h = 2166136261 >>> 0; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; }
   function words(text) { return (String(text || '').toLowerCase().replace(/\[[^\]]*\]/g, ' ').match(/[a-zàèéìíòóùú']+/g) || []); }
@@ -122,17 +122,18 @@
       GENRES.forEach(function (g) { score[g] += 2 * (opt.profile.styleScore[g] || 0); });
       why.push('Sto seguendo il tuo modello artisti (' + (opt.profile.names || 'profilo') + '): ' + opt.profile.mood);
     }
+    if (opt.avoid && opt.avoid.length) opt.avoid.forEach(function (g) { if (score[g] != null) score[g] -= 6; });
     var order = GENRES.slice().sort(function (a, b) { return score[b] - score[a]; });
     var genre = order[0];
     why.push('Stile scelto: ' + NAMES[genre] + (order[1] ? ' (secondo: ' + NAMES[order[1]] + ')' : '') + '.');
 
     // velocità, scala, tonalità, seme
     var bpm = BASE_BPM[genre] + (avg >= 12 ? -6 : (avg > 0 && avg <= 8 ? 5 : 0)) + (((h >>> 5) % 9) - 4) + (variant ? ((variant * 3) % 5) - 2 : 0);
-    var lo = { boombap: 80, street: 86 }[genre] || 78;
-    bpm = Math.max(lo, Math.min(150, Math.round(bpm)));
+    var lo = Math.max(60, BASE_BPM[genre] - 12), hi = BASE_BPM[genre] + 12;
+    bpm = Math.max(lo, Math.min(hi, Math.round(bpm)));
     var bright = scenes.festa + scenes.amore + scenes.epico > scenes.dolore + scenes.rabbia + scenes.strada;
     var mode = MAJOR_OK[genre] && bright ? 'maggiore' : 'minore';
-    if (moodWanted) { var mm = MOOD[moodWanted].mode; mode = mm === 'maggiore' ? (MAJOR_OK[genre] ? 'maggiore' : 'minore') : 'minore'; bpm += MOOD[moodWanted].bpm; bpm = Math.max(lo, Math.min(150, bpm)); }
+    if (moodWanted) { var mm = MOOD[moodWanted].mode; mode = mm === 'maggiore' ? (MAJOR_OK[genre] ? 'maggiore' : 'minore') : 'minore'; bpm += MOOD[moodWanted].bpm; bpm = Math.max(lo, Math.min(hi, bpm)); }
     var tonic = (h >>> 9) % 12; if (variant) tonic = (tonic + variant * 5) % 12;
     var seed = ((h >>> 1) % 90000) + 1 + variant * 17;
     var bassStyle = /boombap|melodico|estate/.test(genre) ? null : '808';

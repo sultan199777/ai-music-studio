@@ -684,7 +684,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 08:46</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 08:47</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -774,7 +774,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     <div class="row" style="margin-top:10px">
       <button class="btn" id="ear-go">Orecchio di Sultan · ascolta</button>
       <button class="btn pri" id="sb-make">Cervello Sultan · crea dal testo</button>
-      <button class="btn" id="sb-six">Dammi proposte (6, e poi altre)</button><button class="btn" id="sb-again">Altra versione dal testo</button>
+      <button class="btn" id="sb-wild">Stravolgi la base</button><button class="btn" id="sb-six">Dammi proposte (6, e poi altre)</button><button class="btn" id="sb-again">Altra versione dal testo</button>
       <button class="btn pri" id="b-play"><svg><use href="#i-play"/></svg>Crea e ascolta</button>
       <button class="btn" id="b-mel">Cambia melodia</button>
       <button class="btn" id="b-new">Nuova variante</button>
@@ -1044,7 +1044,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">300 test automatici superati su 300 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">306 test automatici superati su 306 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -4331,29 +4331,29 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   };
   // quanto ogni scena "vota" ogni stile (0-3)
   var VOTE = {
-    strada: { boombap: 2, street: 2.5, trapdark: 2, drill: 1.5, trap: 1 },
-    soldi: { street: 2.5, trapdark: 1.5, clubtrap: 2, trap: 1.5 },
-    rabbia: { drill: 3, trapdark: 2.5, street: 1.5 },
-    dolore: { trap: 2.5, boombap: 2, melodico: 1.5, trapdark: 1 },
-    amore: { melodico: 2.5, clubtrap: 1.5, trap: 1 },
-    festa: { clubtrap: 3, estate: 2.5, melodico: 0.5 },
-    nostalgia: { boombap: 3, melodico: 2, trap: 0.5 },
-    epico: { epico: 3, street: 1.5, trapdark: 1 }
+    strada: { boombap: 2, street: 2.5, trapdark: 2, drill: 1.5, trap: 1, brooklyn: 2, detroit: 1.5, phonk: 1 },
+    soldi: { street: 2.5, trapdark: 1.5, clubtrap: 2, trap: 1.5, rage: 2, plugg: 2, detroit: 1.5, afrotrap: 1 },
+    rabbia: { drill: 3, trapdark: 2.5, street: 1.5, brooklyn: 2.5, rage: 2.5, phonk: 2 },
+    dolore: { trap: 2.5, boombap: 2, melodico: 1.5, trapdark: 1, emorap: 3, cloud: 2, rnb: 2, lofi: 1.5 },
+    amore: { melodico: 2.5, clubtrap: 1.5, trap: 1, rnb: 2.5, afrotrap: 2, reggaeton: 2, cloud: 1, lofi: 1 },
+    festa: { clubtrap: 3, estate: 2.5, melodico: 0.5, reggaeton: 3, afrotrap: 2.5, jersey: 2, plugg: 1 },
+    nostalgia: { boombap: 3, melodico: 2, trap: 0.5, lofi: 3, cloud: 2, rnb: 1.5 },
+    epico: { epico: 3, street: 1.5, trapdark: 1, rage: 1, cloud: 1, brooklyn: 1 }
   };
   // Umori voluti: spingono stile, scala e velocità (Ipotesi di mestiere, da tarare a orecchio)
   var MOOD = {
-    malinconico: { votes: { trap: 2, boombap: 1.2, melodico: 1, street: 0.4 }, mode: 'minore', bpm: -6 },
-    dark: { votes: { trapdark: 2.5, drill: 1.5, street: 1 }, mode: 'minore', bpm: 0 },
-    euforico: { votes: { clubtrap: 2.5, estate: 1.5, melodico: 1 }, mode: 'maggiore', bpm: 4 },
-    aggressivo: { votes: { drill: 2.5, trapdark: 1.5, street: 1 }, mode: 'minore', bpm: 4 },
-    romantico: { votes: { melodico: 2, clubtrap: 1, trap: 0.5 }, mode: 'maggiore', bpm: -2 },
-    nostalgico: { votes: { boombap: 2.5, melodico: 1.5, trap: 0.4 }, mode: 'minore', bpm: -6 }
+    malinconico: { votes: { trap: 2, boombap: 1.2, melodico: 1, street: 0.4, emorap: 2.5, cloud: 1.5, rnb: 1.2, lofi: 1.2 }, mode: 'minore', bpm: -6 },
+    dark: { votes: { trapdark: 2.5, drill: 1.5, street: 1, brooklyn: 2, phonk: 2, rage: 1 }, mode: 'minore', bpm: 0 },
+    euforico: { votes: { clubtrap: 2.5, estate: 1.5, melodico: 1, reggaeton: 2, afrotrap: 2, jersey: 1.5, plugg: 1.5 }, mode: 'maggiore', bpm: 4 },
+    aggressivo: { votes: { drill: 2.5, trapdark: 1.5, street: 1, brooklyn: 2, rage: 2.5, phonk: 1.5 }, mode: 'minore', bpm: 4 },
+    romantico: { votes: { melodico: 2, clubtrap: 1, trap: 0.5, rnb: 2.5, afrotrap: 1.2, reggaeton: 1 }, mode: 'maggiore', bpm: -2 },
+    nostalgico: { votes: { boombap: 2.5, melodico: 1.5, trap: 0.4, lofi: 2.5, cloud: 1.5 }, mode: 'minore', bpm: -6 }
   };
   var SCENE_MOOD = { strada: 'dark', rabbia: 'aggressivo', dolore: 'malinconico', festa: 'euforico', amore: 'romantico', nostalgia: 'nostalgico', soldi: 'euforico', epico: 'euforico' };
-  var GENRES = ['boombap', 'street', 'trapdark', 'drill', 'trap', 'clubtrap', 'melodico', 'estate', 'epico'];
-  var BASE_BPM = { boombap: 90, street: 96, trapdark: 144, drill: 142, trap: 138, clubtrap: 98, melodico: 94, estate: 100, epico: 84 };
-  var MAJOR_OK = { melodico: 1, estate: 1, clubtrap: 1 };
-  var NAMES = { boombap: 'Boom bap pesante', street: 'Street 50 Cent', trapdark: 'Trap scura pesante', drill: 'Drill', trap: 'Trap', clubtrap: 'Club (dembow trap)', melodico: 'Melodico', estate: 'Estate latina', epico: 'Epico' };
+  var GENRES = ['boombap', 'street', 'trapdark', 'drill', 'trap', 'clubtrap', 'melodico', 'estate', 'epico', 'brooklyn', 'plugg', 'rage', 'jersey', 'afrotrap', 'reggaeton', 'phonk', 'emorap', 'rnb', 'cloud', 'detroit', 'lofi'];
+  var BASE_BPM = { boombap: 90, street: 96, trapdark: 144, drill: 142, trap: 138, clubtrap: 98, melodico: 94, estate: 100, epico: 84, brooklyn: 143, plugg: 150, rage: 158, jersey: 145, afrotrap: 105, reggaeton: 95, phonk: 130, emorap: 144, rnb: 78, cloud: 70, detroit: 98, lofi: 82 };
+  var MAJOR_OK = { melodico: 1, estate: 1, clubtrap: 1, afrotrap: 1, reggaeton: 1, plugg: 1, lofi: 1, jersey: 1 };
+  var NAMES = { boombap: 'Boom bap pesante', street: 'Street 50 Cent', trapdark: 'Trap scura pesante', drill: 'Drill', trap: 'Trap', clubtrap: 'Club (dembow trap)', melodico: 'Melodico', estate: 'Estate latina', epico: 'Epico', brooklyn: 'Drill di Brooklyn', plugg: 'Plugg', rage: 'Rage', jersey: 'Jersey club', afrotrap: 'Afro trap', reggaeton: 'Reggaeton', phonk: 'Phonk', emorap: 'Emo rap', rnb: 'R&B lento', cloud: 'Cloud rap', detroit: 'Detroit', lofi: 'Lo-fi' };
 
   function hash(s) { var h = 2166136261 >>> 0; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; }
   function words(text) { return (String(text || '').toLowerCase().replace(/\[[^\]]*\]/g, ' ').match(/[a-zàèéìíòóùú']+/g) || []); }
@@ -4424,17 +4424,18 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
       GENRES.forEach(function (g) { score[g] += 2 * (opt.profile.styleScore[g] || 0); });
       why.push('Sto seguendo il tuo modello artisti (' + (opt.profile.names || 'profilo') + '): ' + opt.profile.mood);
     }
+    if (opt.avoid && opt.avoid.length) opt.avoid.forEach(function (g) { if (score[g] != null) score[g] -= 6; });
     var order = GENRES.slice().sort(function (a, b) { return score[b] - score[a]; });
     var genre = order[0];
     why.push('Stile scelto: ' + NAMES[genre] + (order[1] ? ' (secondo: ' + NAMES[order[1]] + ')' : '') + '.');
 
     // velocità, scala, tonalità, seme
     var bpm = BASE_BPM[genre] + (avg >= 12 ? -6 : (avg > 0 && avg <= 8 ? 5 : 0)) + (((h >>> 5) % 9) - 4) + (variant ? ((variant * 3) % 5) - 2 : 0);
-    var lo = { boombap: 80, street: 86 }[genre] || 78;
-    bpm = Math.max(lo, Math.min(150, Math.round(bpm)));
+    var lo = Math.max(60, BASE_BPM[genre] - 12), hi = BASE_BPM[genre] + 12;
+    bpm = Math.max(lo, Math.min(hi, Math.round(bpm)));
     var bright = scenes.festa + scenes.amore + scenes.epico > scenes.dolore + scenes.rabbia + scenes.strada;
     var mode = MAJOR_OK[genre] && bright ? 'maggiore' : 'minore';
-    if (moodWanted) { var mm = MOOD[moodWanted].mode; mode = mm === 'maggiore' ? (MAJOR_OK[genre] ? 'maggiore' : 'minore') : 'minore'; bpm += MOOD[moodWanted].bpm; bpm = Math.max(lo, Math.min(150, bpm)); }
+    if (moodWanted) { var mm = MOOD[moodWanted].mode; mode = mm === 'maggiore' ? (MAJOR_OK[genre] ? 'maggiore' : 'minore') : 'minore'; bpm += MOOD[moodWanted].bpm; bpm = Math.max(lo, Math.min(hi, bpm)); }
     var tonic = (h >>> 9) % 12; if (variant) tonic = (tonic + variant * 5) % 12;
     var seed = ((h >>> 1) % 90000) + 1 + variant * 17;
     var bassStyle = /boombap|melodico|estate/.test(genre) ? null : '808';
@@ -4859,6 +4860,79 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     return out;
   }
   return { onsets: onsets, measure: measure, shift: shift };
+});
+
+/*
+ * Effetti "firma" delle basi trap/drill moderne, tutti SINTETIZZATI da zero (nessun campione, nessun diritto di terzi):
+ *  sirena (ambulanza/polizia), sparo, mitraglia (raffica), coro lirico (intro stile opera), filtro "focus" (intro ovattata che si apre sul drop).
+ * Ogni funzione è deterministica col seme. I buffer sono Float32Array mono alla sample rate indicata.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.SigFx = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  function rng(seed) { var a = (seed >>> 0) || 1; return function () { a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  var SIG = ['coro', 'sirena', 'spari', 'mitra', 'focus'];
+
+  /* due toni che si alternano (ambulanza) o salita/discesa continua (sirena americana) */
+  function siren(sr, dur, seed) {
+    var r = rng(seed), len = Math.round(dur * sr), b = new Float32Array(len), ph = 0, lp = 0, wail = r() < 0.5, base = 620 + r() * 120, hi = base * 1.4;
+    for (var i = 0; i < len; i++) {
+      var t = i / sr, f = wail ? base + (hi - base) * (0.5 - 0.5 * Math.cos(2 * Math.PI * t / 1.6)) : (Math.floor(t / 0.42) % 2 ? hi : base);
+      ph += 2 * Math.PI * f / sr; var x = Math.sin(ph) + 0.35 * Math.sin(2 * ph) + 0.15 * Math.sin(3 * ph);
+      lp += 0.35 * (x - lp); b[i] = lp * 0.5 * Math.min(1, t / 0.15) * Math.min(1, (len - i) / (0.25 * sr));
+    }
+    return b;
+  }
+  /* colpo secco + coda d'eco (riverbero finto) */
+  function gunshot(sr, seed) {
+    var r = rng(seed), len = Math.round(0.9 * sr), b = new Float32Array(len), lp = 0, ph = 0;
+    for (var i = 0; i < len; i++) {
+      var t = i / sr, n = r() * 2 - 1; lp += (0.55 - 0.4 * Math.min(1, t * 6)) * (n - lp);
+      ph += 2 * Math.PI * (70 + 120 * Math.exp(-t * 40)) / sr;
+      b[i] = lp * Math.exp(-t * 14) * 1.1 + Math.sin(ph) * Math.exp(-t * 18) * 0.6 + (r() * 2 - 1) * Math.exp(-t * 4.5) * 0.06 * Math.min(1, t * 30);
+    }
+    return b;
+  }
+  /* raffica: n colpi ravvicinati con ritmo leggermente irregolare */
+  function machinegun(sr, dur, seed) {
+    var r = rng(seed), len = Math.round(dur * sr), b = new Float32Array(len), gap = Math.round(0.065 * sr), shot = gunshot(sr, seed + 1), t0 = 0, k = 0;
+    while (t0 < len - gap) { var g = 1 - 0.04 * k, off = t0 + Math.round((r() - 0.5) * 0.008 * sr); for (var i = 0; i < Math.round(0.12 * sr) && off + i < len; i++) if (off + i >= 0) b[off + i] += shot[i] * 0.8 * Math.max(0.5, g); t0 += gap; k++; }
+    return b;
+  }
+  /* coro lirico: voci "aaah" con formanti, vibrato lento, attacco morbido; accordi dalla lista midi */
+  function choir(sr, midis, dur, seed) {
+    var r = rng(seed), len = Math.round(dur * sr), b = new Float32Array(len), F = [[800, 1], [1150, 0.6], [2900, 0.3]];
+    midis.forEach(function (m, vi) {
+      var f0 = 440 * Math.pow(2, (m - 69) / 12), ph = 0, vph = r() * 6.28, det = 1 + (vi - midis.length / 2) * 0.0012;
+      for (var i = 0; i < len; i++) {
+        var t = i / sr, vib = 1 + 0.006 * Math.sin(2 * Math.PI * 5.4 * t + vph), f = f0 * det * vib; ph += 2 * Math.PI * f / sr;
+        var v = 0, h; for (h = 1; h <= 14; h++) { var fh = f * h, w = 0, q; for (q = 0; q < F.length; q++) w += F[q][1] * Math.exp(-Math.pow((fh - F[q][0]) / 320, 2)); v += Math.sin(ph * h) * w / h; }
+        b[i] += v * 0.16 * Math.min(1, t / 0.9) * Math.min(1, (len - i) / (0.5 * sr));
+      }
+    });
+    return b;
+  }
+  /* "focus": passa-basso che si apre da fromHz a toHz sulla finestra [i0,i1) di arr (modifica arr) */
+  function focus(arr, sr, i0, i1, fromHz, toHz) {
+    var y = 0, n = Math.min(i1, arr.length);
+    for (var i = i0; i < n; i++) { var t = (i - i0) / Math.max(1, i1 - i0), fc = fromHz * Math.pow(toHz / fromHz, t * t), a = 1 - Math.exp(-2 * Math.PI * fc / sr); y += a * (arr[i] - y); arr[i] = y; }
+    return arr;
+  }
+  /* quali firme usare: dal testo/stile (parole) e dal genere; deterministico col seme (Ipotesi di gusto, tarare a orecchio) */
+  function pick(opt) {
+    opt = opt || {}; var t = String(opt.styleText || '').toLowerCase(), r = rng(opt.seed || 1), out = [], sc = opt.scenes || {}, g = opt.genre || '';
+    var forced = { coro: /coro|lirica|opera|chiesa|gospel/.test(t), sirena: /sirena|ambulanza|polizia|volante/.test(t), spari: /spari|sparo|pistola|colpi/.test(t), mitra: /mitra|raffica/.test(t), focus: /focus|tunnel|ovattat|filtro/.test(t) };
+    var hard = { drill: 1, brooklyn: 1, trapdark: 1, rage: 1, phonk: 1, street: 1 }[g], soft = { emorap: 1, cloud: 1, epico: 1, rnb: 1, melodico: 1, boombap: 1, lofi: 1 }[g];
+    var p = { coro: soft ? 0.45 : 0.2, sirena: hard ? 0.45 : 0.12, spari: hard ? 0.3 : 0.06, mitra: hard ? 0.25 : 0.05, focus: soft ? 0.35 : 0.3 };
+    if (sc.strada > 0 || sc.rabbia > 0) { p.sirena += 0.15; p.spari += 0.1; }
+    if (sc.epico > 0 || sc.dolore > 0) { p.coro += 0.2; p.focus += 0.15; }
+    SIG.forEach(function (k) { if (forced[k] || r() < p[k]) out.push(k); });
+    if (opt.none) return [];
+    return out;
+  }
+  return { SIG: SIG, siren: siren, gunshot: gunshot, machinegun: machinegun, choir: choir, focus: focus, pick: pick, rng: rng };
 });
 
 /*
@@ -5448,10 +5522,11 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
  * mixa con Backing.mix.
  */
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) { var sd = null, ins = null; try { sd = require('./samples-data.js'); } catch (e) {} try { ins = require('./instruments.js'); } catch (e) {} module.exports = factory(sd, ins); }
+  if (typeof module === 'object' && module.exports) { var sd = null, ins = null; try { sd = require('./samples-data.js'); } catch (e) {} try { ins = require('./instruments.js'); } catch (e) {} try { global.__SigFx = require('./sig-fx.js'); } catch (e) {} module.exports = factory(sd, ins); }
   else root.Arranger = factory(root.SampleData || null, root.Instruments || null);
 })(typeof self !== 'undefined' ? self : this, function (SampleData, Inst) {
   'use strict';
+  var SigFx = (typeof global !== 'undefined' && global.__SigFx) || (typeof self !== 'undefined' && self.SigFx) || (typeof window !== 'undefined' && window.SigFx) || null;
 
   var NAMES = ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'];
   var STEPS = { maggiore: [0, 2, 4, 5, 7, 9, 11], minore: [0, 2, 3, 5, 7, 8, 10] };
@@ -5906,6 +5981,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     /* Melodia nuova: un motivo corto (3-5 note) che si ripete con piccole variazioni e chiude sulla tonica.
        Note scelte nella pentatonica (con la seconda minore come nota "scura" nei generi duri), contorno spesso discendente,
        ritmi radi con pause: suona trap/drill/hip hop, non una passeggiata a caso sulla scala. Seme proprio: p.melSeed. */
+    var SIGS = SigFx && p.sig ? p.sig.filter(function (k) { return SigFx.SIG.indexOf(k) >= 0; }) : [];
     var rm = rng(((p.melSeed || 0) * 7919 + (p.seed || 1) * 31 + 17) >>> 0), HARD = { trap: 1, drill: 1, trapdark: 1, street: 1, boombap: 1, clubtrap: 1, epico: 1 }[genreKey] === 1;
     var PENT = mode === 'minore' ? [0, 3, 5, 7, 10] : [0, 2, 4, 7, 9];
     var CONT = [[0, -1, -2, -1], [2, 1, 0, 0], [0, 0, -1, -3], [1, 0, -1, 0, -2], [3, 2, 2, 0], [0, 1, 0, -2], [2, 0, 1, -1, -2], [0, -2, -1, -3]];
@@ -6112,6 +6188,14 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
         // effetti
         if (cfg.riserEnd && lastBar) add('fx', bar * barLen, riserBuf(barLen / sr), 0.7);
         if (cfg.impact && firstBar) add('fx', bar * barLen, impactBuf(), 0.8);
+        /* firme: coro lirico in intro, sirena nel finale di intro/pre, spari sul drop, raffica prima del drop */
+        if (SIGS.length) {
+          var sg = SigFx, sd = (p.seed || 1) * 7 + bar;
+          if (SIGS.indexOf('coro') >= 0 && sec.name === 'intro' && firstBar) add('fx', bar * barLen, sg.choir(sr, [ch[0] + 24, (ch[1] != null ? ch[1] : ch[0] + 7) + 24, ch[0] + 31], sec.bars * barLen / sr, sd), 0.7);
+          if (SIGS.indexOf('sirena') >= 0 && cfg.riserEnd && lastBar && sec.name !== 'bridge') add('fx', bar * barLen, sg.siren(sr, barLen / sr, sd), 0.32);
+          if (SIGS.indexOf('spari') >= 0 && cfg.impact && firstBar) [0, 6, 10].forEach(function (st2, q) { add('fx', at(bar, st2), sg.gunshot(sr, sd + q), 0.7 - q * 0.12); });
+          if (SIGS.indexOf('mitra') >= 0 && sec.name === 'pre' && lastBar) add('fx', at(bar, 8), sg.machinegun(sr, barLen / sr / 2, sd), 0.5);
+        }
         if (cfg.gap && lastBar) { // respiro: ultimi 2 passi muti (tranne fx)
           var g0 = at(bar, 14), g1 = at(bar + 1, 0);
           ['kick', 'snare', 'hat', 'bass', 'chords', 'pad', 'lead'].forEach(function (tr) {
@@ -6120,6 +6204,9 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
         }
       }
     });
+
+    /* focus: l'intro suona ovattata e si apre sul drop */
+    if (SIGS.indexOf('focus') >= 0) { var isec = sections[0] && sections[0].name === 'intro' ? sections[0] : null; if (isec) { var bl0 = stepLen * 16, f0 = isec.startBar * bl0, f1 = Math.min(N, (isec.startBar + isec.bars) * bl0); ['kick', 'snare', 'hat', 'bass', 'chords', 'pad', 'lead', 'arp'].forEach(function (tr) { if (T[tr]) SigFx.focus(T[tr], sr, f0, f1, 380, 9000); }); } }
 
     // note scritte a mano nel piano roll (sostituiscono quelle generate; il resto della base resta identico)
     if (NL) NL.forEach(function (n) {
@@ -11143,8 +11230,8 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     return SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {} });
   }
   function getBase() {
-    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.kit, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, drumRender: p.kit && SynthDesign.KITS[p.kit] ? function (part, o, s2) { return SynthDesign.kitRender(p.kit, part, o, s2); } : undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
+    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, (p.sig || []).join(), p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.kit, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, sig: p.sig || [], bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, drumRender: p.kit && SynthDesign.KITS[p.kit] ? function (part, o, s2) { return SynthDesign.kitRender(p.kit, part, o, s2); } : undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -11359,12 +11446,13 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   function applyMoodBg(m) { try { document.body.dataset.mood = m || ''; } catch (e) {} }
   /* ===== Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti) ===== */
   var BANNED_INST = { flute: 1, ocarina: 1, harmonica: 1, clarinet: 1, kalimba: 0 };
-  async function runBrain(again, fixedV, mel) {
-    var s = cur(), p = s.prod, m = $('#sb-msg');
+  async function runBrain(again, fixedV, mel, radical) {
+    var s = cur(), p = s.prod, m = $('#sb-msg'); s.recentG = s.recentG || [];
+    if (radical) { fixedV = (s.brainV || 0) + 1; mel = (s.brainV || 0) + 7; }
     if (!s.lyrics.trim()) { m.textContent = 'Scrivi o incolla prima il testo (in alto): il cervello parte da quello.'; return; }
     s.brainV = fixedV != null ? fixedV : (again ? (s.brainV || 0) + 1 : 0); s.brainFor = SultanBrain.hash(s.lyrics.trim()); s.genreManual = false;
-    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel(), mood: $('#sb-mood').value || null, styleText: ($('#sb-style') || {}).value || '' }); s.moodTarget = pl.moodTarget; applyMoodBg(pl.moodTarget); persist();
-    p.heavy = !!pl.heavy; p.melSeed = mel || 0; p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
+    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel(), mood: $('#sb-mood').value || null, styleText: ($('#sb-style') || {}).value || '', avoid: radical ? s.recentG.slice(-5) : null }); s.recentG.push(pl.genre); if (s.recentG.length > 12) s.recentG.shift(); s.moodTarget = pl.moodTarget; applyMoodBg(pl.moodTarget); persist();
+    p.heavy = !!pl.heavy; p.melSeed = mel || 0; p.sig = SigFx.pick({ styleText: ($('#sb-style') || {}).value || '', seed: pl.seed, scenes: pl.scenes, genre: pl.genre }); p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
     var res = Coach.suggest(coachState(), coachCands(p.genre), { emotion: pl.scene, seed: pl.seed }), R = Instruments.RECIPES[p.genre] || {};
     ['melodia', 'accordi', 'pad'].forEach(function (role) { if (BANNED_INST[res.inst[role]]) res.inst[role] = (R[role] || ['piano'])[0]; });
     if (res.inst.accordi === res.inst.melodia) { var alt = (R.accordi || []).concat(R.melodia || []).filter(function (id) { return id !== res.inst.melodia && !BANNED_INST[id]; }); if (alt.length) res.inst.accordi = alt[(pl.seed >>> 3) % Math.min(alt.length, 3)]; }
@@ -11379,6 +11467,11 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   $('#sb-mood').addEventListener('change', function () { $('#bl-mood').value = this.value; });
   $('#bl-mood').addEventListener('change', function () { $('#sb-mood').value = this.value; });
   $('#sb-make').addEventListener('click', function () { runBrain(false); });
+  $('#sb-wild').addEventListener('click', function () { runBrain(false, null, null, true); });
+  /* quello che scrivi nel campo stile si applica da solo (Invio o quando esci dal campo) */
+  var sbLast = '';
+  function sbAuto() { var v = ($('#sb-style') || {}).value || ''; if (v.trim() && v !== sbLast && cur().lyrics.trim()) { sbLast = v; runBrain(false); } }
+  $('#sb-style').addEventListener('change', sbAuto); $('#sb-style').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); sbAuto(); } });
   /* proposte diverse dallo stesso testo, senza limite: ogni "Altre 6" ne aggiunge altre (stile, velocità, tonalità e melodia cambiano) */
   var SB_N = 0;
   function sbMore(reset) {
@@ -12022,7 +12115,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   $('#dw-rec').addEventListener('click', dwRecord);
   $('#dw-new').addEventListener('click', function () { var p = cur().prod; if (SESSION.lastPlay && performance.now() - SESSION.lastPlay.t < 10000) coachRec('skip', SESSION.lastPlay.ctx); p.seed++; dwStop(); dwChanged(true); setTimeout(function () { dwPlay(0); }, 300); });
   $('#dw-name').addEventListener('input', function () { cur().title = this.value.trim() || 'Senza titolo'; $('#top-song').textContent = cur().title; persist(); });
-  $('#dw-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.bpm = Arranger.STYLES[this.value].bpm; p.tune = null; p.groove = null; p.prog = null; p.mix = null; applyRecipe(this.value); mixRender(); $('#dw-bpm').value = p.bpm; dwStop(); fillBase(); dwChanged(true); });
+  $('#dw-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.bpm = Arranger.STYLES[this.value].bpm; p.tune = null; p.groove = null; p.prog = null; p.mix = null; p.atmNome = null; applyRecipe(this.value); mixRender(); $('#dw-bpm').value = p.bpm; dwStop(); fillBase(); dwChanged(true); });
   $('#dw-bpm').addEventListener('change', function () { cur().prod.bpm = Math.max(60, Math.min(180, +this.value || 100)); this.value = cur().prod.bpm; dwStop(); fillBase(); dwChanged(true); dwLyInfo(); });
   $('#dw-key').addEventListener('change', function () { var v = this.value.split(':'), p = cur().prod; p.tonic = +v[0]; p.mode = v[1]; dwStop(); fillBase(); dwChanged(true); });
   $('#dw-master').addEventListener('change', function () { cur().prod.master = this.value; persist(); fillBase(); });
@@ -12758,7 +12851,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   (function dwAdoptBrain() {
     function mv(id, to, wrapLabel) { var el = $('#' + id), t = $(to); if (!el || !t) return; if (wrapLabel) el = el.closest('label') || el; t.appendChild(el); }
     ['sb-style', 'sb-mood'].forEach(function (id) { mv(id, '#dwb-fields', true); });
-    ['sb-make', 'sb-six', 'sb-again'].forEach(function (id) { mv(id, '#dwb-actions'); });
+    ['sb-make', 'sb-wild', 'sb-six', 'sb-again'].forEach(function (id) { mv(id, '#dwb-actions'); });
     ['sb-list', 'sb-msg'].forEach(function (id) { mv(id, '#dwb-out'); });
     ['b-play', 'b-mel', 'b-new', 'b-stop'].forEach(function (id) { mv(id, '#dwp-actions'); });
     ['b-status', 'b-out', 'ear-out'].forEach(function (id) { mv(id, '#dwp-out'); });
@@ -12809,7 +12902,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     if (vp != null) { var s1 = VAR.list[+vp]; dwStop(true); playBuf(s1.mix, s1.sr); $('#dw-var-msg').textContent = 'Ascolti: ' + varName(s1); }
     if (vu != null) {
       var s2 = VAR.list[+vu], p = cur().prod, changed = p.genre !== s2.genre; stopPlay();
-      p.genre = s2.genre; p.bpm = s2.bpm; p.seed = s2.seed; p.inst = Object.assign({}, s2.inst); p.kit = s2.kit; p.arpPattern = s2.arpPattern; if (changed) { p.mix = null; p.groove = null; p.prog = null; p.tune = null; } if (s2.groove) p.groove = s2.groove; if (s2.prog) p.prog = s2.prog; if (s2.mode) p.mode = s2.mode; if (s2.tune) p.tune = s2.tune; if (s2.bassStyle !== undefined) p.bassStyle = s2.bassStyle;
+      p.genre = s2.genre; p.bpm = s2.bpm; p.seed = s2.seed; p.inst = Object.assign({}, s2.inst); p.kit = s2.kit; p.arpPattern = s2.arpPattern; if (changed) { p.mix = null; p.groove = null; p.prog = null; p.tune = null; } p.atmNome = s2.nome || null; if (s2.groove) p.groove = s2.groove; if (s2.prog) p.prog = s2.prog; if (s2.mode) p.mode = s2.mode; if (s2.tune) p.tune = s2.tune; if (s2.bassStyle !== undefined) p.bassStyle = s2.bassStyle;
       coachRec('like', { genre: s2.genre, mode: p.mode, bpm: s2.bpm, inst: s2.inst }); fillInst(); fillBase(); dwFill(); dwChanged(true); projLine();
       $('#dw-var-msg').textContent = 'Usata: ' + varName(s2) + '. Ora la puoi modificare traccia per traccia.';
       if (e.currentTarget && e.currentTarget.id === 'dw-p-learn') { dwWs('base'); window.scrollTo(0, 0); }
@@ -12878,7 +12971,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     else if (a === 'mic') { this.hidden = true; dwWs('voce'); }
   });
   $('#v-daw').addEventListener('click', function (e) { var b = e.target.closest('[data-next]'); if (!b) return; dwWs(b.getAttribute('data-next')); window.scrollTo(0, 0); });
-  function projLine() { var p = cur().prod; $('#dw-proj-t').textContent = (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode; }
+  function projLine() { var p = cur().prod; $('#dw-proj-t').textContent = (p.atmNome || (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre)) + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode; }
   $('#dw-proj').addEventListener('click', function () { $('#dw-set').hidden = false; });
   $('#dw-set').addEventListener('click', function (e) { if (e.target === this || e.target.id === 'dw-set-x') { this.hidden = true; projLine(); } });
   document.body.appendChild($('#dw-set'));
