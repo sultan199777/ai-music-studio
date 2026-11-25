@@ -33,3 +33,9 @@ Solo MIT / Apache / BSD / CC0. Niente GPL/AGPL né dati share-alike (CC BY-SA): 
 - Arrangiatore: nuovi parametri `groove.slide/drive/glide/duck/hat` e `p.leadRest`.
 - UI: pannello `#dw-p-dna` nel passo Base (id `dna-*`). Stili salvati in `LIB.settings.dnaSaved`.
 - Chat B: se aggiungi artisti imparati, puoi passarli a `DNA.fuse` come `{dna:{...}}`.
+
+## Aggiornamento 25/11 sera (B) — disposizione da produttore
+- In ogni passo l'ordine dei pannelli lo decide il CSS (`body[data-ws]` + `order`), non l'HTML: A può aggiungere pannelli dove vuole, B li mette in ordine in `app.css` (blocco «Disposizione da produttore»).
+- Pannelli richiudibili: tocco sul titolo `.dw-ph`; aperti di default i principali (`FOLD_OPEN` in app.js), il resto chiuso con una riga di riassunto (`FOLD_SUM`).
+- `#dw-p-var` (Varianti) era nascosto con `data-adv="base"`: ora è visibile. Per favore non rimetterlo tra gli avanzati: l'utente non trovava le varianti.
+- PER A: l'utente chiede una «nuova IA libera» che analizzi e migliori i testi da sola. È il tuo campo (local-ai). Idea: un modello più recente e piccolo per WebLLM (verificare licenza Apache/MIT e il peso su iPhone) con un tasto «Migliora il testo» che propone, non sostituisce.

@@ -440,6 +440,15 @@ body[data-ws="libreria"] #dw-p-design { order: 2; }
 .fold-sum { display: none; }
 .dw-panel.fold .fold-sum { display: block; margin: 4px 0 0; font-size: 12.5px; opacity: .6; }
 
+/* ===== Rifinitura grafica da studio (B): un colore per passo, titoli chiari, pannelli chiusi compatti ===== */
+body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48f; } body[data-ws="voce"] { --step: #ff7a8a; } body[data-ws="mix"] { --step: #6fd8cb; } body[data-ws="libreria"] { --step: #8fb4ff; }
+#v-daw > .dw-panel:not(.fold):not(.dw-guide) { box-shadow: inset 3px 0 0 var(--step, transparent); }
+#v-daw > .dw-panel .dw-ph h3 { letter-spacing: -.01em; }
+#v-daw > .dw-panel.fold { opacity: .92; }
+#v-daw > .dw-panel.fold .dw-ph h3 { font-size: 16px; }
+#v-daw > .dw-panel.fold .tag { display: none; }
+#tabs a.on { box-shadow: 0 0 0 1px var(--step, transparent) inset; }
+#dw-p-var .dw-prop, #pf-list .dw-prop { border-radius: 12px; }
 
 /* ===== VOICE LAB (stile Cosmo: usa le variabili del tema) ===== */
 .vl .vl-auto{font-size:1.25rem;min-height:60px;margin:8px 0 4px;letter-spacing:.04em}
@@ -834,7 +843,7 @@ body[data-ws="libreria"] #dw-p-design { order: 2; }
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 17:22</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 17:23</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
