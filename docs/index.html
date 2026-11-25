@@ -749,6 +749,23 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
     <div class="row" style="margin-top:10px;align-items:center"><label class="sw small"><input type="checkbox" id="teach-use" checked> Usa quello che ho insegnato quando creo le basi</label></div>
     <label class="f"><span>Quanto contano gli esempi: <b id="teach-wv">70</b>%</span><input type="range" id="teach-w" min="20" max="100" step="10" value="70"></label>
   </section>
+  <section class="dw-panel one" id="dw-p-arch" data-ws="libreria">
+    <div class="dw-ph"><h3>Memoria online</h3><span class="tag i" id="arch-badge">Non collegato</span></div>
+    <p class="small">Salva su un <b>tuo archivio privato</b> (GitHub) le basi che hai insegnato, i tuoi ♥ e ✕ e i tuoi stili. Se cancelli Safari o cambi telefono, li riprendi. <b>Solo numeri: niente audio, niente testi.</b></p>
+    <details><summary class="small"><b>Come si attiva (una volta sola, 5 minuti)</b></summary>
+      <ol class="learn-seq small">
+        <li>Apri <b>github.com</b> in Safari, accedi. Tocca <b>+</b> → <b>New repository</b>. Nome: <b>sultan-memoria</b>. Scegli <b>Private</b>. Tocca <b>Create repository</b>.</li>
+        <li>Vai su <b>github.com/settings/personal-access-tokens/new</b>. Nome: <b>sultan-sound</b>. Scadenza: 1 anno. In «Repository access» scegli <b>Only select repositories</b> e il tuo <b>sultan-memoria</b>. In «Permissions → Repository permissions» metti <b>Contents: Read and write</b>. Tocca <b>Generate token</b> e <b>copia</b> il codice.</li>
+        <li>Incollalo qui sotto e tocca <b>Collega e salva</b>. Il codice resta solo su questo telefono: non lo mando a nessuno e non lo scrivo nell'archivio.</li>
+      </ol>
+      <p class="small muted">Se cancelli i dati di Safari, il codice si cancella dal telefono: tienilo in Note per reincollarlo. L'archivio online invece resta.</p>
+    </details>
+    <div class="grid2"><label class="f"><span>Utente GitHub</span><input id="arch-owner" autocomplete="off" autocapitalize="none" spellcheck="false"></label><label class="f"><span>Repository</span><input id="arch-repo" autocomplete="off" autocapitalize="none" spellcheck="false"></label></div>
+    <label class="f"><span>Permesso (token)</span><input id="arch-token" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="incolla qui il codice"></label>
+    <div class="row"><button class="btn pri" id="arch-go">Collega e salva</button><button class="btn" id="arch-load">Ricarica dall'archivio</button><button class="btn sm" id="arch-off" hidden>Scollega</button></div>
+    <label class="sw small"><input type="checkbox" id="arch-auto" checked> Salva da solo ogni volta che impari o voti</label>
+    <div id="arch-status" class="small one-status" aria-live="polite"></div>
+  </section>
   <section class="dw-panel" id="dw-p-learn" data-ws="libreria">
     <div class="dw-ph"><h3>Impara da una base</h3><span class="tag a">Solo misure, niente copie</span></div>
     <ol class="learn-seq small"><li><b>Carica</b> una canzone o un video (sotto, tasto «2»).</li><li><b>Separo</b> voce e base sul tuo telefono.</li><li><b>Misuro</b> ritmo, accordi, tempo: solo numeri.</li><li><b>Uso</b> quei numeri nel passo 2 Base, quando premi «Crea base».</li></ol>
@@ -887,7 +904,7 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 17:56</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 18:14</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -1262,7 +1279,7 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">370 test automatici superati su 370 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">376 test automatici superati su 376 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -5506,6 +5523,107 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
   }
   function describe(dna) { var d = sanitize(dna); return ORDER.map(function (k) { return FIELDS[k][2] + ': ' + (k === 'bpm' ? Math.round(d[k]) : d[k]); }); }
   return { FIELDS: FIELDS, ORDER: ORDER, LIST: LIST, byId: byId, neutral: neutral, sanitize: sanitize, fuse: fuse, emotion: emotion, applyEmotion: applyEmotion, suggest: suggest, toProd: toProd, describe: describe, EMOS: EMOS };
+});
+
+/*
+ * ARCHIVIO ONLINE: la memoria dell'app (basi studiate, gusti ♥/✕, stili DNA salvati, voce) in un tuo repository PRIVATO su GitHub.
+ * Salva SOLO numeri: niente audio, niente testi, niente nomi di file privati. Se cancelli i dati di Safari, li riprendi da lì.
+ *  snapshot(settings) → {v,at,learned,taste,dnaSaved,voice,prefs}      merge(a,b) → unione senza duplicati
+ *  apply(settings, snap) → rimette i dati nelle impostazioni              Client({owner,repo,token,fetch}) → get/put via API GitHub
+ *  sync(settings, client) → legge l'archivio, unisce, salva se serve, aggiorna le impostazioni
+ * Il permesso (token) resta solo nel telefono, mai dentro lo snapshot e mai nel codice.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.Archive = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  var PATH = 'memoria-sultan-sound.json', MAXL = 120;
+  function clone(x) { return JSON.parse(JSON.stringify(x)); }
+  function num(v) { return typeof v === 'number' && isFinite(v) ? v : null; }
+  /* tieni solo numeri/schemi: da ogni base studiata i numeri del profilo; il nome file si accorcia */
+  function cleanLearned(r) {
+    if (!r || !r.prof || typeof r.prof !== 'object') return null;
+    return { id: String(r.id || ''), name: String(r.name || '').slice(0, 40), artist: String(r.artist || 'Senza cartella').slice(0, 30), prof: clone(r.prof), vote: r.vote > 0 ? 1 : (r.vote < 0 ? -1 : 0), at: num(r.at) || 0 };
+  }
+  function snapshot(st) {
+    st = st || {}; var gv = st.gv || {};
+    return {
+      v: 1, at: Date.now(),
+      learned: (Array.isArray(st.learned) ? st.learned : []).map(cleanLearned).filter(Boolean).slice(-MAXL),
+      taste: st.taste ? clone(st.taste) : null,
+      dnaSaved: (Array.isArray(st.dnaSaved) ? st.dnaSaved : []).filter(function (d) { return d && d.name && d.dna; }).map(function (d) { return { name: String(d.name).slice(0, 40), dna: clone(d.dna), at: num(d.at) || 0 }; }),
+      voice: { f0: num(gv.f0), lo: num(gv.lo), hi: num(gv.hi), tune: num(gv.tune) },
+      prefs: { useLearned: st.useLearned !== false, learnW: num(+st.learnW) || 70, oneMode: st.oneMode === 'dna' ? 'dna' : 'auto' }
+    };
+  }
+  function union(a, b, key, cap) {
+    var seen = {}, out = []; (a || []).concat(b || []).forEach(function (x) { var k = key(x); if (!k || seen[k]) return; seen[k] = 1; out.push(x); });
+    return cap ? out.slice(-cap) : out;
+  }
+  /* local ha la precedenza dove ci sono conflitti (i tuoi ultimi ♥/✕); le cose nuove dell'altro lato si aggiungono */
+  function merge(local, remote) {
+    if (!remote || remote.v !== 1) return clone(local);
+    var out = clone(local);
+    out.learned = union(local.learned, remote.learned, function (r) { return r.id || (r.name + '|' + r.at); }, MAXL);
+    out.dnaSaved = union(local.dnaSaved, remote.dnaSaved, function (d) { return d.name + '|' + d.at; }, 60);
+    var lt = local.taste && local.taste.n || 0, rt = remote.taste && remote.taste.n || 0; out.taste = rt > lt ? clone(remote.taste) : (local.taste ? clone(local.taste) : (remote.taste ? clone(remote.taste) : null));
+    out.voice = { f0: local.voice && local.voice.f0 != null ? local.voice.f0 : remote.voice && remote.voice.f0, lo: local.voice && local.voice.lo || remote.voice && remote.voice.lo, hi: local.voice && local.voice.hi || remote.voice && remote.voice.hi, tune: local.voice && local.voice.tune != null ? local.voice.tune : remote.voice && remote.voice.tune };
+    out.prefs = local.learned && local.learned.length ? local.prefs : (remote.prefs || local.prefs);
+    return out;
+  }
+  function apply(st, snap) {
+    if (!snap || snap.v !== 1) return st;
+    st.learned = snap.learned.slice(); if (snap.taste) st.taste = clone(snap.taste); st.dnaSaved = snap.dnaSaved.slice();
+    st.gv = st.gv || {}; ['f0', 'lo', 'hi', 'tune'].forEach(function (k) { if (snap.voice && snap.voice[k] != null) st.gv[k] = snap.voice[k]; });
+    if (snap.prefs) { st.useLearned = snap.prefs.useLearned; st.learnW = snap.prefs.learnW; st.oneMode = snap.prefs.oneMode; }
+    return st;
+  }
+  function b64(s) { return typeof Buffer !== 'undefined' ? Buffer.from(s, 'utf8').toString('base64') : btoa(unescape(encodeURIComponent(s))); }
+  function unb64(s) { s = String(s || '').replace(/\s/g, ''); return typeof Buffer !== 'undefined' ? Buffer.from(s, 'base64').toString('utf8') : decodeURIComponent(escape(atob(s))); }
+  function explain(status) {
+    if (status === 401) return 'Il permesso (token) non è valido o è scaduto: creane uno nuovo.';
+    if (status === 403) return 'Il permesso non basta: deve poter leggere e scrivere i «Contents» di questo repository.';
+    if (status === 404) return 'Repository non trovato, oppure il permesso non lo include. Controlla il nome e che il permesso sia per questo repository.';
+    if (status === 409 || status === 422) return 'Conflitto di salvataggio: riprovo con la versione più recente.';
+    return 'Risposta inattesa da GitHub (' + status + ').';
+  }
+  function Client(o) {
+    var f = o.fetch || (typeof fetch !== 'undefined' ? fetch.bind(typeof self !== 'undefined' ? self : this) : null), base = 'https://api.github.com/repos/' + encodeURIComponent(o.owner) + '/' + encodeURIComponent(o.repo) + '/contents/' + PATH;
+    function H() { return { Authorization: 'Bearer ' + o.token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }; }
+    return {
+      get: async function () {
+        var r = await f(base + '?t=' + Date.now(), { headers: H(), cache: 'no-store' });
+        if (r.status === 404) { /* repository raggiungibile ma file non ancora creato? distinguiamo con una chiamata al repo */
+          var rr = await f('https://api.github.com/repos/' + encodeURIComponent(o.owner) + '/' + encodeURIComponent(o.repo), { headers: H() });
+          if (rr.status === 200) return null; var e0 = new Error(explain(rr.status === 200 ? 404 : rr.status)); e0.status = rr.status; throw e0;
+        }
+        if (!r.ok) { var e = new Error(explain(r.status)); e.status = r.status; throw e; }
+        var j = await r.json(); return { sha: j.sha, data: JSON.parse(unb64(j.content)) };
+      },
+      put: async function (data, sha) {
+        var body = { message: 'Memoria Sultan Sound', content: b64(JSON.stringify(data)) }; if (sha) body.sha = sha;
+        var r = await f(base, { method: 'PUT', headers: Object.assign({ 'Content-Type': 'application/json' }, H()), body: JSON.stringify(body) });
+        if (!r.ok) { var e = new Error(explain(r.status)); e.status = r.status; throw e; }
+        return true;
+      }
+    };
+  }
+  /* legge, unisce, salva se c'è qualcosa di nuovo, aggiorna le impostazioni. Riprova una volta in caso di conflitto. */
+  async function sync(st, client, opt) {
+    opt = opt || {}; var tries = 0;
+    for (;;) {
+      var remote = await client.get(), local = snapshot(st), merged = merge(local, remote && remote.data);
+      var changedRemote = !remote || JSON.stringify(strip(merged)) !== JSON.stringify(strip(remote.data));
+      try { if (changedRemote && !opt.readOnly) await client.put(merged, remote && remote.sha); }
+      catch (e) { if ((e.status === 409 || e.status === 422) && ++tries < 2) continue; throw e; }
+      var before = (st.learned || []).length; apply(st, merged);
+      return { remoteLearned: remote && remote.data && remote.data.learned ? remote.data.learned.length : 0, learned: merged.learned.length, addedFromArchive: Math.max(0, merged.learned.length - before), saved: !!(changedRemote && !opt.readOnly), created: !remote };
+    }
+  }
+  function strip(s) { var c = clone(s || {}); delete c.at; return c; }
+  function hash(st) { return JSON.stringify(strip(snapshot(st))); }
+  return { PATH: PATH, snapshot: snapshot, merge: merge, apply: apply, Client: Client, sync: sync, hash: hash, explain: explain };
 });
 
 /*
@@ -12478,6 +12596,7 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
   var saveT = null;
   function persist() {
     try { localStorage.setItem('msa-lib', JSON.stringify(LIB)); } catch (e) {}
+    try { archSoon(); } catch (e) {}
     if (!store.doc) return;
     clearTimeout(saveT);
     saveT = setTimeout(flush, 700);
@@ -13374,6 +13493,43 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
     try { var n = 22050 * 1.2, x = new Float32Array(n), i; for (i = 0; i < n; i++) { var t = i / 22050; x[i] = 0.35 * Math.sin(2 * Math.PI * (t < 0.6 ? 440 : 660) * t) * Math.min(1, t * 20) * Math.max(0, 1 - t / 1.2); } playBuf(x, 22050); } catch (e) { out.textContent = 'Errore: ' + e.message; return; }
     out.innerHTML = 'Dovresti sentire due note (la, poi mi). Stato audio: <b>' + esc(st) + '</b> · sessione: ' + esc(sess) + '.<br>Se non senti niente: 1) alza il volume dell\'iPhone, 2) controlla l\'interruttore laterale (niente arancione = suona), 3) scollega e ricollega le cuffie, 4) chiudi Safari e riaprilo, 5) l\'app deve essere aperta da Safari, non dentro un\'altra app. Poi dimmi cosa vedi scritto in «Stato audio».';
   });
+  /* ===== ARCHIVIO ONLINE (repository privato tuo su GitHub): la memoria non si perde più ===== */
+  var ARCH = { last: '', t: 0, busy: false };
+  function archCfg() { return LIB.settings.arch || (LIB.settings.arch = { owner: 'sultan199777', repo: 'sultan-memoria', auto: true, ok: false }); }
+  function archTok() { try { return localStorage.getItem('msa-arch-token') || ''; } catch (e) { return ''; } }
+  function archMsg(t, bad) { var el = $('#arch-status'); if (el) { el.textContent = t; el.style.color = bad ? '#fca5a5' : ''; } }
+  async function archSync(why, readOnly) {
+    var cfg = archCfg(), tk = archTok(); if (!tk || !cfg.owner || !cfg.repo || ARCH.busy) return null; ARCH.busy = true;
+    try {
+      archMsg(why === 'auto' ? 'Salvo la memoria online…' : 'Parlo con GitHub…');
+      var r = await Archive.sync(LIB.settings, Archive.Client({ owner: cfg.owner, repo: cfg.repo, token: tk }), { readOnly: !!readOnly });
+      cfg.ok = true; ARCH.last = Archive.hash(LIB.settings); cfg.at = Date.now(); persist(); try { teachRender(); } catch (e) {}
+      archMsg((r.created ? 'Archivio creato. ' : '') + 'Memoria online in ordine: ' + r.learned + ' basi studiate' + (r.addedFromArchive ? ' (' + r.addedFromArchive + ' riprese dall\'archivio)' : '') + (r.saved ? ', salvate adesso' : ', già aggiornate') + ' · ' + new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) + '.');
+      return r;
+    } catch (e) { archMsg('Non riesco: ' + ((e && e.message) || e) + (e && e.status ? '' : ' (controlla la connessione)'), true); return null; }
+    finally { ARCH.busy = false; }
+  }
+  function archSoon() {
+    var cfg = LIB.settings && LIB.settings.arch; if (!cfg || !cfg.ok || cfg.auto === false || !archTok()) return;
+    var h = Archive.hash(LIB.settings); if (h === ARCH.last) return; clearTimeout(ARCH.t); ARCH.t = setTimeout(function () { archSync('auto'); }, 6000);
+  }
+  (function archInit() {
+    if (!$('#arch-go')) return; var cfg = archCfg();
+    $('#arch-owner').value = cfg.owner; $('#arch-repo').value = cfg.repo; $('#arch-auto').checked = cfg.auto !== false;
+    function state() { var on = !!archTok() && cfg.ok; $('#arch-badge').textContent = on ? 'Collegato' : 'Non collegato'; $('#arch-badge').className = 'tag ' + (on ? 'm' : 'i'); $('#arch-off').hidden = !archTok(); }
+    state();
+    $('#arch-go').addEventListener('click', async function () {
+      var o = $('#arch-owner').value.trim(), r = $('#arch-repo').value.trim(), t = $('#arch-token').value.trim();
+      if (!o || !r) { archMsg('Scrivi il nome utente e il nome del repository.', true); return; }
+      if (!t && !archTok()) { archMsg('Incolla il permesso (token) del passo 2.', true); return; }
+      cfg.owner = o; cfg.repo = r; if (t) { try { localStorage.setItem('msa-arch-token', t); } catch (e) { archMsg('Questo browser non permette di tenere il permesso.', true); return; } $('#arch-token').value = ''; }
+      persist(); var res = await archSync('manual'); state(); if (!res && !cfg.ok) { /* resta non collegato */ }
+    });
+    $('#arch-load').addEventListener('click', async function () { await archSync('manual'); state(); });
+    $('#arch-auto').addEventListener('change', function () { cfg.auto = this.checked; persist(); });
+    $('#arch-off').addEventListener('click', function () { try { localStorage.removeItem('msa-arch-token'); } catch (e) {} cfg.ok = false; persist(); $('#arch-token').value = ''; archMsg('Scollegato: il permesso è stato tolto da questo telefono. L\'archivio online resta com\'è.'); state(); });
+    if (archTok() && cfg.ok) setTimeout(function () { archSync('start').then(state); }, 2500);
+  })();
   /* ===== Impara: elenco di quello che hai insegnato, opzioni, stato ===== */
   function teachRender() {
     var el = $('#teach-list'); if (!el) return; var L = learnList().filter(function (r) { return r.vote > 0; }).slice(-6).reverse();
@@ -14986,8 +15142,8 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
   // spazi di lavoro dello Studio: Impara · Base · Testo · Voce · Mix (un solo gruppo di pannelli alla volta)
   /* pannelli che si aprono e chiudono: aperti quelli principali del passo, il resto chiuso (la scelta del tuo tocco resta salvata) */
-  var FOLD_OPEN = {"testo": ["dw-p-testo"], "base": ["dw-p-one", "dw-p-var", "dw-p-arr", "dw-p-omino"], "voce": ["dw-kar", "dw-p-mic", "dw-p-omino"], "mix": ["dw-p-mix"], "libreria": ["dw-p-learn"]};
-  var FOLD_SUM = { 'dw-p-arr': 'Le tracce della base: tocca un nome per suono, note e mixer', 'dw-p-prod': 'Effetti da film e voci di produzione scelti dal testo', 'dw-p-play': 'Cambia melodia, ascolta l\'Orecchio, salva', 'dw-p-brain': 'Stile, umore e atmosfere a mano', 'dw-p-dna': 'Stili a numeri e fusione di generi', 'dw-p-talk': 'Scrivi cosa cambiare e gli agenti lo fanno', 'dw-p-agents': 'Proposte automatiche degli agenti', 'dw-p-sing': 'Quando entrare, quanto tenere, dove respirare', 'dw-p-clips': 'Prove registrate e montaggio', 'dw-p-extra': 'Assistente testi e rime', 'dw-p-design': 'Crea suoni tuoi', 'dw-p-mixer': 'Canali del mixer' };
+  var FOLD_OPEN = {"testo": ["dw-p-testo"], "base": ["dw-p-one", "dw-p-var", "dw-p-arr", "dw-p-omino"], "voce": ["dw-kar", "dw-p-mic", "dw-p-omino"], "mix": ["dw-p-mix"], "libreria": ["dw-p-teach", "dw-p-arch"]};
+  var FOLD_SUM = { 'dw-p-learn': 'Opzioni avanzate: modo di separazione, spazio online, cartelle e varianti', 'dw-p-arch': 'Salva la memoria su un tuo archivio privato', 'dw-p-teach': 'Carica canzoni o video: l\'app misura e impara', 'dw-p-arr': 'Le tracce della base: tocca un nome per suono, note e mixer', 'dw-p-prod': 'Effetti da film e voci di produzione scelti dal testo', 'dw-p-play': 'Cambia melodia, ascolta l\'Orecchio, salva', 'dw-p-brain': 'Stile, umore e atmosfere a mano', 'dw-p-dna': 'Stili a numeri e fusione di generi', 'dw-p-talk': 'Scrivi cosa cambiare e gli agenti lo fanno', 'dw-p-agents': 'Proposte automatiche degli agenti', 'dw-p-sing': 'Quando entrare, quanto tenere, dove respirare', 'dw-p-clips': 'Prove registrate e montaggio', 'dw-p-extra': 'Assistente testi e rime', 'dw-p-design': 'Crea suoni tuoi', 'dw-p-mixer': 'Canali del mixer' };
   function foldApply(ws) {
     var st = LIB.settings.fold || (LIB.settings.fold = {}), open = FOLD_OPEN[ws] || [];
     $$('#v-daw > .dw-panel').forEach(function (pn) {

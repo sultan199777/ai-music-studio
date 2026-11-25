@@ -179,6 +179,23 @@
     <div class="row" style="margin-top:10px;align-items:center"><label class="sw small"><input type="checkbox" id="teach-use" checked> Usa quello che ho insegnato quando creo le basi</label></div>
     <label class="f"><span>Quanto contano gli esempi: <b id="teach-wv">70</b>%</span><input type="range" id="teach-w" min="20" max="100" step="10" value="70"></label>
   </section>
+  <section class="dw-panel one" id="dw-p-arch" data-ws="libreria">
+    <div class="dw-ph"><h3>Memoria online</h3><span class="tag i" id="arch-badge">Non collegato</span></div>
+    <p class="small">Salva su un <b>tuo archivio privato</b> (GitHub) le basi che hai insegnato, i tuoi ♥ e ✕ e i tuoi stili. Se cancelli Safari o cambi telefono, li riprendi. <b>Solo numeri: niente audio, niente testi.</b></p>
+    <details><summary class="small"><b>Come si attiva (una volta sola, 5 minuti)</b></summary>
+      <ol class="learn-seq small">
+        <li>Apri <b>github.com</b> in Safari, accedi. Tocca <b>+</b> → <b>New repository</b>. Nome: <b>sultan-memoria</b>. Scegli <b>Private</b>. Tocca <b>Create repository</b>.</li>
+        <li>Vai su <b>github.com/settings/personal-access-tokens/new</b>. Nome: <b>sultan-sound</b>. Scadenza: 1 anno. In «Repository access» scegli <b>Only select repositories</b> e il tuo <b>sultan-memoria</b>. In «Permissions → Repository permissions» metti <b>Contents: Read and write</b>. Tocca <b>Generate token</b> e <b>copia</b> il codice.</li>
+        <li>Incollalo qui sotto e tocca <b>Collega e salva</b>. Il codice resta solo su questo telefono: non lo mando a nessuno e non lo scrivo nell'archivio.</li>
+      </ol>
+      <p class="small muted">Se cancelli i dati di Safari, il codice si cancella dal telefono: tienilo in Note per reincollarlo. L'archivio online invece resta.</p>
+    </details>
+    <div class="grid2"><label class="f"><span>Utente GitHub</span><input id="arch-owner" autocomplete="off" autocapitalize="none" spellcheck="false"></label><label class="f"><span>Repository</span><input id="arch-repo" autocomplete="off" autocapitalize="none" spellcheck="false"></label></div>
+    <label class="f"><span>Permesso (token)</span><input id="arch-token" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="incolla qui il codice"></label>
+    <div class="row"><button class="btn pri" id="arch-go">Collega e salva</button><button class="btn" id="arch-load">Ricarica dall'archivio</button><button class="btn sm" id="arch-off" hidden>Scollega</button></div>
+    <label class="sw small"><input type="checkbox" id="arch-auto" checked> Salva da solo ogni volta che impari o voti</label>
+    <div id="arch-status" class="small one-status" aria-live="polite"></div>
+  </section>
   <section class="dw-panel" id="dw-p-learn" data-ws="libreria">
     <div class="dw-ph"><h3>Impara da una base</h3><span class="tag a">Solo misure, niente copie</span></div>
     <ol class="learn-seq small"><li><b>Carica</b> una canzone o un video (sotto, tasto «2»).</li><li><b>Separo</b> voce e base sul tuo telefono.</li><li><b>Misuro</b> ritmo, accordi, tempo: solo numeri.</li><li><b>Uso</b> quei numeri nel passo 2 Base, quando premi «Crea base».</li></ol>

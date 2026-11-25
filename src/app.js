@@ -37,6 +37,7 @@
   var saveT = null;
   function persist() {
     try { localStorage.setItem('msa-lib', JSON.stringify(LIB)); } catch (e) {}
+    try { archSoon(); } catch (e) {}
     if (!store.doc) return;
     clearTimeout(saveT);
     saveT = setTimeout(flush, 700);
@@ -933,6 +934,43 @@
     try { var n = 22050 * 1.2, x = new Float32Array(n), i; for (i = 0; i < n; i++) { var t = i / 22050; x[i] = 0.35 * Math.sin(2 * Math.PI * (t < 0.6 ? 440 : 660) * t) * Math.min(1, t * 20) * Math.max(0, 1 - t / 1.2); } playBuf(x, 22050); } catch (e) { out.textContent = 'Errore: ' + e.message; return; }
     out.innerHTML = 'Dovresti sentire due note (la, poi mi). Stato audio: <b>' + esc(st) + '</b> · sessione: ' + esc(sess) + '.<br>Se non senti niente: 1) alza il volume dell\'iPhone, 2) controlla l\'interruttore laterale (niente arancione = suona), 3) scollega e ricollega le cuffie, 4) chiudi Safari e riaprilo, 5) l\'app deve essere aperta da Safari, non dentro un\'altra app. Poi dimmi cosa vedi scritto in «Stato audio».';
   });
+  /* ===== ARCHIVIO ONLINE (repository privato tuo su GitHub): la memoria non si perde più ===== */
+  var ARCH = { last: '', t: 0, busy: false };
+  function archCfg() { return LIB.settings.arch || (LIB.settings.arch = { owner: 'sultan199777', repo: 'sultan-memoria', auto: true, ok: false }); }
+  function archTok() { try { return localStorage.getItem('msa-arch-token') || ''; } catch (e) { return ''; } }
+  function archMsg(t, bad) { var el = $('#arch-status'); if (el) { el.textContent = t; el.style.color = bad ? '#fca5a5' : ''; } }
+  async function archSync(why, readOnly) {
+    var cfg = archCfg(), tk = archTok(); if (!tk || !cfg.owner || !cfg.repo || ARCH.busy) return null; ARCH.busy = true;
+    try {
+      archMsg(why === 'auto' ? 'Salvo la memoria online…' : 'Parlo con GitHub…');
+      var r = await Archive.sync(LIB.settings, Archive.Client({ owner: cfg.owner, repo: cfg.repo, token: tk }), { readOnly: !!readOnly });
+      cfg.ok = true; ARCH.last = Archive.hash(LIB.settings); cfg.at = Date.now(); persist(); try { teachRender(); } catch (e) {}
+      archMsg((r.created ? 'Archivio creato. ' : '') + 'Memoria online in ordine: ' + r.learned + ' basi studiate' + (r.addedFromArchive ? ' (' + r.addedFromArchive + ' riprese dall\'archivio)' : '') + (r.saved ? ', salvate adesso' : ', già aggiornate') + ' · ' + new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) + '.');
+      return r;
+    } catch (e) { archMsg('Non riesco: ' + ((e && e.message) || e) + (e && e.status ? '' : ' (controlla la connessione)'), true); return null; }
+    finally { ARCH.busy = false; }
+  }
+  function archSoon() {
+    var cfg = LIB.settings && LIB.settings.arch; if (!cfg || !cfg.ok || cfg.auto === false || !archTok()) return;
+    var h = Archive.hash(LIB.settings); if (h === ARCH.last) return; clearTimeout(ARCH.t); ARCH.t = setTimeout(function () { archSync('auto'); }, 6000);
+  }
+  (function archInit() {
+    if (!$('#arch-go')) return; var cfg = archCfg();
+    $('#arch-owner').value = cfg.owner; $('#arch-repo').value = cfg.repo; $('#arch-auto').checked = cfg.auto !== false;
+    function state() { var on = !!archTok() && cfg.ok; $('#arch-badge').textContent = on ? 'Collegato' : 'Non collegato'; $('#arch-badge').className = 'tag ' + (on ? 'm' : 'i'); $('#arch-off').hidden = !archTok(); }
+    state();
+    $('#arch-go').addEventListener('click', async function () {
+      var o = $('#arch-owner').value.trim(), r = $('#arch-repo').value.trim(), t = $('#arch-token').value.trim();
+      if (!o || !r) { archMsg('Scrivi il nome utente e il nome del repository.', true); return; }
+      if (!t && !archTok()) { archMsg('Incolla il permesso (token) del passo 2.', true); return; }
+      cfg.owner = o; cfg.repo = r; if (t) { try { localStorage.setItem('msa-arch-token', t); } catch (e) { archMsg('Questo browser non permette di tenere il permesso.', true); return; } $('#arch-token').value = ''; }
+      persist(); var res = await archSync('manual'); state(); if (!res && !cfg.ok) { /* resta non collegato */ }
+    });
+    $('#arch-load').addEventListener('click', async function () { await archSync('manual'); state(); });
+    $('#arch-auto').addEventListener('change', function () { cfg.auto = this.checked; persist(); });
+    $('#arch-off').addEventListener('click', function () { try { localStorage.removeItem('msa-arch-token'); } catch (e) {} cfg.ok = false; persist(); $('#arch-token').value = ''; archMsg('Scollegato: il permesso è stato tolto da questo telefono. L\'archivio online resta com\'è.'); state(); });
+    if (archTok() && cfg.ok) setTimeout(function () { archSync('start').then(state); }, 2500);
+  })();
   /* ===== Impara: elenco di quello che hai insegnato, opzioni, stato ===== */
   function teachRender() {
     var el = $('#teach-list'); if (!el) return; var L = learnList().filter(function (r) { return r.vote > 0; }).slice(-6).reverse();
@@ -2545,8 +2583,8 @@
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
   // spazi di lavoro dello Studio: Impara · Base · Testo · Voce · Mix (un solo gruppo di pannelli alla volta)
   /* pannelli che si aprono e chiudono: aperti quelli principali del passo, il resto chiuso (la scelta del tuo tocco resta salvata) */
-  var FOLD_OPEN = {"testo": ["dw-p-testo"], "base": ["dw-p-one", "dw-p-var", "dw-p-arr", "dw-p-omino"], "voce": ["dw-kar", "dw-p-mic", "dw-p-omino"], "mix": ["dw-p-mix"], "libreria": ["dw-p-learn"]};
-  var FOLD_SUM = { 'dw-p-arr': 'Le tracce della base: tocca un nome per suono, note e mixer', 'dw-p-prod': 'Effetti da film e voci di produzione scelti dal testo', 'dw-p-play': 'Cambia melodia, ascolta l\'Orecchio, salva', 'dw-p-brain': 'Stile, umore e atmosfere a mano', 'dw-p-dna': 'Stili a numeri e fusione di generi', 'dw-p-talk': 'Scrivi cosa cambiare e gli agenti lo fanno', 'dw-p-agents': 'Proposte automatiche degli agenti', 'dw-p-sing': 'Quando entrare, quanto tenere, dove respirare', 'dw-p-clips': 'Prove registrate e montaggio', 'dw-p-extra': 'Assistente testi e rime', 'dw-p-design': 'Crea suoni tuoi', 'dw-p-mixer': 'Canali del mixer' };
+  var FOLD_OPEN = {"testo": ["dw-p-testo"], "base": ["dw-p-one", "dw-p-var", "dw-p-arr", "dw-p-omino"], "voce": ["dw-kar", "dw-p-mic", "dw-p-omino"], "mix": ["dw-p-mix"], "libreria": ["dw-p-teach", "dw-p-arch"]};
+  var FOLD_SUM = { 'dw-p-learn': 'Opzioni avanzate: modo di separazione, spazio online, cartelle e varianti', 'dw-p-arch': 'Salva la memoria su un tuo archivio privato', 'dw-p-teach': 'Carica canzoni o video: l\'app misura e impara', 'dw-p-arr': 'Le tracce della base: tocca un nome per suono, note e mixer', 'dw-p-prod': 'Effetti da film e voci di produzione scelti dal testo', 'dw-p-play': 'Cambia melodia, ascolta l\'Orecchio, salva', 'dw-p-brain': 'Stile, umore e atmosfere a mano', 'dw-p-dna': 'Stili a numeri e fusione di generi', 'dw-p-talk': 'Scrivi cosa cambiare e gli agenti lo fanno', 'dw-p-agents': 'Proposte automatiche degli agenti', 'dw-p-sing': 'Quando entrare, quanto tenere, dove respirare', 'dw-p-clips': 'Prove registrate e montaggio', 'dw-p-extra': 'Assistente testi e rime', 'dw-p-design': 'Crea suoni tuoi', 'dw-p-mixer': 'Canali del mixer' };
   function foldApply(ws) {
     var st = LIB.settings.fold || (LIB.settings.fold = {}), open = FOLD_OPEN[ws] || [];
     $$('#v-daw > .dw-panel').forEach(function (pn) {
