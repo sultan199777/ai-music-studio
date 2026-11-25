@@ -58,3 +58,12 @@ test('sanitize: valori fuori scala vengono riportati nei limiti, dati sporchi no
   const s = D.sanitize({ bpm: 9999, swing: -3, kick: 'x', fam: 'trap' }); assert.strictEqual(s.bpm, 175); assert.strictEqual(s.swing, 0); assert.ok(typeof s.kick === 'number');
   assert.ok(D.sanitize(null).bpm > 0);
 });
+
+test('Consigliere: dal testo propone 3 mix diversi coerenti con l\'emozione', () => {
+  const r = D.suggest('Sono solo, piove, il dolore mi consuma, lacrime nel buio, perso e vuoto', 3, 1);
+  assert.strictEqual(r.recipes.length, 3); assert.strictEqual(new Set(r.recipes.map(x => x.name)).size, 3);
+  r.recipes.forEach(x => { assert.strictEqual(x.parts.reduce((a, y) => a + y.w, 0), 100); x.parts.forEach(y => assert.ok(D.byId(y.id))); });
+  const eu = D.suggest('Festa tutta la notte, ballo, soldi, vinto, libero, estate', 3, 1);
+  assert.notDeepStrictEqual(r.recipes.map(x => x.name), eu.recipes.map(x => x.name));
+  assert.ok(D.suggest('', 2, 1).recipes.length >= 1);
+});

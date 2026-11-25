@@ -543,8 +543,8 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     <div class="status" id="dw-tmsg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-brain" data-ws="testo">
-    <div class="dw-ph"><h3>Crea la base dal tuo testo</h3><span class="tag i">Cervello Sultan</span></div>
+  <section class="dw-panel" id="dw-p-brain" data-ws="base">
+    <div class="dw-ph"><h3>A · Automatico: lascia decidere al testo</h3><span class="tag i">Cervello Sultan</span></div>
     <p class="small muted">Scrivi lo stile che vuoi (es. "trap dark") oppure lascia vuoto: il testo decide. Poi premi il tasto grande.</p>
     <label class="f"><span><b>Suona come</b> (le tue cartelle imparate dai video, o un'atmosfera)</span><select id="dw-ref"><option value="">Lo decide il mio testo</option></select></label><p class="small muted" id="dw-ref-msg"></p>
     <div id="dwb-fields"></div>
@@ -552,7 +552,8 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     <div id="dwb-out"></div>
   </section>
   <section class="dw-panel" id="dw-p-dna" data-ws="base">
-    <div class="dw-ph"><h3>DNA musicale · mescola gli stili</h3><span class="tag m">Numeri</span></div>
+    <div class="dw-ph"><h3>B · DNA musicale: mescola gli stili</h3><span class="tag m">Numeri</span></div>
+    <div class="row"><button class="btn pri" id="dna-ai">Consigliami 3 mix dal mio testo</button></div><div id="dna-ai-out" class="small"></div>
     <p class="small muted">Ogni stile è un elenco di numeri (tempo, cassa, rullante, hi-hat, 808, buio…). Scegli fino a 3 stili e quanto pesa ciascuno: nasce uno stile nuovo. Il testo può spostare i numeri (malinconia, rabbia, euforia…).</p>
     <div id="dna-rows"></div>
     <label class="sw small"><input type="checkbox" id="dna-emo" checked> Lascia che il testo cambi i numeri</label>
@@ -738,7 +739,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 15:32</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 16:04</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -1113,7 +1114,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">362 test automatici superati su 362 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">363 test automatici superati su 363 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -5305,6 +5306,24 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     return { dna: d, why: why, emotions: tops };
   }
 
+  /* ===== CONSIGLIERE: dal testo propone mix di stili (regole locali, nessuna API) ===== */
+  var AFF = {
+    malinconia: ['kidyugi', 'weeknd', 'f-cloud', 'drake'], nostalgia: ['ultimo', 'f-ballata', 'f-boombap', 'drake'], rabbia: ['shiva', 'smoke', 'f-drill', 'future'],
+    solitudine: ['kidyugi', 'drake', 'f-cloud', 'weeknd'], speranza: ['ultimo', 'lazza', 'sfera', 'f-ballata'], amore: ['anna', 'badbunny', 'f-rnb', 'weeknd'],
+    euforia: ['travis', 'f-rage', 'badbunny', 'anna'], tensione: ['smoke', 'future', 'f-phonk', 'shiva']
+  };
+  /* suggest(testo, n) → n ricette [{parts:[{id,w}], name, why}] diverse tra loro, basate sulle emozioni del testo */
+  function suggest(text, n, seed) {
+    var em = emotion(text), r = rng((seed || 1) * 104729 + 5), tops = em.top.length ? em.top : ['malinconia', 'tensione'], out = [], seen = {}, tries = 0;
+    while (out.length < (n || 3) && tries++ < 40) {
+      var e1 = tops[0], e2 = tops[1] || tops[0], a = AFF[e1][Math.floor(r() * AFF[e1].length)], b = AFF[e2][Math.floor(r() * AFF[e2].length)];
+      if (a === b) b = AFF[e2][(AFF[e2].indexOf(b) + 1) % AFF[e2].length]; if (a === b) continue;
+      var w = [50, 60, 70][Math.floor(r() * 3)], k = a + '|' + b; if (seen[k]) continue; seen[k] = 1;
+      out.push({ parts: [{ id: a, w: w }, { id: b, w: 100 - w }], name: BY[a].nome + ' + ' + BY[b].nome, why: 'Il testo parla soprattutto di ' + e1 + (e2 !== e1 ? ' e ' + e2 : '') + ': ' + BY[a].nome + ' porta il ' + w + '% del suono, ' + BY[b].nome + ' il resto.' });
+    }
+    return { emotions: em, recipes: out };
+  }
+
   /* ===== dal DNA ai parametri del Beat Composer ===== */
   var SNARE_HALF = [[8], [8], [8, 14], [8, 11]], SNARE_FULL = [[4, 12], [4, 12], [4, 12, 15]];
   function kickPair(r, density) {
@@ -5327,7 +5346,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     };
   }
   function describe(dna) { var d = sanitize(dna); return ORDER.map(function (k) { return FIELDS[k][2] + ': ' + (k === 'bpm' ? Math.round(d[k]) : d[k]); }); }
-  return { FIELDS: FIELDS, ORDER: ORDER, LIST: LIST, byId: byId, neutral: neutral, sanitize: sanitize, fuse: fuse, emotion: emotion, applyEmotion: applyEmotion, toProd: toProd, describe: describe, EMOS: EMOS };
+  return { FIELDS: FIELDS, ORDER: ORDER, LIST: LIST, byId: byId, neutral: neutral, sanitize: sanitize, fuse: fuse, emotion: emotion, applyEmotion: applyEmotion, suggest: suggest, toProd: toProd, describe: describe, EMOS: EMOS };
 });
 
 /*
@@ -12500,7 +12519,15 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   }
   $('#b-genre').innerHTML = Object.keys(ALLG).map(function (g) { return '<option value="' + g + '">' + ALLG[g].label + '</option>'; }).join('');
   $('#b-tonic').innerHTML = NOTES.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
-  $('#b-genre').addEventListener('change', function () { cur().genreManual = true; var p = cur().prod; p.genre = this.value; p.tune = null; p.bpm = ALLG[this.value].bpm; if (['trap', 'drill', 'epico', 'boombap', 'street', 'trapdark', 'clubtrap'].indexOf(this.value) >= 0) { p.mode = 'minore'; $('#b-mode').value = 'minore'; } else if (this.value === 'estate') { p.mode = 'maggiore'; $('#b-mode').value = 'maggiore'; } if (Arranger.STYLES[this.value] && p.bars < 16) { p.bars = 32; $('#b-bars').value = 32; $('#b-barsv').textContent = 32; } $('#b-bpm').value = p.bpm; persist(); });
+  $('#b-genre').addEventListener('change', function () { cur().genreManual = true; var p = cur().prod; p.genre = this.value; p.tune = null; p.bpm = ALLG[this.value].bpm; if (['trap', 'drill', 'epico', 'boombap', 'street', 'trapdark', 'clubtrap'].indexOf(this.value) >= 0) { p.mode = 'minore'; $('#b-mode').value = 'minore'; } else if (this.value === 'estate') { p.mode = 'maggiore'; $('#b-mode').value = 'maggiore'; } if (Arranger.STYLES[this.value] && p.bars < 16) { p.bars = 32; $('#b-bars').value = 32; $('#b-barsv').textContent = 32; } $('#b-bpm').value = p.bpm;
+    /* cambiare genere cambia TUTTO: ritmo, giro, strumenti, effetti (prima restavano quelli di prima e la base sembrava uguale) */
+    var g = this.value, fam = DNA.LIST.filter(function (d) { return d.fam === g; })[0], sd = (Date.now() % 100000) + 1, R = Instruments.RECIPES[g] || {};
+    if (fam) { var pr = DNA.toProd(fam, sd); p.groove = pr.groove; p.prog = pr.prog; p.tune = pr.tune; p.heavy = pr.heavy; p.leadRest = pr.leadRest; p.melSeed = pr.melSeed; p.tonic = pr.tonic; p.bpm = pr.bpm; p.mode = pr.mode; $('#b-bpm').value = p.bpm; $('#b-mode').value = p.mode; }
+    else { var st = Arranger.STYLES[g] || {}, rx = Remix.make(sd, { half: !st.snare || st.snare.length === 1, mode: p.mode }); p.groove = rx.groove; p.prog = rx.prog; p.tune = rx.tune; p.melSeed = rx.melSeed; p.leadRest = undefined; }
+    p.seed = sd; p.kit = null; p.arpPattern = undefined; p.bassStyle = ['trap', 'trapdark', 'drill', 'brooklyn', 'street', 'rage', 'phonk'].indexOf(g) >= 0 ? '808' : undefined;
+    try { p.sig = SigFx.pick({ styleText: '', seed: sd, scenes: [], genre: g }); } catch (e) {}
+    p.inst = Object.assign({}, p.inst || {}); ['melodia', 'accordi', 'pad'].forEach(function (role) { var l = (R[role] || []).filter(function (id) { return !BANNED_INST[id]; }); if (l.length) p.inst[role] = l[(sd + role.length) % l.length]; });
+    persist(); try { fillInst(); } catch (e) {} makeAndPlay(false); });
   ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.addEventListener('change', function () { cur().prod.karBars = this.value === 'auto' ? 'auto' : +this.value; persist(); syncKar(); }); });
   function syncKar() { var v = String(cur().prod.karBars || 'auto'); ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.value = v; }); }
   $('#b-sounds').addEventListener('change', function () { cur().prod.sounds = this.value; persist(); });
@@ -12864,7 +12891,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     earRun(true);
   }
   /* ===== MUSICAL DNA ENGINE: mescola stili (numeri), emozioni del testo → base vera ===== */
-  var DNAUI = { n: 0, over: {} };
+  var DNAUI = { n: Date.now() % 1000, over: {} };
   function dnaSaved() { return LIB.settings.dnaSaved || (LIB.settings.dnaSaved = []); }
   function dnaOpts(sel, withNone) {
     var g = {}; DNA.LIST.forEach(function (d) { (g[d.gruppo] = g[d.gruppo] || []).push('<option value="' + d.id + '">' + esc(d.nome) + '</option>'); });
@@ -12905,7 +12932,21 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     $$('#dna-rows .dna-row').forEach(function (r, i) { var sel = r.querySelector('select'); dnaOpts(sel, i > 0); sel.value = defs[i][0]; r.querySelector('input').addEventListener('input', function () { r.querySelector('b').textContent = this.value + '%'; }); });
     dnaSliders(dnaBuild().dna);
     $('#dna-sl').addEventListener('input', function (e) { var k = e.target.getAttribute('data-dna'); if (!k) return; DNAUI.over[k] = +e.target.value; $('#dna-v-' + k).textContent = k === 'bpm' ? Math.round(e.target.value) : e.target.value; });
-    $('#dna-go').addEventListener('click', function () { DNAUI.n = 0; dnaCreate(false); });
+    var aiN = 0;
+    $('#dna-ai').addEventListener('click', function () {
+      var s = cur(); if (!s.lyrics || !s.lyrics.trim()) { $('#dna-ai-out').textContent = 'Scrivi prima il testo: il consigliere lo legge.'; return; }
+      var r = DNA.suggest(s.lyrics, 3, ++aiN), top = r.emotions.top;
+      $('#dna-ai-out').innerHTML = '<p><span class="tag i">Ipotesi</span> Emozioni trovate: ' + (top.length ? top.map(function (e) { return e + ' ' + Math.round(r.emotions.share[e] * 100) + '%'; }).join(', ') : 'poche parole di emozione, scelgo io') + '. Consigliere a regole sul telefono (non è un modello di linguaggio).</p>' +
+        r.recipes.map(function (x, i) { return '<div class="note" style="margin:6px 0"><b>' + esc(x.name) + '</b><br><small class="muted">' + esc(x.why) + '</small><br><button class="btn sm" data-dna-r="' + i + '">Crea questa base</button></div>'; }).join('') + '<button class="btn sm" id="dna-ai-more">Altri 3 consigli</button>';
+      DNAUI.recipes = r.recipes;
+    });
+    $('#dna-ai-out').addEventListener('click', function (e) {
+      if (e.target.id === 'dna-ai-more') { $('#dna-ai').click(); return; }
+      var i = e.target.getAttribute && e.target.getAttribute('data-dna-r'); if (i == null || !DNAUI.recipes) return; var x = DNAUI.recipes[+i], rows = $$('#dna-rows .dna-row');
+      rows.forEach(function (r, k) { var part = x.parts[k]; r.querySelector('select').value = part ? part.id : ''; r.querySelector('input').value = part ? part.w : 0; r.querySelector('b').textContent = (part ? part.w : 0) + '%'; });
+      DNAUI.over = {}; dnaCreate(true);
+    });
+    $('#dna-go').addEventListener('click', function () { dnaCreate(true); });
     $('#dna-again').addEventListener('click', function () { dnaCreate(true); });
     $('#dna-reset').addEventListener('click', function () { DNAUI.over = {}; dnaSliders(dnaBuild().dna); });
     $('#dna-save').addEventListener('click', function () { var nm = ($('#dna-name').value || '').trim().slice(0, 40); if (!nm) { $('#dna-msg').textContent = 'Scrivi un nome per il tuo stile.'; return; } var b = dnaBuild(); dnaSaved().push({ name: nm, dna: b.dna, at: Date.now() }); persist(); $$('#dna-rows select').forEach(function (sel, i) { var v = sel.value; dnaOpts(sel, i > 0); sel.value = v; }); $('#dna-msg').textContent = 'Salvato «' + nm + '». Lo trovi in «I miei stili» in ogni menu: puoi rimescolarlo con altri.'; });

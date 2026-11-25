@@ -425,7 +425,15 @@
   }
   $('#b-genre').innerHTML = Object.keys(ALLG).map(function (g) { return '<option value="' + g + '">' + ALLG[g].label + '</option>'; }).join('');
   $('#b-tonic').innerHTML = NOTES.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
-  $('#b-genre').addEventListener('change', function () { cur().genreManual = true; var p = cur().prod; p.genre = this.value; p.tune = null; p.bpm = ALLG[this.value].bpm; if (['trap', 'drill', 'epico', 'boombap', 'street', 'trapdark', 'clubtrap'].indexOf(this.value) >= 0) { p.mode = 'minore'; $('#b-mode').value = 'minore'; } else if (this.value === 'estate') { p.mode = 'maggiore'; $('#b-mode').value = 'maggiore'; } if (Arranger.STYLES[this.value] && p.bars < 16) { p.bars = 32; $('#b-bars').value = 32; $('#b-barsv').textContent = 32; } $('#b-bpm').value = p.bpm; persist(); });
+  $('#b-genre').addEventListener('change', function () { cur().genreManual = true; var p = cur().prod; p.genre = this.value; p.tune = null; p.bpm = ALLG[this.value].bpm; if (['trap', 'drill', 'epico', 'boombap', 'street', 'trapdark', 'clubtrap'].indexOf(this.value) >= 0) { p.mode = 'minore'; $('#b-mode').value = 'minore'; } else if (this.value === 'estate') { p.mode = 'maggiore'; $('#b-mode').value = 'maggiore'; } if (Arranger.STYLES[this.value] && p.bars < 16) { p.bars = 32; $('#b-bars').value = 32; $('#b-barsv').textContent = 32; } $('#b-bpm').value = p.bpm;
+    /* cambiare genere cambia TUTTO: ritmo, giro, strumenti, effetti (prima restavano quelli di prima e la base sembrava uguale) */
+    var g = this.value, fam = DNA.LIST.filter(function (d) { return d.fam === g; })[0], sd = (Date.now() % 100000) + 1, R = Instruments.RECIPES[g] || {};
+    if (fam) { var pr = DNA.toProd(fam, sd); p.groove = pr.groove; p.prog = pr.prog; p.tune = pr.tune; p.heavy = pr.heavy; p.leadRest = pr.leadRest; p.melSeed = pr.melSeed; p.tonic = pr.tonic; p.bpm = pr.bpm; p.mode = pr.mode; $('#b-bpm').value = p.bpm; $('#b-mode').value = p.mode; }
+    else { var st = Arranger.STYLES[g] || {}, rx = Remix.make(sd, { half: !st.snare || st.snare.length === 1, mode: p.mode }); p.groove = rx.groove; p.prog = rx.prog; p.tune = rx.tune; p.melSeed = rx.melSeed; p.leadRest = undefined; }
+    p.seed = sd; p.kit = null; p.arpPattern = undefined; p.bassStyle = ['trap', 'trapdark', 'drill', 'brooklyn', 'street', 'rage', 'phonk'].indexOf(g) >= 0 ? '808' : undefined;
+    try { p.sig = SigFx.pick({ styleText: '', seed: sd, scenes: [], genre: g }); } catch (e) {}
+    p.inst = Object.assign({}, p.inst || {}); ['melodia', 'accordi', 'pad'].forEach(function (role) { var l = (R[role] || []).filter(function (id) { return !BANNED_INST[id]; }); if (l.length) p.inst[role] = l[(sd + role.length) % l.length]; });
+    persist(); try { fillInst(); } catch (e) {} makeAndPlay(false); });
   ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.addEventListener('change', function () { cur().prod.karBars = this.value === 'auto' ? 'auto' : +this.value; persist(); syncKar(); }); });
   function syncKar() { var v = String(cur().prod.karBars || 'auto'); ['#kar-speed', '#kar-speed2'].forEach(function (id) { var el = $(id); if (el) el.value = v; }); }
   $('#b-sounds').addEventListener('change', function () { cur().prod.sounds = this.value; persist(); });
@@ -789,7 +797,7 @@
     earRun(true);
   }
   /* ===== MUSICAL DNA ENGINE: mescola stili (numeri), emozioni del testo → base vera ===== */
-  var DNAUI = { n: 0, over: {} };
+  var DNAUI = { n: Date.now() % 1000, over: {} };
   function dnaSaved() { return LIB.settings.dnaSaved || (LIB.settings.dnaSaved = []); }
   function dnaOpts(sel, withNone) {
     var g = {}; DNA.LIST.forEach(function (d) { (g[d.gruppo] = g[d.gruppo] || []).push('<option value="' + d.id + '">' + esc(d.nome) + '</option>'); });
@@ -830,7 +838,21 @@
     $$('#dna-rows .dna-row').forEach(function (r, i) { var sel = r.querySelector('select'); dnaOpts(sel, i > 0); sel.value = defs[i][0]; r.querySelector('input').addEventListener('input', function () { r.querySelector('b').textContent = this.value + '%'; }); });
     dnaSliders(dnaBuild().dna);
     $('#dna-sl').addEventListener('input', function (e) { var k = e.target.getAttribute('data-dna'); if (!k) return; DNAUI.over[k] = +e.target.value; $('#dna-v-' + k).textContent = k === 'bpm' ? Math.round(e.target.value) : e.target.value; });
-    $('#dna-go').addEventListener('click', function () { DNAUI.n = 0; dnaCreate(false); });
+    var aiN = 0;
+    $('#dna-ai').addEventListener('click', function () {
+      var s = cur(); if (!s.lyrics || !s.lyrics.trim()) { $('#dna-ai-out').textContent = 'Scrivi prima il testo: il consigliere lo legge.'; return; }
+      var r = DNA.suggest(s.lyrics, 3, ++aiN), top = r.emotions.top;
+      $('#dna-ai-out').innerHTML = '<p><span class="tag i">Ipotesi</span> Emozioni trovate: ' + (top.length ? top.map(function (e) { return e + ' ' + Math.round(r.emotions.share[e] * 100) + '%'; }).join(', ') : 'poche parole di emozione, scelgo io') + '. Consigliere a regole sul telefono (non è un modello di linguaggio).</p>' +
+        r.recipes.map(function (x, i) { return '<div class="note" style="margin:6px 0"><b>' + esc(x.name) + '</b><br><small class="muted">' + esc(x.why) + '</small><br><button class="btn sm" data-dna-r="' + i + '">Crea questa base</button></div>'; }).join('') + '<button class="btn sm" id="dna-ai-more">Altri 3 consigli</button>';
+      DNAUI.recipes = r.recipes;
+    });
+    $('#dna-ai-out').addEventListener('click', function (e) {
+      if (e.target.id === 'dna-ai-more') { $('#dna-ai').click(); return; }
+      var i = e.target.getAttribute && e.target.getAttribute('data-dna-r'); if (i == null || !DNAUI.recipes) return; var x = DNAUI.recipes[+i], rows = $$('#dna-rows .dna-row');
+      rows.forEach(function (r, k) { var part = x.parts[k]; r.querySelector('select').value = part ? part.id : ''; r.querySelector('input').value = part ? part.w : 0; r.querySelector('b').textContent = (part ? part.w : 0) + '%'; });
+      DNAUI.over = {}; dnaCreate(true);
+    });
+    $('#dna-go').addEventListener('click', function () { dnaCreate(true); });
     $('#dna-again').addEventListener('click', function () { dnaCreate(true); });
     $('#dna-reset').addEventListener('click', function () { DNAUI.over = {}; dnaSliders(dnaBuild().dna); });
     $('#dna-save').addEventListener('click', function () { var nm = ($('#dna-name').value || '').trim().slice(0, 40); if (!nm) { $('#dna-msg').textContent = 'Scrivi un nome per il tuo stile.'; return; } var b = dnaBuild(); dnaSaved().push({ name: nm, dna: b.dna, at: Date.now() }); persist(); $$('#dna-rows select').forEach(function (sel, i) { var v = sel.value; dnaOpts(sel, i > 0); sel.value = v; }); $('#dna-msg').textContent = 'Salvato «' + nm + '». Lo trovi in «I miei stili» in ogni menu: puoi rimescolarlo con altri.'; });

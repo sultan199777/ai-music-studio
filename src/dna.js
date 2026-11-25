@@ -140,6 +140,24 @@
     return { dna: d, why: why, emotions: tops };
   }
 
+  /* ===== CONSIGLIERE: dal testo propone mix di stili (regole locali, nessuna API) ===== */
+  var AFF = {
+    malinconia: ['kidyugi', 'weeknd', 'f-cloud', 'drake'], nostalgia: ['ultimo', 'f-ballata', 'f-boombap', 'drake'], rabbia: ['shiva', 'smoke', 'f-drill', 'future'],
+    solitudine: ['kidyugi', 'drake', 'f-cloud', 'weeknd'], speranza: ['ultimo', 'lazza', 'sfera', 'f-ballata'], amore: ['anna', 'badbunny', 'f-rnb', 'weeknd'],
+    euforia: ['travis', 'f-rage', 'badbunny', 'anna'], tensione: ['smoke', 'future', 'f-phonk', 'shiva']
+  };
+  /* suggest(testo, n) → n ricette [{parts:[{id,w}], name, why}] diverse tra loro, basate sulle emozioni del testo */
+  function suggest(text, n, seed) {
+    var em = emotion(text), r = rng((seed || 1) * 104729 + 5), tops = em.top.length ? em.top : ['malinconia', 'tensione'], out = [], seen = {}, tries = 0;
+    while (out.length < (n || 3) && tries++ < 40) {
+      var e1 = tops[0], e2 = tops[1] || tops[0], a = AFF[e1][Math.floor(r() * AFF[e1].length)], b = AFF[e2][Math.floor(r() * AFF[e2].length)];
+      if (a === b) b = AFF[e2][(AFF[e2].indexOf(b) + 1) % AFF[e2].length]; if (a === b) continue;
+      var w = [50, 60, 70][Math.floor(r() * 3)], k = a + '|' + b; if (seen[k]) continue; seen[k] = 1;
+      out.push({ parts: [{ id: a, w: w }, { id: b, w: 100 - w }], name: BY[a].nome + ' + ' + BY[b].nome, why: 'Il testo parla soprattutto di ' + e1 + (e2 !== e1 ? ' e ' + e2 : '') + ': ' + BY[a].nome + ' porta il ' + w + '% del suono, ' + BY[b].nome + ' il resto.' });
+    }
+    return { emotions: em, recipes: out };
+  }
+
   /* ===== dal DNA ai parametri del Beat Composer ===== */
   var SNARE_HALF = [[8], [8], [8, 14], [8, 11]], SNARE_FULL = [[4, 12], [4, 12], [4, 12, 15]];
   function kickPair(r, density) {
@@ -162,5 +180,5 @@
     };
   }
   function describe(dna) { var d = sanitize(dna); return ORDER.map(function (k) { return FIELDS[k][2] + ': ' + (k === 'bpm' ? Math.round(d[k]) : d[k]); }); }
-  return { FIELDS: FIELDS, ORDER: ORDER, LIST: LIST, byId: byId, neutral: neutral, sanitize: sanitize, fuse: fuse, emotion: emotion, applyEmotion: applyEmotion, toProd: toProd, describe: describe, EMOS: EMOS };
+  return { FIELDS: FIELDS, ORDER: ORDER, LIST: LIST, byId: byId, neutral: neutral, sanitize: sanitize, fuse: fuse, emotion: emotion, applyEmotion: applyEmotion, suggest: suggest, toProd: toProd, describe: describe, EMOS: EMOS };
 });
