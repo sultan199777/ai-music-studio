@@ -134,7 +134,7 @@
     var order = GENRES.slice().sort(function (a, b) { return score[b] - score[a]; });
     var genre = order[0];
     /* ogni nuova versione passa a uno degli stili vicini al migliore: così «un'altra» è davvero un'altra, ma resta nel gusto del testo */
-    if (variant > 0 && !ps.genre && !opt.forceGenre) { var near = order.filter(function (g) { return score[g] >= score[order[0]] - 3 && (wantsLight || ['cloud', 'lofi', 'rnb', 'melodico', 'estate'].indexOf(g) < 0); }).slice(0, 6); genre = near[(variant - 1 + (h % 3)) % near.length]; }
+    if (variant > 0 && !ps.genre && !opt.forceGenre) { var near = order.filter(function (g) { return score[g] >= score[order[0]] - 3 && (wantsLight || ['cloud', 'lofi', 'rnb', 'melodico', 'estate'].indexOf(g) < 0); }).slice(0, 6); if (!near.length) near = order.filter(function (g) { return wantsLight || ['cloud', 'lofi', 'rnb', 'melodico', 'estate'].indexOf(g) < 0; }).slice(0, 6); if (!near.length) near = order.slice(0, 6); genre = near[(variant - 1 + (h % 3)) % near.length]; }
     why.push('Stile scelto: ' + NAMES[genre] + (order[1] ? ' (secondo: ' + NAMES[order[1]] + ')' : '') + '.');
 
     // velocità, scala, tonalità, seme

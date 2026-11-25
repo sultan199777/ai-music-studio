@@ -746,7 +746,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 16:08</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 16:35</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -4549,7 +4549,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     var order = GENRES.slice().sort(function (a, b) { return score[b] - score[a]; });
     var genre = order[0];
     /* ogni nuova versione passa a uno degli stili vicini al migliore: così «un'altra» è davvero un'altra, ma resta nel gusto del testo */
-    if (variant > 0 && !ps.genre && !opt.forceGenre) { var near = order.filter(function (g) { return score[g] >= score[order[0]] - 3 && (wantsLight || ['cloud', 'lofi', 'rnb', 'melodico', 'estate'].indexOf(g) < 0); }).slice(0, 6); genre = near[(variant - 1 + (h % 3)) % near.length]; }
+    if (variant > 0 && !ps.genre && !opt.forceGenre) { var near = order.filter(function (g) { return score[g] >= score[order[0]] - 3 && (wantsLight || ['cloud', 'lofi', 'rnb', 'melodico', 'estate'].indexOf(g) < 0); }).slice(0, 6); if (!near.length) near = order.filter(function (g) { return wantsLight || ['cloud', 'lofi', 'rnb', 'melodico', 'estate'].indexOf(g) < 0; }).slice(0, 6); if (!near.length) near = order.slice(0, 6); genre = near[(variant - 1 + (h % 3)) % near.length]; }
     why.push('Stile scelto: ' + NAMES[genre] + (order[1] ? ' (secondo: ' + NAMES[order[1]] + ')' : '') + '.');
 
     // velocità, scala, tonalità, seme
@@ -13111,7 +13111,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   ['#dw-lyrics', '#st-lyrics'].forEach(function (q) { var el = $(q); if (el) el.addEventListener('input', sbChipsLater); }); $('#sb-mood').addEventListener('change', sbChips); setTimeout(sbChips, 1500);
   /* il testo decide la base: se non hai scelto tu il genere a mano, parte il Cervello Sultan (una base diversa per ogni testo) */
   function brainFirst(again) { var s = cur(); if (s.lyrics && s.lyrics.trim() && !s.genreManual && (again || s.brainFor !== SultanBrain.hash(s.lyrics.trim()))) { runBrain(again && s.brainFor === SultanBrain.hash(s.lyrics.trim())); return true; } return false; }
-  $('#b-play').addEventListener('click', function () { if (brainFirst(false)) return; var p = cur().prod; if (!(cur().lyrics || '').trim() && !cur().genreManual && p.genre === 'melodico' && !p.atmNome) { atmQuick($('#b-status')); return; } makeAndPlay(false); });
+  $('#b-play').addEventListener('click', function () { if (brainFirst(false)) return; var p = cur().prod; if (!(cur().lyrics || '').trim() && !cur().genreManual && p.genre === 'melodico' && !p.atmNome) { atmQuick($('#b-status')); return; } if (SESSION.lastPlay && SESSION.baseMade) { newVariantBase(); return; } makeAndPlay(false); });
   $('#b-mel').addEventListener('click', function () { var p = cur().prod; p.melSeed = (p.melSeed || 0) + 1;
     /* anche gli strumenti della melodia e degli accordi cambiano, così la differenza si sente */
     var R = Instruments.RECIPES[p.genre] || {}, ok = function (id) { return !BANNED_INST[id]; }, ml = (R.melodia || []).filter(ok), ac = (R.accordi || []).filter(ok);
@@ -13119,7 +13119,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     persist(); fillBase(); makeAndPlay(false); });
   /* «Nuova variante»: se il cervello non parte (stile scelto a mano o niente testo) applico comunque un Remix vero:
      cassa, rullante, hi-hat, mix e melodia cambiano, lo stile resta. Prima cambiava solo il seme e si sentiva la stessa base. */
-  $('#b-new').addEventListener('click', function () {
+  function newVariantBase() {
     if (brainFirst(true)) return;
     if (!(cur().lyrics || '').trim() && !cur().genreManual) { atmQuick($('#b-status')); return; }
     var s = cur(), p = s.prod; s.varN = (s.varN || 0) + 1;
@@ -13129,7 +13129,8 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     var R2 = Instruments.RECIPES[p.genre] || {}; p.inst = Object.assign({}, p.inst || {}); ['melodia', 'accordi'].forEach(function (role) { var l = (R2[role] || []).filter(function (id) { return !BANNED_INST[id]; }); if (l.length) p.inst[role] = l[(rx.melSeed + role.length) % l.length]; }); persist();
     $('#b-status').textContent = 'Nuova variante ' + (s.varN + 1) + ': ' + rx.label + '.';
     makeAndPlay(true);
-  });
+  }
+  $('#b-new').addEventListener('click', newVariantBase);
   $('#b-stop').addEventListener('click', stopPlay);
   $('#b-save').addEventListener('click', async function () { coachRec('save', coachCtx()); var mx = buildMix({ voice: false }); saveAudio(mx.samples, mx.sr, 'base-' + (cur().title || 'canzone').replace(/\W+/g, '-'), $('#b-status')); });
 

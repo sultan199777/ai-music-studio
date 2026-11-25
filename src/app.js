@@ -937,7 +937,7 @@
   ['#dw-lyrics', '#st-lyrics'].forEach(function (q) { var el = $(q); if (el) el.addEventListener('input', sbChipsLater); }); $('#sb-mood').addEventListener('change', sbChips); setTimeout(sbChips, 1500);
   /* il testo decide la base: se non hai scelto tu il genere a mano, parte il Cervello Sultan (una base diversa per ogni testo) */
   function brainFirst(again) { var s = cur(); if (s.lyrics && s.lyrics.trim() && !s.genreManual && (again || s.brainFor !== SultanBrain.hash(s.lyrics.trim()))) { runBrain(again && s.brainFor === SultanBrain.hash(s.lyrics.trim())); return true; } return false; }
-  $('#b-play').addEventListener('click', function () { if (brainFirst(false)) return; var p = cur().prod; if (!(cur().lyrics || '').trim() && !cur().genreManual && p.genre === 'melodico' && !p.atmNome) { atmQuick($('#b-status')); return; } makeAndPlay(false); });
+  $('#b-play').addEventListener('click', function () { if (brainFirst(false)) return; var p = cur().prod; if (!(cur().lyrics || '').trim() && !cur().genreManual && p.genre === 'melodico' && !p.atmNome) { atmQuick($('#b-status')); return; } if (SESSION.lastPlay && SESSION.baseMade) { newVariantBase(); return; } makeAndPlay(false); });
   $('#b-mel').addEventListener('click', function () { var p = cur().prod; p.melSeed = (p.melSeed || 0) + 1;
     /* anche gli strumenti della melodia e degli accordi cambiano, così la differenza si sente */
     var R = Instruments.RECIPES[p.genre] || {}, ok = function (id) { return !BANNED_INST[id]; }, ml = (R.melodia || []).filter(ok), ac = (R.accordi || []).filter(ok);
@@ -945,7 +945,7 @@
     persist(); fillBase(); makeAndPlay(false); });
   /* «Nuova variante»: se il cervello non parte (stile scelto a mano o niente testo) applico comunque un Remix vero:
      cassa, rullante, hi-hat, mix e melodia cambiano, lo stile resta. Prima cambiava solo il seme e si sentiva la stessa base. */
-  $('#b-new').addEventListener('click', function () {
+  function newVariantBase() {
     if (brainFirst(true)) return;
     if (!(cur().lyrics || '').trim() && !cur().genreManual) { atmQuick($('#b-status')); return; }
     var s = cur(), p = s.prod; s.varN = (s.varN || 0) + 1;
@@ -955,7 +955,8 @@
     var R2 = Instruments.RECIPES[p.genre] || {}; p.inst = Object.assign({}, p.inst || {}); ['melodia', 'accordi'].forEach(function (role) { var l = (R2[role] || []).filter(function (id) { return !BANNED_INST[id]; }); if (l.length) p.inst[role] = l[(rx.melSeed + role.length) % l.length]; }); persist();
     $('#b-status').textContent = 'Nuova variante ' + (s.varN + 1) + ': ' + rx.label + '.';
     makeAndPlay(true);
-  });
+  }
+  $('#b-new').addEventListener('click', newVariantBase);
   $('#b-stop').addEventListener('click', stopPlay);
   $('#b-save').addEventListener('click', async function () { coachRec('save', coachCtx()); var mx = buildMix({ voice: false }); saveAudio(mx.samples, mx.sr, 'base-' + (cur().title || 'canzone').replace(/\W+/g, '-'), $('#b-status')); });
 
