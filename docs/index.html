@@ -607,7 +607,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
       <button class="dw-mode" data-sep="studio"><b>Studio</b><small>La voce più pulita (Mel-Band RoFormer, 474 MB). Consigliata sul computer.</small></button>
     </div>
     <p class="small muted" id="dw-sep-info"></p>
-    <label class="small">Quanto analizzo: <select id="dw-learn-secs"><option value="30">30 secondi (veloce)</option><option value="45">45 secondi (consigliato)</option><option value="90">90 secondi</option><option value="180">3 minuti (computer)</option></select></label><br>
+    <label class="small">Quanto analizzo: <select id="dw-learn-secs"><option value="30">30 secondi (veloce)</option><option value="40">40 secondi (consigliato)</option><option value="90">90 secondi</option><option value="180">3 minuti (computer)</option></select></label><br>
     <label class="small"><input type="checkbox" id="dw-bt-on" checked> Battiti e battute precisi con <b>Beat This!</b> (rete neurale gratuita, 10 MB, si scarica la prima volta)</label>
     <div class="row"><label class="btn pri" for="dw-learn-file">Carica una canzone o un video</label><input type="file" id="dw-learn-file" accept="audio/*,video/*,.mov,.mp4,.m4a" hidden></div>
     <div class="dw-prog" id="dw-learn-bar" hidden><i></i></div>
@@ -684,6 +684,11 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     <div class="dw-more"><a href="#voce">Voce: autotune e caratteri</a><a href="#strumenti">Strumentario e Laboratorio</a><a href="#beatlab">Laboratorio batteria (batteria a passi, piano roll)</a><a href="#studio">Coach completo e percorso</a></div>
   </section>
 
+  <details class="dw-panel dw-guide" data-ws="testo"><summary><b>Come si fa, da produttore</b> <span class="small muted">Passo 1 · il testo</span></summary><ol class="small" style="margin:8px 0 0 18px;line-height:1.5"><li>Scrivi il testo con i titoli <b>[Strofa]</b> e <b>[Ritornello]</b>: la base si costruisce su queste parti.</li><li>Il ritornello è il gancio: poche parole, facili da ripetere. Le strofe raccontano.</li><li>Righe di lunghezza simile suonano meglio a tempo. Se una riga è molto più lunga, spezzala.</li><li>Scrivi lo stile con parole tue (es. «trap dark», «drill malinconica») oppure lascialo vuoto: il testo decide.</li><li>Premi il tasto grande: la base nasce dal testo. Non ti piace? <b>✕</b> e ne arriva un'altra, senza fine. <b>♥</b> insegna al Gusto cosa ti piace.</li></ol><p class="small muted" style="margin-top:6px"><span class="tag i">Ipotesi</span> Un produttore parte dal gancio e dall'emozione, non dagli strumenti.</p></details>
+  <details class="dw-panel dw-guide" data-ws="base"><summary><b>Come si fa, da produttore</b> <span class="small muted">Passo 2 · la base</span></summary><ol class="small" style="margin:8px 0 0 18px;line-height:1.5"><li>Ascolta con le cuffie, a volume basso: se suona bene piano, suona bene sempre.</li><li>Non ti piace? <b>Cambia melodia</b> (stessa base, melodia nuova) oppure <b>Stravolgi</b> (stile diverso).</li><li>Metti ♥ alle basi che ti piacciono e ✕ a quelle che scarti: più voti dai, meglio il Gusto sceglie.</li><li>Scegli il tempo giusto: drill 140–145, trap 130–150 (anche a metà tempo), boom bap 85–95.</li><li>Effetti (sirene, spari, coro) li decide il testo: li trovi come eventi nella produzione e puoi toglierli.</li><li>Vuoi imparare da una base che ti piace? Nella Libreria carichi il file: l'app misura solo i numeri (tempo, ritmo, accordi) e non copia nulla.</li></ol><p class="small muted" style="margin-top:6px"><span class="tag i">Ipotesi</span> Un produttore ascolta 20 versioni e ne tiene una: qui le versioni non finiscono.</p></details>
+  <details class="dw-panel dw-guide" data-ws="voce"><summary><b>Come si fa, da produttore</b> <span class="small muted">Passo 3 · la voce</span></summary><ol class="small" style="margin:8px 0 0 18px;line-height:1.5"><li>Apri la guida al canto: ti dice quando entrare, quanto tenere la nota e dove respirare.</li><li>Registra a una spanna dal microfono, in una stanza con tessuti (letto, armadio) per meno eco.</li><li>Il livello giusto: la voce non deve mai toccare il rosso. Meglio piano che distorta.</li><li>Fai più riprese e tieni la migliore. Le doppie sul ritornello danno corpo.</li><li>Il controllo dell'orecchio misura tempo e intonazione e dice cosa sistemare.</li></ol><p class="small muted" style="margin-top:6px"><span class="tag i">Ipotesi</span> Le grandi voci trap sono spesso 3–4 riprese sovrapposte, non una sola.</p></details>
+  <details class="dw-panel dw-guide" data-ws="mix"><summary><b>Come si fa, da produttore</b> <span class="small muted">Passo 4 · mix e salvataggio</span></summary><ol class="small" style="margin:8px 0 0 18px;line-height:1.5"><li>Prima i livelli: voce davanti a tutto, 808 e cassa che non litigano, il resto dietro.</li><li>Poi riverbero ed eco: pochi sulla voce principale, di più sulle doppie e sulle fine-frase.</li><li>Ascolta il risultato su cuffie, altoparlante del telefono e auto: se regge su tutti, va bene.</li><li>Per YouTube punta a un volume medio vicino a −14 LUFS: più forte viene abbassato da solo.</li><li>Salva e pubblica solo quando lo decidi tu: l'app non pubblica nulla da sola.</li></ol><p class="small muted" style="margin-top:6px"><span class="tag i">Ipotesi</span> Il mix è togliere, non aggiungere: se non senti la voce, abbassa il resto.</p></details>
+  <details class="dw-panel dw-guide" data-ws="libreria"><summary><b>Come si fa, da produttore</b> <span class="small muted">Libreria e imparare</span></summary><ol class="small" style="margin:8px 0 0 18px;line-height:1.5"><li>Qui salvi le canzoni e carichi basi o video per imparare.</li><li>L'app separa voce e base, misura tempo, ritmo e accordi, e <b>tiene solo i numeri</b>.</li><li>Metti ♥ o ✕ alla base imparata: il Cervello userà quei numeri per le tue basi nuove.</li><li>Non carichiamo né copiamo canzoni altrui: si impara lo stile, non la melodia.</li></ol><p class="small muted" style="margin-top:6px"><span class="tag i">Ipotesi</span> Si impara come un produttore: ascoltando tanto e prendendo il metodo, non la canzone.</p></details>
   <div class="dw-advbar" data-ws="testo base voce"><button class="btn" id="dw-adv">Mostra strumenti avanzati</button></div>
   <div class="dw-next" data-ws="testo"><button class="btn pri" data-next="base">Avanti: crea la base →</button></div>
   <div class="dw-next" data-ws="base"><button class="btn pri" data-next="voce">Avanti: registra la voce →</button></div>
@@ -715,20 +720,21 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 12:48</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 12:52</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
-  <details class="card" open><summary>Come si usa dall'iPhone <svg width="18" height="18"><use href="#i-chev"/></svg></summary>
-    <ol style="padding-left:20px;margin:0">
-      <li><b>Testo.</b> Vai in <a href="#studio">Studio</a>, scrivi o incolla il tuo testo. Usa [Strofa] e [Ritornello] sulle righe di titolo.</li>
-      <li><b>Base.</b> Premi "Crea la base": il programma la compone seguendo il testo. Cambia gli strumenti con i cursori.</li>
-      <li><b>La tua voce.</b> Apri l'app <b>Memo Vocali</b> dell'iPhone e registra mentre canti (meglio con le cuffie sulla base). Tocca la registrazione → ⋯ → <b>Salva su File</b>. Poi in <a href="#voce">Voce</a> premi "Scegli la registrazione" e selezionala da File.</li>
-      <li><b>Autotune e rifinitura.</b> In Voce scegli tonalità e intensità, premi "Applica" e ascolta Originale / Corretta.</li>
-      <li><b>Voce sulla base.</b> Premi "Voce + base" per sentire la canzone completa. Poi salvala.</li>
-      <li><b>Clip.</b> In <a href="#video">Video</a> scegli una tua foto: diventa cartone/manga e si muove a tempo con le parole.</li>
+  <details class="card" open><summary><b>Guida: come si usa l'app</b> <svg width="18" height="18"><use href="#i-chev"/></svg></summary>
+    <p class="small muted" style="margin-top:8px">Apri sempre il sito da <b>Safari</b> (il microfono funziona solo lì) e usa "Aggiungi a Home" per averla come app. Usa cuffie con filo.</p>
+    <ol style="padding-left:20px;margin:8px 0 0;line-height:1.55">
+      <li><b>Testo.</b> Apri <a href="#daw">Studio</a> (passo 1 Testo). Scrivi o incolla il testo con i titoli <b>[Strofa]</b> e <b>[Ritornello]</b>. Se vuoi, scrivi lo stile a parole (es. «trap dark», «drill malinconica»).</li>
+      <li><b>Base.</b> Premi il tasto grande «Crea la base». Poi: <b>♥</b> se ti piace, <b>✕</b> se la scarti (ne arriva un'altra), <b>Stravolgi</b> per uno stile diverso, <b>Cambia melodia</b> per tenere la base e cambiare la melodia, <b>Ancora proposte</b> per vederne altre, senza fine. Più voti dai, meglio capisco il tuo gusto.</li>
+      <li><b>Imparare dalle basi.</b> In <b>Libreria</b> carica una base o un video che ti piace: l'app separa voce e base e misura tempo, cassa, rullante e accordi (solo numeri, niente copia). Metti <b>♥</b>: la prossima «Crea la base» userà quei numeri. Dopo «Stravolgi» li lascia da parte, per darti qualcosa di diverso.</li>
+      <li><b>Voce.</b> In <b>3 Voce</b> apri la guida al canto (quando entrare, quanto tenere, dove respirare), registra a una spanna dal microfono, rifai le riprese che non ti piacciono. L'orecchio controlla tempo e intonazione.</li>
+      <li><b>Mix.</b> In <b>4 Mix</b> voce davanti a tutto, 808 e cassa che non litigano, poi riverbero ed eco. Ascolta su cuffie e altoparlante. Per YouTube punta a circa −14 LUFS.</li>
+      <li><b>Salva.</b> Le canzoni restano sul tuo telefono. L'app non pubblica niente da sola.</li>
     </ol>
-    <p class="note">L'app non può accedere al microfono: per questo si registra con Memo Vocali e si importa.</p>
+    <p class="note"><b>Quando Claude non è più disponibile</b> (token finiti): l'app continua a funzionare, perché Cervello, Gusto, Orecchio, rime e guida al canto sono dentro l'app e girano sul telefono, gratis. Non puoi chiedere nuove modifiche all'app finché non torni a parlare con me; le canzoni e le basi che hai già fatto restano. I modelli di intelligenza artificiale opzionali (scrittura locale, Beat This!) si scaricano una volta con internet.</p>
   </details>
   <div class="card"><div class="card-head"><h3>Cosa funziona davvero oggi</h3></div><div id="h-status"></div></div>
 </main>
@@ -1076,7 +1082,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">320 test automatici superati su 320 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">326 test automatici superati su 326 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -4388,12 +4394,12 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   'use strict';
 
   var LEX = {
-    strada: 'strada strade quartiere quartieri fra frate bro gang piazza zona blocco polizia sbirri sbirro galera carcere droga fumo erba giro cella ghetto periferia palazzi marciapiede vicolo ragazzi banda clan zone strada'.split(' '),
+    strada: 'strada strade quartiere quartieri fra frate bro gang piazza zona blocco polizia sbirri sbirro galera carcere droga fumo erba giro cella ghetto periferia palazzi marciapiede vicolo ragazzi banda clan zone strada sirene sirena ambulanza ambulanze spari sparo sparatoria cemento asfalto cappuccio città citta sotterranea periferie rione rioni sbarre'.split(' '),
     soldi: 'soldi euro oro rolex lusso gucci prada macchina macchine diamanti collana collane cash banca fama top classifica platino dollari milioni tasca tasche portafoglio ferrari lambo orologio catena catene'.split(' '),
-    rabbia: 'guerra sangue odio nemici nemico falsi falso tradito tradimento pistola lama morte rabbia fuoco bruciare ammazzo uccidere vendetta cattivo lotta combatto nemmeno'.split(' '),
-    dolore: 'solo sola buio lacrime vuoto perso persa dolore pianto ricordi manca mancare addio piango male ferite ferita cicatrici ombra ombre spento silenzio notti'.split(' '),
-    amore: 'amore bacio baci cuore occhi baby labbra insieme tesoro stringo abbraccio ti amo mia mio passione pelle'.split(' '),
-    festa: 'festa estate mare ballare ballo sera club drink ragazze sole vacanza discoteca shot balliamo salto musica notte luci tutti'.split(' '),
+    rabbia: 'guerra sangue odio nemici nemico falsi falso tradito tradimento pistola lama morte mitra mitragliatrice rabbia fuoco bruciare ammazzo uccidere vendetta cattivo lotta combatto nemmeno'.split(' '),
+    dolore: 'solo sola buio lacrime vuoto perso persa dolore pianto ricordi manca mancare addio piango male ferite ferita cicatrici ombra ombre spento silenzio notti notte prega prega madre urlano urlo consuma consumano nero neri nera dark oscuro oscura fantasmi fantasma gelo freddo'.split(' '),
+    amore: 'amore bacio baci cuore occhi baby labbra insieme tesoro stringo abbraccio ti amo passione pelle'.split(' '),
+    festa: 'festa estate mare ballare ballo sera club drink ragazze sole vacanza discoteca shot balliamo salto musica luci tutti'.split(' '),
     nostalgia: 'ricordo ricordi infanzia vecchio vecchia anni tempo ieri casa mamma papà nonno nonna ragazzino bambino passato scuola'.split(' '),
     epico: 'dio cielo sogno sogni destino re impero leggenda vittoria vinco corona trono eterno immortale storia mondo futuro luce'.split(' ')
   };
@@ -4480,7 +4486,10 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     if (rep >= 0.25) { score.clubtrap += 1; score.trap += 0.5; why.push('Molte ripetizioni: ritornello da cantare tutti insieme.'); }
 
     // impronta del testo: piccolo spostamento deterministico, così testi diversi non danno lo stesso stile
-    GENRES.forEach(function (g, i) { score[g] += ((((h >>> (i * 3)) & 7) / 7) * 0.9) + ((((variant * 2654435761) >>> (i * 2)) & 3) / 3) * (variant ? 0.5 : 0); });
+    GENRES.forEach(function (g, i) { score[g] += ((((h >>> (i * 3)) & 7) / 7) * 0.9) + ((((variant * 2654435761) >>> (i * 2)) & 3) / 3) * (variant ? 1.3 : 0); });
+    /* gusto di base dell'utente (trap, drill, dark): senza scene di festa/amore, gli stili solari restano indietro. Si vede in 'why'. */
+    var bright0 = (scenes.festa || 0) + (scenes.amore || 0), wantsLight = bright0 > (scenes.dolore || 0) + (scenes.strada || 0) + (scenes.rabbia || 0) || opt.mood === 'euforico' || opt.mood === 'romantico';
+    if (!wantsLight) { ['afrotrap', 'reggaeton', 'estate', 'jersey', 'clubtrap', 'melodico', 'lofi', 'rnb'].forEach(function (g) { score[g] -= 1.4; }); ['trapdark', 'drill', 'trap', 'brooklyn', 'street'].forEach(function (g) { score[g] += 0.8; }); why.push('Il tuo stile è trap/drill/dark: parto da lì, se il testo non chiede festa o amore.'); }
     var ps = parseStyle(opt.styleText); if (ps.mood && !opt.mood) opt = Object.assign({}, opt, { mood: ps.mood });
     if (ps.genre) { score[ps.genre] += 100; why.push('Stile che hai scritto: «' + String(opt.styleText).trim() + '».'); }
     var moodWanted = opt.mood && MOOD[opt.mood] ? opt.mood : null, moodAuto = top[0] ? SCENE_MOOD[top[0]] : null, moodTarget = moodWanted || moodAuto || null;
@@ -4495,6 +4504,8 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     if (opt.avoid && opt.avoid.length) opt.avoid.forEach(function (g) { if (score[g] != null) score[g] -= 6; });
     var order = GENRES.slice().sort(function (a, b) { return score[b] - score[a]; });
     var genre = order[0];
+    /* ogni nuova versione passa a uno degli stili vicini al migliore: così «un'altra» è davvero un'altra, ma resta nel gusto del testo */
+    if (variant > 0) { var near = order.filter(function (g) { return score[g] >= score[order[0]] - 3 && (wantsLight || ['cloud', 'lofi', 'rnb', 'melodico', 'estate'].indexOf(g) < 0); }).slice(0, 6); genre = near[(variant - 1 + (h % 3)) % near.length]; }
     why.push('Stile scelto: ' + NAMES[genre] + (order[1] ? ' (secondo: ' + NAMES[order[1]] + ')' : '') + '.');
 
     // velocità, scala, tonalità, seme
@@ -5001,6 +5012,62 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     return out;
   }
   return { SIG: SIG, siren: siren, gunshot: gunshot, machinegun: machinegun, choir: choir, focus: focus, pick: pick, rng: rng };
+});
+
+/*
+ * Gusto: impara dai ♥ e ✕ che metti alle basi generate. Salva SOLO numeri (stile, tonalità, pesantezza, BPM), mai audio né testi.
+ * newMem() → memoria vuota; vote(mem, plan, +1|-1) → nuova memoria; profile(mem) → profilo per SultanBrain (styleScore) o null;
+ * avoidList(mem) → stili da evitare (✕ ripetuti); summary(mem) → frase in italiano. Tutto misurato sui tuoi voti (Misurato).
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.Taste = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  var MAX = 200;
+  function newMem() { return { n: 0, up: 0, down: 0, g: {}, mode: { minore: 0, maggiore: 0 }, heavy: 0, bpm: [], log: [] }; }
+  function copy(m) { return JSON.parse(JSON.stringify(m || newMem())); }
+  function vote(mem, plan, v) {
+    var m = copy(mem); if (!plan || !plan.genre || !v) return m;
+    v = v > 0 ? 1 : -1; m.n++; if (v > 0) m.up++; else m.down++;
+    m.g[plan.genre] = (m.g[plan.genre] || 0) + v;
+    if (v > 0) {
+      if (plan.mode === 'maggiore') m.mode.maggiore++; else m.mode.minore++;
+      if (plan.heavy) m.heavy++;
+      if (plan.bpm) { m.bpm.push(Math.round(plan.bpm)); if (m.bpm.length > 40) m.bpm.shift(); }
+    }
+    m.log.push([plan.genre, v]); if (m.log.length > MAX) m.log.shift();
+    return m;
+  }
+  /* peso per stile: da -1 a +1, solo se hai votato abbastanza */
+  function weights(mem) {
+    var out = {}; if (!mem || mem.n < 3) return out;
+    Object.keys(mem.g).forEach(function (k) {
+      var tot = mem.log.filter(function (x) { return x[0] === k; }).length || 1;
+      out[k] = Math.max(-1, Math.min(1, mem.g[k] / Math.max(2, tot)));
+    });
+    return out;
+  }
+  function profile(mem) {
+    var w = weights(mem), ks = Object.keys(w); if (!ks.length) return null;
+    var sc = {}; ks.forEach(function (k) { sc[k] = w[k]; });
+    return { styleScore: sc, names: 'il tuo gusto (' + mem.up + ' ♥, ' + mem.down + ' ✕)', mood: 'seguo i tuoi voti' };
+  }
+  function avoidList(mem) {
+    var w = weights(mem); return Object.keys(w).filter(function (k) { return w[k] <= -0.5; });
+  }
+  function bpmRange(mem) {
+    if (!mem || mem.bpm.length < 3) return null; var s = mem.bpm.slice().sort(function (a, b) { return a - b; });
+    return [s[Math.floor(s.length * 0.2)], s[Math.floor(s.length * 0.8)]];
+  }
+  function summary(mem) {
+    if (!mem || !mem.n) return 'Non ho ancora votato nulla. Metti ♥ alle basi che ti piacciono e ✕ a quelle che scarti: imparo.';
+    if (mem.n < 3) return 'Ho ' + mem.n + ' voti: ancora troppo pochi per capire il tuo gusto.';
+    var w = weights(mem), ks = Object.keys(w).sort(function (a, b) { return w[b] - w[a]; }), love = ks.filter(function (k) { return w[k] > 0.2; }).slice(0, 3), no = avoidList(mem).slice(0, 3), r = bpmRange(mem);
+    return 'Misurato su ' + mem.n + ' voti: ' + (love.length ? 'ti piacciono ' + love.join(', ') : 'nessuno stile spicca ancora') + (no.length ? '; scarti spesso ' + no.join(', ') : '') + (r ? '; BPM che scegli: ' + r[0] + '–' + r[1] : '') + (mem.heavy > mem.up / 2 ? '; di solito pesanti' : '') + '.';
+  }
+  function reset() { return newMem(); }
+  return { newMem: newMem, vote: vote, weights: weights, profile: profile, avoidList: avoidList, bpmRange: bpmRange, summary: summary, reset: reset };
 });
 
 /*
@@ -12067,7 +12134,13 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   });
   /* ===== Cartelle artista: stile misurato dai testi caricati (solo numeri) ===== */
   function arStore() { LIB.settings.artists = LIB.settings.artists || {}; return LIB.settings.artists; }
+  function tasteMem() { return LIB.settings.taste || (LIB.settings.taste = Taste.newMem()); }
   function arModel() {
+    var b = arModel0(), t = Taste.profile(tasteMem()); if (!t) return b; if (!b) return t;
+    var sc = Object.assign({}, b.styleScore || {}); Object.keys(t.styleScore).forEach(function (g) { sc[g] = (sc[g] || 0) + 1.5 * t.styleScore[g]; });
+    return Object.assign({}, b, { styleScore: sc, names: (b.names || '') + ' + ' + t.names });
+  }
+  function arModel0() {
     var st = arStore(), names = Object.keys(st).filter(function (n) { return st[n].on; });
     var a = names.length ? ArtistLab.blend(names.map(function (n) { return ArtistLab.finalize(st[n].acc); }), names) : null, bp = beatProfile();
     if (!a) return bp; if (!bp) return a;
@@ -12175,7 +12248,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     if (radical) { fixedV = (s.brainV || 0) + 1; mel = (s.brainV || 0) + 7; }
     if (!s.lyrics.trim()) { m.textContent = 'Scrivi o incolla prima il testo (in alto): il cervello parte da quello.'; return; }
     s.brainV = fixedV != null ? fixedV : (again ? (s.brainV || 0) + 1 : 0); s.brainFor = SultanBrain.hash(s.lyrics.trim()); s.genreManual = false;
-    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel(), mood: $('#sb-mood').value || null, styleText: ($('#sb-style') || {}).value || '', avoid: radical ? s.recentG.slice(-5) : null }); s.recentG.push(pl.genre); if (s.recentG.length > 12) s.recentG.shift(); s.moodTarget = pl.moodTarget; applyMoodBg(pl.moodTarget); persist();
+    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel(), mood: $('#sb-mood').value || null, styleText: ($('#sb-style') || {}).value || '', avoid: (radical ? s.recentG.slice(-5) : []).concat(Taste.avoidList(tasteMem())) }); s.recentG.push(pl.genre); s.lastPlan = { genre: pl.genre, mode: pl.mode, heavy: !!pl.heavy, bpm: pl.bpm }; if (s.recentG.length > 12) s.recentG.shift(); s.moodTarget = pl.moodTarget; applyMoodBg(pl.moodTarget); persist();
     p.heavy = !!pl.heavy; p.melSeed = mel || 0; p.sig = SigFx.pick({ styleText: ($('#sb-style') || {}).value || '', seed: pl.seed, scenes: pl.scenes, genre: pl.genre }); p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
     var res = Coach.suggest(coachState(), coachCands(p.genre), { emotion: pl.scene, seed: pl.seed }), R = Instruments.RECIPES[p.genre] || {};
     ['melodia', 'accordi', 'pad'].forEach(function (role) { if (BANNED_INST[res.inst[role]]) res.inst[role] = (R[role] || ['piano'])[0]; });
@@ -12183,8 +12256,13 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     if (['trap', 'trapdark', 'drill', 'street', 'boombap', 'clubtrap'].indexOf(p.genre) >= 0) { /* rap: strofe parlate a ritmo, ritornelli cantati (solo righe senza modo scelto da te) */
       s.modes = s.modes || {}; var sm0 = SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: {} });
       sm0.lines.forEach(function (ln) { if (!s.modes[ln.text]) s.modes[ln.text] = (ln.section === 'ritornello' || ln.section === 'bridge') ? 'canta' : 'parla'; }); }
+    /* imparato dalle basi che ti piacciono (solo numeri): ritmo, cassa, rullante, giro di accordi, tempo. «Stravolgi» li lascia da parte per darti qualcosa di diverso. */
+    var lp = radical ? null : learnPlan(), learnTxt = '';
+    if (lp && lp.from) { p.groove = lp.groove; p.prog = lp.prog; p.tune = lp.tune; p.fromLearn = lp.from; if (Math.abs(lp.bpm - pl.bpm) <= 30) p.bpm = Math.round((pl.bpm + 2 * lp.bpm) / 3); if (lp.from >= 2) p.mode = lp.mode;
+      learnTxt = '<br><span class="tag m">Misurato</span> Ho usato i numeri di ' + lp.from + ' basi che ti piacciono: cassa sui passi ' + lp.groove.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + (lp.prog ? ', giro ' + BeatLearn.progName(lp.prog, lp.mode) : '') + ', ' + p.bpm + ' BPM.'; }
+    else { if (p.fromLearn) { p.groove = null; p.prog = null; p.fromLearn = 0; } learnTxt = learnList().some(function (r) { return r.vote > 0; }) ? '' : '<br><span class="small muted">Non ho ancora basi imparate: caricane una in Libreria e premi ♥ per farmi imparare ritmo e accordi.</span>'; }
     p.inst = res.inst; persist(); fillBase();
-    m.innerHTML = '<b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + pl.mode + '<br>' + pl.why.map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Strumenti: ' + ['melodia', 'accordi', 'pad'].map(function (r) { return r + ' ' + esc(instName(p.inst[r])); }).join(', ') + '. Se non ti piace premi "Altra versione dal testo".';
+    m.innerHTML = '<b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + pl.mode + '<br>' + pl.why.map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Strumenti: ' + ['melodia', 'accordi', 'pad'].map(function (r) { return r + ' ' + esc(instName(p.inst[r])); }).join(', ') + '. Se non ti piace premi "Altra versione dal testo".' + learnTxt + '<div class="row" style="margin-top:8px"><button class="chip" data-taste="1">♥ Mi piace</button><button class="chip" data-taste="-1">✕ Scarta e dammene un\'altra</button></div><div class="small muted" id="sb-taste">' + esc(Taste.summary(tasteMem())) + '</div>';
     await makeAndPlay(false);
     earRun(true);
   }
@@ -12200,18 +12278,27 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   var SB_N = 0;
   function sbMore(reset) {
     var s = cur(), box = $('#sb-list'); if (!s.lyrics.trim()) { box.innerHTML = '<p class="small">Scrivi prima il testo.</p>'; return; }
-    if (reset) { SB_N = 0; box.innerHTML = '<ul class="clean small" id="sb-ul"></ul><div class="row"><button class="btn sm" id="sb-more">Altre 6 proposte</button></div>'; }
+    if (reset) { SB_N = 0; box.innerHTML = '<ul class="clean small" id="sb-ul"></ul><div class="row"><button class="btn sm" id="sb-more">Ancora proposte (non finiscono mai)</button></div>'; }
     var a = analysisOf(s), st = ($('#sb-style') || {}).value || '', h = '', i;
     for (i = SB_N; i < SB_N + 6; i++) {
-      var pl = SultanBrain.plan(s.lyrics, a, { variant: i, profile: arModel(), mood: $('#sb-mood').value || null, styleText: st });
-      h += '<li>' + (i + 1) + '. <b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + NOTES[pl.tonic] + ' ' + pl.mode + (pl.heavy ? ' · pesante' : '') + ' <button class="chip" data-sb-v="' + i + '" style="min-height:28px;padding:2px 10px">Ascolta</button></li>';
+      var pl = SultanBrain.plan(s.lyrics, a, { variant: i, profile: arModel(), mood: $('#sb-mood').value || null, styleText: st, avoid: Taste.avoidList(tasteMem()) });
+      h += '<li>' + (i + 1) + '. <b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + NOTES[pl.tonic] + ' ' + pl.mode + (pl.heavy ? ' · pesante' : '') + ' <button class="chip" data-sb-v="' + i + '" style="min-height:28px;padding:2px 10px">Ascolta</button> <button class="chip" data-sb-like="' + i + '" style="min-height:28px;padding:2px 10px">♥</button><button class="chip" data-sb-nope="' + i + '" style="min-height:28px;padding:2px 10px">✕</button></li>';
     }
     SB_N += 6; $('#sb-ul').insertAdjacentHTML('beforeend', h);
   }
   $('#sb-six').addEventListener('click', function () { sbMore(true); });
   $('#sb-list').addEventListener('click', function (e) {
     if (e.target && e.target.id === 'sb-more') { sbMore(false); return; }
-    var v = e.target && e.target.getAttribute && e.target.getAttribute('data-sb-v'); if (v != null) runBrain(false, +v, +v);
+    var v = e.target && e.target.getAttribute && e.target.getAttribute('data-sb-v'); if (v != null) { runBrain(false, +v, +v); return; }
+    var lk = e.target && e.target.getAttribute && e.target.getAttribute('data-sb-like'), np = e.target && e.target.getAttribute && e.target.getAttribute('data-sb-nope'), k = lk != null ? lk : np;
+    if (k != null) { var s = cur(), pl = SultanBrain.plan(s.lyrics, analysisOf(s), { variant: +k, profile: arModel(), mood: $('#sb-mood').value || null, styleText: ($('#sb-style') || {}).value || '', avoid: Taste.avoidList(tasteMem()) }); LIB.settings.taste = Taste.vote(tasteMem(), pl, lk != null ? 1 : -1); persist(); e.target.textContent = lk != null ? '♥ ok' : '✕ ok'; e.target.disabled = true; }
+  });
+  /* Gusto: ♥ / ✕ sulla base appena fatta */
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest && e.target.closest('[data-taste]'); if (!b) return; var s = cur(), v = +b.getAttribute('data-taste');
+    if (!s.lastPlan) return; LIB.settings.taste = Taste.vote(tasteMem(), s.lastPlan, v); persist();
+    var t = document.getElementById('sb-taste'); if (t) t.textContent = Taste.summary(tasteMem());
+    if (v < 0) runBrain(false, null, null, true); else b.textContent = '♥ salvato';
   });
   $('#sb-again').addEventListener('click', function () { runBrain(true); });
   /* il testo decide la base: se non hai scelto tu il genere a mano, parte il Cervello Sultan (una base diversa per ogni testo) */
@@ -13471,7 +13558,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     return { sr: 44100, voice: voice, base: base, stems: st, rhythm: rhythm, orig: orig, ai: true,
       note: (mode === 'studio' ? 'Modalità Studio: voce con Mel-Band RoFormer, base divisa con SCNet.' : 'Modalità Rapida: SCNet.') + ' Modelli open source, tutto sul dispositivo. Ritmo misurato su batteria e basso separati.' };
   }
-  function learnSecs() { var v = +LIB.settings.learnSecs; return v >= 20 && v <= 300 ? v : 45; }
+  function learnSecs() { var v = +LIB.settings.learnSecs; return v >= 20 && v <= 300 ? v : 40; }
   async function sepFast(f, el) {
     var d = await decodeStereo(f, 32000), sr = d.sr, i, mx = Math.round(sr * learnSecs());
     if (d.L.length > mx) { var b0 = Math.max(0, Math.min(d.L.length - mx, Math.round(d.L.length * 0.3))); d.L = d.L.slice(b0, b0 + mx); if (d.R) d.R = d.R.slice(b0, b0 + mx); }
@@ -13482,7 +13569,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     return { sr: sr, voice: sep.voice, base: bm, stems: null, rhythm: mono, orig: mono, ai: false, note: 'ATTENZIONE: l\'AI non è partita su questo dispositivo, ho usato il metodo semplice. Voce e base NON sono pulite: va bene solo per misurare il ritmo.' };
   }
   function normOnly(x, sr) { return BeatLearn.clean(x, sr, { denoise: 0 }).x; }
-  (function learnCrashNote() { try { var r = JSON.parse(localStorage.getItem('learnRunning') || 'null'); if (!r) return; localStorage.removeItem('learnRunning'); if (Date.now() - r.at > 3 * 3600e3) return; LIB.settings.learnSecs = Math.max(20, Math.round((r.secs || 45) * 0.6)); persist(); $('#dw-learn-msg').textContent = 'L\'ultima analisi di "' + r.name + '" si è interrotta: il telefono ha chiuso la pagina (memoria o schermo bloccato). Riprova: ora analizzo solo ' + LIB.settings.learnSecs + ' secondi. Tieni lo schermo acceso.'; } catch (e) {} })();
+  (function learnCrashNote() { try { var r = JSON.parse(localStorage.getItem('learnRunning') || 'null'); if (!r) return; localStorage.removeItem('learnRunning'); if (Date.now() - r.at > 3 * 3600e3) return; LIB.settings.learnSecs = Math.max(20, Math.round((r.secs || 40) * 0.6)); persist(); $('#dw-learn-msg').textContent = 'L\'ultima analisi di "' + r.name + '" si è interrotta: il telefono ha chiuso la pagina (memoria o schermo bloccato). Riprova: ora analizzo solo ' + LIB.settings.learnSecs + ' secondi. Tieni lo schermo acceso.'; } catch (e) {} })();
   $('#dw-learn-secs').value = String(learnSecs()); $('#dw-learn-secs').addEventListener('change', function () { LIB.settings.learnSecs = +this.value; persist(); });
   $('#dw-bt-on').checked = LIB.settings.beatThis !== false; $('#dw-bt-on').addEventListener('change', function () { LIB.settings.beatThis = this.checked; persist(); });
   /* Beat This! (MIT): battiti e inizio battuta con una rete neurale da 10 MB, scaricata una volta sola */
