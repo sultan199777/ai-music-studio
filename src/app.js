@@ -95,6 +95,26 @@
     if (player.ctx.state === 'suspended' && player.ctx.resume) player.ctx.resume();
     return player.ctx;
   }
+  /* iPhone: l'audio parte solo se viene sbloccato DENTRO il tocco. Lo sblocco ora avviene a ogni tocco (non dopo la composizione) e un file muto
+     fa suonare anche con l'interruttore silenzioso. */
+  var AU = { el: null, n: 0, streams: [] };
+  function micLive() { AU.streams = AU.streams.filter(function (s) { return s.getTracks().some(function (t) { return t.readyState === 'live'; }); }); return AU.streams.length > 0; }
+  function silentEl() {
+    if (AU.el) return AU.el;
+    try { var n = 8000, u = new Uint8Array(44 + n * 2), dv = new DataView(u.buffer), w = function (o, s) { for (var i = 0; i < s.length; i++) u[o + i] = s.charCodeAt(i); };
+      w(0, 'RIFF'); dv.setUint32(4, 36 + n * 2, true); w(8, 'WAVEfmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, 8000, true); dv.setUint32(28, 16000, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true); w(36, 'data'); dv.setUint32(40, n * 2, true);
+      var a = document.createElement('audio'); a.src = URL.createObjectURL(new Blob([u], { type: 'audio/wav' })); a.loop = true; a.setAttribute('playsinline', ''); a.preload = 'auto'; AU.el = a; } catch (e) {}
+    return AU.el;
+  }
+  function unlockAudio() {
+    AU.n++;
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+    try { var c = getCtx(); if (c) { if (c.state !== 'running' && c.resume) c.resume(); var b = c.createBuffer(1, 1, 22050), s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.start(0); } } catch (e) {}
+    try { var el = silentEl(); if (el) { var pr = el.play(); if (pr && pr.catch) pr.catch(function () {}); } } catch (e) {}
+  }
+  ['touchstart', 'touchend', 'pointerdown', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { var c = player.ctx; if (!c || c.state !== 'running' || AU.n < 2) unlockAudio(); else if (AU.el && AU.el.paused && !micLive()) { try { var pr = AU.el.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {} } }, { capture: true, passive: true }); });
+  /* mentre registri la voce il file muto si ferma (non deve disturbare il microfono) */
+  try { var gum0 = navigator.mediaDevices && navigator.mediaDevices.getUserMedia && navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices); if (gum0) navigator.mediaDevices.getUserMedia = function (c) { try { if (AU.el) AU.el.pause(); } catch (e) {} return gum0(c).then(function (s) { AU.streams.push(s); return s; }); }; } catch (e) {}
   function makeBuffer(ctx, samples, sr) {
     var b = ctx.createBuffer(1, samples.length, sr);
     if (b.copyToChannel) b.copyToChannel(samples, 0); else b.getChannelData(0).set(samples);
@@ -892,6 +912,11 @@
     $('#one-to-learn').addEventListener('click', function (e) { e.preventDefault(); dwWs('libreria'); window.scrollTo(0, 0); });
     $('#one-to-voice').addEventListener('click', function (e) { e.preventDefault(); dwWs('voce'); window.scrollTo(0, 0); });
   })();
+  $('#one-beep').addEventListener('click', function () {
+    unlockAudio(); var out = $('#one-beep-out'), c = getCtx(), st = c ? c.state : 'nessun audio', sess = ''; try { sess = navigator.audioSession ? navigator.audioSession.type : 'non disponibile'; } catch (e) {}
+    try { var n = 22050 * 1.2, x = new Float32Array(n), i; for (i = 0; i < n; i++) { var t = i / 22050; x[i] = 0.35 * Math.sin(2 * Math.PI * (t < 0.6 ? 440 : 660) * t) * Math.min(1, t * 20) * Math.max(0, 1 - t / 1.2); } playBuf(x, 22050); } catch (e) { out.textContent = 'Errore: ' + e.message; return; }
+    out.innerHTML = 'Dovresti sentire due note (la, poi mi). Stato audio: <b>' + esc(st) + '</b> · sessione: ' + esc(sess) + '.<br>Se non senti niente: 1) alza il volume dell\'iPhone, 2) controlla l\'interruttore laterale (niente arancione = suona), 3) scollega e ricollega le cuffie, 4) chiudi Safari e riaprilo, 5) l\'app deve essere aperta da Safari, non dentro un\'altra app. Poi dimmi cosa vedi scritto in «Stato audio».';
+  });
   function sleepMs(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   $('#sb-mood').addEventListener('change', function () { $('#bl-mood').value = this.value; });
   $('#bl-mood').addEventListener('change', function () { $('#sb-mood').value = this.value; });
