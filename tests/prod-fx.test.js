@@ -41,3 +41,10 @@ test('firme del Cervello (SigFx): una sola volta, come eventi della Produzione',
   const shotsOnChorus = ev.filter(e => e.snd === 'sparo' && e.bar === 4).length; assert.ok(shotsOnChorus <= 1);
   const b = P.sound('corolirico', 8000, 1, { dur: 2, midi: 57 }); assert.ok(b.length >= 8000 * 1.9 && b.some(v => Math.abs(v) > 0.1));
 });
+test('testo vero (25/11): niente falsi temi da parole simili (confondersi≠onde, chiamano≠telefono), cristallo e dolore sì', () => {
+  const r = l => P.readLine(l).hits.map(h => h.why);
+  assert.ok(!r('con gli altri, che è tanto facile non vuole confondersi').includes('mare'));
+  assert.ok(!r('alcuni lo chiamano dono, altri agonia').includes('telefono'));
+  assert.ok(r('sta in bilico come un cristallo su neve').includes('qualcosa che si rompe'));
+  assert.ok(r('mi prendo i loro dolori e li porto addosso').includes('cuore'));
+});
