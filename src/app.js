@@ -501,6 +501,7 @@
     await ensureInst();
     try {
       var mx = buildMix({ voice: false });
+      if (gvS().on && !SESSION.useImported && cur().lyrics && cur().lyrics.trim()) { st.textContent = 'Aggiungo la voce guida…'; await tick(); mx = gvAdd(mx); }
       var lp = SESSION.lastPlay = { t: performance.now(), ctx: coachCtx(), dur: mx.samples.length / mx.sr };
       var ok = playBuf(mx.samples, mx.sr, karaokeTick(mx.bpm), function () { $('#kar').innerHTML = '<div><b>Fine</b><small>Premi di nuovo per ricantare</small></div>'; if ((performance.now() - lp.t) / 1000 > lp.dur * 0.9) coachRec('complete', lp.ctx); });
       if (!ok) { st.textContent = 'Questo browser non riesce a riprodurre audio.'; return null; }
@@ -508,6 +509,7 @@
       var s = cur(); if (['idea', 'testo'].indexOf(s.status) !== -1) { s.status = 'base'; persist(); }
       var b = SESSION.useImported ? null : getBase();
       $('#b-out').innerHTML = b ? '<div class="note"><b>' + esc(ALLG[b.genre].label) + '</b> in ' + NOTES[b.tonic] + ' ' + b.mode + ', ' + b.bpm + ' BPM, ' + b.bars + ' battute (' + fmt(b.duration) + ' s). Accordi: <span class="mono">' + b.progression.join(' · ') + '</span>. ' + (b.inst && (b.inst.melodia || b.inst.accordi || b.inst.pad) ? 'Strumenti: ' + ['melodia', 'accordi', 'pad'].filter(function (r) { return b.inst[r]; }).map(function (r) { return instName(b.inst[r]) + ' (' + r + ')'; }).join(', ') + '.' : 'Suoni sintetici.') + ' "Nuova variante" cambia la melodia.' + (b.sections ? '<br>Struttura: <span class="mono">' + b.sections.map(function (x) { return x.name + ' ' + x.bars; }).join(' · ') + '</span>' : '') + '</div>' : '';
+      if (mx.guide) $('#b-out').insertAdjacentHTML('beforeend', '<p class="small muted">Canta la voce guida: uomo, sintetica, autotune duro (' + mx.guide + ' sillabe). Si regola in «3 Voce».</p>');
       return mx;
     } catch (e) { st.textContent = 'Non sono riuscito a creare la base. Prova con meno battute.'; return null; }
   }
@@ -520,6 +522,20 @@
   (function () {
     var sel = $('#ai-model'); if (!sel) return;
     sel.innerHTML = '<option value="ollama">Ollama sul computer (migliore, se lo hai)</option>' + LocalAI.MODELS.map(function (m) { return '<option value="' + m.id + '">' + m.label + ' · ' + m.note + '</option>'; }).join('');
+    /* artista: cartelle imparate (numeri misurati) + atmosfere; il linguaggio crudo è una scelta tua e si ricorda */
+    (function () {
+      var as = $('#ai-artist'), rw = $('#ai-raw'); if (!as || !rw) return; var h = '<option value="">Nessuno: solo il mio stile</option>', st = arStore();
+      var names = Object.keys(st).filter(function (n) { return st[n].on; });
+      if (names.length) h += '<optgroup label="Le tue cartelle artista">' + names.map(function (n) { return '<option value="a:' + esc(n) + '">' + esc(n) + '</option>'; }).join('') + '</optgroup>';
+      if (window.StylePresets) h += '<optgroup label="Atmosfere">' + StylePresets.LIST.map(function (pr) { return '<option value="p:' + pr.id + '">' + esc(pr.nome) + '</option>'; }).join('') + '</optgroup>';
+      as.innerHTML = h; try { if (LIB.settings.aiRaw) rw.value = LIB.settings.aiRaw; if (LIB.settings.aiArtist) as.value = LIB.settings.aiArtist; } catch (e) {}
+      as.addEventListener('change', function () { LIB.settings.aiArtist = as.value; persist(); }); rw.addEventListener('change', function () { LIB.settings.aiRaw = rw.value; persist(); });
+    })();
+    function aiArtist() {
+      var v = ($('#ai-artist') || {}).value || ''; if (!v) return null;
+      if (v.indexOf('a:') === 0) { var n = v.slice(2), st = arStore(); try { var P = ArtistLab.blend([ArtistLab.finalize(st[n].acc)], [n]); return { name: n, note: P && P.mood ? P.mood : '' }; } catch (e) { return { name: n, note: '' }; } }
+      var pr = StylePresets.byId(v.slice(2)); return pr ? { name: pr.nome, note: (pr.spiega || '') + ' Circa ' + pr.bpm + ' BPM.' } : null;
+    }
     var ramBox = $('#ai-ram'); if (ramBox) ramBox.addEventListener('change', function () { var r = LocalAI.recommend(ramBox.value); $('#ai-ramnote').innerHTML = r.note + ' Comando da scrivere nel Terminale: <span class="mono">ollama pull ' + r.model + '</span>'; });
     function ready(on) { ['#ai-v', '#ai-p', '#ai-c', '#ai-m', '#ai-r'].forEach(function (i) { var el = $(i); if (el) el.disabled = !on; }); }
     var LINE = '';
@@ -544,7 +560,7 @@
       out.innerHTML = '<p class="small">Penso…</p>';
       try {
         var sc = {}; try { sc = SultanBrain.plan(s.lyrics, analysisOf(s), {}).scenes || {}; } catch (e) {} var topSc = Object.keys(sc).filter(function (k) { return sc[k] > 0; }).sort(function (a, b) { return sc[b] - sc[a]; }).slice(0, 3).join(', ');
-        var res = await LocalAI.ask(task, { taste: Taste.summary(tasteMem()), scenes: topSc, line: line || '', context: lyricLines(s.lyrics).slice(task === 'ritornello' ? -14 : -6).join('\n'), genre: (ALLG[s.prod.genre] || {}).label || s.prod.genre, mood: s.moodTarget || 'dark', syll: line ? ((LyricsEngine.lineSyllables(line) || {}).metric || 10) : 8, rhymes: rh, artistNote: M ? M.mood : '' });
+        var res = await LocalAI.ask(task, { artist: aiArtist(), raw: ($('#ai-raw') || {}).value || 'crudo', taste: Taste.summary(tasteMem()), scenes: topSc, line: line || '', context: lyricLines(s.lyrics).slice(task === 'ritornello' ? -14 : -6).join('\n'), genre: (ALLG[s.prod.genre] || {}).label || s.prod.genre, mood: s.moodTarget || 'dark', syll: line ? ((LyricsEngine.lineSyllables(line) || {}).metric || 10) : 8, rhymes: rh, artistNote: M ? M.mood : '' });
         out.innerHTML = res.length ? '<ul class="clean small">' + res.map(function (x, i) { return '<li>' + esc(x) + ' <button class="chip" data-ai-use="' + i + '" style="min-height:28px;padding:2px 10px">Usa</button></li>'; }).join('') + '</ul><p class="small muted"><span class="tag i">Ipotesi</span> Sono bozze di un modello piccolo: controlla senso e rime.</p>' : '<p class="small">Nessuna proposta utile, riprova.</p>';
         out._res = res; out._line = line; out._task = task;
       } catch (e) { out.innerHTML = '<p class="small">Errore: ' + esc(e && e.message ? e.message : e) + '</p>'; }
@@ -690,6 +706,62 @@
     if (r.title && (!s.title || /^(nuova canzone|senza titolo)/i.test(s.title))) { s.title = r.title; ['#dw-name', '#st-title'].forEach(function (q) { var el = $(q); if (el) el.value = r.title; }); var ts = $('#top-song'); if (ts) ts.textContent = r.title; }
     persist(); return '<span class="tag i">Ipotesi</span> ' + esc(AutoSections.summary(r)) + ' Puoi cambiare i titoli tra parentesi.';
   }
+  /* ===== Voce guida: voce maschile sintetica sulla base (impara solo l'altezza della tua voce) ===== */
+  function gvS() { return LIB.settings.gv || (LIB.settings.gv = { on: true, gain: 70, tune: 18, f0: 130, lo: 0, hi: 0, n: 0 }); }
+  function gvAdd(mx) {
+    var g = gvS(); if (!g.on || SESSION.useImported || typeof GuideVoice === 'undefined') return mx;
+    var s = cur(); if (!s.lyrics || !s.lyrics.trim()) return mx;
+    try {
+      var map = songMap(); if (!map || !map.lines || !map.lines.length) return mx; var p = s.prod;
+      var r = GuideVoice.render(map.lines, { sr: mx.sr, length: mx.samples.length, tonic: p.tonic || 0, mode: p.mode, f0: g.f0 || 130, seed: (p.melSeed || 0) * 13 + (p.seed || 1), tuneMs: g.tune || 18 });
+      var out = new Float32Array(mx.samples.length), k = (g.gain / 100) * 0.55, i, pk = 0;
+      for (i = 0; i < out.length; i++) { out[i] = mx.samples[i] + r.audio[i] * k; var a = Math.abs(out[i]); if (a > pk) pk = a; }
+      if (pk > 0.98) { var sc = 0.98 / pk; for (i = 0; i < out.length; i++) out[i] *= sc; }
+      return Object.assign({}, mx, { samples: out, guide: r.syllables });
+    } catch (e) { return mx; }
+  }
+  (function () {
+    var g = gvS(), on = $('#gv-on'), ga = $('#gv-gain'), tu = $('#gv-tune'); if (!on) return;
+    on.checked = !!g.on; ga.value = g.gain; $('#gv-gv').textContent = g.gain; tu.value = String(g.tune);
+    on.addEventListener('change', function () { gvS().on = on.checked; persist(); });
+    ga.addEventListener('input', function () { gvS().gain = +ga.value; $('#gv-gv').textContent = ga.value; });
+    ga.addEventListener('change', persist);
+    tu.addEventListener('change', function () { gvS().tune = +tu.value; persist(); });
+    $('#gv-play').addEventListener('click', function () { var s = cur(); if (!s.lyrics || !s.lyrics.trim()) { $('#gv-msg').textContent = 'Scrivi prima il testo.'; return; } if (!gvS().on) { gvS().on = true; on.checked = true; persist(); } $('#gv-msg').textContent = 'Preparo base e voce guida…'; makeAndPlay(false); });
+    $('#gv-learn').addEventListener('click', function () {
+      var t = activeTake(), m = $('#gv-msg'); if (!t) { m.textContent = 'Registra prima una ripresa: la voce che registri è quella che misuro.'; return; }
+      var r = GuideVoice.measureF0(t.mono, t.sr, AudioAnalysis.detectPitch); if (!r) { m.textContent = 'Non sento abbastanza voce chiara in questa ripresa (serve almeno qualche secondo cantato o parlato vicino al microfono).'; return; }
+      var gg = gvS(), w0 = Math.min(gg.n || 0, 400); gg.f0 = Math.round(((gg.f0 || 130) * w0 + r.f0 * r.n) / (w0 + r.n) * 10) / 10; gg.lo = gg.lo ? Math.round((gg.lo + r.lo) / 2) : r.lo; gg.hi = gg.hi ? Math.round((gg.hi + r.hi) / 2) : r.hi; gg.n = Math.min(2000, (gg.n || 0) + r.n); persist();
+      var midi = Math.round(GuideVoice.hzToMidi(gg.f0)); m.innerHTML = '<span class="tag m">Misurato</span> La tua voce sta intorno a ' + gg.f0 + ' Hz (nota ' + NOTES[((midi % 12) + 12) % 12] + '), da ' + gg.lo + ' a ' + gg.hi + ' Hz. La voce guida ora usa questa altezza. Il timbro non lo imita ancora.';
+    });
+  })();
+  /* ===== Controllo del telefono: gira SUL tuo iPhone e dice cosa funziona (Misurato) ===== */
+  (function () {
+    var b = $('#stest-go'); if (!b) return;
+    b.addEventListener('click', async function () {
+      var out = $('#stest-out'), rows = [], add = function (n, ok, note, ms) { rows.push({ n: n, ok: ok, note: note || '', ms: ms }); }, T = function (f) { var t0 = performance.now(), r; try { r = f(); } catch (e) { r = { error: e && e.message ? e.message : String(e) }; } return { r: r, ms: Math.round(performance.now() - t0) }; };
+      out.innerHTML = '<p class="small">Controllo il telefono…</p>'; await tick();
+      try { var AC = window.AudioContext || window.webkitAudioContext; if (!AC) add('Audio', false, 'Web Audio non c\'è'); else { var ac = new AC(); add('Audio', true, 'frequenza ' + ac.sampleRate + ' Hz, stato ' + ac.state + (ac.state === 'suspended' ? ' (parte al primo tocco: normale su iPhone)' : '')); try { ac.close(); } catch (e) {} } } catch (e) { add('Audio', false, e.message); }
+      add('Microfono (strumento presente)', !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia), 'il permesso lo chiede Safari al primo uso; qui non lo richiedo');
+      add('Installata come app (Home)', !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)), 'se no: Condividi → Aggiungi a Home');
+      add('Senza internet (service worker)', 'serviceWorker' in navigator, '');
+      add('WebGPU (serve all\'AI locale)', !!navigator.gpu, navigator.gpu ? 'presente: l\'assistente testi può partire' : 'assente: l\'AI locale non parte, tutto il resto sì');
+      try { localStorage.setItem('__t', new Array(1025).join('x')); localStorage.removeItem('__t'); add('Salvataggio sul telefono', true, ''); } catch (e) { add('Salvataggio sul telefono', false, 'bloccato (modalità privata?)'); }
+      try { var est = navigator.storage && navigator.storage.estimate ? await navigator.storage.estimate() : null; add('Spazio disponibile', !!est, est ? Math.round(est.usage / 1e6) + ' MB usati su circa ' + Math.round(est.quota / 1e6) + ' MB' : 'non misurabile'); } catch (e) { add('Spazio disponibile', false, 'non misurabile'); }
+      await tick();
+      var a = T(function () { return Arranger.generate({ genre: 'trapdark', bpm: 140, mode: 'minore', tonic: 0, seed: 3, bars: 8, heavy: true }); });
+      add('Velocità: arrangiamento di 8 battute', !a.r.error && a.ms < 4000, a.r.error || (a.ms + ' ms' + (a.ms >= 4000 ? ' (lento)' : '')), a.ms); await tick();
+      var ln = [{ text: 'prova di voce guida sulla base', mode: 'canta', words: 'prova di voce guida sulla base'.split(' ').map(function (w, i) { return { w: w, start: i * 0.5, end: i * 0.5 + 0.45 }; }) }], sr0 = 32000;
+      var v = T(function () { return GuideVoice.render(ln, { sr: sr0, length: sr0 * 20, tonic: 0, mode: 'minore', f0: 130, seed: 1 }); });
+      add('Velocità: voce guida su 20 secondi', !v.r.error && v.ms < 6000, v.r.error || (v.ms + ' ms' + (v.ms >= 6000 ? ' (lento)' : '')), v.ms);
+      var x = T(function () { return Remix.make(7, { heavy: true }); }), au = T(function () { return AutoSections.label('25 maggio\n\nuno due tre quattro\ncinque sei sette otto\n\nuno due tre quattro\ncinque sei sette otto'); });
+      add('Ritmi nuovi e sezioni automatiche', !x.r.error && !au.r.error && au.r.changed, (x.ms + au.ms) + ' ms');
+      var mods = { SultanBrain: window.SultanBrain, Taste: window.Taste, LocalAI: window.LocalAI, BeatLearn: window.BeatLearn, Arranger: window.Arranger, GuideVoice: window.GuideVoice }, miss = Object.keys(mods).filter(function (k) { return !mods[k]; });
+      add('Moduli dell\'app caricati', !miss.length, miss.length ? 'mancano: ' + miss.join(', ') : 'tutti');
+      var bad = rows.filter(function (r) { return !r.ok; }).length, plain = rows.map(function (r) { return (r.ok ? 'OK  ' : 'NO  ') + r.n + (r.note ? ' — ' + r.note : ''); }).join('\n');
+      out.innerHTML = '<table class="small" style="width:100%;border-collapse:collapse">' + rows.map(function (r) { return '<tr><td style="padding:4px 6px;white-space:nowrap">' + (r.ok ? '✅' : '⚠️') + '</td><td style="padding:4px 6px"><b>' + esc(r.n) + '</b><br><span class="muted">' + esc(r.note) + '</span></td></tr>'; }).join('') + '</table><p class="small"><span class="tag m">Misurato</span> ' + (bad ? bad + ' cose da guardare.' : 'Tutto ok su questo telefono.') + ' Non provo il microfono vero, l\'ascolto e la AI scaricata: quelli si provano a mano.</p><textarea readonly rows="6" style="width:100%">' + esc(navigator.userAgent + '\n' + plain) + '</textarea>';
+    });
+  })();
   var SB_FORCE = { genre: null, preset: null };
   function rxFor(pl, v, radical) { var st = Arranger.STYLES[pl.genre] || {}; return Remix.make(((pl.seed >>> 0) + (v || 0) * 7919 + (radical ? 104729 : 0)) >>> 0, { half: !st.snare || st.snare.length === 1, heavy: !!pl.heavy, mode: pl.mode }); }
   async function runBrain(again, fixedV, mel, radical) {
@@ -2212,7 +2284,7 @@
     ['b-play', 'b-mel', 'b-new', 'b-stop'].forEach(function (id) { mv(id, '#dwp-actions'); });
     ['b-status', 'b-out', 'ear-out'].forEach(function (id) { mv(id, '#dwp-out'); });
     ['ear-go', 'b-save'].forEach(function (id) { mv(id, '#dwp-more'); });
-    mv('ai-card', '#dwx-ai'); mv('rh-card', '#dwx-rh'); mv('sg-card', '#dwx-sg');
+    mv('ai-card', '#dwx-ai'); mv('gv-card', '#dwx-sg'); mv('rh-card', '#dwx-rh'); mv('sg-card', '#dwx-sg');
   })();
   $('#tabs').addEventListener('click', function (e) { var a = e.target.closest('[data-ws]'); if (!a) return; if (location.hash === '#daw') { e.preventDefault(); dwWs(a.getAttribute('data-ws')); window.scrollTo(0, 0); } else LIB.settings.ws = a.getAttribute('data-ws'); });
   // ---------- Varianti: 8 basi diverse alla volta, da ascoltare e scegliere (senza limite: premi ancora) ----------
