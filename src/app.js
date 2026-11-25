@@ -454,8 +454,8 @@
     return SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {} });
   }
   function getBase() {
-    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, (p.sig || []).join(), p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.kit, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, sig: p.sig || [], bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, drumRender: p.kit && SynthDesign.KITS[p.kit] ? function (part, o, s2) { return SynthDesign.kitRender(p.kit, part, o, s2); } : undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
+    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, pfSig(p).join(), p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.kit, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, sig: pfSig(p), bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, drumRender: p.kit && SynthDesign.KITS[p.kit] ? function (part, o, s2) { return SynthDesign.kitRender(p.kit, part, o, s2); } : undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -1076,7 +1076,7 @@
     DW.k = pk > 0 ? 0.8 / pk : 1;
     var vb = vclipBuffer(b.duration); if (vb) bufs.voice = vb;
     if (pf0 && pf0.on && pf0.events && pf0.events.length) {
-      try { bufs.sfx = { x: ProdFx.renderSfx(pf0.events, b.sampleRate, b.bpm, N, { seed: pf0.seed, tonic: b.tonic }), sr: b.sampleRate, start: 0 }; } catch (e) {}
+      try { bufs.sfx = { x: ProdFx.renderSfx(pf0.events, b.sampleRate, b.bpm, N, { seed: pf0.seed, tonic: b.tonic, mode: b.mode }), sr: b.sampleRate, start: 0 }; } catch (e) {}
       if (vb) try { var vx = ProdFx.renderVox(pf0.events, vb, songMap(), b.bpm, { bank: ADLIB.list, melodic: !PF_HARD[b.genre] }); if (vx) bufs.vox = { x: vx, sr: vb.sr, start: 0 }; } catch (e) {}
     }
     DW.bufs = bufs; DW.bufKey = key; return bufs;
@@ -2241,13 +2241,15 @@
 
   // ---------- Produzione: effetti da film e interventi vocali scelti dal testo (ProdFx), modificabili a mano ----------
   var ADLIB = { list: [] }, PF_HARD = { drill: 1, brooklyn: 1, trapdark: 1, rage: 1, phonk: 1, street: 1, trap: 1, jersey: 1, plugg: 1, detroit: 1, clubtrap: 1 };
+  var PF_SIG = { sirena: 'sirena', spari: 'sparo', mitra: 'raffica', coro: 'corolirico' };
+  function pfSig(p) { var pf = p.prodFx; if (!pf || !pf.on) return p.sig || []; var on = {}; (pf.events || []).forEach(function (e) { if (!e.off) on[e.snd] = 1; }); return (p.sig || []).filter(function (k) { return !on[PF_SIG[k]]; }); }
   function pfHash(str) { var h = 5381; for (var i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) >>> 0; return h; }
   function pfPlan(force) {
     var s = cur(), p = s.prod; if (!p.prodFx) p.prodFx = { on: true, density: 1, events: [] }; var pf = p.prodFx;
-    var k = pfHash((s.lyrics || '') + '|' + p.genre + '|' + p.seed + '|' + pf.density + '|' + ADLIB.list.length);
+    var k = pfHash((s.lyrics || '') + '|' + p.genre + '|' + p.seed + '|' + pf.density + '|' + ADLIB.list.length + '|' + (p.sig || []).join());
     if (force || (!pf.manual && pf.key !== k)) {
       var map = null; try { map = songMap(); } catch (e) {}
-      var r = ProdFx.plan(map, { genre: p.genre, seed: p.seed, density: pf.density, adlibs: ADLIB.list.length });
+      var r = ProdFx.plan(map, { genre: p.genre, seed: p.seed, density: pf.density, adlibs: ADLIB.list.length, sig: p.sig || [] });
       pf.events = r.events; pf.themes = r.themes; pf.key = k; pf.seed = p.seed; pf.manual = false;
     } else pf.stale = pf.manual && pf.key !== k;
     return pf;

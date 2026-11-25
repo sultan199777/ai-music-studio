@@ -35,3 +35,9 @@ test('pitch: un\'ottava sotto dimezza la frequenza, stessa durata', () => {
   const sr = 16000, x = new Float32Array(sr); for (let i = 0; i < sr; i++) x[i] = Math.sin(2 * Math.PI * 440 * i / sr);
   const y = P.pitch(x, sr, -12); assert.strictEqual(y.length, x.length); let z = 0; for (let i = 2000; i < 14000; i++) if (y[i - 1] < 0 && y[i] >= 0) z++; const f = z / (12000 / sr); assert.ok(Math.abs(f - 220) < 25, f);
 });
+test('firme del Cervello (SigFx): una sola volta, come eventi della Produzione', () => {
+  const pl = P.plan(map, { genre: 'trap', seed: 1, density: 0, sig: ['sirena', 'spari', 'coro'] }), ev = pl.events;
+  assert.ok(ev.some(e => e.snd === 'sparo' && /firma/.test(e.why)));
+  const shotsOnChorus = ev.filter(e => e.snd === 'sparo' && e.bar === 4).length; assert.ok(shotsOnChorus <= 1);
+  const b = P.sound('corolirico', 8000, 1, { dur: 2, midi: 57 }); assert.ok(b.length >= 8000 * 1.9 && b.some(v => Math.abs(v) > 0.1));
+});

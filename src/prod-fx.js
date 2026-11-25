@@ -220,6 +220,7 @@
     elicottero: { nome: 'Elicottero', gruppo: 'Motori', tipo: 'colpo', g: 0.4, make: helicopter },
     sirena: { nome: 'Sirena', gruppo: 'Strada', tipo: 'colpo', g: 0.3, make: sg(function (sr, s, o) { return SigFx.siren(sr, (o && o.dur) || 3, s); }) },
     sparo: { nome: 'Spari', gruppo: 'Strada', tipo: 'colpo', g: 0.5, make: sg(function (sr, s) { var a = SigFx.gunshot(sr, s), out = buf(sr, 1.6); [0, 0.32, 0.5].forEach(function (t0, q) { var o0 = Math.round(t0 * sr); for (var i = 0; i < a.length && o0 + i < out.length; i++) out[o0 + i] += a[i] * (1 - q * 0.2); }); return out; }) },
+    corolirico: { nome: 'Coro lirico (nella tonalità)', gruppo: 'Cinema', tipo: 'letto', g: 0.35, make: sg(function (sr, s, o) { var t = (o && o.midi != null ? o.midi : 57) + 12; return SigFx.choir(sr, [t, t + (o && o.minor === false ? 4 : 3), t + 7], Math.min(12, (o && o.dur) || 6), s); }) },
     raffica: { nome: 'Raffica', gruppo: 'Strada', tipo: 'colpo', g: 0.4, make: sg(function (sr, s) { return SigFx.machinegun(sr, 1.1, s); }) },
     citta: { nome: 'Città di notte', gruppo: 'Strada', tipo: 'letto', g: 0.2, make: city },
     clacson: { nome: 'Clacson', gruppo: 'Strada', tipo: 'colpo', g: 0.25, make: horn },
@@ -324,6 +325,14 @@
     // 4) emozioni: rabbia → impatti duri; dolore → pioggia/campana; gloria → folla
     var emoC = {}; read.forEach(function (rd) { rd.emo.forEach(function (e) { emoC[e] = (emoC[e] || 0) + 1; }); });
     if ((emoC.dolore || 0) >= 2 && !ev.some(function (e) { return e.snd === 'pioggia'; }) && dens >= 1) { var sd = secs.filter(function (s) { return s.name === 'bridge' || s.name === 'outro'; })[0]; if (sd) push({ tipo: 'sfx', snd: 'pioggia', bar: sd.start, dur: sd.bars, gain: 0.8, why: 'malinconia del testo' }); }
+    // firme del Cervello (SigFx): le mette la Produzione, una volta sola, così si possono spostare o togliere
+    var SG = opt.sig || [], has = function (snd) { return ev.some(function (e) { return e.snd === snd; }); };
+    secs.forEach(function (s, k) {
+      if (SG.indexOf('coro') >= 0 && s.name === 'intro' && !has('corolirico')) push({ tipo: 'sfx', snd: 'corolirico', bar: s.start, dur: s.bars, gain: 1, why: 'firma: coro lirico in apertura' });
+      if (SG.indexOf('sirena') >= 0 && s.name === 'ritornello' && k > 0 && !ev.some(function (e) { return e.snd === 'sirena' && Math.abs(e.bar - (s.start - 1)) < 1; })) push({ tipo: 'sfx', snd: 'sirena', bar: s.start - 1, gain: 0.9, why: 'firma: sirena prima del ritornello' });
+      if (SG.indexOf('spari') >= 0 && s.name === 'ritornello' && !ev.some(function (e) { return e.snd === 'sparo' && Math.abs(e.bar - s.start) < 0.5; })) push({ tipo: 'sfx', snd: 'sparo', bar: s.start, gain: 0.9, why: 'firma: spari sul ritornello' });
+      if (SG.indexOf('mitra') >= 0 && s.name === 'pre') push({ tipo: 'sfx', snd: 'raffica', bar: s.start + s.bars - 0.5, gain: 0.8, why: 'firma: raffica prima del drop' });
+    });
     // 5) voce: eco sulle chiusure, risposte sulle punchline, cori nel ritornello, scura nei generi duri, reverse sulla prima riga del ritornello
     var firstChorus = true, k2 = 0;
     lines.forEach(function (l, i) {
@@ -355,7 +364,7 @@
     opt = opt || {}; var out = new Float32Array(N), barS = 240 / bpm;
     (events || []).forEach(function (e, k) {
       if (e.tipo !== 'sfx' || !SOUNDS[e.snd] || e.off) return; var S = SOUNDS[e.snd], seed = (opt.seed || 1) * 31 + k * 7 + (e.var || 0) * 977;
-      var o = { bpm: bpm, midi: opt.tonic != null ? 48 + opt.tonic : 57 };
+      var o = { bpm: bpm, midi: opt.tonic != null ? 48 + opt.tonic : 57, minor: opt.mode !== 'maggiore' };
       if (S.tipo === 'letto') o.dur = Math.max(2, (e.dur || 4) * barS + 0.6);
       if (S.tipo === 'fine') o.dur = Math.max(0.4, (e.dur || 1) * barS);
       if (e.snd === 'orologio' || e.snd === 'cuore') o.bpm = e.snd === 'orologio' ? bpm : bpm * (bpm > 100 ? 0.5 : 1) * 0.75;
