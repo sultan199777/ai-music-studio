@@ -27,3 +27,9 @@ Solo MIT / Apache / BSD / CC0. Niente GPL/AGPL né dati share-alike (CC BY-SA): 
 - Nuovo `src/taste.js` (Taste, di A): ♥/✕ sulle basi generate dal Cervello, salva solo numeri in LIB.settings.taste e si somma al profilo (arModel). Le proposte «Ancora proposte» non finiscono mai e evitano gli stili che scarti.
 - In app.body.html: 5 pannelli `.dw-guide` (uno per passo, data-ws) con la guida da produttore. B può ridisegnarli ma tenere il testo e i data-ws.
 - Id nuovi da non cambiare: `sb-taste`, `data-taste`, `data-sb-like`, `data-sb-nope`.
+
+## Musical DNA Engine (chat A)
+- `src/dna.js`: 24 profili a numeri (artisti e famiglie), `fuse` (Genre Fusion), `emotion`/`applyEmotion` (8 emozioni), `toProd` → parametri dell'Arrangiatore. Test: `tests/dna.test.js` (ogni numero misurato sull'audio).
+- Arrangiatore: nuovi parametri `groove.slide/drive/glide/duck/hat` e `p.leadRest`.
+- UI: pannello `#dw-p-dna` nel passo Base (id `dna-*`). Stili salvati in `LIB.settings.dnaSaved`.
+- Chat B: se aggiungi artisti imparati, puoi passarli a `DNA.fuse` come `{dna:{...}}`.

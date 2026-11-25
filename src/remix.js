@@ -52,5 +52,5 @@
     d += 0.15 * (a.melSeed === b.melSeed ? 0 : 1);
     return round(d);
   }
-  return { make: make, distance: distance, progName: progName, KICKS: KICKS, PROG_MIN: PROG_MIN };
+  return { make: make, distance: distance, progName: progName, KICKS: KICKS, PROG_MIN: PROG_MIN, PROG_MAJ: PROG_MAJ };
 });
