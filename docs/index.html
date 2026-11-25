@@ -726,7 +726,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 13:42</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 14:40</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -12396,7 +12396,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
       var lp = SESSION.lastPlay = { t: performance.now(), ctx: coachCtx(), dur: mx.samples.length / mx.sr };
       var ok = playBuf(mx.samples, mx.sr, karaokeTick(mx.bpm), function () { $('#kar').innerHTML = '<div><b>Fine</b><small>Premi di nuovo per ricantare</small></div>'; if ((performance.now() - lp.t) / 1000 > lp.dur * 0.9) coachRec('complete', lp.ctx); });
       if (!ok) { st.textContent = 'Questo browser non riesce a riprodurre audio.'; return null; }
-      st.textContent = ''; SESSION.baseMade = true;
+      st.textContent = ''; SESSION.baseMade = true; try { dwSteps(); } catch (e) {}
       var s = cur(); if (['idea', 'testo'].indexOf(s.status) !== -1) { s.status = 'base'; persist(); }
       var b = SESSION.useImported ? null : getBase();
       $('#b-out').innerHTML = b ? '<div class="note"><b>' + esc(ALLG[b.genre].label) + '</b> in ' + NOTES[b.tonic] + ' ' + b.mode + ', ' + b.bpm + ' BPM, ' + b.bars + ' battute (' + fmt(b.duration) + ' s). Accordi: <span class="mono">' + b.progression.join(' · ') + '</span>. ' + (b.inst && (b.inst.melodia || b.inst.accordi || b.inst.pad) ? 'Strumenti: ' + ['melodia', 'accordi', 'pad'].filter(function (r) { return b.inst[r]; }).map(function (r) { return instName(b.inst[r]) + ' (' + r + ')'; }).join(', ') + '.' : 'Suoni sintetici.') + ' "Nuova variante" cambia la melodia.' + (b.sections ? '<br>Struttura: <span class="mono">' + b.sections.map(function (x) { return x.name + ' ' + x.bars; }).join(' · ') + '</span>' : '') + '</div>' : '';
@@ -12753,7 +12753,16 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     var R = Instruments.RECIPES[p.genre] || {}, ok = function (id) { return !BANNED_INST[id]; }, ml = (R.melodia || []).filter(ok), ac = (R.accordi || []).filter(ok);
     p.inst = Object.assign({}, p.inst || {}); if (ml.length) p.inst.melodia = ml[p.melSeed % ml.length]; if (ac.length) p.inst.accordi = ac[(p.melSeed + 1) % ac.length]; if (p.inst.accordi === p.inst.melodia && ac.length > 1) p.inst.accordi = ac[(p.melSeed + 2) % ac.length];
     persist(); fillBase(); makeAndPlay(false); });
-  $('#b-new').addEventListener('click', function () { if (!brainFirst(true)) makeAndPlay(true); });
+  /* «Nuova variante»: se il cervello non parte (stile scelto a mano o niente testo) applico comunque un Remix vero:
+     cassa, rullante, hi-hat, mix e melodia cambiano, lo stile resta. Prima cambiava solo il seme e si sentiva la stessa base. */
+  $('#b-new').addEventListener('click', function () {
+    if (brainFirst(true)) return;
+    var s = cur(), p = s.prod; s.varN = (s.varN || 0) + 1;
+    var rx = rxFor({ genre: p.genre, seed: p.seed, heavy: p.heavy, mode: p.mode }, s.varN, true);
+    p.groove = rx.groove; p.tune = rx.tune; p.melSeed = rx.melSeed; p.prog = null; p.fromLearn = 0; persist();
+    $('#b-status').textContent = 'Nuova variante ' + (s.varN + 1) + ': ' + rx.label + '.';
+    makeAndPlay(true);
+  });
   $('#b-stop').addEventListener('click', stopPlay);
   $('#b-save').addEventListener('click', async function () { coachRec('save', coachCtx()); var mx = buildMix({ voice: false }); saveAudio(mx.samples, mx.sr, 'base-' + (cur().title || 'canzone').replace(/\W+/g, '-'), $('#b-status')); });
 
@@ -13077,9 +13086,16 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   }
   function dwSteps() {
     var s = cur(), st = { testo: !!lyricLines(s.lyrics).length, base: !!SESSION.baseMade, voce: SESSION.takes.some(function (t) { return !t.example; }), mix: !!SESSION.dwExported };
+    st.base = st.base && !!SESSION.lastPlay; /* la base conta solo se l'hai davvero fatta partire */
     var first = ['testo', 'base', 'voce', 'mix'].filter(function (k) { return !st[k]; })[0];
     $$('#dw-steps a').forEach(function (a) { var k = a.getAttribute('data-step'); a.classList.toggle('done', st[k]); a.classList.toggle('now', k === first); });
+    /* «Prossimo passo»: una scheda sola che dice cosa fare adesso, con un tasto grande */
+    var nx = $('#dw-next'); if (!nx) { var bar = $('#v-daw .dw-transport') || $('#v-daw').firstElementChild; if (!bar || !bar.parentNode) return; nx = document.createElement('div'); nx.id = 'dw-next'; nx.className = 'dw-panel'; nx.style.cssText = 'margin:8px 0;padding:12px;border:2px solid var(--accent,#8b5cf6);border-radius:12px'; bar.parentNode.insertBefore(nx, $('#dw-ws') || bar.nextSibling); }
+    var TX = { testo: ['Passo 1 di 4 · Scrivi il testo', 'Incolla o scrivi la tua canzone. Il titolo e il ritornello li capisco io.', 'Vai al testo'], base: ['Passo 2 di 4 · Crea la base', 'Premi «Crea e ascolta»; se non ti piace premi «Nuova variante»: cambia davvero.', 'Vai alla base'], voce: ['Passo 3 di 4 · Registra la voce', 'Metti le cuffie, premi ● e canta sulla base (microfono solo da Safari).', 'Vai alla voce'], mix: ['Passo 4 di 4 · Mix e salvataggio', 'Regola i volumi, ascolta tutto e salva la canzone.', 'Vai al mix'] };
+    if (!first) { nx.innerHTML = '<b>Canzone pronta</b><div class="small muted">Hai fatto tutti i passi. Per un\'altra versione torna alla base e premi «Nuova variante».</div>'; return; }
+    nx.innerHTML = '<b>' + TX[first][0] + '</b><div class="small muted" style="margin:4px 0 8px">' + TX[first][1] + '</div><button class="btn pri" id="dw-next-go" data-go="' + first + '" style="width:100%">' + TX[first][2] + '</button>';
   }
+  document.addEventListener('click', function (e) { var g = e.target.closest && e.target.closest('#dw-next-go'); if (g) { dwWs(g.getAttribute('data-go')); window.scrollTo(0, 0); } });
   async function dwBase() {
     await ensureInst();
     var b = getBase(); SESSION.baseMade = true; return b;
@@ -14063,7 +14079,8 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
       learnRender(); coachRec('complete', coachCtx()); sepInfo();
     } catch (e) {
       learnBar(null); try { localStorage.removeItem('learnRunning'); } catch (x) {}
-      el.textContent = /video|mov|mp4/i.test((f.type || '') + f.name) ? 'Non riesco a leggere l\'audio di questo video. Su iPhone: apri il video in Foto, Condividi > Salva su File, poi riprova.' : 'Non riesco a leggere questo file. Prova un MP3, M4A, WAV o un video MP4/MOV.';
+      var why2 = ' [Motivo tecnico: ' + String((e && (e.name || '') + ' ' + (e && e.message || e)) || '?').slice(0, 90) + ' · file ' + Math.round((f.size || 0) / 1048576 * 10) / 10 + ' MB, tipo ' + (f.type || 'sconosciuto') + ']';
+      el.textContent = /video|mov|mp4/i.test((f.type || '') + f.name) ? 'Non riesco a leggere l\'audio di questo video. Su iPhone: apri il video in Foto, Condividi > Salva su File, poi riprova.' : 'Non riesco a leggere questo file. Prova un MP3, M4A, WAV o un video MP4/MOV.' + why2;
     }
   }
   // metodo del testo: righe, sillabe, velocità, rime, ripetizioni (si salvano i NUMERI, non le parole)
