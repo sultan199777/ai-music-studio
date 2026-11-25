@@ -53,7 +53,29 @@
    * Separa L, R (44100 Hz). mode 'rapida' | 'studio'. onProgress(0-1, testo).
    * Ritorna {vocals, drums, bass, other} ognuno {left, right}, e info {mode, backend}.
    */
+  /**
+   * Separa a pezzi di ~40 s (con 2 s di sovrapposizione sfumata): sul telefono la memoria resta bassa
+   * (il motore tiene in memoria tutto il pezzo moltiplicato per il numero di tracce).
+   */
   async function separate(L, R, mode, onProgress, onDl) {
+    R = R || L; var sr = 44100, CH = sr * 40, OV = sr * 2, n = L.length;
+    if (n <= CH + OV) return separateOne(L, R, mode, onProgress, onDl);
+    var keys = ['vocals', 'drums', 'bass', 'other'], out = {}, wsum = new Float32Array(n), info = null;
+    keys.forEach(function (k) { out[k] = { left: new Float32Array(n), right: new Float32Array(n) }; });
+    var starts = []; for (var s0 = 0; s0 < n; s0 += CH) starts.push(s0);
+    for (var c = 0; c < starts.length; c++) {
+      var a = Math.max(0, starts[c] - OV), b = Math.min(n, starts[c] + CH + OV);
+      var r = await separateOne(L.subarray(a, b), R.subarray(a, b), mode, function (f, t) { if (onProgress) onProgress((c + f) / starts.length, t + ' (pezzo ' + (c + 1) + ' di ' + starts.length + ')'); }, onDl);
+      info = r.info;
+      for (var i = a; i < b; i++) {
+        var w = 1; if (c > 0 && i < starts[c] + OV) w = (i - a) / (2 * OV); if (c < starts.length - 1 && i > starts[c] + CH - OV) w = Math.min(w, (b - i) / (2 * OV));
+        wsum[i] += w; keys.forEach(function (k) { out[k].left[i] += r[k].left[i - a] * w; out[k].right[i] += r[k].right[i - a] * w; });
+      }
+    }
+    for (i = 0; i < n; i++) if (wsum[i] > 0) keys.forEach(function (k) { out[k].left[i] /= wsum[i]; out[k].right[i] /= wsum[i]; });
+    out.info = info; return out;
+  }
+  async function separateOne(L, R, mode, onProgress, onDl) {
     R = R || L;
     var prog = function (a, b, t) { return function (f) { if (onProgress) onProgress(a + (b - a) * f, t); }; };
     if (mode !== 'studio') {
@@ -73,10 +95,11 @@
     for (i = 0; i < n; i++) { oth.left[i] += res.left[i]; oth.right[i] += res.right[i]; }
     return { vocals: voc, drums: split(ri.stems.drums), bass: split(ri.stems.bass), other: oth, info: { mode: 'studio', backend: be } };
   }
+  async function gpu() { try { return !!(navigator.gpu && await navigator.gpu.requestAdapter()); } catch (e) { return false; } }
   async function cached(model) {
     try { var U = await lib(); if (!U.MODEL_ARTIFACTS) return false; var a = U.MODEL_ARTIFACTS[model].fp16.url, keys = await caches.keys();
       for (var k = 0; k < keys.length; k++) { var c = await caches.open(keys[k]); if (await c.match(a)) return true; } } catch (e) {}
     return false;
   }
-  return { MODELS: MODELS, SAMPLE_RATE: 44100, load: load, separate: separate, cached: cached, setBase: function (b) { S.base = b; } };
+  return { gpu: gpu, MODELS: MODELS, SAMPLE_RATE: 44100, load: load, separate: separate, cached: cached, setBase: function (b) { S.base = b; } };
 });

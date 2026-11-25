@@ -581,6 +581,8 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     <div class="row"><label class="btn pri" for="dw-learn-file">Carica una canzone o un video</label><input type="file" id="dw-learn-file" accept="audio/*,video/*,.mov,.mp4,.m4a" hidden></div>
     <div class="dw-prog" id="dw-learn-bar" hidden><i></i></div>
     <div id="dw-learn-cur"></div>
+    <h4 style="margin:14px 0 6px">Basi nuove nello stile della canzone</h4>
+    <div id="dw-learn-prop"><p class="small muted">Carica una canzone: qui arrivano da sole 6 basi nuove nel suo stile, sul tuo testo.</p></div>
     <h4 style="margin:14px 0 6px">I tuoi gusti</h4>
     <div id="dw-learn-list"></div>
     <div class="row" style="margin-top:8px"><button class="btn pri" id="dw-learn-make">Crea una base nuova dai miei gusti</button></div>
@@ -681,7 +683,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>24/11, 21:18</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 08:24</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -1041,7 +1043,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">296 test automatici superati su 296 · versione del 24 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">296 test automatici superati su 296 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -6813,7 +6815,29 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
    * Separa L, R (44100 Hz). mode 'rapida' | 'studio'. onProgress(0-1, testo).
    * Ritorna {vocals, drums, bass, other} ognuno {left, right}, e info {mode, backend}.
    */
+  /**
+   * Separa a pezzi di ~40 s (con 2 s di sovrapposizione sfumata): sul telefono la memoria resta bassa
+   * (il motore tiene in memoria tutto il pezzo moltiplicato per il numero di tracce).
+   */
   async function separate(L, R, mode, onProgress, onDl) {
+    R = R || L; var sr = 44100, CH = sr * 40, OV = sr * 2, n = L.length;
+    if (n <= CH + OV) return separateOne(L, R, mode, onProgress, onDl);
+    var keys = ['vocals', 'drums', 'bass', 'other'], out = {}, wsum = new Float32Array(n), info = null;
+    keys.forEach(function (k) { out[k] = { left: new Float32Array(n), right: new Float32Array(n) }; });
+    var starts = []; for (var s0 = 0; s0 < n; s0 += CH) starts.push(s0);
+    for (var c = 0; c < starts.length; c++) {
+      var a = Math.max(0, starts[c] - OV), b = Math.min(n, starts[c] + CH + OV);
+      var r = await separateOne(L.subarray(a, b), R.subarray(a, b), mode, function (f, t) { if (onProgress) onProgress((c + f) / starts.length, t + ' (pezzo ' + (c + 1) + ' di ' + starts.length + ')'); }, onDl);
+      info = r.info;
+      for (var i = a; i < b; i++) {
+        var w = 1; if (c > 0 && i < starts[c] + OV) w = (i - a) / (2 * OV); if (c < starts.length - 1 && i > starts[c] + CH - OV) w = Math.min(w, (b - i) / (2 * OV));
+        wsum[i] += w; keys.forEach(function (k) { out[k].left[i] += r[k].left[i - a] * w; out[k].right[i] += r[k].right[i - a] * w; });
+      }
+    }
+    for (i = 0; i < n; i++) if (wsum[i] > 0) keys.forEach(function (k) { out[k].left[i] /= wsum[i]; out[k].right[i] /= wsum[i]; });
+    out.info = info; return out;
+  }
+  async function separateOne(L, R, mode, onProgress, onDl) {
     R = R || L;
     var prog = function (a, b, t) { return function (f) { if (onProgress) onProgress(a + (b - a) * f, t); }; };
     if (mode !== 'studio') {
@@ -6833,12 +6857,13 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     for (i = 0; i < n; i++) { oth.left[i] += res.left[i]; oth.right[i] += res.right[i]; }
     return { vocals: voc, drums: split(ri.stems.drums), bass: split(ri.stems.bass), other: oth, info: { mode: 'studio', backend: be } };
   }
+  async function gpu() { try { return !!(navigator.gpu && await navigator.gpu.requestAdapter()); } catch (e) { return false; } }
   async function cached(model) {
     try { var U = await lib(); if (!U.MODEL_ARTIFACTS) return false; var a = U.MODEL_ARTIFACTS[model].fp16.url, keys = await caches.keys();
       for (var k = 0; k < keys.length; k++) { var c = await caches.open(keys[k]); if (await c.match(a)) return true; } } catch (e) {}
     return false;
   }
-  return { MODELS: MODELS, SAMPLE_RATE: 44100, load: load, separate: separate, cached: cached, setBase: function (b) { S.base = b; } };
+  return { gpu: gpu, MODELS: MODELS, SAMPLE_RATE: 44100, load: load, separate: separate, cached: cached, setBase: function (b) { S.base = b; } };
 });
 
 /*
@@ -12492,20 +12517,21 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     return { L: L, R: R, sr: a.sampleRate };
   }
   function learnBar(f) { var b = $('#dw-learn-bar'); b.hidden = f == null; if (f != null) b.firstElementChild.style.width = Math.round(f * 100) + '%'; }
-  function sepMode() { return LIB.settings.sepMode === 'studio' ? 'studio' : 'rapida'; }
+  function sepMode() { return LIB.settings.sepMode === 'studio' || (LIB.settings.sepMode == null && SEPGPU) ? 'studio' : 'rapida'; }
+  var SEPGPU = false; AiSeparator.gpu().then(function (g) { SEPGPU = g; });
   async function sepInfo() {
     $$('#dw-sep-modes .dw-mode').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-sep') === sepMode()); });
     var st = sepMode() === 'studio', have = await AiSeparator.cached(st ? 'melband_roformer_kim' : 'scnet_small'), gpu = false;
     try { gpu = !!(navigator.gpu && await navigator.gpu.requestAdapter()); } catch (e) {}
     $('#dw-sep-info').textContent = (have ? 'Modello già sul dispositivo.' : 'La prima volta scarico il modello (' + (st ? '474 + 27' : '27') + ' MB, meglio con Wi-Fi), poi resta salvato.') +
-      (st ? ' Modalità Studio: ' + (gpu ? 'userò la scheda grafica.' : 'senza scheda grafica è lenta, circa 15 minuti per ogni minuto di canzone (misurato).') + ' Consigliata sul computer: sul telefono può finire la memoria.' : ' Circa 2 minuti per ogni minuto di canzone sul processore (misurato).') + ' Massimo 3 minuti per volta.';
+      (st ? ' Modalità Studio: ' + (gpu ? 'userò la scheda grafica.' : 'senza scheda grafica è lenta, circa 15 minuti per ogni minuto di canzone (misurato).') + ' Consigliata sul computer: sul telefono può finire la memoria.' : ' Circa 2 minuti per ogni minuto di canzone sul processore (misurato).') + ' Fino a 5 minuti: lavoro a pezzi di 40 secondi per non finire la memoria.';
   }
   $('#dw-sep-modes').addEventListener('click', function (e) { var b = e.target.closest('[data-sep]'); if (!b) return; LIB.settings.sepMode = b.getAttribute('data-sep'); persist(); sepInfo(); });
   function stMono(st) { var o = new Float32Array(st.left.length); for (var i = 0; i < o.length; i++) o[i] = (st.left[i] + st.right[i]) / 2; return o; }
   async function sepAi(f, el) {
     var mode = sepMode();
     el.textContent = 'Preparo il modello…'; learnBar(0.01);
-    var d = await decodeStereo(f, 44100), max = 44100 * 180;
+    var d = await decodeStereo(f, 44100), max = 44100 * 300;
     if (d.L.length > max) { d.L = d.L.slice(0, max); if (d.R) d.R = d.R.slice(0, max); }
     var secs = Math.round(d.L.length / 44100);
     var r = await AiSeparator.separate(d.L, d.R || d.L, mode,
@@ -12541,7 +12567,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
       var prof = BeatLearn.learn(s.rhythm, s.sr, { harm: s.stems ? (function () { var h = new Float32Array(s.stems.other.length); for (var q = 0; q < h.length; q++) h[q] = s.stems.other[q] + s.stems.bass[q]; return h; })() : null });
       if (tuneM) { prof.tune = tuneM; prof.why.push('Voce: ' + tuneM.label + ' (scarto medio ' + tuneM.cents + ' cent dalla nota).'); }
       LEARN.cur = { name: f.name.replace(/\.[^.]+$/, '').slice(0, 40), prof: prof, voice: voice, base: base, orig: s.orig, stems: s.stems, sr: s.sr, note: s.note, vote: 0, ai: s.ai };
-      learnBar(null); el.textContent = s.ai ? 'Fatto. Ascolta le parti separate, poi dimmi se il ritmo ti piace.' : 'Fatto, ma senza AI (' + why + '): voce e base non sono pulite.';
+      learnBar(null); setTimeout(function () { varMake('', learnSpecs(prof), '#dw-learn-msg'); }, 50); el.textContent = s.ai ? 'Fatto. Ascolta le parti separate, poi dimmi se il ritmo ti piace.' : 'Fatto, ma senza AI (' + why + '): voce e base non sono pulite.';
       learnRender(); coachRec('complete', coachCtx()); sepInfo();
     } catch (e) {
       learnBar(null);
@@ -12655,39 +12681,54 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
       inst: { melodia: rnd(R.melodia), accordi: rnd(R.accordi), pad: rnd(R.pad), arpeggio: R.arpeggio ? rnd(R.arpeggio) : undefined },
       kit: Math.random() < 0.75 && R.kit ? R.kit : rnd(kits), arpPattern: rnd(Object.keys(Arranger.ARP)), mode: cur().prod.mode };
   }
-  async function varMake(mode) {
-    if (VAR.busy) return; VAR.busy = true; var el = $('#dw-var-msg'), p = cur().prod, map = songMap(), specs = [];
-    if (mode === 'stili') { var keys = Object.keys(Arranger.STYLES).filter(function (g) { return g !== p.genre; }).sort(function () { return Math.random() - 0.5; }).slice(0, 8); keys.forEach(function (g) { specs.push(varSpec(g, false)); }); }
+  async function varMake(mode, given, elSel) {
+    if (VAR.busy) return; VAR.busy = true; var el = $(elSel || '#dw-var-msg'), p = cur().prod, map = songMap(), specs = given || [];
+    if (given) {} else if (mode === 'stili') { var keys = Object.keys(Arranger.STYLES).filter(function (g) { return g !== p.genre; }).sort(function () { return Math.random() - 0.5; }).slice(0, 8); keys.forEach(function (g) { specs.push(varSpec(g, false)); }); }
     else for (var i = 0; i < 8; i++) specs.push(varSpec(p.genre, true));
     VAR.list = []; varRender();
     for (var k = 0; k < specs.length; k++) {
       var sp = specs[k]; el.textContent = 'Compongo la variante ' + (k + 1) + ' di 8…'; await tick();
       for (var r in sp.inst) if (sp.inst[r]) await loadInst(sp.inst[r]);
       try {
-        var bb = Arranger.generate({ sampleRate: 22050, bpm: sp.bpm, tonic: p.tonic, mode: sp.mode, bars: p.bars, genre: sp.genre, seed: sp.seed, inst: sp.inst, plan: map ? map.plan : undefined, arpPattern: sp.arpPattern, sounds: 'campioni', drumRender: function (part, o, s2) { return SynthDesign.kitRender(sp.kit, part, o, s2); } });
+        var bb = Arranger.generate({ sampleRate: 22050, bpm: sp.bpm, tonic: p.tonic, mode: sp.mode, bars: p.bars, genre: sp.genre, seed: sp.seed, inst: sp.inst, plan: map ? map.plan : undefined, arpPattern: sp.arpPattern, groove: sp.groove, prog: sp.prog, sounds: 'campioni', drumRender: function (part, o, s2) { return SynthDesign.kitRender(sp.kit, part, o, s2); } });
         sp.mix = Backing.mix(bb, p.levels, p.sec); sp.sr = bb.sampleRate; VAR.list.push(sp); varRender();
       } catch (e) {}
     }
-    el.textContent = VAR.list.length + ' varianti pronte: ascoltale, scegli con Usa. Premi ancora per altre 8 nuove.'; VAR.busy = false;
+    el.textContent = given ? VAR.list.length + ' basi nuove nello stile di questa canzone, sul tuo testo: ascoltale e scegli con Usa.' : VAR.list.length + ' varianti pronte: ascoltale, scegli con Usa. Premi ancora per altre 8 nuove.'; VAR.busy = false;
   }
   function varName(sp) { return (Arranger.STYLES[sp.genre] ? Arranger.STYLES[sp.genre].label : sp.genre) + ' · ' + sp.bpm + ' BPM'; }
   function varRender() {
-    $('#dw-var-list').innerHTML = VAR.list.map(function (sp, i) {
+    var lp = $('#dw-learn-prop'); $('#dw-var-list').innerHTML = (lp ? lp.innerHTML = varHtml() : varHtml());
+  }
+  function varHtml() {
+    return VAR.list.map(function (sp, i) {
       return '<div class="dw-prop"><div><b>' + (i + 1) + '. ' + esc(varName(sp)) + '</b><small>' + ['melodia', 'accordi', 'pad'].map(function (r) { return sp.inst[r] ? instName(sp.inst[r]) : ''; }).filter(Boolean).join(' · ') + ' · kit ' + esc(SynthDesign.KITS[sp.kit].nome) + '</small></div><button class="btn sm" data-vp="' + i + '">▶</button><button class="btn sm pri" data-vu="' + i + '">Usa</button></div>';
     }).join('');
   }
-  $('#dw-p-var').addEventListener('click', function (e) {
+  function varClick(e) {
     var b = e.target.closest('button'); if (!b) return;
     if (b.id === 'dw-var-same') varMake('stile'); else if (b.id === 'dw-var-other') varMake('stili');
     var vp = b.getAttribute('data-vp'), vu = b.getAttribute('data-vu');
     if (vp != null) { var s1 = VAR.list[+vp]; dwStop(true); playBuf(s1.mix, s1.sr); $('#dw-var-msg').textContent = 'Ascolti: ' + varName(s1); }
     if (vu != null) {
       var s2 = VAR.list[+vu], p = cur().prod, changed = p.genre !== s2.genre; stopPlay();
-      p.genre = s2.genre; p.bpm = s2.bpm; p.seed = s2.seed; p.inst = Object.assign({}, s2.inst); p.kit = s2.kit; p.arpPattern = s2.arpPattern; if (changed) { p.mix = null; p.groove = null; p.prog = null; p.tune = null; }
+      p.genre = s2.genre; p.bpm = s2.bpm; p.seed = s2.seed; p.inst = Object.assign({}, s2.inst); p.kit = s2.kit; p.arpPattern = s2.arpPattern; if (changed) { p.mix = null; p.groove = null; p.prog = null; p.tune = null; } if (s2.groove) { p.groove = s2.groove; p.prog = s2.prog || null; p.mode = s2.mode; }
       coachRec('like', { genre: s2.genre, mode: p.mode, bpm: s2.bpm, inst: s2.inst }); fillInst(); fillBase(); dwFill(); dwChanged(true); projLine();
       $('#dw-var-msg').textContent = 'Usata: ' + varName(s2) + '. Ora la puoi modificare traccia per traccia.';
+      if (e.currentTarget && e.currentTarget.id === 'dw-p-learn') { dwWs('base'); window.scrollTo(0, 0); }
     }
-  });
+  }
+  $('#dw-p-var').addEventListener('click', varClick);
+  $('#dw-p-learn').addEventListener('click', function (e) { if (e.target.closest('[data-vp],[data-vu]')) varClick(e); });
+  // proposte automatiche dopo aver imparato una canzone: stile, ritmo, giro armonico e tempo misurati, strumenti nostri
+  function learnSpecs(prof) {
+    var g = Arranger.STYLES[prof.style] ? prof.style : 'trap', out = [];
+    var near = { trap: ['trap', 'trapdark', 'plugg'], drill: ['drill', 'brooklyn', 'trapdark'], melodico: ['melodico', 'rnb', 'emorap'], estate: ['estate', 'afrotrap', 'reggaeton'], epico: ['epico', 'cloud', 'trapdark'] }[g] || [g];
+    var kick = prof.kick && prof.kick.length ? prof.kick : [0], kb = kick.slice(); if (kb.length > 1) kb[kb.length - 1] = Math.min(15, kb[kb.length - 1] + 1); else kb.push(10);
+    for (var i = 0; i < 6; i++) { var sp = varSpec(near[i % near.length], false); sp.bpm = Math.max(60, Math.min(180, prof.bpm + (i % 3 - 1) * 2)); sp.mode = prof.key ? prof.key.mode : 'minore';
+      sp.groove = { kickPats: [[kick, kb]], snare: prof.snare, swing: prof.swing || 0, rolls: Math.max(0, Math.min(1, (prof.triplets || 0) * 1.2 + ((prof.hatDensity || 0.5) - 0.5) * 0.6)) }; sp.prog = prof.prog || undefined; out.push(sp); }
+    return out;
+  }
   // ---------- Ispettore della traccia: un tocco sulla traccia → Suono · Note · Canale ----------
   var INSP = { lane: null, tab: 'suono' };
   var LANE_NOTES = { lead: 'lead', bass: 'bass', drums: 'drums', chords: 'chords', arp: 'chords', pad: 'chords' };
