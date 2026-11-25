@@ -362,3 +362,5 @@ body.dw-playing[data-mood]::before { opacity: .85; animation: moodBreath calc(va
 body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: calc(var(--beat, .5s) * 2); }
 @keyframes moodBreath { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
 @media (prefers-reduced-motion: reduce) { body.dw-playing[data-mood]::before { animation: none; } }
+
+#sb-chips .chip{margin:3px 4px 3px 0}#sb-chips .chip.on{outline:2px solid var(--acc,#8b5cf6)}#sb-chips h4{margin:12px 0 4px;font-size:.9rem}

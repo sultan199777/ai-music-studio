@@ -45,7 +45,11 @@
     euforico: { votes: { clubtrap: 2.5, estate: 1.5, melodico: 1, reggaeton: 2, afrotrap: 2, jersey: 1.5, plugg: 1.5 }, mode: 'maggiore', bpm: 4 },
     aggressivo: { votes: { drill: 2.5, trapdark: 1.5, street: 1, brooklyn: 2, rage: 2.5, phonk: 1.5 }, mode: 'minore', bpm: 4 },
     romantico: { votes: { melodico: 2, clubtrap: 1, trap: 0.5, rnb: 2.5, afrotrap: 1.2, reggaeton: 1 }, mode: 'maggiore', bpm: -2 },
-    nostalgico: { votes: { boombap: 2.5, melodico: 1.5, trap: 0.4, lofi: 2.5, cloud: 1.5 }, mode: 'minore', bpm: -6 }
+    nostalgico: { votes: { boombap: 2.5, melodico: 1.5, trap: 0.4, lofi: 2.5, cloud: 1.5 }, mode: 'minore', bpm: -6 },
+    emo: { votes: { emorap: 3, cloud: 1.5, trap: 1.5, melodico: 1 }, mode: 'minore', bpm: -2 },
+    horror: { votes: { phonk: 2.5, trapdark: 2, drill: 1.5, brooklyn: 1.5, rage: 1 }, mode: 'minore', bpm: -4 },
+    sognante: { votes: { cloud: 3, rnb: 2, lofi: 1.5, melodico: 1.5 }, mode: 'minore', bpm: -10 },
+    trionfale: { votes: { epico: 3, rage: 2, street: 1.5, trapdark: 1, detroit: 1.5 }, mode: 'maggiore', bpm: 2 }
   };
   var SCENE_MOOD = { strada: 'dark', rabbia: 'aggressivo', dolore: 'malinconico', festa: 'euforico', amore: 'romantico', nostalgia: 'nostalgico', soldi: 'euforico', epico: 'euforico' };
   var GENRES = ['boombap', 'street', 'trapdark', 'drill', 'trap', 'clubtrap', 'melodico', 'estate', 'epico', 'brooklyn', 'plugg', 'rage', 'jersey', 'afrotrap', 'reggaeton', 'phonk', 'emorap', 'rnb', 'cloud', 'detroit', 'lofi'];
@@ -115,6 +119,7 @@
     var bright0 = (scenes.festa || 0) + (scenes.amore || 0), wantsLight = bright0 > (scenes.dolore || 0) + (scenes.strada || 0) + (scenes.rabbia || 0) || opt.mood === 'euforico' || opt.mood === 'romantico';
     if (!wantsLight) { ['afrotrap', 'reggaeton', 'estate', 'jersey', 'clubtrap', 'melodico', 'lofi', 'rnb'].forEach(function (g) { score[g] -= 1.4; }); ['trapdark', 'drill', 'trap', 'brooklyn', 'street'].forEach(function (g) { score[g] += 0.8; }); why.push('Il tuo stile è trap/drill/dark: parto da lì, se il testo non chiede festa o amore.'); }
     var ps = parseStyle(opt.styleText); if (ps.mood && !opt.mood) opt = Object.assign({}, opt, { mood: ps.mood });
+    if (opt.forceGenre && score[opt.forceGenre] != null) { score[opt.forceGenre] += 100; why.push('Stile scelto da te dalla lista.'); }
     if (ps.genre) { score[ps.genre] += 100; why.push('Stile che hai scritto: «' + String(opt.styleText).trim() + '».'); }
     var moodWanted = opt.mood && MOOD[opt.mood] ? opt.mood : null, moodAuto = top[0] ? SCENE_MOOD[top[0]] : null, moodTarget = moodWanted || moodAuto || null;
     if (moodWanted) {
@@ -129,7 +134,7 @@
     var order = GENRES.slice().sort(function (a, b) { return score[b] - score[a]; });
     var genre = order[0];
     /* ogni nuova versione passa a uno degli stili vicini al migliore: così «un'altra» è davvero un'altra, ma resta nel gusto del testo */
-    if (variant > 0) { var near = order.filter(function (g) { return score[g] >= score[order[0]] - 3 && (wantsLight || ['cloud', 'lofi', 'rnb', 'melodico', 'estate'].indexOf(g) < 0); }).slice(0, 6); genre = near[(variant - 1 + (h % 3)) % near.length]; }
+    if (variant > 0 && !ps.genre && !opt.forceGenre) { var near = order.filter(function (g) { return score[g] >= score[order[0]] - 3 && (wantsLight || ['cloud', 'lofi', 'rnb', 'melodico', 'estate'].indexOf(g) < 0); }).slice(0, 6); genre = near[(variant - 1 + (h % 3)) % near.length]; }
     why.push('Stile scelto: ' + NAMES[genre] + (order[1] ? ' (secondo: ' + NAMES[order[1]] + ')' : '') + '.');
 
     // velocità, scala, tonalità, seme
