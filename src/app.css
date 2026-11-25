@@ -454,3 +454,16 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
 #v-daw > .dw-panel.fold .tag { display: none; }
 #tabs a.on { box-shadow: 0 0 0 1px var(--step, transparent) inset; }
 #dw-p-var .dw-prop, #pf-list .dw-prop { border-radius: 12px; }
+
+/* ===== Sultan IA (B): bottone in ogni pagina + chat ===== */
+.sai-btn { position: fixed; right: 14px; bottom: calc(96px + env(safe-area-inset-bottom)); z-index: 60; width: 52px; height: 52px; border-radius: 26px; border: 0; font-weight: 800; font-size: 15px; color: #111; background: linear-gradient(135deg, #e3c48f, #b79cff); box-shadow: 0 8px 24px rgba(0,0,0,.45); }
+.sai { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; }
+.sai[hidden] { display: none; }
+.sai-box { width: 100%; max-height: 82vh; display: flex; flex-direction: column; background: #15151c; border-radius: 18px 18px 0 0; padding: 12px 12px calc(12px + env(safe-area-inset-bottom)); box-shadow: 0 -10px 40px rgba(0,0,0,.5); }
+.sai-head { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; } .sai-head b { font-size: 17px; } .sai-head .small { flex: 1; }
+.sai-log { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 4px 2px; min-height: 160px; }
+.sai-m { max-width: 88%; padding: 9px 12px; border-radius: 14px; white-space: pre-wrap; line-height: 1.4; font-size: 14.5px; }
+.sai-m.me { align-self: flex-end; background: #2b2540; } .sai-m.ai { align-self: flex-start; background: #20202a; border: 1px solid rgba(255,255,255,.06); }
+.sai-in { display: flex; gap: 6px; margin-top: 8px; } .sai-in input { flex: 1; min-width: 0; }
+#sai-sugg { margin-top: 6px; } #sai-sugg .chip { font-size: 12.5px; }
+#sai-mic.on { background: #ff5d6c; color: #fff; }
