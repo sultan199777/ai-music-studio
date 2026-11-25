@@ -467,3 +467,6 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
 .sai-in { display: flex; gap: 6px; margin-top: 8px; } .sai-in input { flex: 1; min-width: 0; }
 #sai-sugg { margin-top: 6px; } #sai-sugg .chip { font-size: 12.5px; }
 #sai-mic.on { background: #ff5d6c; color: #fff; }
+
+.ace-box { margin: 10px 0; padding: 10px 12px; border-radius: 14px; background: rgba(183,156,255,.08); border: 1px solid rgba(183,156,255,.25); }
+.ace-box audio { width: 100%; margin-top: 8px; }

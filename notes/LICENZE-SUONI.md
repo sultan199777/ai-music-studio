@@ -64,3 +64,6 @@ Più 39 nuovi suoni Synth Pro sintetizzati da zero (nessuna licenza di terzi).
 
 ## Spazio di separazione (space/, 25/11)
 audio-separator (MIT), htdemucs (Meta, MIT), Mel-Band RoFormer vocals di Kimberley Jensen (MIT secondo la scheda huggingface.co/KimberleyJSN/melbandroformer), faster-whisper (MIT) + Whisper small (MIT), gradio (Apache 2.0), @gradio/client (ISC).
+
+## Canto IA (26/11)
+ACE-Step 1.5 (codice e pesi MIT, scheda huggingface.co/ACE-Step/Ace-Step1.5), usato tramite lo spazio pubblico ufficiale ACE-Step/Ace-Step-v1.5 (GPU gratuite con limite giornaliero). La voce generata è IA: per provare melodie, non da pubblicare come voce dell'utente.

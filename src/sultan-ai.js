@@ -81,6 +81,8 @@
     var rg = t.match(/riga\s+(\d+)/);
     if (rg) { var an0 = analyzeLyrics(ctx); if (!an0) return { reply: 'Scrivi prima il testo in 1 Testo.', actions: [{ type: 'go', ws: 'testo' }] }; var L0 = an0.lines[+rg[1] - 1]; if (!L0) return { reply: 'Il testo ha ' + an0.lines.length + ' righe.', actions: [] };
       return { reply: 'Riga ' + rg[1] + ' («' + L0.t + '»): ' + L0.s + ' sillabe, la media è ' + Math.round(an0.avg) + '. ' + (L0.s > an0.avg + 3 ? 'È lunga: spezzala o togli una parola. ' : L0.s < an0.avg - 3 ? 'È corta: può diventare un respiro o un ad-lib, oppure aggiungi un\'immagine. ' : 'La lunghezza va bene. ') + (L0.last ? (rhymesFor(L0.last, ctx) || '') : ''), actions: [] }; }
+    // farlo cantare (ACE-Step, tipo Suno)
+    if (/(fall[oa]|fammi sentire|fai) cantar|come suonerebbe|cantal[oa]|tipo suno|canta il (mio )?testo/.test(t)) return { reply: 'Lo faccio cantare con ACE-Step (voce IA, tipo Suno) nello stile e nell\'emozione della tua base. Ci vuole circa un minuto; il risultato lo trovi in 2 Base, sotto l\'omino.', actions: [{ type: 'go', ws: 'base' }, { type: 'sing' }] };
     // analisi / migliorare il testo
     if (/analizz|migliora|cosa ne pensi|giudica|com'è il (mio )?testo|correggi|consigli? (sul|per il) testo|valuta/.test(t)) {
       var an = analyzeLyrics(ctx); if (!an) return { reply: 'Non vedo ancora il testo: scrivilo o incollalo in 1 Testo e richiedimelo.', actions: [{ type: 'go', ws: 'testo' }] };
