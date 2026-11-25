@@ -714,7 +714,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 12:17</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 12:23</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -7486,7 +7486,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   }
   function describe(p) {
     var w = [];
-    w.push('Velocità ' + p.bpm + ' BPM' + (p.bpmStrength < 0.3 ? ' (stima incerta)' : '') + '.');
+    w.push('Velocità ' + p.bpm + ' BPM' + (p.grid === 'beatthis' ? ' (misurata dai battiti)' : (p.bpmStrength < 0.3 ? ' (stima incerta)' : '')) + '.');
     if (p.key) w.push('Tonalità stimata: ' + p.key.name + '.');
     w.push('Cassa sui passi ' + p.kick.map(function (s) { return s + 1; }).join(', ') + ' di 16; rullante sul ' + p.snare.map(function (s) { return s + 1; }).join(' e ') + (p.snare.indexOf(8) >= 0 && p.snare.indexOf(4) < 0 ? ' (metà tempo, tipico trap/drill).' : '.'));
     w.push(p.hatDensity > 0.7 ? 'Hi-hat fitti (quasi tutti i sedicesimi).' : (p.hatDensity > 0.35 ? 'Hi-hat a ottavi, medi.' : 'Hi-hat radi: c\'è spazio.'));
@@ -7553,6 +7553,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   };
   var S = { lib: null, seps: {}, base: './' };
 
+  function isIOS() { try { return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); } catch (e) { return false; } }
   function dir(sub) { return new URL(S.base + sub, location.href).href; }
   async function lib() { if (!S.lib) S.lib = await import(dir('unblend/index.js')); return S.lib; }
   function testUrl(model) { return G.MSA_MODEL_DIR ? G.MSA_MODEL_DIR + model + '_fp16.onnx' : undefined; }
@@ -7564,6 +7565,8 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     var opt = { precision: 'fp16', wasmPaths: dir('ort126/'), numThreads: threads, cache: true,
       onProgress: function (phase, got, tot, src) { if (onDl) onDl(phase, got || 0, tot || MODELS[model].mb * 1048576, src === 'cache'); } };
     var u = testUrl(model); if (u) opt.modelUrl = u;
+    // iPhone/iPad: WebGPU con onnxruntime a volte resta fermo senza errore → per il modello piccolo si usa subito il processore (wasm)
+    if (isIOS() && model === 'scnet_small') opt.backend = 'wasm';
     var sep = null, err = null;
     try { sep = await U.Separator.load(model, opt); } catch (e) { err = e; }
     if (!sep) { opt.backend = 'wasm'; try { sep = await U.Separator.load(model, opt); } catch (e2) { throw e2 || err; } }
@@ -13446,15 +13449,20 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   }
   $('#dw-sep-modes').addEventListener('click', function (e) { var b = e.target.closest('[data-sep]'); if (!b) return; LIB.settings.sepMode = b.getAttribute('data-sep'); persist(); sepInfo(); });
   function stMono(st) { var o = new Float32Array(st.left.length); for (var i = 0; i < o.length; i++) o[i] = (st.left[i] + st.right[i]) / 2; return o; }
+  function withTimeout(pr, ms, why) { return Promise.race([pr, new Promise(function (_, rej) { setTimeout(function () { rej(new Error(why)); }, ms); })]); }
+  /* rifiuta se il lavoro non dà segni di vita per "ms" (idle() = ms dall'ultimo avanzamento) */
+  function stallGuard(pr, idle, ms) { var t; return Promise.race([pr, new Promise(function (_, rej) { t = setInterval(function () { if (idle() > ms) rej(new Error('separazione ferma da ' + Math.round(ms / 60000) + ' minuti')); }, 3000); })]).then(function (v) { clearInterval(t); return v; }, function (e) { clearInterval(t); throw e; }); }
   async function sepAi(f, el) {
     var mode = sepMode();
-    el.textContent = 'Preparo il modello…'; learnBar(0.01);
-    var d = await decodeStereo(f, 44100), max = 44100 * 300;
+    el.textContent = 'Leggo l\'audio del file…'; learnBar(0.01);
+    var d = await withTimeout(decodeStereo(f, 44100), 120000, 'il file non si apre (troppo lungo o formato video non letto)'), max = 44100 * 300;
+    el.textContent = 'Preparo il modello di separazione…'; await tick();
     if (d.L.length > max) { d.L = d.L.slice(0, max); if (d.R) d.R = d.R.slice(0, max); }
     var secs = Math.round(d.L.length / 44100);
-    var r = await AiSeparator.separate(d.L, d.R || d.L, mode,
-      function (p, txt) { el.textContent = txt + ' (' + secs + ' s di audio, ' + Math.round(p * 100) + '%). Resta su questa pagina…'; learnBar(0.1 + p * 0.75); },
-      function (phase, got, tot, mem) { if (phase === 'download' && !mem) { el.textContent = 'Scarico il modello: ' + Math.round(got / 1048576) + ' di ' + Math.round(tot / 1048576) + ' MB (solo la prima volta)…'; learnBar(0.01 + 0.09 * got / tot); } });
+    var last = Date.now(), alive = function () { last = Date.now(); };
+    var r = await stallGuard(AiSeparator.separate(d.L, d.R || d.L, mode,
+      function (p, txt) { alive(); el.textContent = txt + ' (' + secs + ' s di audio, ' + Math.round(p * 100) + '%). Resta su questa pagina…'; learnBar(0.1 + p * 0.75); },
+      function (phase, got, tot, mem) { alive(); if (phase === 'download' && !mem) { el.textContent = 'Scarico il modello: ' + Math.round(got / 1048576) + ' di ' + Math.round(tot / 1048576) + ' MB (solo la prima volta)…'; learnBar(0.01 + 0.09 * got / tot); } }), function () { return Date.now() - last; }, 150000);
     var st = { drums: stMono(r.drums), bass: stMono(r.bass), other: stMono(r.other) }, voice = stMono(r.vocals), n = voice.length;
     var base = new Float32Array(n), rhythm = new Float32Array(n), orig = new Float32Array(n);
     for (var i = 0; i < n; i++) { base[i] = st.drums[i] + st.bass[i] + st.other[i]; rhythm[i] = st.drums[i] + st.bass[i]; orig[i] = d.R ? (d.L[i] + d.R[i]) / 2 : d.L[i]; }
@@ -13620,7 +13628,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
       var sp = specs[k]; el.textContent = 'Compongo la base ' + (k + 1) + ' di ' + specs.length + '…'; await tick();
       for (var r in sp.inst) if (sp.inst[r]) await loadInst(sp.inst[r]);
       try {
-        var bb = Arranger.generate({ sampleRate: 22050, bpm: sp.bpm, tonic: p.tonic, mode: sp.mode, bars: p.bars, genre: sp.genre, seed: sp.seed, inst: sp.inst, plan: map ? map.plan : undefined, arpPattern: sp.arpPattern, groove: sp.groove, prog: sp.prog, tune: sp.tune, bassStyle: sp.bassStyle || undefined, sounds: 'campioni', drumRender: function (part, o, s2) { return SynthDesign.kitRender(sp.kit, part, o, s2); } });
+        var bb = Arranger.generate({ sampleRate: 22050, bpm: sp.bpm, tonic: sp.tonic != null ? sp.tonic : p.tonic, mode: sp.mode, bars: p.bars, genre: sp.genre, seed: sp.seed, inst: sp.inst, plan: map ? map.plan : undefined, arpPattern: sp.arpPattern, groove: sp.groove, prog: sp.prog, tune: sp.tune, bassStyle: sp.bassStyle || undefined, sounds: 'campioni', drumRender: function (part, o, s2) { return SynthDesign.kitRender(sp.kit, part, o, s2); } });
         sp.mix = Backing.mix(bb, p.levels, p.sec); sp.sr = bb.sampleRate;
         var pfv = pfPlan(); if (pfv.on && map) { var pv = ProdFx.plan(map, { genre: sp.genre, seed: sp.seed, density: Math.min(1, pfv.density) }); sp.fxNames = pv.events.filter(function (e2) { return e2.tipo === 'sfx' && ProdFx.SOUNDS[e2.snd].gruppo !== 'Cinema'; }).map(function (e2) { return ProdFx.SOUNDS[e2.snd].nome.split(' (')[0].toLowerCase(); }).filter(function (v, i, a) { return a.indexOf(v) === i; }).slice(0, 4); var sx = ProdFx.renderSfx(pv.events, sp.sr, sp.bpm, sp.mix.length, { seed: sp.seed, tonic: p.tonic }); var pkv = 0, q; for (q = 0; q < sx.length; q++) { sp.mix[q] += sx[q] * 0.5; var av = sp.mix[q] < 0 ? -sp.mix[q] : sp.mix[q]; if (av > pkv) pkv = av; } if (pkv > 0.98) for (q = 0; q < sp.mix.length; q++) sp.mix[q] *= 0.98 / pkv; }
         VAR.list.push(sp); varRender();
@@ -13648,7 +13656,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     if (vp != null) { var s1 = VAR.list[+vp]; dwStop(true); playBuf(s1.mix, s1.sr); $('#dw-var-msg').textContent = 'Ascolti: ' + varName(s1); }
     if (vu != null) {
       var s2 = VAR.list[+vu], p = cur().prod, changed = p.genre !== s2.genre; stopPlay();
-      p.genre = s2.genre; p.bpm = s2.bpm; p.seed = s2.seed; p.inst = Object.assign({}, s2.inst); p.kit = s2.kit; p.arpPattern = s2.arpPattern; if (changed) { p.mix = null; p.groove = null; p.prog = null; p.tune = null; } p.atmNome = s2.nome || null; if (s2.groove) p.groove = s2.groove; if (s2.prog) p.prog = s2.prog; if (s2.mode) p.mode = s2.mode; if (s2.tune) p.tune = s2.tune; if (s2.bassStyle !== undefined) p.bassStyle = s2.bassStyle;
+      p.genre = s2.genre; p.bpm = s2.bpm; p.seed = s2.seed; p.inst = Object.assign({}, s2.inst); p.kit = s2.kit; p.arpPattern = s2.arpPattern; if (changed) { p.mix = null; p.groove = null; p.prog = null; p.tune = null; } p.atmNome = s2.nome || null; if (s2.groove) p.groove = s2.groove; if (s2.prog) p.prog = s2.prog; if (s2.mode) p.mode = s2.mode; if (s2.tonic != null) p.tonic = s2.tonic; if (s2.tune) p.tune = s2.tune; if (s2.bassStyle !== undefined) p.bassStyle = s2.bassStyle;
       coachRec('like', { genre: s2.genre, mode: p.mode, bpm: s2.bpm, inst: s2.inst }); fillInst(); fillBase(); dwFill(); dwChanged(true); projLine();
       $('#dw-var-msg').textContent = 'Usata: ' + varName(s2) + '. Ora la puoi modificare traccia per traccia.';
       if (e.currentTarget && e.currentTarget.id === 'dw-p-learn') { dwWs('base'); window.scrollTo(0, 0); }
@@ -13671,12 +13679,27 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     Object.keys(cnt).forEach(function (k) { (B[k] || []).forEach(function (g) { if (w[g] != null) w[g] *= 1 + Math.min(1.5, cnt[k] * 0.45); }); });
     return w;
   }
+  /* proposte FEDELI a quello che ha imparato: atmosfere dello stesso stile e velocità vicina, stesso giro, stessa tonalità,
+     stessa cassa/rullante/swing/densità hi-hat. Solo numeri della canzone, nessun suono copiato. */
   function learnSpecs2(prof) {
-    var near = { trap: ['trap', 'trapdark', 'plugg', 'emorap'], drill: ['drill', 'brooklyn', 'trapdark', 'street'], melodico: ['melodico', 'rnb', 'emorap', 'cloud'], estate: ['estate', 'afrotrap', 'reggaeton'], epico: ['epico', 'cloud', 'trapdark'] }[prof.style] || ['trap'], w = {};
-    near.forEach(function (g) { w[g] = 6; });
+    var near = { trap: ['trap', 'trapdark', 'plugg', 'emorap', 'cloud'], drill: ['drill', 'brooklyn', 'trapdark', 'street'], melodico: ['melodico', 'rnb', 'emorap', 'cloud', 'lofi'], estate: ['estate', 'afrotrap', 'reggaeton', 'clubtrap'], epico: ['epico', 'cloud', 'trapdark'] }[prof.style] || ['trap'];
+    var bpm = prof.bpm || 120, dark = (prof.bright || 0.5) < 0.45, mode = prof.key ? prof.key.mode : null;
+    function bd(b) { return Math.min(Math.abs(b - bpm), Math.abs(b / 2 - bpm), Math.abs(b * 2 - bpm)); }
+    var DARK = /scur|dark|drill|street|cupa|pesante|cinema/i;
+    var ranked = StylePresets.LIST.map(function (pr) {
+      var sc = (near.indexOf(pr.base) === 0 ? 5 : near.indexOf(pr.base) > 0 ? 3 : 0) - bd(pr.bpm) / 6 + (mode && pr.mode === mode ? 1.5 : 0) + (dark === DARK.test(pr.spiega + pr.nome) ? 1 : 0);
+      return { pr: pr, sc: sc + Math.random() * 0.8 };
+    }).sort(function (a, b) { return b.sc - a.sc; }).slice(0, 6);
     var kick = prof.kick && prof.kick.length ? prof.kick : [0], kb = kick.slice(); if (kb.length > 1) kb[kb.length - 1] = Math.min(15, kb[kb.length - 1] + 1); else kb.push(10);
-    return StylePresets.pickMany(12, w, Date.now() % 1e9).map(function (v, i) { v.bpm = Math.max(60, Math.min(180, prof.bpm + (i % 3 - 1) * 2)); v.mode = prof.key ? prof.key.mode : v.mode; if (prof.prog && i % 2 === 0) v.prog = prof.prog;
-      v.groove = { kickPats: [[kick, kb]], snare: prof.snare, swing: prof.swing || 0, rolls: Math.max(0, Math.min(1, (prof.triplets || 0) * 1.2 + ((prof.hatDensity || 0.5) - 0.5) * 0.6)) }; return v; });
+    var out = []; ranked.forEach(function (r, k) { for (var q = 0; q < 2; q++) {
+      var v = StylePresets.variant(r.pr, Math.floor(Math.random() * 1e9));
+      v.bpm = Math.round(Math.max(60, Math.min(180, bpm + (q ? 0 : (k % 3 - 1))))); v.mode = mode || v.mode; v.tonic = prof.key ? prof.key.tonic : undefined;
+      if (prof.prog && prof.prog.length) v.prog = prof.prog;
+      v.groove = { kickPats: [[kick, kb]], snare: prof.snare, swing: prof.swing || 0, rolls: Math.max(0, Math.min(1, (prof.triplets || 0) * 1.2 + ((prof.hatDensity || 0.5) - 0.5) * 0.6)) };
+      v.tune = Object.assign({}, v.tune || {}, { hat: 0.7 + (prof.hatDensity || 0.5) * 0.7 });
+      v.nome = v.nome + ' · dalla canzone'; out.push(v);
+    } });
+    return out;
   }
   function learnSpecs(prof) {
     var g = Arranger.STYLES[prof.style] ? prof.style : 'trap', out = [];

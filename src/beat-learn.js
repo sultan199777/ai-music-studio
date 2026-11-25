@@ -316,7 +316,7 @@
   }
   function describe(p) {
     var w = [];
-    w.push('Velocità ' + p.bpm + ' BPM' + (p.bpmStrength < 0.3 ? ' (stima incerta)' : '') + '.');
+    w.push('Velocità ' + p.bpm + ' BPM' + (p.grid === 'beatthis' ? ' (misurata dai battiti)' : (p.bpmStrength < 0.3 ? ' (stima incerta)' : '')) + '.');
     if (p.key) w.push('Tonalità stimata: ' + p.key.name + '.');
     w.push('Cassa sui passi ' + p.kick.map(function (s) { return s + 1; }).join(', ') + ' di 16; rullante sul ' + p.snare.map(function (s) { return s + 1; }).join(' e ') + (p.snare.indexOf(8) >= 0 && p.snare.indexOf(4) < 0 ? ' (metà tempo, tipico trap/drill).' : '.'));
     w.push(p.hatDensity > 0.7 ? 'Hi-hat fitti (quasi tutti i sedicesimi).' : (p.hatDensity > 0.35 ? 'Hi-hat a ottavi, medi.' : 'Hi-hat radi: c\'è spazio.'));
