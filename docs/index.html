@@ -396,6 +396,51 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
 
 .learn-seq{margin:6px 0 12px;padding-left:20px;line-height:1.5;opacity:.9}.learn-seq li{margin:2px 0}
 
+/* ===== Disposizione da produttore (B, 25/11): per ogni passo prima l'azione, poi il lavoro, poi le rifiniture.
+   Ordine con CSS (nessun id spostato), pannelli che si aprono/chiudono con un tocco sul titolo. ===== */
+#v-daw { display: flex; flex-direction: column; }
+#v-daw > * { order: 50; }
+#v-daw > .dw-transport { order: -10; }
+#v-daw > .dw-guide { order: -5; }
+#v-daw > .dw-advbar { order: 90; } #v-daw > .dw-next { order: 95; }
+#v-daw > #dw-next { order: -4; }
+
+body[data-ws="testo"] #dw-p-testo { order: 1; }
+body[data-ws="testo"] #dw-p-extra { order: 2; }
+body[data-ws="testo"] #dw-p-talk { order: 3; }
+body[data-ws="base"] #dw-p-one { order: 1; }
+body[data-ws="base"] #dw-p-var { order: 2; }
+body[data-ws="base"] #dw-p-arr { order: 3; }
+body[data-ws="base"] #dw-p-omino { order: 4; }
+body[data-ws="base"] #dw-p-prod { order: 5; }
+body[data-ws="base"] #dw-p-play { order: 6; }
+body[data-ws="base"] #dw-p-brain { order: 7; }
+body[data-ws="base"] #dw-p-dna { order: 8; }
+body[data-ws="base"] #dw-p-talk { order: 9; }
+body[data-ws="base"] #dw-p-agents { order: 10; }
+body[data-ws="voce"] #dw-kar { order: 1; }
+body[data-ws="voce"] #dw-p-mic { order: 2; }
+body[data-ws="voce"] #dw-p-omino { order: 3; }
+body[data-ws="voce"] #dw-p-arr { order: 4; }
+body[data-ws="voce"] #dw-p-sing { order: 5; }
+body[data-ws="voce"] #dw-p-clips { order: 6; }
+body[data-ws="voce"] #dw-p-prod { order: 7; }
+body[data-ws="mix"] #dw-p-mix { order: 1; }
+body[data-ws="mix"] #dw-p-arr { order: 2; }
+body[data-ws="mix"] #dw-p-mixer { order: 3; }
+body[data-ws="libreria"] #dw-p-learn { order: 1; }
+body[data-ws="libreria"] #dw-p-design { order: 2; }
+
+.dw-panel.fold > :not(.dw-ph):not(.fold-sum) { display: none !important; }
+.dw-panel .dw-ph { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.dw-panel .dw-ph::after { content: ''; width: 9px; height: 9px; margin-left: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); opacity: .5; transition: transform .2s; flex: none; align-self: center; }
+.dw-panel.fold .dw-ph::after { transform: rotate(-45deg); }
+.dw-panel.fold { padding-bottom: 12px; }
+.dw-panel.fold .dw-ph { margin-bottom: 0; }
+.fold-sum { display: none; }
+.dw-panel.fold .fold-sum { display: block; margin: 4px 0 0; font-size: 12.5px; opacity: .6; }
+
+
 /* ===== VOICE LAB (stile Cosmo: usa le variabili del tema) ===== */
 .vl .vl-auto{font-size:1.25rem;min-height:60px;margin:8px 0 4px;letter-spacing:.04em}
 .vl .vl-hint{margin:2px 0 8px}
@@ -638,11 +683,11 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   <section class="dw-panel" id="dw-p-sing" data-ws="voce">
     <details open><summary><b>Guida al canto</b> <span class="small muted">quando entrare, quanto tenere, dove respirare</span></summary><div id="dwx-sg" style="margin-top:8px"></div></details>
   </section>
-<section class="dw-panel" id="dw-p-var" data-adv="base" data-ws="base">
+<section class="dw-panel" id="dw-p-var" data-ws="base">
     <div class="dw-ph"><h3>Varianti</h3><span class="tag m">Sempre nuove</span></div>
     <label class="f"><span>Stile</span><select id="dw-var-style"><option value="">Lo decide il mio testo</option></select></label>
     <div class="row"><button class="btn pri" id="dw-var-other">Basi adatte al mio testo</button><select id="dw-var-n"><option value="8">8</option><option value="16" selected>16</option><option value="24">24</option></select><button class="btn" id="dw-var-same">Varianti di questo stile</button></div>
-    <details class="dw-atm" open><summary class="small"><b>Atmosfere</b> (tocca per avere varianti in quello stile)</summary><div id="dw-var-atm"></div></details>
+    <details class="dw-atm"><summary class="small"><b>Tutte le atmosfere</b> (Sfera, Shiva, Pop Smoke, Drake… tocca per varianti in quello stile)</summary><div id="dw-var-atm"></div></details>
     <div id="dw-var-list"></div>
     <div class="status" id="dw-var-msg"></div>
   </section>
@@ -789,7 +834,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 17:10</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 17:19</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -14724,9 +14769,25 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   });
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
   // spazi di lavoro dello Studio: Impara · Base · Testo · Voce · Mix (un solo gruppo di pannelli alla volta)
+  /* pannelli che si aprono e chiudono: aperti quelli principali del passo, il resto chiuso (la scelta del tuo tocco resta salvata) */
+  var FOLD_OPEN = {"testo": ["dw-p-testo"], "base": ["dw-p-one", "dw-p-var", "dw-p-arr", "dw-p-omino"], "voce": ["dw-kar", "dw-p-mic", "dw-p-omino"], "mix": ["dw-p-mix"], "libreria": ["dw-p-learn"]};
+  var FOLD_SUM = { 'dw-p-arr': 'Le tracce della base: tocca un nome per suono, note e mixer', 'dw-p-prod': 'Effetti da film e voci di produzione scelti dal testo', 'dw-p-play': 'Cambia melodia, ascolta l\'Orecchio, salva', 'dw-p-brain': 'Stile, umore e atmosfere a mano', 'dw-p-dna': 'Stili a numeri e fusione di generi', 'dw-p-talk': 'Scrivi cosa cambiare e gli agenti lo fanno', 'dw-p-agents': 'Proposte automatiche degli agenti', 'dw-p-sing': 'Quando entrare, quanto tenere, dove respirare', 'dw-p-clips': 'Prove registrate e montaggio', 'dw-p-extra': 'Assistente testi e rime', 'dw-p-design': 'Crea suoni tuoi', 'dw-p-mixer': 'Canali del mixer' };
+  function foldApply(ws) {
+    var st = LIB.settings.fold || (LIB.settings.fold = {}), open = FOLD_OPEN[ws] || [];
+    $$('#v-daw > .dw-panel').forEach(function (pn) {
+      if (!pn.id || pn.classList.contains('dw-guide') || !pn.querySelector('.dw-ph')) return;
+      if (!pn.querySelector('.fold-sum') && FOLD_SUM[pn.id]) { var sm = document.createElement('p'); sm.className = 'fold-sum'; sm.textContent = FOLD_SUM[pn.id]; pn.querySelector('.dw-ph').insertAdjacentElement('afterend', sm); }
+      var k = ws + ':' + pn.id, want = st[k] != null ? st[k] : open.indexOf(pn.id) < 0; pn.classList.toggle('fold', !!want);
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var h = e.target.closest && e.target.closest('#v-daw > .dw-panel > .dw-ph'); if (!h || e.target.closest('button,a,input,select,.tag')) return;
+    var pn = h.parentElement, ws = dwWsName(), st = LIB.settings.fold || (LIB.settings.fold = {}); pn.classList.toggle('fold'); st[ws + ':' + pn.id] = pn.classList.contains('fold'); persist();
+    if (!pn.classList.contains('fold')) { try { if (SESSION.base && (pn.id === 'dw-p-arr')) dwDraw(SESSION.base); } catch (x) {} }
+  });
   function dwWsName() { var w = LIB.settings.ws; return ['testo', 'base', 'voce', 'mix', 'libreria'].indexOf(w) >= 0 ? w : 'testo'; }
   function dwWs(ws) {
-    LIB.settings.ws = ws; persist();
+    LIB.settings.ws = ws; persist(); document.body.dataset.ws = ws; try { foldApply(ws); } catch (e) {}
     var adv = !!LIB.settings.adv; $$('#v-daw [data-ws]').forEach(function (el) { var a = el.getAttribute('data-adv'); el.hidden = (' ' + el.getAttribute('data-ws') + ' ').indexOf(' ' + ws + ' ') < 0 || (!adv && a && (' ' + a + ' ').indexOf(' ' + ws + ' ') >= 0); });
     var ab = $('#dw-adv'); if (ab) ab.textContent = adv ? 'Nascondi strumenti avanzati' : 'Mostra strumenti avanzati';
     $$('#tabs a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-ws') === ws); });

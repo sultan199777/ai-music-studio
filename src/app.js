@@ -2505,9 +2505,25 @@
   });
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
   // spazi di lavoro dello Studio: Impara · Base · Testo · Voce · Mix (un solo gruppo di pannelli alla volta)
+  /* pannelli che si aprono e chiudono: aperti quelli principali del passo, il resto chiuso (la scelta del tuo tocco resta salvata) */
+  var FOLD_OPEN = {"testo": ["dw-p-testo"], "base": ["dw-p-one", "dw-p-var", "dw-p-arr", "dw-p-omino"], "voce": ["dw-kar", "dw-p-mic", "dw-p-omino"], "mix": ["dw-p-mix"], "libreria": ["dw-p-learn"]};
+  var FOLD_SUM = { 'dw-p-arr': 'Le tracce della base: tocca un nome per suono, note e mixer', 'dw-p-prod': 'Effetti da film e voci di produzione scelti dal testo', 'dw-p-play': 'Cambia melodia, ascolta l\'Orecchio, salva', 'dw-p-brain': 'Stile, umore e atmosfere a mano', 'dw-p-dna': 'Stili a numeri e fusione di generi', 'dw-p-talk': 'Scrivi cosa cambiare e gli agenti lo fanno', 'dw-p-agents': 'Proposte automatiche degli agenti', 'dw-p-sing': 'Quando entrare, quanto tenere, dove respirare', 'dw-p-clips': 'Prove registrate e montaggio', 'dw-p-extra': 'Assistente testi e rime', 'dw-p-design': 'Crea suoni tuoi', 'dw-p-mixer': 'Canali del mixer' };
+  function foldApply(ws) {
+    var st = LIB.settings.fold || (LIB.settings.fold = {}), open = FOLD_OPEN[ws] || [];
+    $$('#v-daw > .dw-panel').forEach(function (pn) {
+      if (!pn.id || pn.classList.contains('dw-guide') || !pn.querySelector('.dw-ph')) return;
+      if (!pn.querySelector('.fold-sum') && FOLD_SUM[pn.id]) { var sm = document.createElement('p'); sm.className = 'fold-sum'; sm.textContent = FOLD_SUM[pn.id]; pn.querySelector('.dw-ph').insertAdjacentElement('afterend', sm); }
+      var k = ws + ':' + pn.id, want = st[k] != null ? st[k] : open.indexOf(pn.id) < 0; pn.classList.toggle('fold', !!want);
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var h = e.target.closest && e.target.closest('#v-daw > .dw-panel > .dw-ph'); if (!h || e.target.closest('button,a,input,select,.tag')) return;
+    var pn = h.parentElement, ws = dwWsName(), st = LIB.settings.fold || (LIB.settings.fold = {}); pn.classList.toggle('fold'); st[ws + ':' + pn.id] = pn.classList.contains('fold'); persist();
+    if (!pn.classList.contains('fold')) { try { if (SESSION.base && (pn.id === 'dw-p-arr')) dwDraw(SESSION.base); } catch (x) {} }
+  });
   function dwWsName() { var w = LIB.settings.ws; return ['testo', 'base', 'voce', 'mix', 'libreria'].indexOf(w) >= 0 ? w : 'testo'; }
   function dwWs(ws) {
-    LIB.settings.ws = ws; persist();
+    LIB.settings.ws = ws; persist(); document.body.dataset.ws = ws; try { foldApply(ws); } catch (e) {}
     var adv = !!LIB.settings.adv; $$('#v-daw [data-ws]').forEach(function (el) { var a = el.getAttribute('data-adv'); el.hidden = (' ' + el.getAttribute('data-ws') + ' ').indexOf(' ' + ws + ' ') < 0 || (!adv && a && (' ' + a + ' ').indexOf(' ' + ws + ' ') >= 0); });
     var ab = $('#dw-adv'); if (ab) ab.textContent = adv ? 'Nascondi strumenti avanzati' : 'Mostra strumenti avanzati';
     $$('#tabs a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-ws') === ws); });
