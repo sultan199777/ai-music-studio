@@ -2016,7 +2016,12 @@
     var r = await BeatThis.track(x, sr, function (f) { el.textContent = 'Trovo battiti e battute con Beat This! ' + Math.round(f * 100) + '%'; }); r.ms = Date.now() - t0; return r;
   }
   $('#dw-learn-file').addEventListener('change', async function () {
-    var f = this.files && this.files[0], el = $('#dw-learn-msg'); this.value = ''; if (!f) return;
+    var fs = Array.prototype.slice.call(this.files || []); this.value = ''; if (!fs.length) return;
+    var art = (($('#dw-learn-art0') || {}).value || '').trim().slice(0, 30); if (art) { LEARN.lastArt = art; LIB.settings.learnArt = art; persist(); }
+    for (var q = 0; q < fs.length; q++) { $('#dw-learn-msg').textContent = (fs.length > 1 ? 'Canzone ' + (q + 1) + ' di ' + fs.length + ': ' : ''); await learnOne(fs[q], art || 'Senza cartella', q === fs.length - 1); }
+  });
+  async function learnOne(f, art, last) {
+    var el = $('#dw-learn-msg');
     el.textContent = 'Apro "' + f.name + '"…'; learnBar(0.02); await tick(); dwStop(); stopPlay();
     try { localStorage.setItem('learnRunning', JSON.stringify({ name: f.name, at: Date.now(), secs: learnSecs() })); } catch (e) {}
     try {
@@ -2032,15 +2037,16 @@
       var prof = BeatLearn.learn(s.rhythm, s.sr, { grid: grid, harm: s.stems ? (function () { var h = new Float32Array(s.stems.other.length); for (var q = 0; q < h.length; q++) h[q] = s.stems.other[q] + s.stems.bass[q]; return h; })() : null });
       if (grid) prof.why.unshift((prof.grid === 'beatthis' ? 'Misurato con Beat This! (rete neurale): ' + grid.beats.length + ' battiti, ' + grid.downbeats.length + ' inizi di battuta, affidabilità ' + Math.round((grid.conf || 0) * 100) + '%.' : 'Beat This! poco sicuro su questa base (affidabilità ' + Math.round((grid.conf || 0) * 100) + '%): velocità dal metodo a regole.'));
       if (tuneM) { prof.tune = tuneM; prof.why.push('Voce: ' + tuneM.label + ' (scarto medio ' + tuneM.cents + ' cent dalla nota).'); }
-      LEARN.cur = { name: f.name.replace(/\.[^.]+$/, '').slice(0, 40), prof: prof, voice: voice, base: base, orig: s.orig, stems: s.stems, sr: s.sr, note: s.note, vote: 0, ai: s.ai };
-      learnBar(null); setTimeout(function () { varMake('', learnSpecs2(prof), '#dw-learn-msg'); }, 50); el.textContent = s.ai ? 'Fatto. Ascolta le parti separate, poi dimmi se il ritmo ti piace.' : 'Fatto, ma senza AI (' + why + '): voce e base non sono pulite.';
+      LEARN.cur = { name: f.name.replace(/\.[^.]+$/, '').slice(0, 40), prof: prof, voice: voice, base: base, orig: s.orig, stems: s.stems, sr: s.sr, note: s.note, vote: 1, ai: s.ai };
+      var rec = { id: uid(), name: LEARN.cur.name, artist: art, prof: prof, vote: 1, at: Date.now() }, LL = learnList(); LL.push(rec); if (LL.length > 120) LL.shift(); LEARN.cur.recId = rec.id; persist();
+      learnBar(null); if (last) setTimeout(function () { var fp = folderProf(art); varMake('', learnSpecs2(fp || prof, varCount()), '#dw-learn-msg'); }, 50); el.textContent = s.ai ? 'Fatto. Ascolta le parti separate, poi dimmi se il ritmo ti piace.' : 'Fatto, ma senza AI (' + why + '): voce e base non sono pulite.';
       try { localStorage.removeItem('learnRunning'); } catch (e) {}
       learnRender(); coachRec('complete', coachCtx()); sepInfo();
     } catch (e) {
-      learnBar(null);
+      learnBar(null); try { localStorage.removeItem('learnRunning'); } catch (x) {}
       el.textContent = /video|mov|mp4/i.test((f.type || '') + f.name) ? 'Non riesco a leggere l\'audio di questo video. Su iPhone: apri il video in Foto, Condividi > Salva su File, poi riprova.' : 'Non riesco a leggere questo file. Prova un MP3, M4A, WAV o un video MP4/MOV.';
     }
-  });
+  }
   // metodo del testo: righe, sillabe, velocità, rime, ripetizioni (si salvano i NUMERI, non le parole)
   function lyricStats(tr) {
     var lines = tr.lines.length ? tr.lines : [{ t0: 0, t1: 0, text: tr.text }], txt = lines.map(function (l) { return l.text; }).join('\n'), a = LyricsEngine.analyze(txt);
@@ -2076,6 +2082,8 @@
         '<div class="row"><button class="btn sm pri" data-lv="1">Mi piace questo ritmo</button><button class="btn sm" data-lv="-1">Non mi piace</button></div></div>';
     }
     $('#dw-learn-cur').innerHTML = h;
+    var dl = $('#dw-learn-arts0'); if (dl) { var nm = learnArtists().filter(function (x) { return x !== 'Senza cartella'; }).concat(StylePresets.LIST.map(function (p) { return p.nome.replace(/^Tipo /, '').replace(/ \(.*\)$/, ''); })); dl.innerHTML = nm.filter(function (v, i) { return nm.indexOf(v) === i; }).map(function (x) { return '<option value="' + esc(x) + '">'; }).join(''); }
+    var a0 = $('#dw-learn-art0'); if (a0 && !a0.value && LIB.settings.learnArt) a0.value = LIB.settings.learnArt;
     var L = learnList(), arts = learnArtists();
     $('#dw-learn-list').innerHTML = L.length ? arts.map(function (a) {
       var items = L.map(function (r, i) { return [r, i]; }).filter(function (x) { return (x[0].artist || 'Senza cartella') === a; }), lk = items.filter(function (x) { return x[0].vote > 0; }).length;
@@ -2084,7 +2092,7 @@
       return '<div class="dw-agent"><header><span class="dw-dot ' + (lk ? 'ok' : '') + '"></span><b>' + esc(a) + '</b><span class="st">' + items.length + (items.length === 1 ? ' canzone · ' : ' canzoni · ') + lk + ' ♥</span></header>' +
         '<p class="small muted">' + esc(sum) + '</p>' +
         items.map(function (x) { var r = x[0]; return '<div class="dw-prop"><div><b>' + (r.vote > 0 ? '♥ ' : '✕ ') + esc(r.name) + '</b><small>' + esc(profLine(r.prof)) + '</small></div><button class="btn sm" data-lx="' + x[1] + '">Togli</button></div>'; }).join('') +
-        (lk ? '<div class="row"><button class="btn sm pri" data-la="' + esc(a) + '">Crea una base nello stile ' + esc(a) + '</button></div>' : '') + '</div>';
+        (lk ? '<div class="row"><button class="btn sm pri" data-lm="' + esc(a) + '">Crea ' + varCount() + ' basi nello stile ' + esc(a) + '</button><button class="btn sm" data-la="' + esc(a) + '">Usa subito una base</button></div>' + (lk < 4 ? '<p class="small muted">Con ' + lk + (lk === 1 ? ' canzone' : ' canzoni') + ' lo stile è ancora grezzo: ne servono 4-5.</p>' : '') : '') + '</div>';
     }).join('') : '<p class="small muted">Ancora niente. Carica 2 o 3 canzoni che ti piacciono e una che non ti piace: impara la differenza.</p>';
   }
   $('#dw-p-learn').addEventListener('click', async function (e) {
@@ -2094,15 +2102,28 @@
     if (ls && c) await saveAudio(c[ls], c.sr, c.name.replace(/\W+/g, '-') + '-' + (ls === 'voice' ? 'voce' : 'base'), $('#dw-learn-msg'));
     if (lv && c) {
       var art = (($('#dw-learn-art') || {}).value || '').trim().slice(0, 30) || 'Senza cartella'; LEARN.lastArt = art === 'Senza cartella' ? '' : art;
-      var L = learnList(); L.push({ id: uid(), name: c.name, artist: art, prof: c.prof, vote: +lv, at: Date.now() }); if (L.length > 80) L.shift();
+      var L = learnList(), ex = L.filter(function (r) { return r.id === c.recId; })[0]; if (ex) { ex.vote = +lv; ex.artist = art; } else { L.push({ id: uid(), name: c.name, artist: art, prof: c.prof, vote: +lv, at: Date.now() }); if (L.length > 120) L.shift(); }
       persist(); LEARN.cur = null; stopPlay();
       $('#dw-learn-msg').textContent = +lv > 0 ? 'Imparato: terrò conto di questo ritmo. Ho cancellato l\'audio, restano solo le misure.' : 'Segnato: eviterò questo tipo di ritmo.';
       learnRender(); agentsRun();
     }
     if (lx != null) { learnList().splice(+lx, 1); persist(); learnRender(); }
     var la = b.getAttribute('data-la');
+    var lm = b.getAttribute('data-lm'); if (lm) { var fp = folderProf(lm); if (fp) { dwStop(); varMake('', learnSpecs2(fp, varCount()), '#dw-learn-msg'); $('#dw-learn-prop').scrollIntoView({ behavior: 'smooth' }); } return; }
     if (la) { var pl = learnPlan(la); if (pl) { learnUse(pl); $('#dw-learn-msg').textContent = 'Base nuova nello stile "' + la + '" (da ' + pl.from + (pl.from === 1 ? ' canzone' : ' canzoni') + ' della cartella): ' + (Arranger.STYLES[pl.genre] ? Arranger.STYLES[pl.genre].label : pl.genre) + ', ' + pl.bpm + ' BPM. Ogni volta che la premi esce una base diversa. Premi Play.'; } }
   });
+  function varCount() { var v = +(($('#dw-var-n') || {}).value || 16); return v > 0 ? v : 16; }
+  /* profilo medio di una cartella (solo canzoni che ti piacciono): stile più frequente, velocità mediana, tonalità e giro più usati, cassa e rullante */
+  function folderProf(artist) {
+    var L = learnList().filter(function (r) { return (r.artist || 'Senza cartella') === artist && r.vote > 0 && r.prof; }).map(function (r) { return r.prof; }); if (!L.length) return null;
+    function most(f) { var c = {}, best = null; L.forEach(function (p) { var k = f(p); if (k == null) return; k = JSON.stringify(k); c[k] = (c[k] || 0) + 1; if (best == null || c[k] > c[best]) best = k; }); return best == null ? null : JSON.parse(best); }
+    function med(f) { var v = L.map(f).filter(function (x) { return x != null && isFinite(x); }).sort(function (a, b) { return a - b; }); return v.length ? v[v.length >> 1] : null; }
+    var bl = learnPlan(artist), out = Object.assign({}, L[L.length - 1]);
+    out.style = most(function (p) { return p.style; }) || out.style; out.bpm = Math.round(med(function (p) { return p.bpm; }) || out.bpm); out.key = most(function (p) { return p.key; }) || out.key;
+    out.prog = most(function (p) { return p.prog; }) || out.prog; out.kick = bl && bl.groove ? bl.groove.kickPats[0][0] : out.kick; out.snare = bl && bl.groove ? bl.groove.snare : out.snare;
+    out.swing = med(function (p) { return p.swing; }) || 0; out.triplets = med(function (p) { return p.triplets; }) || 0; out.hatDensity = med(function (p) { return p.hatDensity; }); out.bright = med(function (p) { return p.bright; });
+    out.artist = artist; out.count = L.length; return out;
+  }
   function learnArtists() { var seen = {}, out = []; learnList().forEach(function (r) { var a = r.artist || 'Senza cartella'; if (!seen[a]) { seen[a] = 1; out.push(a); } }); return out; }
   function learnPlan(artist) { var L = learnList().filter(function (r) { return !artist || (r.artist || 'Senza cartella') === artist; }); return BeatLearn.blend(L.filter(function (r) { return r.vote > 0; }).map(function (r) { return r.prof; }), L.filter(function (r) { return r.vote < 0; }).map(function (r) { return r.prof; })); }
   function learnUse(pl) {
@@ -2212,15 +2233,19 @@
   }
   /* proposte FEDELI a quello che ha imparato: atmosfere dello stesso stile e velocità vicina, stesso giro, stessa tonalità,
      stessa cassa/rullante/swing/densità hi-hat. Solo numeri della canzone, nessun suono copiato. */
-  function learnSpecs2(prof) {
+  function learnSpecs2(prof, n) {
+    n = n || 12;
     var near = { trap: ['trap', 'trapdark', 'plugg', 'emorap', 'cloud'], drill: ['drill', 'brooklyn', 'trapdark', 'street'], melodico: ['melodico', 'rnb', 'emorap', 'cloud', 'lofi'], estate: ['estate', 'afrotrap', 'reggaeton', 'clubtrap'], epico: ['epico', 'cloud', 'trapdark'] }[prof.style] || ['trap'];
     var bpm = prof.bpm || 120, dark = (prof.bright || 0.5) < 0.45, mode = prof.key ? prof.key.mode : null;
     function bd(b) { return Math.min(Math.abs(b - bpm), Math.abs(b / 2 - bpm), Math.abs(b * 2 - bpm)); }
     var DARK = /scur|dark|drill|street|cupa|pesante|cinema/i;
     var ranked = StylePresets.LIST.map(function (pr) {
       var sc = (near.indexOf(pr.base) === 0 ? 5 : near.indexOf(pr.base) > 0 ? 3 : 0) - bd(pr.bpm) / 6 + (mode && pr.mode === mode ? 1.5 : 0) + (dark === DARK.test(pr.spiega + pr.nome) ? 1 : 0);
+      var an = String(prof.artist || '').toLowerCase().replace(/[^a-z0-9]/g, ''), pn = (pr.id + pr.nome).toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (an.length >= 3 && pn.indexOf(an) >= 0) sc += 20; // la cartella ha il nome di un'atmosfera che conosco: quella guida
       return { pr: pr, sc: sc + Math.random() * 0.8 };
-    }).sort(function (a, b) { return b.sc - a.sc; }).slice(0, 6);
+    }).sort(function (a, b) { return b.sc - a.sc; }).slice(0, Math.max(3, Math.ceil(n / 2)));
+    if (ranked[0].sc >= 15) { var hit = ranked[0], rest = ranked.slice(1); ranked = []; for (var z = 0; z < Math.ceil(n / 4); z++) ranked.push(hit); ranked = ranked.concat(rest).slice(0, Math.max(3, Math.ceil(n / 2))); } // metà delle basi sull'atmosfera dell'artista
     var kick = prof.kick && prof.kick.length ? prof.kick : [0], kb = kick.slice(); if (kb.length > 1) kb[kb.length - 1] = Math.min(15, kb[kb.length - 1] + 1); else kb.push(10);
     var out = []; ranked.forEach(function (r, k) { for (var q = 0; q < 2; q++) {
       var v = StylePresets.variant(r.pr, Math.floor(Math.random() * 1e9));
@@ -2228,9 +2253,9 @@
       if (prof.prog && prof.prog.length) v.prog = prof.prog;
       v.groove = { kickPats: [[kick, kb]], snare: prof.snare, swing: prof.swing || 0, rolls: Math.max(0, Math.min(1, (prof.triplets || 0) * 1.2 + ((prof.hatDensity || 0.5) - 0.5) * 0.6)) };
       v.tune = Object.assign({}, v.tune || {}, { hat: 0.7 + (prof.hatDensity || 0.5) * 0.7 });
-      v.nome = v.nome + ' · dalla canzone'; out.push(v);
+      v.nome = prof.artist ? 'Stile ' + prof.artist + ' · ' + (out.length + 1) + ' (' + r.pr.nome.replace(/^Tipo /, '').replace(/ \(.*\)$/, '') + ')' : v.nome + ' · dalla canzone'; out.push(v);
     } });
-    return out;
+    return out.slice(0, n);
   }
   function learnSpecs(prof) {
     var g = Arranger.STYLES[prof.style] ? prof.style : 'trap', out = [];
