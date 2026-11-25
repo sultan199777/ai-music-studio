@@ -746,7 +746,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 16:13</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 16:16</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -1121,7 +1121,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">364 test automatici superati su 364 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">365 test automatici superati su 365 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -5840,14 +5840,14 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     [/mitra|kalash|raffic|\bak\b|\bak47\b/, ['raffica'], 'raffica'],
     [/strad|quartier|citt[aà]|blocco|palazz|periferi|piazz|traffic|marciapied|\bzona\b|\bhood\b|block|viale|incrocio|semafor/, ['citta'], 'strada'],
     [/soldi|cash|euro\b|money|banconot|contant|milion|mazzett|guadagn|ricc[oh]|bigliett|\bcassa\b|grana|paper/, ['contasoldi', 'monete'], 'soldi'],
-    [/cuore|battit|\bpetto\b|ansia|respir|\bpanico\b/, ['cuore'], 'cuore'],
-    [/orolog|lancett|\bminut|second[io]\b|\bore\b|rolex|aspett|tic tac|tempo che/, ['orologio'], 'tempo'],
-    [/\bmare\b|onde|spiaggi|\bporto\b|barca|ocean|riva\b/, ['mare'], 'mare'],
+    [/cuore|battit|\bpetto\b|ansia|respir|\bpanico\b|\banima\b|dolor/, ['cuore'], 'cuore'],
+    [/orolog|lancett|\bminut|second[io]\b|\bore\b|rolex|aspett|tic tac|tempo che|sveglio|insonni/, ['orologio'], 'tempo'],
+    [/\bmare\b|\bonde\b|spiaggi|\bporto\b|barca|ocean|\briva\b/, ['mare'], 'mare'],
     [/\bdio\b|preg[ao]|preghier|chiesa|madonna|santo|angel|paradis|croce|benedi|signore|rosario|cielo/, ['campana'], 'fede'],
-    [/vetro|rott[oa]|spezz|frant|cocci|specchi|crollo/, ['vetro'], 'qualcosa che si rompe'],
+    [/vetro|rott[oa]|spezz|frant|cocci|specchi|crollo|cristall/, ['vetro'], 'qualcosa che si rompe'],
     [/fuoco|fiamm|bruci|accend|\bfumo|cenere|canna|sigar|blunt|incendi|accendino/, ['accendino', 'fuoco'], 'fuoco/fumo'],
     [/vento|freddo|\bgelo|neve|invern|brivid/, ['vento'], 'freddo/vento'],
-    [/telefon|chiam|squill|messagg|iphone|\bcell|whatsapp|vibra|notifich|scrivimi/, ['telefono'], 'telefono'],
+    [/telefon|ti chiamo|mi chiami|chiamata|chiamami|squill|messagg|iphone|\bcell|whatsapp|vibra|notifich|scrivimi/, ['telefono'], 'telefono'],
     [/folla|stadio|\bpalco|concert|\bfan\b|pubblico|applaus|\blive\b|sold out|tour\b/, ['folla'], 'palco'],
     [/ricord|passato|anni fa|da piccol|infanzi|nostalg|vecchi tempi|bambin/, ['vinile'], 'ricordi'],
     [/esplod|bomba|boom\b|crash|schiant|botta|pugno|colpo|impatto|cadut|precipit/, ['esplosione', 'impatto'], 'colpo forte']
