@@ -23,6 +23,7 @@
   };
   var S = { lib: null, seps: {}, base: './' };
 
+  function isIOS() { try { return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); } catch (e) { return false; } }
   function dir(sub) { return new URL(S.base + sub, location.href).href; }
   async function lib() { if (!S.lib) S.lib = await import(dir('unblend/index.js')); return S.lib; }
   function testUrl(model) { return G.MSA_MODEL_DIR ? G.MSA_MODEL_DIR + model + '_fp16.onnx' : undefined; }
@@ -34,6 +35,8 @@
     var opt = { precision: 'fp16', wasmPaths: dir('ort126/'), numThreads: threads, cache: true,
       onProgress: function (phase, got, tot, src) { if (onDl) onDl(phase, got || 0, tot || MODELS[model].mb * 1048576, src === 'cache'); } };
     var u = testUrl(model); if (u) opt.modelUrl = u;
+    // iPhone/iPad: WebGPU con onnxruntime a volte resta fermo senza errore → per il modello piccolo si usa subito il processore (wasm)
+    if (isIOS() && model === 'scnet_small') opt.backend = 'wasm';
     var sep = null, err = null;
     try { sep = await U.Separator.load(model, opt); } catch (e) { err = e; }
     if (!sep) { opt.backend = 'wasm'; try { sep = await U.Separator.load(model, opt); } catch (e2) { throw e2 || err; } }
