@@ -88,7 +88,7 @@
     <div id="one-status" class="small one-status" aria-live="polite"></div>
     <div class="one-team" id="one-team"></div>
     <div class="row" style="margin-top:10px"><button class="btn sm" id="one-beep">🔊 Prova il suono</button></div><div id="one-beep-out" class="small" aria-live="polite" style="margin-top:6px"></div>
-    <div class="one-links small">Hai voglia di imparare da altre canzoni? <a href="#daw" id="one-to-learn">Vai a Libreria</a> · Dopo la base: <a href="#daw" id="one-to-voice">canta la voce</a></div>
+    <div class="one-links small">Hai voglia di imparare da altre canzoni? <a href="#daw" id="one-to-learn">Vai a Impara</a> · Dopo la base: <a href="#daw" id="one-to-voice">canta la voce</a></div>
   </section>
   <section class="dw-panel" id="dw-p-brain" data-ws="base">
     <div class="dw-ph"><h3>Stile e umore</h3><span class="tag i">Facoltativo</span></div>
@@ -171,12 +171,24 @@
     <div class="dw-agents" id="dw-agents"></div>
   </section>
 
+  <section class="dw-panel one" id="dw-p-teach" data-ws="libreria">
+    <div class="one-kick">Apprendimento</div>
+    <h2 class="one-h">Insegna all'app</h2>
+    <p class="one-sub">Carichi una canzone o un video che ti piace. L'app misura <b>ritmo, cassa, hi-hat, accordi e tempo</b> (solo numeri, mai copie). Poi <b>ogni «Crea base» usa quei numeri</b>.</p>
+    <ol class="learn-seq small"><li><b>Carica</b> (tasto qui sotto)</li><li><b>Misuro</b> sul tuo telefono</li><li><b>Salvo i numeri</b> nella tua memoria</li><li><b>Creo basi</b> nel passo 2 con quello stile</li></ol>
+    <label class="one-cta" for="dw-learn-file" id="teach-go" style="cursor:pointer"><span class="one-ico">＋</span><span><b>Carica canzoni o video</b><small>anche più insieme · modalità Veloce consigliata</small></span></label>
+    <div id="teach-status" class="small one-status" aria-live="polite"></div>
+    <div id="teach-list"></div>
+    <div class="row" style="margin-top:10px;align-items:center"><label class="sw small"><input type="checkbox" id="teach-use" checked> Usa quello che ho insegnato quando creo le basi</label></div>
+    <label class="f"><span>Quanto contano gli esempi: <b id="teach-wv">70</b>%</span><input type="range" id="teach-w" min="20" max="100" step="10" value="70"></label>
+  </section>
   <section class="dw-panel" id="dw-p-learn" data-ws="libreria">
     <div class="dw-ph"><h3>Impara da una base</h3><span class="tag a">Solo misure, niente copie</span></div>
     <ol class="learn-seq small"><li><b>Carica</b> una canzone o un video (sotto, tasto «2»).</li><li><b>Separo</b> voce e base sul tuo telefono.</li><li><b>Misuro</b> ritmo, accordi, tempo: solo numeri.</li><li><b>Uso</b> quei numeri nel passo 2 Base, quando premi «Crea base».</li></ol>
     <p class="small muted">Carica una canzone o un video che ti piace. Mettila in una <b>cartella</b> (un artista o un genere): ogni cartella diventa uno stile da cui creare basi nuove. La divido in <b>voce</b> e <b>base</b>, le ripulisco e misuro il ritmo: velocità, cassa, rullante, hi-hat, bassi. Dimmi se ti piace o no. Tengo solo i numeri, mai l'audio, e la base nuova è tua e originale.</p>
     <div class="dw-modes" id="dw-sep-modes">
-      <button class="dw-mode on" data-sep="rapida"><b>Rapida</b><small>Per il telefono. Modello SCNet (27 MB): voce, batteria, basso e resto.</small></button>
+      <button class="dw-mode on" data-sep="veloce"><b>Veloce</b><small>Consigliata sul telefono. Misura ritmo e accordi sulla canzone intera, senza separare: parte sempre.</small></button>
+      <button class="dw-mode" data-sep="rapida"><b>Rapida</b><small>Per il telefono. Modello SCNet (27 MB): voce, batteria, basso e resto.</small></button>
       <button class="dw-mode" data-sep="studio"><b>Studio</b><small>La voce più pulita (Mel-Band RoFormer, 474 MB). Consigliata sul computer.</small></button>
     </div>
     <p class="small muted" id="dw-sep-info"></p>
@@ -186,7 +198,7 @@
     <label class="small"><input type="checkbox" id="dw-tr-auto" checked> Impara anche le <b>parole</b> (Whisper gratuito, circa 80 MB la prima volta): le misure vanno nella cartella testi dello stesso artista</label><br>
     <label class="small"><input type="checkbox" id="dw-bt-on" checked> Battiti e battute precisi con <b>Beat This!</b> (rete neurale gratuita, 10 MB, si scarica la prima volta)</label>
     <label class="f"><span><b>1.</b> Nome dell'artista (crea la cartella)</span><input id="dw-learn-art0" list="dw-learn-arts0" maxlength="30" placeholder="es. Sangiovanni, Shiva, Pop Smoke"><datalist id="dw-learn-arts0"></datalist></label>
-    <div class="row"><label class="btn pri" for="dw-learn-file"><b>2.</b>&nbsp;Carica 1 o più canzoni/video</label><input type="file" id="dw-learn-file" accept="audio/*,video/*,.mov,.mp4,.m4a" multiple hidden></div>
+    <div class="row"><label class="btn pri" for="dw-learn-file"><b>2.</b>&nbsp;Carica 1 o più canzoni/video</label><input type="file" id="dw-learn-file" accept="audio/*,video/*,.mov,.mp4,.m4a" multiple class="vh"></div>
     <p class="small muted"><b>3.</b> Ogni canzone entra nella cartella (solo numeri, l'audio non si salva). Con 4-5 canzoni lo stile è preciso: poi premi «Crea basi nello stile» sulla cartella.</p>
     <div class="dw-prog" id="dw-learn-bar" hidden><i></i></div>
     <div id="dw-learn-cur"></div>
@@ -239,7 +251,16 @@
   </section>
 
   <section class="dw-panel" id="dw-p-mix" data-ws="mix">
-    <div class="dw-ph"><h3>Master e salvataggio</h3></div>
+    <div class="one-kick">Passo 4 di 4</div>
+    <h2 class="one-h">Rifinisci e salva</h2>
+    <p class="one-sub">Ascolta, crea il master (volume e suono finali) e salva. Il resto è nelle impostazioni, in fondo.</p>
+    <div class="mx-steps">
+      <button class="mx-b" id="mx-play"><i>1</i><span><b>Ascolta tutto</b><small>base e voce insieme</small></span></button>
+      <button class="mx-b mx-main" id="mx-master"><i>2</i><span><b>Crea il master</b><small>volume e suono finali</small></span></button>
+      <button class="mx-b" id="mx-save"><i>3</i><span><b>Salva la canzone</b><small>file WAV</small></span></button>
+    </div>
+    <div id="mx-status" class="small one-status" aria-live="polite"></div>
+    <details class="mix-adv"><summary>Tutte le impostazioni (master, riferimento, versioni)</summary>
     <div class="grid2">
       <label class="f"><span>Master (suono finale)</span><select id="dw-master"><option value="off">Spento</option><option value="morbido">Morbido</option><option value="standard">Standard</option><option value="forte">Forte</option></select></label>
       <label class="f"><span>Voce: spostamento (ms) <b id="dw-offv">0</b></span><input type="range" id="dw-off" min="-300" max="300" step="5" value="0"></label>
@@ -260,6 +281,7 @@
     <div id="dw-ver-list"></div>
     <div class="status" id="dw-ver-msg"></div>
     <div class="dw-more"><a href="#voce">Voce: autotune e caratteri</a><a href="#strumenti">Strumentario e Laboratorio</a><a href="#beatlab">Laboratorio batteria (batteria a passi, piano roll)</a><a href="#studio">Coach completo e percorso</a></div>
+  </details>
   </section>
 
   <details class="dw-panel dw-guide" data-ws="testo"><summary><b>Come si fa, da produttore</b> <span class="small muted">Passo 1 · il testo</span></summary><ol class="small" style="margin:8px 0 0 18px;line-height:1.5"><li>Scrivi il testo con i titoli <b>[Strofa]</b> e <b>[Ritornello]</b>: la base si costruisce su queste parti.</li><li>Il ritornello è il gancio: poche parole, facili da ripetere. Le strofe raccontano.</li><li>Righe di lunghezza simile suonano meglio a tempo. Se una riga è molto più lunga, spezzala.</li><li>Scrivi lo stile con parole tue (es. «trap dark», «drill malinconica») oppure lascialo vuoto: il testo decide.</li><li>Premi il tasto grande: la base nasce dal testo. Non ti piace? <b>✕</b> e ne arriva un'altra, senza fine. <b>♥</b> insegna al Gusto cosa ti piace.</li></ol><p class="small muted" style="margin-top:6px"><span class="tag i">Ipotesi</span> Un produttore parte dal gancio e dall'emozione, non dagli strumenti.</p></details>
@@ -682,7 +704,7 @@
   <a href="#daw" data-r="daw" data-ws="base"><svg><use href="#i-disc"/></svg><span><i>2</i>Base</span></a>
   <a href="#daw" data-r="daw" data-ws="voce"><svg><use href="#i-mic"/></svg><span><i>3</i>Voce</span></a>
   <a href="#daw" data-r="daw" data-ws="mix"><svg><use href="#i-sliders"/></svg><span><i>4</i>Mix</span></a>
-  <a href="#daw" data-r="daw" data-ws="libreria"><svg><use href="#i-folder"/></svg><span>Libreria</span></a>
+  <a href="#daw" data-r="daw" data-ws="libreria"><svg><use href="#i-folder"/></svg><span>Impara</span></a>
 </nav></div>
 
 <!-- Sultan IA: assistente in ogni pagina (parli, scrivi, le insegni) -->

@@ -392,6 +392,15 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
 
 .learn-seq{margin:6px 0 12px;padding-left:20px;line-height:1.5;opacity:.9}.learn-seq li{margin:2px 0}
 
+.vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
+#dw-p-mix{padding:20px 16px 16px!important;border-radius:24px!important}
+.mx-steps{display:grid;gap:8px;margin:6px 0 4px}
+.mx-b{display:flex;align-items:center;gap:12px;width:100%;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.25);color:inherit;border-radius:16px;padding:14px;font:inherit;text-align:left;cursor:pointer}
+.mx-b i{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(167,139,250,.25);font-style:normal;font-weight:700;flex:none}
+.mx-b b{display:block;font-size:16px}.mx-b small{display:block;font-size:12px;opacity:.7}
+.mx-main{border:0;background:linear-gradient(135deg,#8b5cf6,#ec4899);color:#fff;box-shadow:0 8px 24px rgba(139,92,246,.4)}.mx-main i{background:rgba(255,255,255,.25)}
+.mix-adv{margin-top:14px}.mix-adv>summary{cursor:pointer;opacity:.8;padding:8px 0}
+.teach-it{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;margin:4px 0;background:rgba(0,0,0,.22);border-radius:12px;font-size:12.5px}
 /* ===== Disposizione da produttore (B, 25/11): per ogni passo prima l'azione, poi il lavoro, poi le rifiniture.
    Ordine con CSS (nessun id spostato), pannelli che si aprono/chiudono con un tocco sul titolo. ===== */
 #v-daw { display: flex; flex-direction: column; }
