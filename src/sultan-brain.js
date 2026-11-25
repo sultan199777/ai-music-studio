@@ -18,12 +18,12 @@
   'use strict';
 
   var LEX = {
-    strada: 'strada strade quartiere quartieri fra frate bro gang piazza zona blocco polizia sbirri sbirro galera carcere droga fumo erba giro cella ghetto periferia palazzi marciapiede vicolo ragazzi banda clan zone strada'.split(' '),
+    strada: 'strada strade quartiere quartieri fra frate bro gang piazza zona blocco polizia sbirri sbirro galera carcere droga fumo erba giro cella ghetto periferia palazzi marciapiede vicolo ragazzi banda clan zone strada sirene sirena ambulanza ambulanze spari sparo sparatoria cemento asfalto cappuccio città citta sotterranea periferie rione rioni sbarre'.split(' '),
     soldi: 'soldi euro oro rolex lusso gucci prada macchina macchine diamanti collana collane cash banca fama top classifica platino dollari milioni tasca tasche portafoglio ferrari lambo orologio catena catene'.split(' '),
-    rabbia: 'guerra sangue odio nemici nemico falsi falso tradito tradimento pistola lama morte rabbia fuoco bruciare ammazzo uccidere vendetta cattivo lotta combatto nemmeno'.split(' '),
-    dolore: 'solo sola buio lacrime vuoto perso persa dolore pianto ricordi manca mancare addio piango male ferite ferita cicatrici ombra ombre spento silenzio notti'.split(' '),
-    amore: 'amore bacio baci cuore occhi baby labbra insieme tesoro stringo abbraccio ti amo mia mio passione pelle'.split(' '),
-    festa: 'festa estate mare ballare ballo sera club drink ragazze sole vacanza discoteca shot balliamo salto musica notte luci tutti'.split(' '),
+    rabbia: 'guerra sangue odio nemici nemico falsi falso tradito tradimento pistola lama morte mitra mitragliatrice rabbia fuoco bruciare ammazzo uccidere vendetta cattivo lotta combatto nemmeno'.split(' '),
+    dolore: 'solo sola buio lacrime vuoto perso persa dolore pianto ricordi manca mancare addio piango male ferite ferita cicatrici ombra ombre spento silenzio notti notte prega prega madre urlano urlo consuma consumano nero neri nera dark oscuro oscura fantasmi fantasma gelo freddo'.split(' '),
+    amore: 'amore bacio baci cuore occhi baby labbra insieme tesoro stringo abbraccio ti amo passione pelle'.split(' '),
+    festa: 'festa estate mare ballare ballo sera club drink ragazze sole vacanza discoteca shot balliamo salto musica luci tutti'.split(' '),
     nostalgia: 'ricordo ricordi infanzia vecchio vecchia anni tempo ieri casa mamma papà nonno nonna ragazzino bambino passato scuola'.split(' '),
     epico: 'dio cielo sogno sogni destino re impero leggenda vittoria vinco corona trono eterno immortale storia mondo futuro luce'.split(' ')
   };
@@ -110,7 +110,10 @@
     if (rep >= 0.25) { score.clubtrap += 1; score.trap += 0.5; why.push('Molte ripetizioni: ritornello da cantare tutti insieme.'); }
 
     // impronta del testo: piccolo spostamento deterministico, così testi diversi non danno lo stesso stile
-    GENRES.forEach(function (g, i) { score[g] += ((((h >>> (i * 3)) & 7) / 7) * 0.9) + ((((variant * 2654435761) >>> (i * 2)) & 3) / 3) * (variant ? 0.5 : 0); });
+    GENRES.forEach(function (g, i) { score[g] += ((((h >>> (i * 3)) & 7) / 7) * 0.9) + ((((variant * 2654435761) >>> (i * 2)) & 3) / 3) * (variant ? 1.3 : 0); });
+    /* gusto di base dell'utente (trap, drill, dark): senza scene di festa/amore, gli stili solari restano indietro. Si vede in 'why'. */
+    var bright0 = (scenes.festa || 0) + (scenes.amore || 0), wantsLight = bright0 > (scenes.dolore || 0) + (scenes.strada || 0) + (scenes.rabbia || 0) || opt.mood === 'euforico' || opt.mood === 'romantico';
+    if (!wantsLight) { ['afrotrap', 'reggaeton', 'estate', 'jersey', 'clubtrap', 'melodico', 'lofi', 'rnb'].forEach(function (g) { score[g] -= 1.4; }); ['trapdark', 'drill', 'trap', 'brooklyn', 'street'].forEach(function (g) { score[g] += 0.8; }); why.push('Il tuo stile è trap/drill/dark: parto da lì, se il testo non chiede festa o amore.'); }
     var ps = parseStyle(opt.styleText); if (ps.mood && !opt.mood) opt = Object.assign({}, opt, { mood: ps.mood });
     if (ps.genre) { score[ps.genre] += 100; why.push('Stile che hai scritto: «' + String(opt.styleText).trim() + '».'); }
     var moodWanted = opt.mood && MOOD[opt.mood] ? opt.mood : null, moodAuto = top[0] ? SCENE_MOOD[top[0]] : null, moodTarget = moodWanted || moodAuto || null;
@@ -125,6 +128,8 @@
     if (opt.avoid && opt.avoid.length) opt.avoid.forEach(function (g) { if (score[g] != null) score[g] -= 6; });
     var order = GENRES.slice().sort(function (a, b) { return score[b] - score[a]; });
     var genre = order[0];
+    /* ogni nuova versione passa a uno degli stili vicini al migliore: così «un'altra» è davvero un'altra, ma resta nel gusto del testo */
+    if (variant > 0) { var near = order.filter(function (g) { return score[g] >= score[order[0]] - 3 && (wantsLight || ['cloud', 'lofi', 'rnb', 'melodico', 'estate'].indexOf(g) < 0); }).slice(0, 6); genre = near[(variant - 1 + (h % 3)) % near.length]; }
     why.push('Stile scelto: ' + NAMES[genre] + (order[1] ? ' (secondo: ' + NAMES[order[1]] + ')' : '') + '.');
 
     // velocità, scala, tonalità, seme

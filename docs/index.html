@@ -719,20 +719,21 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 12:34</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 12:48</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
-  <details class="card" open><summary>Come si usa dall'iPhone <svg width="18" height="18"><use href="#i-chev"/></svg></summary>
-    <ol style="padding-left:20px;margin:0">
-      <li><b>Testo.</b> Vai in <a href="#studio">Studio</a>, scrivi o incolla il tuo testo. Usa [Strofa] e [Ritornello] sulle righe di titolo.</li>
-      <li><b>Base.</b> Premi "Crea la base": il programma la compone seguendo il testo. Cambia gli strumenti con i cursori.</li>
-      <li><b>La tua voce.</b> Apri l'app <b>Memo Vocali</b> dell'iPhone e registra mentre canti (meglio con le cuffie sulla base). Tocca la registrazione → ⋯ → <b>Salva su File</b>. Poi in <a href="#voce">Voce</a> premi "Scegli la registrazione" e selezionala da File.</li>
-      <li><b>Autotune e rifinitura.</b> In Voce scegli tonalità e intensità, premi "Applica" e ascolta Originale / Corretta.</li>
-      <li><b>Voce sulla base.</b> Premi "Voce + base" per sentire la canzone completa. Poi salvala.</li>
-      <li><b>Clip.</b> In <a href="#video">Video</a> scegli una tua foto: diventa cartone/manga e si muove a tempo con le parole.</li>
+  <details class="card" open><summary><b>Guida: come si usa l'app</b> <svg width="18" height="18"><use href="#i-chev"/></svg></summary>
+    <p class="small muted" style="margin-top:8px">Apri sempre il sito da <b>Safari</b> (il microfono funziona solo lì) e usa "Aggiungi a Home" per averla come app. Usa cuffie con filo.</p>
+    <ol style="padding-left:20px;margin:8px 0 0;line-height:1.55">
+      <li><b>Testo.</b> Apri <a href="#daw">Studio</a> (passo 1 Testo). Scrivi o incolla il testo con i titoli <b>[Strofa]</b> e <b>[Ritornello]</b>. Se vuoi, scrivi lo stile a parole (es. «trap dark», «drill malinconica»).</li>
+      <li><b>Base.</b> Premi il tasto grande «Crea la base». Poi: <b>♥</b> se ti piace, <b>✕</b> se la scarti (ne arriva un'altra), <b>Stravolgi</b> per uno stile diverso, <b>Cambia melodia</b> per tenere la base e cambiare la melodia, <b>Ancora proposte</b> per vederne altre, senza fine. Più voti dai, meglio capisco il tuo gusto.</li>
+      <li><b>Imparare dalle basi.</b> In <b>Libreria</b> carica una base o un video che ti piace: l'app separa voce e base e misura tempo, cassa, rullante e accordi (solo numeri, niente copia). Metti <b>♥</b>: la prossima «Crea la base» userà quei numeri. Dopo «Stravolgi» li lascia da parte, per darti qualcosa di diverso.</li>
+      <li><b>Voce.</b> In <b>3 Voce</b> apri la guida al canto (quando entrare, quanto tenere, dove respirare), registra a una spanna dal microfono, rifai le riprese che non ti piacciono. L'orecchio controlla tempo e intonazione.</li>
+      <li><b>Mix.</b> In <b>4 Mix</b> voce davanti a tutto, 808 e cassa che non litigano, poi riverbero ed eco. Ascolta su cuffie e altoparlante. Per YouTube punta a circa −14 LUFS.</li>
+      <li><b>Salva.</b> Le canzoni restano sul tuo telefono. L'app non pubblica niente da sola.</li>
     </ol>
-    <p class="note">L'app non può accedere al microfono: per questo si registra con Memo Vocali e si importa.</p>
+    <p class="note"><b>Quando Claude non è più disponibile</b> (token finiti): l'app continua a funzionare, perché Cervello, Gusto, Orecchio, rime e guida al canto sono dentro l'app e girano sul telefono, gratis. Non puoi chiedere nuove modifiche all'app finché non torni a parlare con me; le canzoni e le basi che hai già fatto restano. I modelli di intelligenza artificiale opzionali (scrittura locale, Beat This!) si scaricano una volta con internet.</p>
   </details>
   <div class="card"><div class="card-head"><h3>Cosa funziona davvero oggi</h3></div><div id="h-status"></div></div>
 </main>
@@ -4392,12 +4393,12 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   'use strict';
 
   var LEX = {
-    strada: 'strada strade quartiere quartieri fra frate bro gang piazza zona blocco polizia sbirri sbirro galera carcere droga fumo erba giro cella ghetto periferia palazzi marciapiede vicolo ragazzi banda clan zone strada'.split(' '),
+    strada: 'strada strade quartiere quartieri fra frate bro gang piazza zona blocco polizia sbirri sbirro galera carcere droga fumo erba giro cella ghetto periferia palazzi marciapiede vicolo ragazzi banda clan zone strada sirene sirena ambulanza ambulanze spari sparo sparatoria cemento asfalto cappuccio città citta sotterranea periferie rione rioni sbarre'.split(' '),
     soldi: 'soldi euro oro rolex lusso gucci prada macchina macchine diamanti collana collane cash banca fama top classifica platino dollari milioni tasca tasche portafoglio ferrari lambo orologio catena catene'.split(' '),
-    rabbia: 'guerra sangue odio nemici nemico falsi falso tradito tradimento pistola lama morte rabbia fuoco bruciare ammazzo uccidere vendetta cattivo lotta combatto nemmeno'.split(' '),
-    dolore: 'solo sola buio lacrime vuoto perso persa dolore pianto ricordi manca mancare addio piango male ferite ferita cicatrici ombra ombre spento silenzio notti'.split(' '),
-    amore: 'amore bacio baci cuore occhi baby labbra insieme tesoro stringo abbraccio ti amo mia mio passione pelle'.split(' '),
-    festa: 'festa estate mare ballare ballo sera club drink ragazze sole vacanza discoteca shot balliamo salto musica notte luci tutti'.split(' '),
+    rabbia: 'guerra sangue odio nemici nemico falsi falso tradito tradimento pistola lama morte mitra mitragliatrice rabbia fuoco bruciare ammazzo uccidere vendetta cattivo lotta combatto nemmeno'.split(' '),
+    dolore: 'solo sola buio lacrime vuoto perso persa dolore pianto ricordi manca mancare addio piango male ferite ferita cicatrici ombra ombre spento silenzio notti notte prega prega madre urlano urlo consuma consumano nero neri nera dark oscuro oscura fantasmi fantasma gelo freddo'.split(' '),
+    amore: 'amore bacio baci cuore occhi baby labbra insieme tesoro stringo abbraccio ti amo passione pelle'.split(' '),
+    festa: 'festa estate mare ballare ballo sera club drink ragazze sole vacanza discoteca shot balliamo salto musica luci tutti'.split(' '),
     nostalgia: 'ricordo ricordi infanzia vecchio vecchia anni tempo ieri casa mamma papà nonno nonna ragazzino bambino passato scuola'.split(' '),
     epico: 'dio cielo sogno sogni destino re impero leggenda vittoria vinco corona trono eterno immortale storia mondo futuro luce'.split(' ')
   };
@@ -4484,7 +4485,10 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     if (rep >= 0.25) { score.clubtrap += 1; score.trap += 0.5; why.push('Molte ripetizioni: ritornello da cantare tutti insieme.'); }
 
     // impronta del testo: piccolo spostamento deterministico, così testi diversi non danno lo stesso stile
-    GENRES.forEach(function (g, i) { score[g] += ((((h >>> (i * 3)) & 7) / 7) * 0.9) + ((((variant * 2654435761) >>> (i * 2)) & 3) / 3) * (variant ? 0.5 : 0); });
+    GENRES.forEach(function (g, i) { score[g] += ((((h >>> (i * 3)) & 7) / 7) * 0.9) + ((((variant * 2654435761) >>> (i * 2)) & 3) / 3) * (variant ? 1.3 : 0); });
+    /* gusto di base dell'utente (trap, drill, dark): senza scene di festa/amore, gli stili solari restano indietro. Si vede in 'why'. */
+    var bright0 = (scenes.festa || 0) + (scenes.amore || 0), wantsLight = bright0 > (scenes.dolore || 0) + (scenes.strada || 0) + (scenes.rabbia || 0) || opt.mood === 'euforico' || opt.mood === 'romantico';
+    if (!wantsLight) { ['afrotrap', 'reggaeton', 'estate', 'jersey', 'clubtrap', 'melodico', 'lofi', 'rnb'].forEach(function (g) { score[g] -= 1.4; }); ['trapdark', 'drill', 'trap', 'brooklyn', 'street'].forEach(function (g) { score[g] += 0.8; }); why.push('Il tuo stile è trap/drill/dark: parto da lì, se il testo non chiede festa o amore.'); }
     var ps = parseStyle(opt.styleText); if (ps.mood && !opt.mood) opt = Object.assign({}, opt, { mood: ps.mood });
     if (ps.genre) { score[ps.genre] += 100; why.push('Stile che hai scritto: «' + String(opt.styleText).trim() + '».'); }
     var moodWanted = opt.mood && MOOD[opt.mood] ? opt.mood : null, moodAuto = top[0] ? SCENE_MOOD[top[0]] : null, moodTarget = moodWanted || moodAuto || null;
@@ -4499,6 +4503,8 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     if (opt.avoid && opt.avoid.length) opt.avoid.forEach(function (g) { if (score[g] != null) score[g] -= 6; });
     var order = GENRES.slice().sort(function (a, b) { return score[b] - score[a]; });
     var genre = order[0];
+    /* ogni nuova versione passa a uno degli stili vicini al migliore: così «un'altra» è davvero un'altra, ma resta nel gusto del testo */
+    if (variant > 0) { var near = order.filter(function (g) { return score[g] >= score[order[0]] - 3 && (wantsLight || ['cloud', 'lofi', 'rnb', 'melodico', 'estate'].indexOf(g) < 0); }).slice(0, 6); genre = near[(variant - 1 + (h % 3)) % near.length]; }
     why.push('Stile scelto: ' + NAMES[genre] + (order[1] ? ' (secondo: ' + NAMES[order[1]] + ')' : '') + '.');
 
     // velocità, scala, tonalità, seme
@@ -12249,8 +12255,13 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     if (['trap', 'trapdark', 'drill', 'street', 'boombap', 'clubtrap'].indexOf(p.genre) >= 0) { /* rap: strofe parlate a ritmo, ritornelli cantati (solo righe senza modo scelto da te) */
       s.modes = s.modes || {}; var sm0 = SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: {} });
       sm0.lines.forEach(function (ln) { if (!s.modes[ln.text]) s.modes[ln.text] = (ln.section === 'ritornello' || ln.section === 'bridge') ? 'canta' : 'parla'; }); }
+    /* imparato dalle basi che ti piacciono (solo numeri): ritmo, cassa, rullante, giro di accordi, tempo. «Stravolgi» li lascia da parte per darti qualcosa di diverso. */
+    var lp = radical ? null : learnPlan(), learnTxt = '';
+    if (lp && lp.from) { p.groove = lp.groove; p.prog = lp.prog; p.tune = lp.tune; p.fromLearn = lp.from; if (Math.abs(lp.bpm - pl.bpm) <= 30) p.bpm = Math.round((pl.bpm + 2 * lp.bpm) / 3); if (lp.from >= 2) p.mode = lp.mode;
+      learnTxt = '<br><span class="tag m">Misurato</span> Ho usato i numeri di ' + lp.from + ' basi che ti piacciono: cassa sui passi ' + lp.groove.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + (lp.prog ? ', giro ' + BeatLearn.progName(lp.prog, lp.mode) : '') + ', ' + p.bpm + ' BPM.'; }
+    else { if (p.fromLearn) { p.groove = null; p.prog = null; p.fromLearn = 0; } learnTxt = learnList().some(function (r) { return r.vote > 0; }) ? '' : '<br><span class="small muted">Non ho ancora basi imparate: caricane una in Libreria e premi ♥ per farmi imparare ritmo e accordi.</span>'; }
     p.inst = res.inst; persist(); fillBase();
-    m.innerHTML = '<b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + pl.mode + '<br>' + pl.why.map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Strumenti: ' + ['melodia', 'accordi', 'pad'].map(function (r) { return r + ' ' + esc(instName(p.inst[r])); }).join(', ') + '. Se non ti piace premi "Altra versione dal testo".<div class="row" style="margin-top:8px"><button class="chip" data-taste="1">♥ Mi piace</button><button class="chip" data-taste="-1">✕ Scarta e dammene un\'altra</button></div><div class="small muted" id="sb-taste">' + esc(Taste.summary(tasteMem())) + '</div>';
+    m.innerHTML = '<b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + pl.mode + '<br>' + pl.why.map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Strumenti: ' + ['melodia', 'accordi', 'pad'].map(function (r) { return r + ' ' + esc(instName(p.inst[r])); }).join(', ') + '. Se non ti piace premi "Altra versione dal testo".' + learnTxt + '<div class="row" style="margin-top:8px"><button class="chip" data-taste="1">♥ Mi piace</button><button class="chip" data-taste="-1">✕ Scarta e dammene un\'altra</button></div><div class="small muted" id="sb-taste">' + esc(Taste.summary(tasteMem())) + '</div>';
     await makeAndPlay(false);
     earRun(true);
   }
