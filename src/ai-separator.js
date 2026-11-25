@@ -66,7 +66,7 @@
    *  load(c) / save(c, pezzo) → ogni pezzo finito si salva (es. IndexedDB): se il telefono chiude la pagina, si riparte dal pezzo dopo.
    */
   async function separate(L, R, mode, onProgress, onDl, opt) {
-    R = R || L; opt = opt || {}; var sr = 44100, CH = sr * 40, OV = sr * 2, n = L.length;
+    R = R || L; opt = opt || {}; var sr = 44100, CH = sr * (opt.chunkSec || G.MSA_CHUNK || 40), OV = sr * 2, n = L.length; // pezzi più corti NON riducono la memoria (misurato: 20 s → 2,5 GB, 40 s → 1,9 GB)
     if (n <= CH + OV && !opt.mono && !opt.save) return separateOne(L, R, mode, onProgress, onDl);
     var keys = ['vocals', 'drums', 'bass', 'other'], out = {}, wsum = new Float32Array(n), info = null;
     keys.forEach(function (k) { if (opt.mono) { var m = new Float32Array(n); out[k] = { left: m, right: m }; } else out[k] = { left: new Float32Array(n), right: new Float32Array(n) }; });

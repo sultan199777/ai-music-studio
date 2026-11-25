@@ -76,6 +76,9 @@ async function handleMessage(event) {
             session = await onnx.InferenceSession.create(modelBytes, {
                 executionProviders: [msg.backend],
                 graphOptimizationLevel: msg.graphOptimizationLevel ?? 'all',
+                // Sultan Sound: meno memoria sui telefoni (niente "arena" e niente schema di memoria pre-allocato)
+                enableCpuMemArena: self.MSA_ARENA === true,
+                enableMemPattern: self.MSA_ARENA === true,
             });
             if (msg.backend === 'webgpu') {
                 // ORT creates its device while building the first session.

@@ -790,7 +790,7 @@
   }
   $('#sb-mood').addEventListener('change', function () { $('#bl-mood').value = this.value; });
   $('#bl-mood').addEventListener('change', function () { $('#sb-mood').value = this.value; });
-  $('#sb-make').addEventListener('click', function () { var s = cur(); runBrain(!!(s.lyrics && s.brainFor === SultanBrain.hash(s.lyrics.trim()))); });
+  $('#sb-make').addEventListener('click', function () { var s = cur(); Promise.resolve(runBrain(!!(s.lyrics && s.brainFor === SultanBrain.hash(s.lyrics.trim())))).then(refApply); });
   $('#sb-wild').addEventListener('click', function () { runBrain(false, null, null, true); });
   /* quello che scrivi nel campo stile si applica da solo (Invio o quando esci dal campo) */
   var sbLast = '';
@@ -2342,7 +2342,8 @@
     el.textContent = given ? VAR.list.length + ' basi nuove pronte, sul tuo testo: ascoltale e scegli con Usa. Premi ancora per altre diverse.' : VAR.list.length + ' varianti pronte: ascoltale, scegli con Usa. Premi ancora per altre 8 nuove.'; VAR.busy = false;
   }
   function varName(sp) { return (sp.nome || (Arranger.STYLES[sp.genre] ? Arranger.STYLES[sp.genre].label : sp.genre)) + ' · ' + sp.bpm + ' BPM' + (sp.prog ? ' · giro ' + StylePresets.progName(sp.prog, sp.mode) : ''); }
-  $('#dw-var-style').addEventListener('change', function () { LIB.settings.varStyle = this.value; persist(); });
+  $('#dw-var-style').addEventListener('change', function () { refSet(this.value); });
+  $('#dw-ref').addEventListener('change', function () { refSet(this.value); $('#dw-ref-msg').textContent = this.value ? 'Da ora testi e basi seguono questo stile. Premi «Cervello Sultan · crea dal testo».' : 'Lo stile lo decide il testo.'; });
   function atmRender() { varStyleRender(); var g = {}; StylePresets.LIST.forEach(function (p) { (g[p.gruppo] = g[p.gruppo] || []).push(p); }); $('#dw-var-atm').innerHTML = Object.keys(g).map(function (k) { return '<p class="small muted" style="margin:8px 0 4px">' + esc(k) + '</p><div class="chips">' + g[k].map(function (p) { return '<button class="chip" data-atm="' + p.id + '" title="' + esc(p.spiega) + '">' + esc(p.nome.replace(/^Tipo /, '')) + '</button>'; }).join('') + '</div>'; }).join(''); }
   function varRender() {
     var lp = $('#dw-learn-prop'); $('#dw-var-list').innerHTML = (lp ? lp.innerHTML = varHtml() : varHtml());
@@ -2374,12 +2375,39 @@
   $('#dw-p-learn').addEventListener('click', function (e) { if (e.target.closest('[data-vp],[data-vu]')) varClick(e); });
   // proposte automatiche dopo aver imparato una canzone: stile, ritmo, giro armonico e tempo misurati, strumenti nostri
   // quanto ogni stile base si adatta al testo (cervello Sultan dell'altra chat: punteggi per genere)
+  /* Collegatore: lo stile scelto (una tua cartella imparata dai video, o un'atmosfera) guida sia i TESTI sia le BASI.
+     - cartella: accende la cartella testi con lo stesso nome (il Cervello scrive e sceglie più vicino a quell'artista)
+       e, dopo "crea dal testo", mette ritmo, giro, velocità e tonalità imparati dalle canzoni della cartella;
+     - atmosfera: strumenti, kit e velocità di quell'atmosfera. La forma della canzone e gli effetti restano del TUO testo. */
+  function refSet(v) {
+    LIB.settings.varStyle = v || ''; var st = arStore();
+    if (v && v.slice(0, 2) === 'f:') { var nm = v.slice(2); Object.keys(st).forEach(function (k) { st[k].on = k === nm; }); }
+    persist(); varStyleRender();
+  }
+  function refApply() {
+    var v = LIB.settings.varStyle || '', p = cur().prod, m = $('#sb-msg'); if (!v) return;
+    if (v.slice(0, 2) === 'f:') {
+      var fp = folderProf(v.slice(2)); if (!fp) return; var kick = fp.kick && fp.kick.length ? fp.kick : [0], kb = kick.slice(); if (kb.length > 1) kb[kb.length - 1] = Math.min(15, kb[kb.length - 1] + 1); else kb.push(10);
+      p.bpm = Math.max(60, Math.min(180, fp.bpm || p.bpm)); if (fp.key) { p.mode = fp.key.mode; p.tonic = fp.key.tonic; } if (fp.prog && fp.prog.length) p.prog = fp.prog;
+      p.groove = { kickPats: [[kick, kb]], snare: fp.snare, swing: fp.swing || 0, rolls: Math.max(0, Math.min(1, (fp.triplets || 0) * 1.2 + ((fp.hatDensity || 0.5) - 0.5) * 0.6)) };
+      var pr = StylePresets.LIST.filter(function (x) { var a = v.slice(2).toLowerCase().replace(/[^a-z0-9]/g, ''); return a.length >= 3 && (x.id + x.nome).toLowerCase().replace(/[^a-z0-9]/g, '').indexOf(a) >= 0; })[0];
+      if (pr) { var va = StylePresets.variant(pr, p.seed || 1); p.inst = va.inst; p.kit = va.kit; }
+      p.atmNome = 'Stile ' + v.slice(2) + ' (' + fp.count + (fp.count === 1 ? ' canzone' : ' canzoni') + ')';
+      if (m) m.textContent += ' · Suono dallo stile ' + v.slice(2) + ': ' + p.bpm + ' BPM, ritmo e giro imparati dalle tue canzoni.';
+    } else if (v.slice(0, 2) === 'a:') {
+      var pa = StylePresets.byId(v.slice(2)); if (!pa) return; var vb = StylePresets.variant(pa, p.seed || 1);
+      if (Arranger.STYLES[vb.genre]) p.genre = vb.genre; p.bpm = vb.bpm; p.inst = vb.inst; p.kit = vb.kit; p.arpPattern = vb.arpPattern; p.prog = vb.prog; p.tune = vb.tune; p.atmNome = vb.nome;
+      if (m) m.textContent += ' · Suono: ' + vb.nome + '.';
+    }
+    try { fillInst(); fillBase(); dwFill(); } catch (e) {} dwChanged(true); projLine();
+  }
   function varStyleRender() {
-    var sel = $('#dw-var-style'); if (!sel) return; var v = sel.value || LIB.settings.varStyle || '';
+    var sel = $('#dw-var-style'); if (!sel) return; var v = LIB.settings.varStyle || sel.value || '';
     var folders = learnArtists().filter(function (a) { return a !== 'Senza cartella' && folderProf(a); });
     sel.innerHTML = '<option value="">Lo decide il mio testo</option>' + (folders.length ? '<optgroup label="Le mie cartelle (imparate)">' + folders.map(function (a) { return '<option value="f:' + esc(a) + '">' + esc(a) + ' (' + folderProf(a).count + ')</option>'; }).join('') + '</optgroup>' : '') +
       '<optgroup label="Atmosfere">' + StylePresets.LIST.map(function (p) { return '<option value="a:' + p.id + '">' + esc(p.nome.replace(/^Tipo /, '')) + '</option>'; }).join('') + '</optgroup>';
     sel.value = v; if (sel.value !== v) sel.value = '';
+    var r2 = $('#dw-ref'); if (r2) { r2.innerHTML = sel.innerHTML; r2.value = sel.value; }
   }
   function textWeights() {
     var s0 = cur(); if (!(s0.lyrics || '').trim()) return null; if (!window.SultanBrain) return pfImageWeights(s0.lyrics, null);
