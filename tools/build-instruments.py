@@ -49,6 +49,25 @@ INSTR = [
     ('chimes', 'vcsl', 'Idiophones/Struck Idiophones/Hand Chimes/', r'_r01_main', 2.6, 48, 96, 4),
     ('bells', 'vcsl', 'Idiophones/Struck Idiophones/Tubular Bells 1/', r'_f_|_ff_', 2.6, 48, 84, 4),
     ('glass', 'vcsl', 'Idiophones/Friction Idiophones/Wine Glasses/Sustains/Fast/', r'', 2.4, 60, 90, 2),
+    # 26/11: tavolozza trap/drill/dark (tutti CC0)
+    ('harpsi', 'vcsl', 'Chordophones/Zithers/Harpsichord, English/Sustains/Normal/', r'_rr1', 2.0, 36, 90, 5),
+    ('xylo', 'vcsl', 'Idiophones/Struck Idiophones/Xylophone/Medium Mallets/', r'_ff_', 1.4, 60, 96, 5),
+    ('vibbow', 'vcsl', 'Idiophones/Struck Idiophones/Vibraphone/Bowed/', r'', 3.0, 45, 80, 3),
+    ('vlnspic', 'vsco', 'Strings/Violin Section/Spic/', r'_v2_rr1', 0.6, 55, 96, 4),
+    ('cellospic', 'vsco', 'Strings/Cello Section/spic/', r'_v2_RR1', 0.7, 36, 72, 4),
+    ('vlntrem', 'vsco', 'Strings/Violin Section/Trem/', r'_v2', 2.2, 55, 96, 4),
+    ('cellotrem', 'vsco', 'Strings/Cello Section/trem/', r'_v2_1', 2.2, 36, 72, 4),
+    ('violin', 'vsco', 'Strings/Solo Violin/Arco Vib/', r'_f\.', 2.2, 55, 96, 4),
+    ('bassarco', 'vsco', 'Strings/Solo Contrabass/SusVib/', r'_v3_rr1', 2.4, 28, 60, 4),
+    ('tuba', 'vsco', 'Brass/Tuba/sus/', r'_v2_rr1', 2.0, 28, 60, 4),
+    ('bassoon', 'vsco', 'Woodwinds/Bassoon/sus/', r'_v2_1', 2.0, 34, 72, 4),
+    ('hornmute', 'vsco', 'Brass/F Horn/mute/', r'_v2_1', 1.8, 40, 77, 4),
+    ('tbnstac', 'vsco', 'Brass/Tenor Trombone/stac/', r'_v2_rr1', 0.8, 40, 72, 4),
+    ('pipeorgan', 'vcsl', 'Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/', r'', 2.6, 33, 84, 5),
+    ('psaltbow', 'vcsl', 'Chordophones/Zithers/Psaltery, Bowed and Plucked/LongBow/', r'', 2.6, 55, 90, 3),
+    ('psaltpluck', 'vcsl', 'Chordophones/Zithers/Psaltery, Bowed and Plucked/Pluck/', r'', 1.6, 55, 90, 3),
+    ('mbira', 'vcsl', 'Idiophones/Plucked Idiophones/Mbira dzaVadzimu Nyamaropa, Zimbabwe, Low B/', r'_rr1', 1.6, 40, 84, 4),
+    ('kawai', 'vcsl', 'Chordophones/Zithers/Grand Piano, Kawai/Sustains/', r'_v3_rr1', 2.4, 33, 96, 5),
 ]
 
 
