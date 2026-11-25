@@ -16,3 +16,22 @@
 - Non copiare testi, melodie o basi altrui: solo misure (numeri). Non aggirare licenze: spiegare e dare l'alternativa legale.
 - Licenze: solo MIT/Apache/BSD/CC0 (CC BY con credito). No GPL/AGPL, CC BY-SA, CC BY-NC, soglie di fatturato, licenze non chiare o non lette.
 - Vuole che Claude "senta" con misure (Orecchio di Sultan). Basi diverse per ogni testo, pesanti, mai da bambini; melodie che cambiano davvero.
+
+## Due abitudini in più (valgono per entrambe le chat)
+Ispirate a idee di obra/superpowers (MIT), scritte con parole nostre.
+
+### Trova la causa vera (quando un test fallisce o qualcosa non va)
+1. Riproduci il problema (passo esatto o test). Senza riprodurlo, non toccare il codice.
+2. Leggi l'errore intero: messaggio, file, riga. Non indovinare.
+3. Restringi: cosa è cambiato per ultimo? Controlla solo il modulo coinvolto.
+4. Una ipotesi alla volta, provata con un test o un log.
+5. Correggi la causa, non il sintomo, con la modifica più piccola.
+6. Aggiungi un test che prima falliva e ora passa.
+7. Dopo 3 tentativi senza esito: fermati e spiega all'utente cosa hai provato.
+
+### Verifica prima di dire "fatto"
+1. Esegui `node --test tests/*.test.js` e leggi il risultato vero.
+2. Se hai toccato l'app: build in background con log, senza errori.
+3. Dopo il push: `git ls-remote origin main` uguale a `git rev-parse HEAD`.
+4. Etichetta ciò che dici: Misurato / Analisi / Ipotesi.
+5. Ciò che non puoi provare (ascolto su iPhone, gusto, WebGPU sul telefono) va detto come non verificato.
