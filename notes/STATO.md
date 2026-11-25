@@ -204,3 +204,7 @@ Ancora da fare: piano roll accordi/arpeggio, trascinare note voce (stile Melodyn
 - Misurato su MUSDB (2 brani): rifinitura Wiener dopo SCNet PEGGIORA (voce −1,4 dB), più passaggi (shifts) +0,1 dB, SCNet+HTDemucs insieme +0,1 dB → non adottati. Unico salto vero: Mel-RoFormer (+2-3 dB voce).
 - Separazione a pezzi di 40 s con 2 s di sovrapposizione sfumata (memoria bassa su iPhone), canzoni fino a 5 minuti; modalità Studio (RoFormer) scelta da sola se c'è WebGPU.
 - Dopo aver imparato una canzone l'app compone da sola 6 basi nuove nel suo stile (BPM, cassa, rullante, swing, giro armonico, kit), sulla forma del testo dell'utente; ▶ e Usa (porta allo Studio).
+
+## Atmosfere "tipo …" e varianti a richiesta (25/11)
+- `src/style-presets.js`: 32 atmosfere (Italia: Sfera, Shiva, Sangiovanni, Ultimo, Lazza, Geolier, Tedua, Marracash, Kid Yugi, Capo Plaza, Tony Effe, Ghali, Mahmood, Anna, Tha Supreme; USA: Drake x2, Kanye, Travis, Metro Boomin, Future, Lil Baby, Juice WRLD, Carti, Kendrick, The Weeknd, Kid Cudi; UK/NY: Pop Smoke, Central Cee; Latino: Anuel, Bad Bunny, Afrobeats) = caratteristiche di genere (tempo, strumenti, kit, spinta), nessuna copia. 22 giri armonici. `pickMany` = varianti tutte diverse pesate dal testo (SultanBrain.plan scores).
+- Base → Varianti: "Basi adatte al mio testo" 8/16/24 (24 in ~8 s, ~17 atmosfere diverse), tocco su un'atmosfera = varianti solo di quella, "Varianti di questo stile" con giri e spinte diversi. Imparare una canzone ora propone 12 basi.

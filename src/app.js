@@ -1333,7 +1333,7 @@
   $('#dw-rec').addEventListener('click', dwRecord);
   $('#dw-new').addEventListener('click', function () { var p = cur().prod; if (SESSION.lastPlay && performance.now() - SESSION.lastPlay.t < 10000) coachRec('skip', SESSION.lastPlay.ctx); p.seed++; dwStop(); dwChanged(true); setTimeout(function () { dwPlay(0); }, 300); });
   $('#dw-name').addEventListener('input', function () { cur().title = this.value.trim() || 'Senza titolo'; $('#top-song').textContent = cur().title; persist(); });
-  $('#dw-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.bpm = Arranger.STYLES[this.value].bpm; p.tune = null; p.groove = null; p.prog = null; p.mix = null; applyRecipe(this.value); mixRender(); $('#dw-bpm').value = p.bpm; dwStop(); fillBase(); dwChanged(true); });
+  $('#dw-genre').addEventListener('change', function () { var p = cur().prod; p.genre = this.value; p.bpm = Arranger.STYLES[this.value].bpm; p.tune = null; p.groove = null; p.prog = null; p.mix = null; p.atmNome = null; applyRecipe(this.value); mixRender(); $('#dw-bpm').value = p.bpm; dwStop(); fillBase(); dwChanged(true); });
   $('#dw-bpm').addEventListener('change', function () { cur().prod.bpm = Math.max(60, Math.min(180, +this.value || 100)); this.value = cur().prod.bpm; dwStop(); fillBase(); dwChanged(true); dwLyInfo(); });
   $('#dw-key').addEventListener('change', function () { var v = this.value.split(':'), p = cur().prod; p.tonic = +v[0]; p.mode = v[1]; dwStop(); fillBase(); dwChanged(true); });
   $('#dw-master').addEventListener('change', function () { cur().prod.master = this.value; persist(); fillBase(); });
@@ -1972,7 +1972,7 @@
       var prof = BeatLearn.learn(s.rhythm, s.sr, { harm: s.stems ? (function () { var h = new Float32Array(s.stems.other.length); for (var q = 0; q < h.length; q++) h[q] = s.stems.other[q] + s.stems.bass[q]; return h; })() : null });
       if (tuneM) { prof.tune = tuneM; prof.why.push('Voce: ' + tuneM.label + ' (scarto medio ' + tuneM.cents + ' cent dalla nota).'); }
       LEARN.cur = { name: f.name.replace(/\.[^.]+$/, '').slice(0, 40), prof: prof, voice: voice, base: base, orig: s.orig, stems: s.stems, sr: s.sr, note: s.note, vote: 0, ai: s.ai };
-      learnBar(null); setTimeout(function () { varMake('', learnSpecs(prof), '#dw-learn-msg'); }, 50); el.textContent = s.ai ? 'Fatto. Ascolta le parti separate, poi dimmi se il ritmo ti piace.' : 'Fatto, ma senza AI (' + why + '): voce e base non sono pulite.';
+      learnBar(null); setTimeout(function () { varMake('', learnSpecs2(prof), '#dw-learn-msg'); }, 50); el.textContent = s.ai ? 'Fatto. Ascolta le parti separate, poi dimmi se il ritmo ti piace.' : 'Fatto, ma senza AI (' + why + '): voce e base non sono pulite.';
       learnRender(); coachRec('complete', coachCtx()); sepInfo();
     } catch (e) {
       learnBar(null);
@@ -2084,7 +2084,7 @@
     var R = Instruments.RECIPES[g] || Instruments.RECIPES.melodico, st = Arranger.STYLES[g], kits = Object.keys(SynthDesign.KITS);
     return { genre: g, bpm: same ? cur().prod.bpm : st.bpm + Math.round((Math.random() - 0.5) * 6), seed: 1 + Math.floor(Math.random() * 99999),
       inst: { melodia: rnd(R.melodia), accordi: rnd(R.accordi), pad: rnd(R.pad), arpeggio: R.arpeggio ? rnd(R.arpeggio) : undefined },
-      kit: Math.random() < 0.75 && R.kit ? R.kit : rnd(kits), arpPattern: rnd(Object.keys(Arranger.ARP)), mode: cur().prod.mode };
+      kit: Math.random() < 0.75 && R.kit ? R.kit : rnd(kits), arpPattern: rnd(Object.keys(Arranger.ARP)), mode: cur().prod.mode, prog: rnd(StylePresets.PROGS[cur().prod.mode] || StylePresets.PROGS.minore), tune: { hat: 0.8 + Math.random() * 0.45, lift: 0.85 + Math.random() * 0.45, kickVar: 0.8 + Math.random() * 0.5 } };
   }
   async function varMake(mode, given, elSel) {
     if (VAR.busy) return; VAR.busy = true; var el = $(elSel || '#dw-var-msg'), p = cur().prod, map = songMap(), specs = given || [];
@@ -2095,13 +2095,14 @@
       var sp = specs[k]; el.textContent = 'Compongo la variante ' + (k + 1) + ' di 8…'; await tick();
       for (var r in sp.inst) if (sp.inst[r]) await loadInst(sp.inst[r]);
       try {
-        var bb = Arranger.generate({ sampleRate: 22050, bpm: sp.bpm, tonic: p.tonic, mode: sp.mode, bars: p.bars, genre: sp.genre, seed: sp.seed, inst: sp.inst, plan: map ? map.plan : undefined, arpPattern: sp.arpPattern, groove: sp.groove, prog: sp.prog, sounds: 'campioni', drumRender: function (part, o, s2) { return SynthDesign.kitRender(sp.kit, part, o, s2); } });
+        var bb = Arranger.generate({ sampleRate: 22050, bpm: sp.bpm, tonic: p.tonic, mode: sp.mode, bars: p.bars, genre: sp.genre, seed: sp.seed, inst: sp.inst, plan: map ? map.plan : undefined, arpPattern: sp.arpPattern, groove: sp.groove, prog: sp.prog, tune: sp.tune, bassStyle: sp.bassStyle || undefined, sounds: 'campioni', drumRender: function (part, o, s2) { return SynthDesign.kitRender(sp.kit, part, o, s2); } });
         sp.mix = Backing.mix(bb, p.levels, p.sec); sp.sr = bb.sampleRate; VAR.list.push(sp); varRender();
       } catch (e) {}
     }
-    el.textContent = given ? VAR.list.length + ' basi nuove nello stile di questa canzone, sul tuo testo: ascoltale e scegli con Usa.' : VAR.list.length + ' varianti pronte: ascoltale, scegli con Usa. Premi ancora per altre 8 nuove.'; VAR.busy = false;
+    el.textContent = given ? VAR.list.length + ' basi nuove pronte, sul tuo testo: ascoltale e scegli con Usa. Premi ancora per altre diverse.' : VAR.list.length + ' varianti pronte: ascoltale, scegli con Usa. Premi ancora per altre 8 nuove.'; VAR.busy = false;
   }
-  function varName(sp) { return (Arranger.STYLES[sp.genre] ? Arranger.STYLES[sp.genre].label : sp.genre) + ' · ' + sp.bpm + ' BPM'; }
+  function varName(sp) { return (sp.nome || (Arranger.STYLES[sp.genre] ? Arranger.STYLES[sp.genre].label : sp.genre)) + ' · ' + sp.bpm + ' BPM' + (sp.prog ? ' · giro ' + StylePresets.progName(sp.prog, sp.mode) : ''); }
+  function atmRender() { var g = {}; StylePresets.LIST.forEach(function (p) { (g[p.gruppo] = g[p.gruppo] || []).push(p); }); $('#dw-var-atm').innerHTML = Object.keys(g).map(function (k) { return '<p class="small muted" style="margin:8px 0 4px">' + esc(k) + '</p><div class="chips">' + g[k].map(function (p) { return '<button class="chip" data-atm="' + p.id + '" title="' + esc(p.spiega) + '">' + esc(p.nome.replace(/^Tipo /, '')) + '</button>'; }).join('') + '</div>'; }).join(''); }
   function varRender() {
     var lp = $('#dw-learn-prop'); $('#dw-var-list').innerHTML = (lp ? lp.innerHTML = varHtml() : varHtml());
   }
@@ -2112,12 +2113,14 @@
   }
   function varClick(e) {
     var b = e.target.closest('button'); if (!b) return;
-    if (b.id === 'dw-var-same') varMake('stile'); else if (b.id === 'dw-var-other') varMake('stili');
+    var cnt = +(($('#dw-var-n') || {}).value || 8);
+    if (b.id === 'dw-var-same') { var ss = []; for (var q = 0; q < cnt; q++) ss.push(varSpec(cur().prod.genre, true)); varMake('', ss); } else if (b.id === 'dw-var-other') varMake('', StylePresets.pickMany(cnt, textWeights(), Date.now() % 1e9));
+    if (b.getAttribute('data-atm')) { varMake('', StylePresets.pickMany(cnt, null, Date.now() % 1e9, b.getAttribute('data-atm'))); $('#dw-var-msg').textContent = 'Compongo varianti ' + StylePresets.byId(b.getAttribute('data-atm')).nome + '…'; }
     var vp = b.getAttribute('data-vp'), vu = b.getAttribute('data-vu');
     if (vp != null) { var s1 = VAR.list[+vp]; dwStop(true); playBuf(s1.mix, s1.sr); $('#dw-var-msg').textContent = 'Ascolti: ' + varName(s1); }
     if (vu != null) {
       var s2 = VAR.list[+vu], p = cur().prod, changed = p.genre !== s2.genre; stopPlay();
-      p.genre = s2.genre; p.bpm = s2.bpm; p.seed = s2.seed; p.inst = Object.assign({}, s2.inst); p.kit = s2.kit; p.arpPattern = s2.arpPattern; if (changed) { p.mix = null; p.groove = null; p.prog = null; p.tune = null; } if (s2.groove) { p.groove = s2.groove; p.prog = s2.prog || null; p.mode = s2.mode; }
+      p.genre = s2.genre; p.bpm = s2.bpm; p.seed = s2.seed; p.inst = Object.assign({}, s2.inst); p.kit = s2.kit; p.arpPattern = s2.arpPattern; if (changed) { p.mix = null; p.groove = null; p.prog = null; p.tune = null; } p.atmNome = s2.nome || null; if (s2.groove) p.groove = s2.groove; if (s2.prog) p.prog = s2.prog; if (s2.mode) p.mode = s2.mode; if (s2.tune) p.tune = s2.tune; if (s2.bassStyle !== undefined) p.bassStyle = s2.bassStyle;
       coachRec('like', { genre: s2.genre, mode: p.mode, bpm: s2.bpm, inst: s2.inst }); fillInst(); fillBase(); dwFill(); dwChanged(true); projLine();
       $('#dw-var-msg').textContent = 'Usata: ' + varName(s2) + '. Ora la puoi modificare traccia per traccia.';
       if (e.currentTarget && e.currentTarget.id === 'dw-p-learn') { dwWs('base'); window.scrollTo(0, 0); }
@@ -2126,6 +2129,19 @@
   $('#dw-p-var').addEventListener('click', varClick);
   $('#dw-p-learn').addEventListener('click', function (e) { if (e.target.closest('[data-vp],[data-vu]')) varClick(e); });
   // proposte automatiche dopo aver imparato una canzone: stile, ritmo, giro armonico e tempo misurati, strumenti nostri
+  // quanto ogni stile base si adatta al testo (cervello Sultan dell'altra chat: punteggi per genere)
+  function textWeights() {
+    var s0 = cur(); if (!(s0.lyrics || '').trim() || !window.SultanBrain) return null;
+    try { var pl = SultanBrain.plan(s0.lyrics, analysisOf(s0), {}), sc = pl.scores || {}, mx = Math.max.apply(null, Object.keys(sc).map(function (k) { return sc[k]; }).concat([1])), w = {};
+      Object.keys(sc).forEach(function (k) { w[k] = 0.4 + 2.6 * Math.max(0, sc[k]) / mx; }); w.cloud = w.cloud || w.trapdark; w.brooklyn = w.brooklyn || w.drill; w.rnb = w.rnb || w.melodico; w.emorap = w.emorap || w.trap; w.plugg = w.plugg || w.trap; w.reggaeton = w.reggaeton || w.estate; w.afrotrap = w.afrotrap || w.estate; w.rage = w.rage || w.clubtrap; w.jersey = w.jersey || w.clubtrap; return w; } catch (e) { return null; }
+  }
+  function learnSpecs2(prof) {
+    var near = { trap: ['trap', 'trapdark', 'plugg', 'emorap'], drill: ['drill', 'brooklyn', 'trapdark', 'street'], melodico: ['melodico', 'rnb', 'emorap', 'cloud'], estate: ['estate', 'afrotrap', 'reggaeton'], epico: ['epico', 'cloud', 'trapdark'] }[prof.style] || ['trap'], w = {};
+    near.forEach(function (g) { w[g] = 6; });
+    var kick = prof.kick && prof.kick.length ? prof.kick : [0], kb = kick.slice(); if (kb.length > 1) kb[kb.length - 1] = Math.min(15, kb[kb.length - 1] + 1); else kb.push(10);
+    return StylePresets.pickMany(12, w, Date.now() % 1e9).map(function (v, i) { v.bpm = Math.max(60, Math.min(180, prof.bpm + (i % 3 - 1) * 2)); v.mode = prof.key ? prof.key.mode : v.mode; if (prof.prog && i % 2 === 0) v.prog = prof.prog;
+      v.groove = { kickPats: [[kick, kb]], snare: prof.snare, swing: prof.swing || 0, rolls: Math.max(0, Math.min(1, (prof.triplets || 0) * 1.2 + ((prof.hatDensity || 0.5) - 0.5) * 0.6)) }; return v; });
+  }
   function learnSpecs(prof) {
     var g = Arranger.STYLES[prof.style] ? prof.style : 'trap', out = [];
     var near = { trap: ['trap', 'trapdark', 'plugg'], drill: ['drill', 'brooklyn', 'trapdark'], melodico: ['melodico', 'rnb', 'emorap'], estate: ['estate', 'afrotrap', 'reggaeton'], epico: ['epico', 'cloud', 'trapdark'] }[g] || [g];
@@ -2173,13 +2189,13 @@
     else if (a === 'mic') { this.hidden = true; dwWs('voce'); }
   });
   $('#v-daw').addEventListener('click', function (e) { var b = e.target.closest('[data-next]'); if (!b) return; dwWs(b.getAttribute('data-next')); window.scrollTo(0, 0); });
-  function projLine() { var p = cur().prod; $('#dw-proj-t').textContent = (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode; }
+  function projLine() { var p = cur().prod; $('#dw-proj-t').textContent = (p.atmNome || (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre)) + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode; }
   $('#dw-proj').addEventListener('click', function () { $('#dw-set').hidden = false; });
   $('#dw-set').addEventListener('click', function (e) { if (e.target === this || e.target.id === 'dw-set-x') { this.hidden = true; projLine(); } });
   document.body.appendChild($('#dw-set'));
   // spiegazioni nascoste: un "?" in ogni pannello le mostra
   $$('#v-daw .dw-panel .dw-ph').forEach(function (ph) { var b = document.createElement('button'); b.className = 'dw-help'; b.type = 'button'; b.textContent = '?'; b.setAttribute('aria-label', 'Spiegazione'); b.addEventListener('click', function () { ph.parentElement.classList.toggle('show-help'); }); ph.appendChild(b); });
-  SHOW.daw = function () { dwWs(dwWsName()); projLine(); aiRender(); verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+  SHOW.daw = function () { dwWs(dwWsName()); projLine(); aiRender(); atmRender(); verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {
