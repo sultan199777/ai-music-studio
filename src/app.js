@@ -461,9 +461,11 @@
     if (p.useLyrics === false || !lyricLines(s.lyrics).length) return null;
     return SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {} });
   }
+  /* iPhone: base a 24 kHz (25% di memoria in meno, misurata); computer: 32 kHz */
+  var BASE_SR = (function () { try { return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ? 24000 : 32000; } catch (e) { return 32000; } })();
   function getBase() {
     var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, p.leadRest, pfSig(p).join(), p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.kit, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, leadRest: typeof p.leadRest === 'number' ? p.leadRest : undefined, sig: pfSig(p), bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, drumRender: p.kit && SynthDesign.KITS[p.kit] ? function (part, o, s2) { return SynthDesign.kitRender(p.kit, part, o, s2); } : undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: BASE_SR, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, leadRest: typeof p.leadRest === 'number' ? p.leadRest : undefined, sig: pfSig(p), bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, drumRender: p.kit && SynthDesign.KITS[p.kit] ? function (part, o, s2) { return SynthDesign.kitRender(p.kit, part, o, s2); } : undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -1295,7 +1297,7 @@
   }
   function voiceTake() { var t = activeTake(); return t && !t.example ? t : null; }
   function dwBuffers(b) {
-    var t = voiceTake(), pf0 = pfPlan(), key = SESSION.baseKey + '|' + vclipKey() + '|' + pfKey(pf0);
+    var t = voiceTake(), pf0 = pfPlan(), key = SESSION.baseKey + '|' + vclipKey() + '|' + pfKey(pf0) + '|' + (ominoSings() ? 'g' + gvS().f0 : '');
     if (DW.bufKey === key && DW.bufs) return DW.bufs;
     var bufs = {}, N = b.length, sum = new Float32Array(N), i;
     LANES.forEach(function (L) {
@@ -1316,13 +1318,18 @@
       try { bufs.sfx = { x: ProdFx.renderSfx(pf0.events, b.sampleRate, b.bpm, N, { seed: pf0.seed, tonic: b.tonic, mode: b.mode }), sr: b.sampleRate, start: 0 }; } catch (e) {}
       if (vb) try { var vx = ProdFx.renderVox(pf0.events, vb, songMap(), b.bpm, { bank: ADLIB.list, melodic: !PF_HARD[b.genre] }); if (vx) bufs.vox = { x: vx, sr: vb.sr, start: 0 }; } catch (e) {}
     }
+    if (ominoSings()) { try { var gmap = songMap(), s0 = cur(), p0 = s0.prod, gg = gvS();
+      if (gmap && gmap.lines && gmap.lines.length && b.bars === gmap.totalBars) { var gr = GuideVoice.render(gmap.lines, { sr: b.sampleRate, length: N, tonic: p0.tonic || 0, mode: p0.mode, f0: gg.f0 || 130, seed: (p0.melSeed || 0) * 13 + (p0.seed || 1), tuneMs: gg.tune || 18 });
+        var gx = new Float32Array(N), gk = 0.55; for (i = 0; i < N; i++) gx[i] = (gr.audio[i] || 0) * gk;
+        if (bufs.vox && bufs.vox.sr === b.sampleRate) { var vv = bufs.vox.x; for (i = 0; i < Math.min(N, vv.length); i++) gx[i] += vv[i]; }
+        bufs.vox = { x: gx, sr: b.sampleRate, start: 0, guide: true }; } } catch (e) {} }
     DW.bufs = bufs; DW.bufKey = key; return bufs;
   }
   function gainFor(L) {
     var any = Object.keys(DW.solo).some(function (k) { return DW.solo[k]; });
     if (DW.mute[L.id] || (any && !DW.solo[L.id])) return 0;
     if (L.voice) return DW.recording ? 0 : lvl('voce');
-    if (L.voxfx) return DW.recording ? 0 : lvl('voce') * lvl(L.level);
+    if (L.voxfx) return DW.recording ? 0 : (DW.bufs && DW.bufs.vox && DW.bufs.vox.guide && !voiceTake() ? 1 : lvl('voce')) * lvl(L.level);
     return lvl(L.level) * DW.k;
   }
   function dwGains() { LANES.forEach(function (L) { var g = DW.gains[L.id]; if (g) g.gain.setTargetAtTime(gainFor(L), g.context.currentTime, 0.02); }); }
@@ -1356,7 +1363,10 @@
     };
     loop(); dwSteps();
   }
-  /* omino che canta: a tempo con lo Studio */
+  /* omino che canta: a tempo con lo Studio. Se «Fai cantare l'omino» è attivo e non hai ancora registrato, si sente la voce guida */
+  function ominoSings() { return LIB.settings.ominoSing !== false && typeof GuideVoice !== 'undefined' && !!(cur().lyrics || '').trim() && !voiceTake(); }
+  $('#dw-omino-sing').checked = LIB.settings.ominoSing !== false;
+  $('#dw-omino-sing').addEventListener('change', function () { LIB.settings.ominoSing = this.checked; persist(); DW.bufKey = ''; var was = DW.playing, at = was ? (getCtx().currentTime - DW.t0 + DW.from) : DW.from; dwStop(true); dwRefresh().then(function () { if (was) dwPlay(at); }); });
   var OM = { last: -1 };
   function ominoTick(t) {
     var cv = $('#dw-omino'); if (!cv || cv.offsetParent === null) return; var b = SESSION.base; if (!b) return;
@@ -1384,7 +1394,7 @@
     $('#dw-lyl').innerHTML = map && b.bars === map.totalBars ? map.lines.map(function (l) { return '<span style="left:' + (l.startBar * DW.px + 1) + 'px;width:' + (l.bars * DW.px - 2) + 'px" title="' + esc(l.text) + '">' + esc(l.text) + '</span>'; }).join('') : '';
     var inst = cur().prod.inst || {};
     $('#dw-heads').innerHTML = '<div class="dw-hl">Battute</div><div class="dw-hl s">Parti</div><div class="dw-hl l">Testo</div>' + LANES.map(function (L) {
-      var label = L.fx ? pfCount('sfx') + ' suoni dal testo' : L.voxfx ? pfCount('vox') + ' interventi voce' : L.role ? (inst[L.role] ? instName(inst[L.role]) : 'Sintetizzato') : (L.id === 'drums' ? (cur().prod.kit && SynthDesign.KITS[cur().prod.kit] ? 'Kit ' + SynthDesign.KITS[cur().prod.kit].nome : (cur().prod.sounds === 'sint' ? 'Sintetici' : 'Campioni veri')) : (L.id === 'bass' ? (cur().prod.bassStyle === '808' ? '808 sempre' : 'Dallo stile') : (voiceTake() ? voiceTake().name : 'Registra con ●')));
+      var label = L.fx ? pfCount('sfx') + ' suoni dal testo' : L.voxfx ? (ominoSings() ? 'Voce guida (omino)' : pfCount('vox') + ' interventi voce') : L.role ? (inst[L.role] ? instName(inst[L.role]) : 'Sintetizzato') : (L.id === 'drums' ? (cur().prod.kit && SynthDesign.KITS[cur().prod.kit] ? 'Kit ' + SynthDesign.KITS[cur().prod.kit].nome : (cur().prod.sounds === 'sint' ? 'Sintetici' : 'Campioni veri')) : (L.id === 'bass' ? (cur().prod.bassStyle === '808' ? '808 sempre' : 'Dallo stile') : (voiceTake() ? voiceTake().name : 'Registra con ●')));
       return '<div class="dw-lh" style="--lc:' + L.c + '"><b>' + L.nome + '</b><button class="inst" data-inst="' + L.id + '">' + esc(label) + '</button><div class="ms"><button data-m="' + L.id + '" class="' + (DW.mute[L.id] ? 'on' : '') + '">M</button><button data-s="' + L.id + '" class="' + (DW.solo[L.id] ? 'on' : '') + '">S</button><input type="range" min="0" max="160" value="' + Math.round(lvl(L.level) * 100) + '" data-lv="' + L.id + '" aria-label="Volume ' + L.nome + '"></div></div>';
     }).join('');
     var dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -1525,7 +1535,7 @@
     if (!pl) { AG.li.st = 'fermo'; return; }
     AG.li.st = 'al lavoro'; agentsRender(); await wait(30);
     var p = cur().prod, map = songMap(), g = Arranger.STYLES[pl.genre] ? pl.genre : p.genre;
-    var bb = Arranger.generate({ sampleRate: 22050, bpm: pl.bpm, tonic: p.tonic, mode: pl.mode, bars: p.bars, genre: g, seed: p.seed + 7, inst: p.inst, plan: map ? map.plan : undefined, groove: pl.groove, tune: pl.tune, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' });
+    var bb = Arranger.generate({ sampleRate: 22050, bpm: pl.bpm, tonic: p.tonic, mode: pl.mode, bars: p.bars, genre: g, seed: p.seed + 7, inst: p.inst, plan: previewPlan(map), groove: pl.groove, tune: pl.tune, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' });
     AG.li.prop = { plan: pl, mix: Backing.mix(bb, p.levels, p.sec), sr: bb.sampleRate, desc: (Arranger.STYLES[g] ? Arranger.STYLES[g].label : g) + ' · ' + pl.bpm + ' BPM · ' + pl.mode + ' · cassa ' + pl.groove.kickPats[0][0].map(function (x) { return x + 1; }).join('-') + ' · da ' + pl.from + ' canzoni' };
     AG.li.st = 'pronto';
   }
@@ -1553,7 +1563,7 @@
         var sig = JSON.stringify(res.inst) + ap; if (seen[sig]) { ap = arps[(arps.indexOf(ap) + 3) % arps.length]; } seen[sig] = 1;
         for (var r in res.inst) if (res.inst[r]) await loadInst(res.inst[r]);
         await wait(20);
-        var bb = Arranger.generate({ sampleRate: 22050, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed + k + 1, inst: res.inst, plan: map ? map.plan : undefined, arpPattern: ap, sounds: p.sounds === 'sint' ? 'sint' : 'campioni', tune: p.tune || undefined });
+        var bb = Arranger.generate({ sampleRate: 22050, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed + k + 1, inst: res.inst, plan: previewPlan(map), arpPattern: ap, sounds: p.sounds === 'sint' ? 'sint' : 'campioni', tune: p.tune || undefined });
         var mix = Backing.mix(bb, p.levels, p.sec);
         AG.arr.props.push({ inst: res.inst, arpPattern: ap, seed: p.seed + k + 1, explore: !!res.explore, mix: mix, sr: bb.sampleRate, ctx: { genre: p.genre, mode: p.mode, bpm: p.bpm, inst: res.inst, emotion: ctx.emotion },
           desc: ['melodia', 'accordi', 'arpeggio', 'pad'].map(function (r) { return r + ': ' + (res.inst[r] ? instName(res.inst[r]) : 'sintesi'); }).join(' · ') + ' · arpeggio ' + ap });
@@ -2014,7 +2024,7 @@
     var srcs = [];
     LANES.forEach(function (L) {
       var B = bufs[L.id]; if (!B) return;
-      var src = ctx.createBufferSource(); src.buffer = makeBuffer(ctx, B.x, B.sr);
+      var src = ctx.createBufferSource(); if (!B.ab || B.ab.ctx !== ctx) { B.ab = makeBuffer(ctx, B.x, B.sr); B.ab.ctx = ctx; try { B.x = B.ab.getChannelData(0); } catch (e) {} } src.buffer = B.ab; // una copia sola per traccia (prima a ogni ▶)
       var g = ctx.createGain(); g.gain.value = gainFor(L); src.connect(g); g.connect(mx.input(L.id)); if (gains) gains[L.id] = g;
       var st = B.start - from;
       if (st >= 0) src.start(t0 + st); else if (-st < B.x.length / B.sr) src.start(t0, -st); else return;
@@ -2464,6 +2474,14 @@
       inst: { melodia: rnd(R.melodia), accordi: rnd(R.accordi), pad: rnd(R.pad), arpeggio: R.arpeggio ? rnd(R.arpeggio) : undefined },
       kit: Math.random() < 0.75 && R.kit ? R.kit : rnd(kits), arpPattern: rnd(Object.keys(Arranger.ARP)), mode: cur().prod.mode, prog: rnd(StylePresets.PROGS[cur().prod.mode] || StylePresets.PROGS.minore), tune: { hat: 0.8 + Math.random() * 0.45, lift: 0.85 + Math.random() * 0.45, kickVar: 0.8 + Math.random() * 0.5 } };
   }
+  /* Anteprime CORTE (varianti e agenti): dall'inizio fino alla fine del primo ritornello, massimo 20 battute.
+     Prima ogni anteprima era la canzone intera (es. 3,5 minuti × 16 varianti = 1,3 GB misurati): sull'iPhone Safari chiudeva la pagina. */
+  function previewPlan(map) {
+    if (!map || !map.plan) return undefined; var out = [], bars = 0, seenR = false;
+    for (var i = 0; i < map.plan.length && bars < 20; i++) { var sec = map.plan[i], n = Math.min(sec[1], 20 - bars); if (seenR && sec[0] !== 'ritornello') break; out.push([sec[0], n]); bars += n; if (sec[0] === 'ritornello') seenR = true; if (bars >= 12 && seenR) break; }
+    return out;
+  }
+  function previewMap(map) { if (!map) return null; var pl = previewPlan(map), nb = pl.reduce(function (a, x) { return a + x[1]; }, 0); return { plan: pl, lines: (map.lines || []).filter(function (l) { return l.startBar < nb; }), totalBars: nb, barSec: map.barSec }; }
   async function varMake(mode, given, elSel) {
     if (VAR.busy) return; VAR.busy = true; var el = $(elSel || '#dw-var-msg'), p = cur().prod, map = songMap(), specs = given || [];
     if (given) {} else if (mode === 'stili') { var keys = Object.keys(Arranger.STYLES).filter(function (g) { return g !== p.genre; }).sort(function () { return Math.random() - 0.5; }).slice(0, 8); keys.forEach(function (g) { specs.push(varSpec(g, false)); }); }
@@ -2473,9 +2491,9 @@
       var sp = specs[k]; el.textContent = 'Compongo la base ' + (k + 1) + ' di ' + specs.length + '…'; await tick();
       for (var r in sp.inst) if (sp.inst[r]) await loadInst(sp.inst[r]);
       try {
-        var bb = Arranger.generate({ sampleRate: 22050, bpm: sp.bpm, tonic: sp.tonic != null ? sp.tonic : p.tonic, mode: sp.mode, bars: p.bars, genre: sp.genre, seed: sp.seed, inst: sp.inst, plan: map ? map.plan : undefined, arpPattern: sp.arpPattern, groove: sp.groove, prog: sp.prog, tune: sp.tune, bassStyle: sp.bassStyle || undefined, sounds: 'campioni', drumRender: function (part, o, s2) { return SynthDesign.kitRender(sp.kit, part, o, s2); } });
+        var bb = Arranger.generate({ sampleRate: 22050, bpm: sp.bpm, tonic: sp.tonic != null ? sp.tonic : p.tonic, mode: sp.mode, bars: p.bars, genre: sp.genre, seed: sp.seed, inst: sp.inst, plan: previewPlan(map), arpPattern: sp.arpPattern, groove: sp.groove, prog: sp.prog, tune: sp.tune, bassStyle: sp.bassStyle || undefined, sounds: 'campioni', drumRender: function (part, o, s2) { return SynthDesign.kitRender(sp.kit, part, o, s2); } });
         sp.mix = Backing.mix(bb, p.levels, p.sec); sp.sr = bb.sampleRate;
-        var pfv = pfPlan(); if (pfv.on && map) { var pv = ProdFx.plan(map, { genre: sp.genre, seed: sp.seed, density: Math.min(1, pfv.density) }); sp.fxNames = pv.events.filter(function (e2) { return e2.tipo === 'sfx' && ProdFx.SOUNDS[e2.snd].gruppo !== 'Cinema'; }).map(function (e2) { return ProdFx.SOUNDS[e2.snd].nome.split(' (')[0].toLowerCase(); }).filter(function (v, i, a) { return a.indexOf(v) === i; }).slice(0, 4); var sx = ProdFx.renderSfx(pv.events, sp.sr, sp.bpm, sp.mix.length, { seed: sp.seed, tonic: p.tonic }); var pkv = 0, q; for (q = 0; q < sx.length; q++) { sp.mix[q] += sx[q] * 0.5; var av = sp.mix[q] < 0 ? -sp.mix[q] : sp.mix[q]; if (av > pkv) pkv = av; } if (pkv > 0.98) for (q = 0; q < sp.mix.length; q++) sp.mix[q] *= 0.98 / pkv; }
+        var pfv = pfPlan(); if (pfv.on && map) { var pv = ProdFx.plan(previewMap(map), { genre: sp.genre, seed: sp.seed, density: Math.min(1, pfv.density) }); sp.fxNames = pv.events.filter(function (e2) { return e2.tipo === 'sfx' && ProdFx.SOUNDS[e2.snd].gruppo !== 'Cinema'; }).map(function (e2) { return ProdFx.SOUNDS[e2.snd].nome.split(' (')[0].toLowerCase(); }).filter(function (v, i, a) { return a.indexOf(v) === i; }).slice(0, 4); var sx = ProdFx.renderSfx(pv.events, sp.sr, sp.bpm, sp.mix.length, { seed: sp.seed, tonic: p.tonic }); var pkv = 0, q; for (q = 0; q < sx.length; q++) { sp.mix[q] += sx[q] * 0.5; var av = sp.mix[q] < 0 ? -sp.mix[q] : sp.mix[q]; if (av > pkv) pkv = av; } if (pkv > 0.98) for (q = 0; q < sp.mix.length; q++) sp.mix[q] *= 0.98 / pkv; }
         VAR.list.push(sp); varRender();
       } catch (e) { VAR.err = (e && e.message) || String(e); }
     }
