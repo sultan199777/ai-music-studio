@@ -684,7 +684,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 08:47</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 08:51</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -729,6 +729,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   <div class="card" id="ai-card"><div class="card-head"><h3>Assistente testi (AI locale)</h3><span class="tag i">Opzionale</span></div>
     <p class="small muted">Un piccolo modello gratuito che gira sul tuo telefono e propone righe e punchline nel genere scelto. Si scarica una volta sola (Wi-Fi consigliato) e nessun testo esce dal telefono. Il cervello Sultan resta il maestro: l'AI scrive solo bozze, tu decidi. Serve un iPhone recente (WebGPU).</p>
     <label class="f"><span>Modello</span><select id="ai-model"></select></label>
+    <label class="f"><span>Se usi Ollama: quanta RAM ha il tuo computer?</span><select id="ai-ram"><option value="8">8 GB</option><option value="16">16 GB</option><option value="24">24 GB</option><option value="32">32 GB o più</option></select></label><p class="small muted" id="ai-ramnote">Scegli la RAM e ti dico quale modello conviene.</p>
     <div class="row"><button class="btn pri" id="ai-on">Attiva (scarica il modello)</button></div>
     <div class="status" id="ai-msg"></div>
     <div class="row"><button class="btn" id="ai-v" disabled>3 versioni della riga</button><button class="btn" id="ai-p" disabled>Punchline</button><button class="btn" id="ai-c" disabled>Riga dopo</button></div>
@@ -1044,7 +1045,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">306 test automatici superati su 306 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">307 test automatici superati su 307 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -4957,6 +4958,14 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     punchline: 'Scrivi 3 punchline (frase a effetto, doppio senso o immagine forte) che possano chiudere questa riga o seguirla. Massimo {syll} sillabe ciascuna.',
     continua: 'Scrivi 3 possibili righe successive (circa {syll} sillabe) che portino avanti la storia e finiscano con una di queste rime: {rime}.'
   };
+  /* Quale modello Ollama consigliare in base alla RAM del computer (stime da guide 2026: RAM totale meno 3-4 GB per il sistema; Ipotesi) */
+  function recommend(ramGb) {
+    ramGb = +ramGb || 8;
+    if (ramGb <= 8) return { model: 'qwen2.5:3b', note: 'Con 8 GB stai stretto: modelli piccoli (3B). Il 7B parte ma rallenta.' };
+    if (ramGb <= 16) return { model: 'qwen2.5:7b', note: 'Con 16 GB il 7B va bene (italiano buono).' };
+    if (ramGb <= 24) return { model: 'qwen2.5:14b', note: 'Con 24 GB va il 14B (italiano molto migliore).' };
+    return { model: 'qwen2.5:32b', note: 'Con 32 GB o più va anche il 32B (il migliore).' };
+  }
   function supported() { return typeof navigator !== 'undefined' && !!navigator.gpu; }
 
   function buildPrompt(task, c) {
@@ -5005,7 +5014,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     var r = await engine.chat.completions.create({ messages: buildPrompt(task, ctx), temperature: 0.9, top_p: 0.92, max_tokens: 160 });
     return clean(r.choices[0].message.content, ctx && ctx.line);
   }
-  return { pingOllama: pingOllama, useOllama: useOllama, MODELS: MODELS, TASKS: TASKS, supported: supported, buildPrompt: buildPrompt, clean: clean, load: load, ask: ask, LIB_URL: LIB_URL };
+  return { recommend: recommend, pingOllama: pingOllama, useOllama: useOllama, MODELS: MODELS, TASKS: TASKS, supported: supported, buildPrompt: buildPrompt, clean: clean, load: load, ask: ask, LIB_URL: LIB_URL };
 });
 
 /*
@@ -11296,6 +11305,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   (function () {
     var sel = $('#ai-model'); if (!sel) return;
     sel.innerHTML = '<option value="ollama">Ollama sul computer (migliore, se lo hai)</option>' + LocalAI.MODELS.map(function (m) { return '<option value="' + m.id + '">' + m.label + ' · ' + m.note + '</option>'; }).join('');
+    var ramBox = $('#ai-ram'); if (ramBox) ramBox.addEventListener('change', function () { var r = LocalAI.recommend(ramBox.value); $('#ai-ramnote').innerHTML = r.note + ' Comando da scrivere nel Terminale: <span class="mono">ollama pull ' + r.model + '</span>'; });
     function ready(on) { ['#ai-v', '#ai-p', '#ai-c'].forEach(function (i) { $(i).disabled = !on; }); }
     var LINE = '';
     function lyTa() { var d = $('#dw-lyrics'); return d && d.offsetParent ? d : $('#st-lyrics'); }
