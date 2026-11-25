@@ -356,3 +356,9 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
 #pf-list input[type=range]{height:18px;margin:2px 0 0}
 .dw-advbar{display:flex;justify-content:center;margin:6px 0 2px}
 .dw-advbar .btn{background:transparent;border:1px dashed rgba(255,255,255,.22);font-size:13px;opacity:.85}
+/* sfondo che segue l'emozione: luce più ampia mentre suona, respira a tempo, più intensa nel ritornello */
+body[data-mood]::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(90% 55% at 50% 0%, var(--mood-glow, transparent), transparent 75%), radial-gradient(70% 40% at 50% 105%, var(--mood-glow, transparent), transparent 70%); opacity: .55; transition: opacity 1.2s ease, background 1.2s ease; }
+body.dw-playing[data-mood]::before { opacity: .85; animation: moodBreath calc(var(--beat, .5s) * 4) ease-in-out infinite; }
+body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: calc(var(--beat, .5s) * 2); }
+@keyframes moodBreath { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
+@media (prefers-reduced-motion: reduce) { body.dw-playing[data-mood]::before { animation: none; } }

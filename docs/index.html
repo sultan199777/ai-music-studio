@@ -360,6 +360,12 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
 #pf-list input[type=range]{height:18px;margin:2px 0 0}
 .dw-advbar{display:flex;justify-content:center;margin:6px 0 2px}
 .dw-advbar .btn{background:transparent;border:1px dashed rgba(255,255,255,.22);font-size:13px;opacity:.85}
+/* sfondo che segue l'emozione: luce più ampia mentre suona, respira a tempo, più intensa nel ritornello */
+body[data-mood]::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(90% 55% at 50% 0%, var(--mood-glow, transparent), transparent 75%), radial-gradient(70% 40% at 50% 105%, var(--mood-glow, transparent), transparent 70%); opacity: .55; transition: opacity 1.2s ease, background 1.2s ease; }
+body.dw-playing[data-mood]::before { opacity: .85; animation: moodBreath calc(var(--beat, .5s) * 4) ease-in-out infinite; }
+body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: calc(var(--beat, .5s) * 2); }
+@keyframes moodBreath { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
+@media (prefers-reduced-motion: reduce) { body.dw-playing[data-mood]::before { animation: none; } }
 
 /* ===== VOICE LAB (stile Cosmo: usa le variabili del tema) ===== */
 .vl .vl-auto{font-size:1.25rem;min-height:60px;margin:8px 0 4px;letter-spacing:.04em}
@@ -708,7 +714,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 12:09</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 12:10</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -12072,6 +12078,8 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   $('#ear-out').addEventListener('click', async function (e) { if (e.target.id !== 'ear-fix') return; var r = earMeasure(), ch = earApply(r); $('#ear-out').innerHTML = '<p class="small">' + (ch.length ? 'Ho cambiato: ' + esc(ch.join(', ')) + '. Riascolto…' : 'Niente da cambiare.') + '</p>'; await tick(); await earRun(false); });
   /* sfondo ed emozione: espone l'umore sul body (la grafica la decide la schermata, in CSS con body[data-mood]) */
   function applyMoodBg(m) { try { document.body.dataset.mood = m || ''; } catch (e) {} }
+  /* umore attuale: quello scelto dal Cervello, altrimenti misurato da tonalità e velocità della base */
+  function moodNow() { var s = cur(), p = s.prod; if (s.moodTarget) return s.moodTarget; try { return Ear.moodOf({ mode: p.mode, bpm: p.bpm }).top; } catch (e) { return ''; } }
   /* ===== Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti) ===== */
   var BANNED_INST = { flute: 1, ocarina: 1, harmonica: 1, clarinet: 1, kalimba: 0 };
   async function runBrain(again, fixedV, mel, radical) {
@@ -12494,6 +12502,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     cancelAnimationFrame(DW.raf);
     DW.srcs.forEach(function (s) { try { s.onended = null; s.stop(); } catch (e) {} }); DW.srcs = []; DW.gains = {};
     if (DW.playing && !keepPos) DW.from = 0;
+    document.body.classList.remove('dw-playing', 'mood-hi');
     DW.playing = false; var pb = $('#dw-play'); if (pb) { pb.classList.remove('on'); pb.innerHTML = '<svg><use href="#i-play"/></svg>'; }
     if (DW.rec && !DW.rec.stopping && !keepRec) dwRecStop();
   }
@@ -12508,6 +12517,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     var t0 = ctx.currentTime + 0.08; DW.t0 = t0; DW.dur = b.duration;
     var gr = dwGraph(ctx, master, bufs, b, from, t0, DW.gains); DW.mixer = gr.mixer; DW.srcs = gr.srcs;
     gr.srcs.forEach(function (src) { if (src._lane === 'drums') src.onended = function () { if (DW.playing) { var lp = SESSION.lastPlay; if (DW.from === 0 && lp) coachRec('complete', lp.ctx); dwStop(); dwPos(0); } }; });
+    applyMoodBg(moodNow()); document.body.style.setProperty('--beat', (60 / b.bpm).toFixed(3) + 's'); document.body.classList.add('dw-playing');
     DW.playing = true; SESSION.lastPlay = { t: performance.now(), ctx: coachCtx(), dur: b.duration };
     var pb = $('#dw-play'); pb.classList.add('on'); pb.innerHTML = '<svg><use href="#i-stop"/></svg>';
     var map = songMap(), lk = '', loop = function () {
@@ -12523,6 +12533,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     var barSec = 240 / b.bpm, x = t / barSec * DW.px, ph = $('#dw-playhead'); if (ph) ph.style.transform = 'translateX(' + x + 'px)';
     $('#dw-time').textContent = Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
     var bar = Math.floor(t / barSec), sec = (b.sections || []).filter(function (s) { return t >= s.startSec && t < s.endSec; })[0];
+    if (DW.playing) document.body.classList.toggle('mood-hi', !!(sec && sec.name === 'ritornello'));
     $('#dw-pos').textContent = 'battuta ' + (bar + 1) + (sec ? ' · ' + sec.name : '');
     var sc = $('#dw-scroll'); if (DW.playing && sc && (x < sc.scrollLeft + 20 || x > sc.scrollLeft + sc.clientWidth - 40)) sc.scrollLeft = Math.max(0, x - 60);
   }
@@ -13713,7 +13724,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   $('#dw-p-prod').addEventListener('change', function (e) { var pf = pfPlan(); if (e.target.id === 'pf-dens') { pf.density = +e.target.value; pf.manual = false; pfPlan(true); pfChanged(false); } if (e.target.id === 'pf-on') { pf.on = e.target.checked; pfChanged(false); } });
   // iPhone: sblocca l'audio al primo tocco (Safari tiene l'audio spento finché non tocchi; con questo suona anche col silenzioso)
   ['touchend', 'pointerdown', 'keydown'].forEach(function (ev) { document.addEventListener(ev, function unlock() { var c = getCtx(); if (c) { try { var bf = c.createBuffer(1, 1, 22050), sn = c.createBufferSource(); sn.buffer = bf; sn.connect(c.destination); sn.start(0); } catch (x) {} } document.removeEventListener(ev, unlock, true); }, true); });
-  SHOW.daw = function () { dwWs(dwWsName()); projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+  SHOW.daw = function () { applyMoodBg(moodNow()); dwWs(dwWsName()); projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {

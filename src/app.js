@@ -669,6 +669,8 @@
   $('#ear-out').addEventListener('click', async function (e) { if (e.target.id !== 'ear-fix') return; var r = earMeasure(), ch = earApply(r); $('#ear-out').innerHTML = '<p class="small">' + (ch.length ? 'Ho cambiato: ' + esc(ch.join(', ')) + '. Riascolto…' : 'Niente da cambiare.') + '</p>'; await tick(); await earRun(false); });
   /* sfondo ed emozione: espone l'umore sul body (la grafica la decide la schermata, in CSS con body[data-mood]) */
   function applyMoodBg(m) { try { document.body.dataset.mood = m || ''; } catch (e) {} }
+  /* umore attuale: quello scelto dal Cervello, altrimenti misurato da tonalità e velocità della base */
+  function moodNow() { var s = cur(), p = s.prod; if (s.moodTarget) return s.moodTarget; try { return Ear.moodOf({ mode: p.mode, bpm: p.bpm }).top; } catch (e) { return ''; } }
   /* ===== Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti) ===== */
   var BANNED_INST = { flute: 1, ocarina: 1, harmonica: 1, clarinet: 1, kalimba: 0 };
   async function runBrain(again, fixedV, mel, radical) {
@@ -1091,6 +1093,7 @@
     cancelAnimationFrame(DW.raf);
     DW.srcs.forEach(function (s) { try { s.onended = null; s.stop(); } catch (e) {} }); DW.srcs = []; DW.gains = {};
     if (DW.playing && !keepPos) DW.from = 0;
+    document.body.classList.remove('dw-playing', 'mood-hi');
     DW.playing = false; var pb = $('#dw-play'); if (pb) { pb.classList.remove('on'); pb.innerHTML = '<svg><use href="#i-play"/></svg>'; }
     if (DW.rec && !DW.rec.stopping && !keepRec) dwRecStop();
   }
@@ -1105,6 +1108,7 @@
     var t0 = ctx.currentTime + 0.08; DW.t0 = t0; DW.dur = b.duration;
     var gr = dwGraph(ctx, master, bufs, b, from, t0, DW.gains); DW.mixer = gr.mixer; DW.srcs = gr.srcs;
     gr.srcs.forEach(function (src) { if (src._lane === 'drums') src.onended = function () { if (DW.playing) { var lp = SESSION.lastPlay; if (DW.from === 0 && lp) coachRec('complete', lp.ctx); dwStop(); dwPos(0); } }; });
+    applyMoodBg(moodNow()); document.body.style.setProperty('--beat', (60 / b.bpm).toFixed(3) + 's'); document.body.classList.add('dw-playing');
     DW.playing = true; SESSION.lastPlay = { t: performance.now(), ctx: coachCtx(), dur: b.duration };
     var pb = $('#dw-play'); pb.classList.add('on'); pb.innerHTML = '<svg><use href="#i-stop"/></svg>';
     var map = songMap(), lk = '', loop = function () {
@@ -1120,6 +1124,7 @@
     var barSec = 240 / b.bpm, x = t / barSec * DW.px, ph = $('#dw-playhead'); if (ph) ph.style.transform = 'translateX(' + x + 'px)';
     $('#dw-time').textContent = Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
     var bar = Math.floor(t / barSec), sec = (b.sections || []).filter(function (s) { return t >= s.startSec && t < s.endSec; })[0];
+    if (DW.playing) document.body.classList.toggle('mood-hi', !!(sec && sec.name === 'ritornello'));
     $('#dw-pos').textContent = 'battuta ' + (bar + 1) + (sec ? ' · ' + sec.name : '');
     var sc = $('#dw-scroll'); if (DW.playing && sc && (x < sc.scrollLeft + 20 || x > sc.scrollLeft + sc.clientWidth - 40)) sc.scrollLeft = Math.max(0, x - 60);
   }
@@ -2310,7 +2315,7 @@
   $('#dw-p-prod').addEventListener('change', function (e) { var pf = pfPlan(); if (e.target.id === 'pf-dens') { pf.density = +e.target.value; pf.manual = false; pfPlan(true); pfChanged(false); } if (e.target.id === 'pf-on') { pf.on = e.target.checked; pfChanged(false); } });
   // iPhone: sblocca l'audio al primo tocco (Safari tiene l'audio spento finché non tocchi; con questo suona anche col silenzioso)
   ['touchend', 'pointerdown', 'keydown'].forEach(function (ev) { document.addEventListener(ev, function unlock() { var c = getCtx(); if (c) { try { var bf = c.createBuffer(1, 1, 22050), sn = c.createBufferSource(); sn.buffer = bf; sn.connect(c.destination); sn.start(0); } catch (x) {} } document.removeEventListener(ev, unlock, true); }, true); });
-  SHOW.daw = function () { dwWs(dwWsName()); projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+  SHOW.daw = function () { applyMoodBg(moodNow()); dwWs(dwWsName()); projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {
