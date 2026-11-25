@@ -2852,6 +2852,7 @@
       if (a.type === 'remember') { saiMem().push(a.text); persist(); }
       else if (a.type === 'forget') { var f = (a.text || '').toLowerCase(); LIB.settings.aiMem = saiMem().filter(function (m) { return !f || m.toLowerCase().indexOf(f) < 0; }); persist(); }
       else if (a.type === 'go') { dwWs(a.ws); }
+      else if (a.type === 'sing') { var fo = $('#dw-p-omino'); if (fo) fo.classList.remove('fold'); setTimeout(function () { $('#ace-go').click(); }, 100); }
       else if (a.type === 'variants') {
         var pf = SultanAI.prefs(saiMem(), StylePresets.LIST), atm = a.atm || (pf.like[0] || null); $('#dw-var-n').value = String(a.n >= 20 ? 24 : a.n >= 12 ? 16 : 8);
         var specs = atm ? StylePresets.pickMany(a.n, null, Date.now() % 1e9, atm) : StylePresets.pickMany(a.n, textWeights(), Date.now() % 1e9);
@@ -2879,6 +2880,43 @@
     }
   });
   $('#sai-txt').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); var v = this.value; this.value = ''; saiAsk(v); } });
+
+  /* ---------- ACE-Step 1.5 (MIT): il testo cantato da una voce IA, tipo Suno, per provare melodia ed emozione ----------
+     Spazio pubblico ufficiale ACE-Step/Ace-Step-v1.5 su Hugging Face (GPU gratuite con limite giornaliero), client @gradio/client (ISC). */
+  var ACE = { busy: false };
+  function aceLyrics(txt) {
+    var T = { strofa: 'verse', ritornello: 'chorus', pre: 'pre-chorus', prechorus: 'pre-chorus', bridge: 'bridge', ponte: 'bridge', intro: 'intro', outro: 'outro', hook: 'chorus' };
+    return String(txt || '').split(/\r?\n/).map(function (l) { var m = l.trim().match(/^\[([^\]]+)\]$/); if (m) { var k = m[1].toLowerCase().replace(/[^a-z]/g, '').replace(/\d+$/, ''); return '[' + (T[k] || 'verse') + ']'; } return l; }).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+  function aceCaption() {
+    var p = cur().prod, st = Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre, mood = moodNow() || '';
+    var G = { trap: 'italian trap', trapdark: 'dark trap', drill: 'drill', brooklyn: 'brooklyn drill', street: 'street rap', melodico: 'melodic italian pop ballad, piano', emorap: 'emo rap, guitar', rnb: 'r&b', cloud: 'cloud rap, ambient', plugg: 'plugg', rage: 'rage trap, synth', lofi: 'lofi hip hop', boombap: 'boom bap', epico: 'cinematic rap, orchestral', estate: 'summer pop, latin', reggaeton: 'reggaeton', afrotrap: 'afro trap', clubtrap: 'club trap', jersey: 'jersey club', phonk: 'phonk', detroit: 'detroit rap' };
+    var M = { malinconico: 'melancholic, sad, emotional', dark: 'dark, mysterious', euforico: 'euphoric, energetic', aggressivo: 'aggressive, intense', romantico: 'romantic, warm', nostalgico: 'nostalgic, dreamy' };
+    return [G[p.genre] || st, M[mood] || 'emotional', $('#ace-voice').value, 'autotune', '808 bass', 'italian lyrics', p.mode === 'minore' ? 'minor key' : 'major key'].join(', ');
+  }
+  $('#ace-go').addEventListener('click', async function () {
+    var m = $('#ace-msg'), out = $('#ace-out'), s = cur(), p = s.prod; if (ACE.busy) return;
+    var lyr = aceLyrics(s.lyrics); if (!lyr) { m.textContent = 'Scrivi prima il testo in 1 Testo.'; return; }
+    ACE.busy = true; this.disabled = true; var t0 = Date.now();
+    try {
+      m.textContent = 'Mi collego ad ACE-Step…';
+      var GC = await import('https://cdn.jsdelivr.net/npm/@gradio/client@2.8.0/+esm'), cl = await GC.Client.connect('ACE-Step/Ace-Step-v1.5');
+      var api = await cl.view_api(), ep = api && api.named_endpoints && api.named_endpoints['/generation_wrapper']; if (!ep) throw new Error('lo spazio ACE-Step è cambiato');
+      // argomenti in ordine (alcuni non hanno nome nell'API): valori di serie + i nostri per nome
+      var args = ep.parameters.map(function (q) { return q.parameter_has_default ? q.parameter_default : (/Textbox/.test(q.component || '') ? '' : null); });
+      var set = function (nm, v) { for (var i = 0; i < ep.parameters.length; i++) if (ep.parameters[i].parameter_name === nm) { args[i] = v; return; } };
+      set('generation_mode', 'custom'); set('simple_query_input', ''); set('simple_vocal_language', 'it'); set('param_4', aceCaption()); set('param_5', lyr); set('param_6', p.bpm); set('param_9', 'it'); set('param_15', +$('#ace-dur').value); set('param_16', 1);
+      var tick2 = setInterval(function () { m.textContent = 'ACE-Step sta cantando il tuo testo (può esserci coda) · ' + Math.round((Date.now() - t0) / 1000) + ' s'; }, 1000), res = null;
+      try { var pr = await cl.predict('/generation_wrapper', args); res = pr && pr.data; if (window.ACE_DEBUG) console.log('ACE', JSON.stringify(pr).slice(0, 600)); } finally { clearInterval(tick2); }
+      var f = res && res[0], url = f && (f.url || (f.value && f.value.url) || f.path); if (!url) throw new Error('nessun audio restituito');
+      out.innerHTML = '<audio controls playsinline src="' + esc(url) + '"></audio><div class="row"><a class="btn sm" href="' + esc(url) + '" download="demo-cantata.mp3" target="_blank">Salva la demo</a></div>';
+      m.textContent = 'Fatto in ' + Math.round((Date.now() - t0) / 1000) + ' s. Stile: ' + aceCaption() + '. Voce IA: usala per provare melodia e flow, non per pubblicare come tua.';
+      try { out.querySelector('audio').play(); } catch (e) {}
+    } catch (e) {
+      var w = String((e && e.message) || e);
+      m.textContent = /quota|limit|ZeroGPU/i.test(w) ? 'Limite gratuito di oggi finito per questo telefono (GPU gratuite di Hugging Face). Riprova più tardi o domani.' : 'ACE-Step non ha risposto: ' + w.slice(0, 140);
+    } finally { ACE.busy = false; $('#ace-go').disabled = false; }
+  });
   SHOW.daw = function () { applyMoodBg(moodNow()); dwWs(dwWsName()); projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */

@@ -23,3 +23,4 @@ test('aiuto e persona prima di tutto', () => {
   const r = AI.respond('dove sono le varianti?', ctx); assert.strictEqual(r.actions[0].ws, 'base');
   assert.match(AI.respond('non ce la faccio più', ctx).reply, /112/);
 });
+test('«fallo cantare» → ACE-Step', () => { const r = AI.respond('fallo cantare', { presets: [] }); assert.ok(r.actions.some(a => a.type === 'sing')); });

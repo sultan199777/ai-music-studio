@@ -463,6 +463,9 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
 #sai-sugg { margin-top: 6px; } #sai-sugg .chip { font-size: 12.5px; }
 #sai-mic.on { background: #ff5d6c; color: #fff; }
 
+.ace-box { margin: 10px 0; padding: 10px 12px; border-radius: 14px; background: rgba(183,156,255,.08); border: 1px solid rgba(183,156,255,.25); }
+.ace-box audio { width: 100%; margin-top: 8px; }
+
 /* ===== VOICE LAB (stile Cosmo: usa le variabili del tema) ===== */
 .vl .vl-auto{font-size:1.25rem;min-height:60px;margin:8px 0 4px;letter-spacing:.04em}
 .vl .vl-hint{margin:2px 0 8px}
@@ -674,6 +677,9 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
   <section class="dw-panel" id="dw-p-omino" data-ws="base voce">
     <div class="dw-ph"><h3>Come canterai</h3><span class="tag m">Segui l'omino</span></div>
     <canvas id="dw-omino" style="width:100%;height:190px;display:block"></canvas>
+    <div class="ace-box"><b>Senti come suonerebbe cantata (tipo Suno)</b><p class="small muted">ACE-Step 1.5 (gratis, licenza MIT) canta il tuo testo con una voce IA, nello stile e nell'emozione della tua base: serve a provare melodia e flow, poi la rifai con la tua voce. Il testo va ai server pubblici di ACE-Step; c'è un limite gratuito al giorno.</p>
+      <div class="row"><select id="ace-dur" aria-label="Durata"><option value="30">30 secondi</option><option value="60" selected>1 minuto</option><option value="120">2 minuti</option></select><select id="ace-voice" aria-label="Voce"><option value="male vocals">voce maschile</option><option value="female vocals">voce femminile</option></select><button class="btn pri" id="ace-go">🎤 Fallo cantare</button></div>
+      <div class="status" id="ace-msg"></div><div id="ace-out"></div></div>
     <label class="small"><input type="checkbox" id="dw-omino-sing" checked> Fai cantare l'omino (voce guida sintetica: ti fa sentire dove entrano le parole e la melodia; si spegne da sola quando registri la tua voce)</label>
     <p class="small muted">Premi ▶ in alto: l'omino canta il tuo testo a tempo sulla base, ti dice quando entrare, cosa tenere e dove respirare.</p>
   </section>
@@ -856,7 +862,7 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 17:50</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 18:03</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -15289,6 +15295,43 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
     }
   });
   $('#sai-txt').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); var v = this.value; this.value = ''; saiAsk(v); } });
+
+  /* ---------- ACE-Step 1.5 (MIT): il testo cantato da una voce IA, tipo Suno, per provare melodia ed emozione ----------
+     Spazio pubblico ufficiale ACE-Step/Ace-Step-v1.5 su Hugging Face (GPU gratuite con limite giornaliero), client @gradio/client (ISC). */
+  var ACE = { busy: false };
+  function aceLyrics(txt) {
+    var T = { strofa: 'verse', ritornello: 'chorus', pre: 'pre-chorus', prechorus: 'pre-chorus', bridge: 'bridge', ponte: 'bridge', intro: 'intro', outro: 'outro', hook: 'chorus' };
+    return String(txt || '').split(/\r?\n/).map(function (l) { var m = l.trim().match(/^\[([^\]]+)\]$/); if (m) { var k = m[1].toLowerCase().replace(/[^a-z]/g, '').replace(/\d+$/, ''); return '[' + (T[k] || 'verse') + ']'; } return l; }).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+  function aceCaption() {
+    var p = cur().prod, st = Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre, mood = moodNow() || '';
+    var G = { trap: 'italian trap', trapdark: 'dark trap', drill: 'drill', brooklyn: 'brooklyn drill', street: 'street rap', melodico: 'melodic italian pop ballad, piano', emorap: 'emo rap, guitar', rnb: 'r&b', cloud: 'cloud rap, ambient', plugg: 'plugg', rage: 'rage trap, synth', lofi: 'lofi hip hop', boombap: 'boom bap', epico: 'cinematic rap, orchestral', estate: 'summer pop, latin', reggaeton: 'reggaeton', afrotrap: 'afro trap', clubtrap: 'club trap', jersey: 'jersey club', phonk: 'phonk', detroit: 'detroit rap' };
+    var M = { malinconico: 'melancholic, sad, emotional', dark: 'dark, mysterious', euforico: 'euphoric, energetic', aggressivo: 'aggressive, intense', romantico: 'romantic, warm', nostalgico: 'nostalgic, dreamy' };
+    return [G[p.genre] || st, M[mood] || 'emotional', $('#ace-voice').value, 'autotune', '808 bass', 'italian lyrics', p.mode === 'minore' ? 'minor key' : 'major key'].join(', ');
+  }
+  $('#ace-go').addEventListener('click', async function () {
+    var m = $('#ace-msg'), out = $('#ace-out'), s = cur(), p = s.prod; if (ACE.busy) return;
+    var lyr = aceLyrics(s.lyrics); if (!lyr) { m.textContent = 'Scrivi prima il testo in 1 Testo.'; return; }
+    ACE.busy = true; this.disabled = true; var t0 = Date.now();
+    try {
+      m.textContent = 'Mi collego ad ACE-Step…';
+      var GC = await import('https://cdn.jsdelivr.net/npm/@gradio/client@2.8.0/+esm'), cl = await GC.Client.connect('ACE-Step/Ace-Step-v1.5');
+      var api = await cl.view_api(), ep = api && api.named_endpoints && api.named_endpoints['/generation_wrapper']; if (!ep) throw new Error('lo spazio ACE-Step è cambiato');
+      // argomenti in ordine (alcuni non hanno nome nell'API): valori di serie + i nostri per nome
+      var args = ep.parameters.map(function (q) { return q.parameter_has_default ? q.parameter_default : (/Textbox/.test(q.component || '') ? '' : null); });
+      var set = function (nm, v) { for (var i = 0; i < ep.parameters.length; i++) if (ep.parameters[i].parameter_name === nm) { args[i] = v; return; } };
+      set('generation_mode', 'custom'); set('simple_query_input', ''); set('simple_vocal_language', 'it'); set('param_4', aceCaption()); set('param_5', lyr); set('param_6', p.bpm); set('param_9', 'it'); set('param_15', +$('#ace-dur').value); set('param_16', 1);
+      var tick2 = setInterval(function () { m.textContent = 'ACE-Step sta cantando il tuo testo (può esserci coda) · ' + Math.round((Date.now() - t0) / 1000) + ' s'; }, 1000), res = null;
+      try { var pr = await cl.predict('/generation_wrapper', args); res = pr && pr.data; if (window.ACE_DEBUG) console.log('ACE', JSON.stringify(pr).slice(0, 600)); } finally { clearInterval(tick2); }
+      var f = res && res[0], url = f && (f.url || (f.value && f.value.url) || f.path); if (!url) throw new Error('nessun audio restituito');
+      out.innerHTML = '<audio controls playsinline src="' + esc(url) + '"></audio><div class="row"><a class="btn sm" href="' + esc(url) + '" download="demo-cantata.mp3" target="_blank">Salva la demo</a></div>';
+      m.textContent = 'Fatto in ' + Math.round((Date.now() - t0) / 1000) + ' s. Stile: ' + aceCaption() + '. Voce IA: usala per provare melodia e flow, non per pubblicare come tua.';
+      try { out.querySelector('audio').play(); } catch (e) {}
+    } catch (e) {
+      var w = String((e && e.message) || e);
+      m.textContent = /quota|limit|ZeroGPU/i.test(w) ? 'Limite gratuito di oggi finito per questo telefono (GPU gratuite di Hugging Face). Riprova più tardi o domani.' : 'ACE-Step non ha risposto: ' + w.slice(0, 140);
+    } finally { ACE.busy = false; $('#ace-go').disabled = false; }
+  });
   SHOW.daw = function () { applyMoodBg(moodNow()); dwWs(dwWsName()); projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */

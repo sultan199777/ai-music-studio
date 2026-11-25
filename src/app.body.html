@@ -113,6 +113,9 @@
   <section class="dw-panel" id="dw-p-omino" data-ws="base voce">
     <div class="dw-ph"><h3>Come canterai</h3><span class="tag m">Segui l'omino</span></div>
     <canvas id="dw-omino" style="width:100%;height:190px;display:block"></canvas>
+    <div class="ace-box"><b>Senti come suonerebbe cantata (tipo Suno)</b><p class="small muted">ACE-Step 1.5 (gratis, licenza MIT) canta il tuo testo con una voce IA, nello stile e nell'emozione della tua base: serve a provare melodia e flow, poi la rifai con la tua voce. Il testo va ai server pubblici di ACE-Step; c'è un limite gratuito al giorno.</p>
+      <div class="row"><select id="ace-dur" aria-label="Durata"><option value="30">30 secondi</option><option value="60" selected>1 minuto</option><option value="120">2 minuti</option></select><select id="ace-voice" aria-label="Voce"><option value="male vocals">voce maschile</option><option value="female vocals">voce femminile</option></select><button class="btn pri" id="ace-go">🎤 Fallo cantare</button></div>
+      <div class="status" id="ace-msg"></div><div id="ace-out"></div></div>
     <label class="small"><input type="checkbox" id="dw-omino-sing" checked> Fai cantare l'omino (voce guida sintetica: ti fa sentire dove entrano le parole e la melodia; si spegne da sola quando registri la tua voce)</label>
     <p class="small muted">Premi ▶ in alto: l'omino canta il tuo testo a tempo sulla base, ti dice quando entrare, cosa tenere e dove respirare.</p>
   </section>
