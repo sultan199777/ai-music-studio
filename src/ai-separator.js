@@ -60,22 +60,33 @@
    * Separa a pezzi di ~40 s (con 2 s di sovrapposizione sfumata): sul telefono la memoria resta bassa
    * (il motore tiene in memoria tutto il pezzo moltiplicato per il numero di tracce).
    */
-  async function separate(L, R, mode, onProgress, onDl) {
-    R = R || L; var sr = 44100, CH = sr * 40, OV = sr * 2, n = L.length;
-    if (n <= CH + OV) return separateOne(L, R, mode, onProgress, onDl);
+  /*
+   * opt (facoltativo, pensato per l'iPhone e le canzoni intere):
+   *  mono: true → le tracce escono mono (metà memoria); left e right sono lo stesso array.
+   *  load(c) / save(c, pezzo) → ogni pezzo finito si salva (es. IndexedDB): se il telefono chiude la pagina, si riparte dal pezzo dopo.
+   */
+  async function separate(L, R, mode, onProgress, onDl, opt) {
+    R = R || L; opt = opt || {}; var sr = 44100, CH = sr * 40, OV = sr * 2, n = L.length;
+    if (n <= CH + OV && !opt.mono && !opt.save) return separateOne(L, R, mode, onProgress, onDl);
     var keys = ['vocals', 'drums', 'bass', 'other'], out = {}, wsum = new Float32Array(n), info = null;
-    keys.forEach(function (k) { out[k] = { left: new Float32Array(n), right: new Float32Array(n) }; });
+    keys.forEach(function (k) { if (opt.mono) { var m = new Float32Array(n); out[k] = { left: m, right: m }; } else out[k] = { left: new Float32Array(n), right: new Float32Array(n) }; });
     var starts = []; for (var s0 = 0; s0 < n; s0 += CH) starts.push(s0);
     for (var c = 0; c < starts.length; c++) {
       var a = Math.max(0, starts[c] - OV), b = Math.min(n, starts[c] + CH + OV);
-      var r = await separateOne(L.subarray(a, b), R.subarray(a, b), mode, function (f, t) { if (onProgress) onProgress((c + f) / starts.length, t + ' (pezzo ' + (c + 1) + ' di ' + starts.length + ')'); }, onDl);
-      info = r.info;
+      var r = opt.load ? await opt.load(c) : null, fresh = !r;
+      if (fresh) {
+        r = await separateOne(L.subarray(a, b), R.subarray(a, b), mode, function (f, t) { if (onProgress) onProgress((c + f) / starts.length, t + ' (pezzo ' + (c + 1) + ' di ' + starts.length + ')'); }, onDl);
+        info = r.info;
+        if (opt.mono || opt.save) { var mr = { info: r.info }; keys.forEach(function (k) { var x = new Float32Array(b - a); for (var j = 0; j < x.length; j++) x[j] = (r[k].left[j] + r[k].right[j]) / 2; mr[k] = x; }); r = mr; if (opt.save) await opt.save(c, r); }
+      } else { info = r.info || info; if (onProgress) onProgress((c + 1) / starts.length, 'Pezzo ' + (c + 1) + ' già fatto prima (ripreso)'); }
       for (var i = a; i < b; i++) {
         var w = 1; if (c > 0 && i < starts[c] + OV) w = (i - a) / (2 * OV); if (c < starts.length - 1 && i > starts[c] + CH - OV) w = Math.min(w, (b - i) / (2 * OV));
-        wsum[i] += w; keys.forEach(function (k) { out[k].left[i] += r[k].left[i - a] * w; out[k].right[i] += r[k].right[i - a] * w; });
+        wsum[i] += w;
+        if (opt.mono || opt.save) keys.forEach(function (k) { out[k].left[i] += r[k][i - a] * w; if (!opt.mono) out[k].right[i] += r[k][i - a] * w; });
+        else keys.forEach(function (k) { out[k].left[i] += r[k].left[i - a] * w; out[k].right[i] += r[k].right[i - a] * w; });
       }
     }
-    for (i = 0; i < n; i++) if (wsum[i] > 0) keys.forEach(function (k) { out[k].left[i] /= wsum[i]; out[k].right[i] /= wsum[i]; });
+    for (i = 0; i < n; i++) if (wsum[i] > 0) keys.forEach(function (k) { out[k].left[i] /= wsum[i]; if (out[k].right !== out[k].left) out[k].right[i] /= wsum[i]; });
     out.info = info; return out;
   }
   async function separateOne(L, R, mode, onProgress, onDl) {
