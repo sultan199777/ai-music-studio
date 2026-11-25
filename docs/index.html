@@ -562,6 +562,11 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     <details><summary class="small">Regola i numeri a mano (ogni slider cambia il suono)</summary><div id="dna-sl"></div><div class="row"><button class="btn sm" id="dna-reset">Torna ai numeri dello stile</button></div></details>
     <div class="row" style="margin-top:8px"><input id="dna-name" maxlength="40" placeholder="Nome del tuo stile (es. Notte di Milano)" style="flex:1"><button class="btn sm" id="dna-save">Salva questo stile</button></div>
   </section>
+  <section class="dw-panel" id="dw-p-omino" data-ws="base voce">
+    <div class="dw-ph"><h3>Come canterai</h3><span class="tag m">Segui l'omino</span></div>
+    <canvas id="dw-omino" style="width:100%;height:190px;display:block"></canvas>
+    <p class="small muted">Premi ▶ in alto: l'omino canta il tuo testo a tempo sulla base, ti dice quando entrare, cosa tenere e dove respirare.</p>
+  </section>
   <section class="dw-panel" id="dw-p-play" data-ws="base">
     <div class="dw-ph"><h3>Ascolta e cambia</h3></div>
     <div class="row" id="dwp-actions"></div>
@@ -740,7 +745,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 15:48</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 15:55</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -1115,7 +1120,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">362 test automatici superati su 362 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">363 test automatici superati su 363 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -5998,6 +6003,79 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   }
   function names() { var o = {}; for (var k in SOUNDS) o[k] = SOUNDS[k].nome; for (k in VOX) o['v:' + k] = VOX[k].nome; return o; }
   return { SOUNDS: SOUNDS, VOX: VOX, LEX: LEX, readLine: readLine, plan: plan, renderSfx: renderSfx, renderVox: renderVox, lastWord: lastWord, pitch: pitch, sound: sound, names: names, rng: rng };
+});
+
+/*
+ * L'omino che canta: mostra COME e QUANDO cantare sulla base, a tempo con lo Studio.
+ * Dalla mappa della canzone (righe e parole con inizio/fine in secondi) calcola in ogni istante:
+ *  bocca (aperta sulle parole, più aperta sulle vocali lunghe), parola attuale, prossima entrata, "respira", "tieni".
+ * Disegno su canvas (leggero, niente librerie). state() è puro e testabile; draw() disegna.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.Omino = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  /** Stato a tempo t (secondi). map = SongMap. beatSec = durata di un battito. */
+  function state(map, t, beatSec) {
+    var L = (map && map.lines) || [], out = { open: 0, word: '', line: '', next: '', cue: '', lineIdx: -1, bounce: 0 };
+    beatSec = beatSec || 0.5; out.bounce = Math.pow(Math.max(0, Math.cos(Math.PI * ((t / beatSec) % 1))), 6);
+    for (var i = 0; i < L.length; i++) {
+      var l = L[i], ws = l.words || [];
+      if (!ws.length) continue;
+      var a = ws[0].start, z = ws[ws.length - 1].end;
+      if (t < a) { // prima della riga: conto alla rovescia
+        var dt = a - t; out.next = l.text; out.lineIdx = i;
+        out.cue = dt < beatSec * 4 ? 'Entra tra ' + Math.max(1, Math.ceil(dt / beatSec)) : (dt > 1.5 && i > 0 ? 'Respira' : 'Pronto…');
+        return out;
+      }
+      if (t <= z + 0.05) {
+        out.line = l.text; out.lineIdx = i; out.next = L[i + 1] ? L[i + 1].text : '';
+        for (var k = 0; k < ws.length; k++) {
+          var w = ws[k];
+          if (t >= w.start && t <= w.end) {
+            var d = Math.max(0.05, w.end - w.start), u = (t - w.start) / d, syl = Math.max(1, Math.round(d / 0.18));
+            out.word = w.w; out.open = 0.35 + 0.65 * Math.abs(Math.sin(Math.PI * u * syl));
+            if (k === ws.length - 1 && d > 0.6) { out.open = Math.max(out.open, 0.8); out.cue = 'Tieni «' + String(w.w).replace(/[^\wàèéìòù'-]/gi, '') + '»'; }
+            return out;
+          }
+        }
+        out.open = 0.08; return out; // tra due parole della stessa riga
+      }
+    }
+    out.cue = L.length ? 'Fine' : 'Scrivi il testo per vedermi cantare';
+    return out;
+  }
+  /** Disegna l'omino su un canvas 2D. mood → colore. */
+  function draw(cv, st, mood) {
+    var g = cv.getContext('2d'), W = cv.width, H = cv.height, dpr = W / (cv.clientWidth || W);
+    var col = { aggressivo: '#ff5d5d', malinconico: '#6f9cff', dark: '#a77bff', euforico: '#ffb454', romantico: '#ff8fc8', nostalgico: '#4fd1c5' }[mood] || '#e3c48f';
+    g.clearRect(0, 0, W, H);
+    var cx = W * 0.27, by = H * 0.92 - st.bounce * 6 * dpr, s = H / 220;
+    g.lineCap = 'round'; g.lineWidth = 7 * s; g.strokeStyle = col; g.fillStyle = col;
+    // corpo e braccia (il braccio col microfono sale quando canta)
+    g.beginPath(); g.moveTo(cx, by - 70 * s); g.lineTo(cx, by - 20 * s); g.stroke();
+    g.beginPath(); g.moveTo(cx, by - 60 * s); g.lineTo(cx - 28 * s, by - 35 * s); g.stroke();
+    var arm = 12 + st.open * 14; g.beginPath(); g.moveTo(cx, by - 60 * s); g.lineTo(cx + 22 * s, by - 60 * s - arm * s); g.stroke();
+    g.beginPath(); g.arc(cx + 24 * s, by - 66 * s - arm * s, 6 * s, 0, 7); g.fill(); // microfono
+    g.beginPath(); g.moveTo(cx, by - 20 * s); g.lineTo(cx - 18 * s, by); g.moveTo(cx, by - 20 * s); g.lineTo(cx + 18 * s, by); g.stroke();
+    // testa
+    var hy = by - 100 * s; g.lineWidth = 5 * s; g.beginPath(); g.arc(cx, hy, 28 * s, 0, 7); g.stroke();
+    g.beginPath(); g.arc(cx - 10 * s, hy - 7 * s, 3 * s, 0, 7); g.arc(cx + 10 * s, hy - 7 * s, 3 * s, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(cx, hy + 11 * s, 9 * s, Math.max(1.5, 11 * st.open) * s, 0, 0, 7); g.fill(); // bocca
+    if (st.open > 0.5) { g.globalAlpha = 0.5; for (var k = 1; k <= 3; k++) { g.beginPath(); g.arc(cx + 30 * s, hy + 8 * s, (8 + k * 9) * s, -0.5, 0.5); g.stroke(); } g.globalAlpha = 1; } // onde del suono
+    // testi a destra
+    var tx = W * 0.5, fs = Math.round(15 * s), mw = W - tx - 8 * dpr; g.textAlign = 'left'; g.textBaseline = 'top';
+    g.fillStyle = col; g.font = '700 ' + Math.round(fs * 1.25) + 'px system-ui, sans-serif'; g.fillText(st.word || st.cue || '', tx, H * 0.12, mw);
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.font = '500 ' + fs + 'px system-ui, sans-serif'; wrap(g, st.line || st.next || '', tx, H * 0.34, mw, fs * 1.3, 3);
+    if (st.line && st.next) { g.fillStyle = 'rgba(255,255,255,.45)'; g.font = '400 ' + Math.round(fs * 0.85) + 'px system-ui, sans-serif'; wrap(g, 'Dopo: ' + st.next, tx, H * 0.72, mw, fs * 1.1, 2); }
+  }
+  function wrap(g, txt, x, y, mw, lh, max) {
+    var ws = String(txt).split(/\s+/), line = '', n = 0;
+    for (var i = 0; i < ws.length; i++) { var t2 = line ? line + ' ' + ws[i] : ws[i]; if (g.measureText(t2).width > mw && line) { g.fillText(line, x, y + n * lh); n++; line = ws[i]; if (n >= max) return; } else line = t2; }
+    if (line && n < max) g.fillText(line, x, y + n * lh);
+  }
+  return { state: state, draw: draw };
 });
 
 /*
@@ -12582,7 +12660,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
       var lp = SESSION.lastPlay = { t: performance.now(), ctx: coachCtx(), dur: mx.samples.length / mx.sr };
       var ok = playBuf(mx.samples, mx.sr, karaokeTick(mx.bpm), function () { $('#kar').innerHTML = '<div><b>Fine</b><small>Premi di nuovo per ricantare</small></div>'; if ((performance.now() - lp.t) / 1000 > lp.dur * 0.9) coachRec('complete', lp.ctx); });
       if (!ok) { st.textContent = 'Questo browser non riesce a riprodurre audio.'; return null; }
-      st.textContent = ''; SESSION.baseMade = true; try { dwSteps(); } catch (e) {}
+      st.textContent = ''; SESSION.baseMade = true; try { dwSteps(); projLine(); DW.bufKey = ''; dwRefresh(); } catch (e) {}
       var s = cur(); if (['idea', 'testo'].indexOf(s.status) !== -1) { s.status = 'base'; persist(); }
       var b = SESSION.useImported ? null : getBase();
       $('#b-out').innerHTML = b ? '<div class="note"><b>' + esc(ALLG[b.genre].label) + '</b> in ' + NOTES[b.tonic] + ' ' + b.mode + ', ' + b.bpm + ' BPM, ' + b.bars + ' battute (' + fmt(b.duration) + ' s). Accordi: <span class="mono">' + b.progression.join(' · ') + '</span>. ' + (b.inst && (b.inst.melodia || b.inst.accordi || b.inst.pad) ? 'Strumenti: ' + ['melodia', 'accordi', 'pad'].filter(function (r) { return b.inst[r]; }).map(function (r) { return instName(b.inst[r]) + ' (' + r + ')'; }).join(', ') + '.' : 'Suoni sintetici.') + ' "Nuova variante" cambia la melodia.' + (b.sections ? '<br>Struttura: <span class="mono">' + b.sections.map(function (x) { return x.name + ' ' + x.bars; }).join(' · ') + '</span>' : '') + '</div>' : '';
@@ -12914,8 +12992,20 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   })();
   $('#sb-mood').addEventListener('change', function () { $('#bl-mood').value = this.value; });
   $('#bl-mood').addEventListener('change', function () { $('#sb-mood').value = this.value; });
-  $('#sb-make').addEventListener('click', function () { var s = cur(); Promise.resolve(runBrain(!!(s.lyrics && s.brainFor === SultanBrain.hash(s.lyrics.trim())))).then(refApply); });
-  $('#sb-wild').addEventListener('click', function () { runBrain(false, null, null, true); });
+  /* base nuova da un'atmosfera (quella scelta in «Suona come», altrimenti trap/drill/street a caso): stravolge davvero
+     genere, velocità, strumenti, kit, giro e ritmo. Serve quando non c'è ancora il testo. */
+  function atmQuick(el) {
+    var p = cur().prod, v = LIB.settings.varStyle || '', w = { trap: 3, trapdark: 3, drill: 3, brooklyn: 2, street: 2, plugg: 1.5, rage: 1.2, emorap: 1.2, cloud: 1, phonk: 1 };
+    var sp = v.slice(0, 2) === 'a:' ? StylePresets.pickMany(1, null, Date.now() % 1e9, v.slice(2))[0] : (v.slice(0, 2) === 'f:' && folderProf(v.slice(2)) ? learnSpecs2(folderProf(v.slice(2)), 2)[Math.floor(Math.random() * 2)] : StylePresets.pickMany(1, textWeights() || w, Date.now() % 1e9)[0]);
+    if (!sp) return; stopPlay(); dwStop();
+    p.genre = sp.genre; p.bpm = sp.bpm; p.seed = sp.seed || (1 + Math.floor(Math.random() * 99999)); p.inst = Object.assign({}, sp.inst); p.kit = sp.kit; p.arpPattern = sp.arpPattern; p.mix = null;
+    p.groove = sp.groove || null; p.prog = sp.prog || null; p.mode = sp.mode || p.mode; if (sp.tonic != null) p.tonic = sp.tonic; else p.tonic = Math.floor(Math.random() * 12); p.tune = sp.tune || null; p.bassStyle = sp.bassStyle !== undefined ? sp.bassStyle : p.bassStyle; p.melSeed = (p.melSeed || 0) + 1; p.atmNome = sp.nome || null;
+    persist(); try { fillInst(); fillBase(); dwFill(); } catch (e) {} dwChanged(true); projLine();
+    var msg = 'Base nuova: ' + (sp.nome || sp.genre) + ' · ' + p.bpm + ' BPM' + (cur().lyrics && cur().lyrics.trim() ? '' : '. Scrivi il testo in «1 Testo» e la base si adatterà alle tue parole (forma ed effetti).');
+    if (el) el.textContent = msg; var sm = $('#sb-msg'); if (sm) sm.textContent = msg; makeAndPlay(false);
+  }
+  $('#sb-make').addEventListener('click', function () { var s = cur(); if (!(s.lyrics || '').trim()) { atmQuick($('#sb-msg')); return; } Promise.resolve(runBrain(!!(s.lyrics && s.brainFor === SultanBrain.hash(s.lyrics.trim())))).then(refApply); });
+  $('#sb-wild').addEventListener('click', function () { if (!(cur().lyrics || '').trim()) { atmQuick($('#sb-msg')); return; } runBrain(false, null, null, true); });
   /* quello che scrivi nel campo stile si applica da solo (Invio o quando esci dal campo) */
   var sbLast = '';
   function sbAuto() { var v = ($('#sb-style') || {}).value || ''; if (v.trim() && v !== sbLast && cur().lyrics.trim()) { sbLast = v; runBrain(false); } }
@@ -12980,7 +13070,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   ['#dw-lyrics', '#st-lyrics'].forEach(function (q) { var el = $(q); if (el) el.addEventListener('input', sbChipsLater); }); $('#sb-mood').addEventListener('change', sbChips); setTimeout(sbChips, 1500);
   /* il testo decide la base: se non hai scelto tu il genere a mano, parte il Cervello Sultan (una base diversa per ogni testo) */
   function brainFirst(again) { var s = cur(); if (s.lyrics && s.lyrics.trim() && !s.genreManual && (again || s.brainFor !== SultanBrain.hash(s.lyrics.trim()))) { runBrain(again && s.brainFor === SultanBrain.hash(s.lyrics.trim())); return true; } return false; }
-  $('#b-play').addEventListener('click', function () { if (!brainFirst(false)) makeAndPlay(false); });
+  $('#b-play').addEventListener('click', function () { if (brainFirst(false)) return; var p = cur().prod; if (!(cur().lyrics || '').trim() && !cur().genreManual && p.genre === 'melodico' && !p.atmNome) { atmQuick($('#b-status')); return; } makeAndPlay(false); });
   $('#b-mel').addEventListener('click', function () { var p = cur().prod; p.melSeed = (p.melSeed || 0) + 1;
     /* anche gli strumenti della melodia e degli accordi cambiano, così la differenza si sente */
     var R = Instruments.RECIPES[p.genre] || {}, ok = function (id) { return !BANNED_INST[id]; }, ml = (R.melodia || []).filter(ok), ac = (R.accordi || []).filter(ok);
@@ -12990,6 +13080,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
      cassa, rullante, hi-hat, mix e melodia cambiano, lo stile resta. Prima cambiava solo il seme e si sentiva la stessa base. */
   $('#b-new').addEventListener('click', function () {
     if (brainFirst(true)) return;
+    if (!(cur().lyrics || '').trim() && !cur().genreManual) { atmQuick($('#b-status')); return; }
     var s = cur(), p = s.prod; s.varN = (s.varN || 0) + 1;
     var rx = rxFor({ genre: p.genre, seed: p.seed, heavy: p.heavy, mode: p.mode }, s.varN, true);
     p.groove = rx.groove; p.tune = rx.tune; p.melSeed = rx.melSeed; p.prog = rx.prog; p.fromLearn = 0;
@@ -13398,8 +13489,16 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     };
     loop(); dwSteps();
   }
+  /* omino che canta: a tempo con lo Studio */
+  var OM = { last: -1 };
+  function ominoTick(t) {
+    var cv = $('#dw-omino'); if (!cv || cv.offsetParent === null) return; var b = SESSION.base; if (!b) return;
+    var dpr = Math.min(2, window.devicePixelRatio || 1), w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr); if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    var map = null; try { map = songMap(); } catch (e) {}
+    Omino.draw(cv, Omino.state(map, t, 60 / b.bpm), document.body.dataset.mood || '');
+  }
   function dwPos(t) {
-    var b = SESSION.base; if (!b) return;
+    var b = SESSION.base; if (!b) return; try { ominoTick(t); } catch (e) {}
     var barSec = 240 / b.bpm, x = t / barSec * DW.px, ph = $('#dw-playhead'); if (ph) ph.style.transform = 'translateX(' + x + 'px)';
     $('#dw-time').textContent = Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
     var bar = Math.floor(t / barSec), sec = (b.sections || []).filter(function (s) { return t >= s.startSec && t < s.endSec; })[0];
@@ -13442,7 +13541,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     $('#dw-arrinfo').textContent = (Arranger.STYLES[b.genre] ? Arranger.STYLES[b.genre].label : b.genre) + ' · ' + NOTES[b.tonic] + ' ' + b.mode + ' · ' + b.bpm + ' BPM · ' + b.bars + ' battute (' + fmt(b.duration, 0) + ' s)' + (map ? ' · forma dal testo' : '');
     dwPos(DW.from || 0);
   }
-  async function dwRefresh() { try { var b = await dwBase(); dwBuffers(b); dwDraw(b); try { pfRender(); } catch (e) {} dwSteps(); if (window.__prReady) prDraw(); } catch (e) { $('#dw-msg').textContent = 'Non riesco a creare la base.'; } }
+  async function dwRefresh() { try { var b = await dwBase(); dwBuffers(b); dwDraw(b); try { pfRender(); } catch (e) {} try { ominoTick(DW.from || 0); } catch (e) {} dwSteps(); if (window.__prReady) prDraw(); } catch (e) { $('#dw-msg').textContent = 'Non riesco a creare la base.'; } }
   var dwT = null;
   function dwChanged(rebuildAgents) { try { projLine(); } catch (e) {} SESSION.baseKey = ''; DW.bufKey = ''; persist(); clearTimeout(dwT); dwT = setTimeout(function () { dwRefresh(); if (rebuildAgents) agentsRun(); }, 250); }
 

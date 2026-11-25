@@ -505,7 +505,7 @@
       var lp = SESSION.lastPlay = { t: performance.now(), ctx: coachCtx(), dur: mx.samples.length / mx.sr };
       var ok = playBuf(mx.samples, mx.sr, karaokeTick(mx.bpm), function () { $('#kar').innerHTML = '<div><b>Fine</b><small>Premi di nuovo per ricantare</small></div>'; if ((performance.now() - lp.t) / 1000 > lp.dur * 0.9) coachRec('complete', lp.ctx); });
       if (!ok) { st.textContent = 'Questo browser non riesce a riprodurre audio.'; return null; }
-      st.textContent = ''; SESSION.baseMade = true; try { dwSteps(); } catch (e) {}
+      st.textContent = ''; SESSION.baseMade = true; try { dwSteps(); projLine(); DW.bufKey = ''; dwRefresh(); } catch (e) {}
       var s = cur(); if (['idea', 'testo'].indexOf(s.status) !== -1) { s.status = 'base'; persist(); }
       var b = SESSION.useImported ? null : getBase();
       $('#b-out').innerHTML = b ? '<div class="note"><b>' + esc(ALLG[b.genre].label) + '</b> in ' + NOTES[b.tonic] + ' ' + b.mode + ', ' + b.bpm + ' BPM, ' + b.bars + ' battute (' + fmt(b.duration) + ' s). Accordi: <span class="mono">' + b.progression.join(' · ') + '</span>. ' + (b.inst && (b.inst.melodia || b.inst.accordi || b.inst.pad) ? 'Strumenti: ' + ['melodia', 'accordi', 'pad'].filter(function (r) { return b.inst[r]; }).map(function (r) { return instName(b.inst[r]) + ' (' + r + ')'; }).join(', ') + '.' : 'Suoni sintetici.') + ' "Nuova variante" cambia la melodia.' + (b.sections ? '<br>Struttura: <span class="mono">' + b.sections.map(function (x) { return x.name + ' ' + x.bars; }).join(' · ') + '</span>' : '') + '</div>' : '';
@@ -837,8 +837,20 @@
   })();
   $('#sb-mood').addEventListener('change', function () { $('#bl-mood').value = this.value; });
   $('#bl-mood').addEventListener('change', function () { $('#sb-mood').value = this.value; });
-  $('#sb-make').addEventListener('click', function () { var s = cur(); Promise.resolve(runBrain(!!(s.lyrics && s.brainFor === SultanBrain.hash(s.lyrics.trim())))).then(refApply); });
-  $('#sb-wild').addEventListener('click', function () { runBrain(false, null, null, true); });
+  /* base nuova da un'atmosfera (quella scelta in «Suona come», altrimenti trap/drill/street a caso): stravolge davvero
+     genere, velocità, strumenti, kit, giro e ritmo. Serve quando non c'è ancora il testo. */
+  function atmQuick(el) {
+    var p = cur().prod, v = LIB.settings.varStyle || '', w = { trap: 3, trapdark: 3, drill: 3, brooklyn: 2, street: 2, plugg: 1.5, rage: 1.2, emorap: 1.2, cloud: 1, phonk: 1 };
+    var sp = v.slice(0, 2) === 'a:' ? StylePresets.pickMany(1, null, Date.now() % 1e9, v.slice(2))[0] : (v.slice(0, 2) === 'f:' && folderProf(v.slice(2)) ? learnSpecs2(folderProf(v.slice(2)), 2)[Math.floor(Math.random() * 2)] : StylePresets.pickMany(1, textWeights() || w, Date.now() % 1e9)[0]);
+    if (!sp) return; stopPlay(); dwStop();
+    p.genre = sp.genre; p.bpm = sp.bpm; p.seed = sp.seed || (1 + Math.floor(Math.random() * 99999)); p.inst = Object.assign({}, sp.inst); p.kit = sp.kit; p.arpPattern = sp.arpPattern; p.mix = null;
+    p.groove = sp.groove || null; p.prog = sp.prog || null; p.mode = sp.mode || p.mode; if (sp.tonic != null) p.tonic = sp.tonic; else p.tonic = Math.floor(Math.random() * 12); p.tune = sp.tune || null; p.bassStyle = sp.bassStyle !== undefined ? sp.bassStyle : p.bassStyle; p.melSeed = (p.melSeed || 0) + 1; p.atmNome = sp.nome || null;
+    persist(); try { fillInst(); fillBase(); dwFill(); } catch (e) {} dwChanged(true); projLine();
+    var msg = 'Base nuova: ' + (sp.nome || sp.genre) + ' · ' + p.bpm + ' BPM' + (cur().lyrics && cur().lyrics.trim() ? '' : '. Scrivi il testo in «1 Testo» e la base si adatterà alle tue parole (forma ed effetti).');
+    if (el) el.textContent = msg; var sm = $('#sb-msg'); if (sm) sm.textContent = msg; makeAndPlay(false);
+  }
+  $('#sb-make').addEventListener('click', function () { var s = cur(); if (!(s.lyrics || '').trim()) { atmQuick($('#sb-msg')); return; } Promise.resolve(runBrain(!!(s.lyrics && s.brainFor === SultanBrain.hash(s.lyrics.trim())))).then(refApply); });
+  $('#sb-wild').addEventListener('click', function () { if (!(cur().lyrics || '').trim()) { atmQuick($('#sb-msg')); return; } runBrain(false, null, null, true); });
   /* quello che scrivi nel campo stile si applica da solo (Invio o quando esci dal campo) */
   var sbLast = '';
   function sbAuto() { var v = ($('#sb-style') || {}).value || ''; if (v.trim() && v !== sbLast && cur().lyrics.trim()) { sbLast = v; runBrain(false); } }
@@ -903,7 +915,7 @@
   ['#dw-lyrics', '#st-lyrics'].forEach(function (q) { var el = $(q); if (el) el.addEventListener('input', sbChipsLater); }); $('#sb-mood').addEventListener('change', sbChips); setTimeout(sbChips, 1500);
   /* il testo decide la base: se non hai scelto tu il genere a mano, parte il Cervello Sultan (una base diversa per ogni testo) */
   function brainFirst(again) { var s = cur(); if (s.lyrics && s.lyrics.trim() && !s.genreManual && (again || s.brainFor !== SultanBrain.hash(s.lyrics.trim()))) { runBrain(again && s.brainFor === SultanBrain.hash(s.lyrics.trim())); return true; } return false; }
-  $('#b-play').addEventListener('click', function () { if (!brainFirst(false)) makeAndPlay(false); });
+  $('#b-play').addEventListener('click', function () { if (brainFirst(false)) return; var p = cur().prod; if (!(cur().lyrics || '').trim() && !cur().genreManual && p.genre === 'melodico' && !p.atmNome) { atmQuick($('#b-status')); return; } makeAndPlay(false); });
   $('#b-mel').addEventListener('click', function () { var p = cur().prod; p.melSeed = (p.melSeed || 0) + 1;
     /* anche gli strumenti della melodia e degli accordi cambiano, così la differenza si sente */
     var R = Instruments.RECIPES[p.genre] || {}, ok = function (id) { return !BANNED_INST[id]; }, ml = (R.melodia || []).filter(ok), ac = (R.accordi || []).filter(ok);
@@ -913,6 +925,7 @@
      cassa, rullante, hi-hat, mix e melodia cambiano, lo stile resta. Prima cambiava solo il seme e si sentiva la stessa base. */
   $('#b-new').addEventListener('click', function () {
     if (brainFirst(true)) return;
+    if (!(cur().lyrics || '').trim() && !cur().genreManual) { atmQuick($('#b-status')); return; }
     var s = cur(), p = s.prod; s.varN = (s.varN || 0) + 1;
     var rx = rxFor({ genre: p.genre, seed: p.seed, heavy: p.heavy, mode: p.mode }, s.varN, true);
     p.groove = rx.groove; p.tune = rx.tune; p.melSeed = rx.melSeed; p.prog = rx.prog; p.fromLearn = 0;
@@ -1321,8 +1334,16 @@
     };
     loop(); dwSteps();
   }
+  /* omino che canta: a tempo con lo Studio */
+  var OM = { last: -1 };
+  function ominoTick(t) {
+    var cv = $('#dw-omino'); if (!cv || cv.offsetParent === null) return; var b = SESSION.base; if (!b) return;
+    var dpr = Math.min(2, window.devicePixelRatio || 1), w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr); if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    var map = null; try { map = songMap(); } catch (e) {}
+    Omino.draw(cv, Omino.state(map, t, 60 / b.bpm), document.body.dataset.mood || '');
+  }
   function dwPos(t) {
-    var b = SESSION.base; if (!b) return;
+    var b = SESSION.base; if (!b) return; try { ominoTick(t); } catch (e) {}
     var barSec = 240 / b.bpm, x = t / barSec * DW.px, ph = $('#dw-playhead'); if (ph) ph.style.transform = 'translateX(' + x + 'px)';
     $('#dw-time').textContent = Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
     var bar = Math.floor(t / barSec), sec = (b.sections || []).filter(function (s) { return t >= s.startSec && t < s.endSec; })[0];
@@ -1365,7 +1386,7 @@
     $('#dw-arrinfo').textContent = (Arranger.STYLES[b.genre] ? Arranger.STYLES[b.genre].label : b.genre) + ' · ' + NOTES[b.tonic] + ' ' + b.mode + ' · ' + b.bpm + ' BPM · ' + b.bars + ' battute (' + fmt(b.duration, 0) + ' s)' + (map ? ' · forma dal testo' : '');
     dwPos(DW.from || 0);
   }
-  async function dwRefresh() { try { var b = await dwBase(); dwBuffers(b); dwDraw(b); try { pfRender(); } catch (e) {} dwSteps(); if (window.__prReady) prDraw(); } catch (e) { $('#dw-msg').textContent = 'Non riesco a creare la base.'; } }
+  async function dwRefresh() { try { var b = await dwBase(); dwBuffers(b); dwDraw(b); try { pfRender(); } catch (e) {} try { ominoTick(DW.from || 0); } catch (e) {} dwSteps(); if (window.__prReady) prDraw(); } catch (e) { $('#dw-msg').textContent = 'Non riesco a creare la base.'; } }
   var dwT = null;
   function dwChanged(rebuildAgents) { try { projLine(); } catch (e) {} SESSION.baseKey = ''; DW.bufKey = ''; persist(); clearTimeout(dwT); dwT = setTimeout(function () { dwRefresh(); if (rebuildAgents) agentsRun(); }, 250); }
 
