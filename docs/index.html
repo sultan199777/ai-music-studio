@@ -683,7 +683,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 08:24</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 08:27</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -1043,7 +1043,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">296 test automatici superati su 296 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">297 test automatici superati su 297 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -4906,6 +4906,13 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     });
     return out.slice(0, 3);
   }
+  /* Ollama (gratuito, sul tuo computer, http://localhost:11434): modelli più grandi = italiano migliore. Nessuna chiave. */
+  var OLLAMA = 'http://localhost:11434', ollamaModel = null;
+  async function pingOllama(url) {
+    try { var r = await fetch((url || OLLAMA) + '/api/tags'); if (!r.ok) return null; var j = await r.json(), names = (j.models || []).map(function (m) { return m.name; });
+      var best = null; ['qwen2\\.5', 'qwen3', 'gemma', 'llama3', 'mistral'].some(function (k) { var f = names.filter(function (n) { return new RegExp(k, 'i').test(n); }); if (f.length) { best = f[0]; return true; } return false; }); return { models: names, best: best || names[0] || null }; } catch (e) { return null; }
+  }
+  async function useOllama(model) { var p = await pingOllama(); if (!p || !p.models.length) throw new Error('Ollama non risponde su questo computer (serve avviarlo con OLLAMA_ORIGINS impostato al sito) o non ha modelli.'); ollamaModel = model || p.best; return ollamaModel; }
   var engine = null, loadedId = null;
   async function load(modelId, onProgress) {
     if (!supported()) throw new Error('Questo telefono/browser non ha WebGPU: l\'assistente AI non può partire. Il cervello Sultan resta attivo.');
@@ -4915,11 +4922,15 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     loadedId = modelId; return engine;
   }
   async function ask(task, ctx) {
+    if (ollamaModel) {
+      var rr = await fetch(OLLAMA + '/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ollamaModel, stream: false, messages: buildPrompt(task, ctx), options: { temperature: 0.9, top_p: 0.92, num_predict: 200 } }) });
+      if (!rr.ok) throw new Error('Ollama ha risposto ' + rr.status); var jj = await rr.json(); return clean(jj.message && jj.message.content, ctx && ctx.line);
+    }
     if (!engine) throw new Error('Assistente non attivo');
     var r = await engine.chat.completions.create({ messages: buildPrompt(task, ctx), temperature: 0.9, top_p: 0.92, max_tokens: 160 });
     return clean(r.choices[0].message.content, ctx && ctx.line);
   }
-  return { MODELS: MODELS, TASKS: TASKS, supported: supported, buildPrompt: buildPrompt, clean: clean, load: load, ask: ask, LIB_URL: LIB_URL };
+  return { pingOllama: pingOllama, useOllama: useOllama, MODELS: MODELS, TASKS: TASKS, supported: supported, buildPrompt: buildPrompt, clean: clean, load: load, ask: ask, LIB_URL: LIB_URL };
 });
 
 /*
@@ -11115,7 +11126,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   /* ===== Assistente testi (AI locale, opzionale) ===== */
   (function () {
     var sel = $('#ai-model'); if (!sel) return;
-    sel.innerHTML = LocalAI.MODELS.map(function (m) { return '<option value="' + m.id + '">' + m.label + ' · ' + m.note + '</option>'; }).join('');
+    sel.innerHTML = '<option value="ollama">Ollama sul computer (migliore, se lo hai)</option>' + LocalAI.MODELS.map(function (m) { return '<option value="' + m.id + '">' + m.label + ' · ' + m.note + '</option>'; }).join('');
     function ready(on) { ['#ai-v', '#ai-p', '#ai-c'].forEach(function (i) { $(i).disabled = !on; }); }
     var LINE = '';
     function lyTa() { var d = $('#dw-lyrics'); return d && d.offsetParent ? d : $('#st-lyrics'); }
@@ -11126,7 +11137,8 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
       return LINE;
     }
     $('#ai-on').addEventListener('click', async function () {
-      var m = $('#ai-msg'); if (!LocalAI.supported()) { m.textContent = 'Questo browser non ha WebGPU: l\'assistente AI non può partire qui. Il cervello Sultan funziona lo stesso.'; return; }
+      var m = $('#ai-msg');
+      if (sel.value === 'ollama') { try { var nm = await LocalAI.useOllama(); m.textContent = 'Collegato a Ollama (' + nm + '). Seleziona una riga e scegli cosa vuoi.'; ready(true); } catch (e) { m.textContent = e.message; } return; } if (!LocalAI.supported()) { m.textContent = 'Questo browser non ha WebGPU: l\'assistente AI non può partire qui. Il cervello Sultan funziona lo stesso.'; return; }
       m.textContent = 'Scarico il modello (solo la prima volta)…'; this.disabled = true;
       try { await LocalAI.load(sel.value, function (p) { m.textContent = (p && p.text ? p.text : 'Carico…').slice(0, 90) + (p && p.progress != null ? ' ' + Math.round(p.progress * 100) + '%' : ''); }); m.textContent = 'Assistente pronto. Seleziona una riga nel testo e scegli cosa vuoi.'; ready(true); }
       catch (e) { m.textContent = 'Non è partito: ' + (e && e.message ? e.message : e); this.disabled = false; }
