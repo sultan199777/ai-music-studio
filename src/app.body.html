@@ -89,7 +89,7 @@
     <div id="dwp-out"></div>
     <details style="margin-top:10px"><summary class="small">Altre opzioni (ascolto dell'Orecchio, salva)</summary><div class="row" id="dwp-more" style="margin-top:8px"></div></details>
   </section>
-  <section class="dw-panel" id="dw-p-prod" data-ws="base voce">
+  <section class="dw-panel" id="dw-p-prod" data-adv="voce" data-ws="base voce">
     <div class="dw-ph"><h3>Produzione: effetti e voci</h3><span class="tag m">Dal tuo testo</span></div>
     <p class="small muted">L'IA legge ogni riga (immagini, emozioni, punchline) e mette suoni da film e interventi sulla tua voce a tempo con la base: eco, risposte pitchate, cori, voce scura, reverse, ad-lib. Tutto modificabile qui sotto.</p>
     <div class="row"><button class="btn pri" id="pf-auto">L'IA rilegge il testo</button><select id="pf-dens" aria-label="Quantità"><option value="0">Poco</option><option value="1" selected>Normale</option><option value="2">Tanto</option></select><label class="small"><input type="checkbox" id="pf-on" checked> Attivi</label></div>
@@ -104,7 +104,7 @@
     </details>
     <div class="status" id="pf-msg"></div>
   </section>
-  <section class="dw-panel" id="dw-p-extra" data-ws="testo">
+  <section class="dw-panel" id="dw-p-extra" data-adv="testo" data-ws="testo">
     <details><summary><b>Assistente testi (AI locale, opzionale)</b></summary><div id="dwx-ai" style="margin-top:8px"></div></details>
     <details style="margin-top:8px"><summary><b>Rime</b></summary><div id="dwx-rh" style="margin-top:8px"></div></details>
   </section>
@@ -119,7 +119,7 @@
     <div class="status" id="dw-var-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-talk" data-ws="testo base">
+  <section class="dw-panel" id="dw-p-talk" data-adv="testo base" data-ws="testo base">
     <div class="dw-ph"><h3>Agenti</h3><span class="tag m">Modifica davvero</span></div>
     <p class="small muted">Scrivi cosa vuoi cambiare: mixer, 808, melodia, effetti, voce, master, velocità, tonalità, stile. La modifica si sente subito; se non ti piace premi Annulla.</p>
     <div class="row"><select id="dw-ai-engine"><option value="regole">Regole (subito)</option><option value="significato">IA che capisce (gratis, anche iPhone)</option><option value="browser">IA che scrive nel browser (computer)</option><option value="ollama">IA Ollama sul Mac (gratis)</option></select><select id="dw-ai-model"></select><button class="btn sm" id="dw-ai-test">Prova collegamento</button></div>
@@ -128,7 +128,7 @@
     <div id="dw-talk-log"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-agents" data-ws="base">
+  <section class="dw-panel" id="dw-p-agents" data-adv="base" data-ws="base">
     <div class="dw-ph"><h3>Agenti al lavoro</h3><span class="tag a">Imparano da te</span></div>
     <p class="small muted">Cinque assistenti lavorano da soli mentre l'app è aperta, sul telefono, gratis. Preparano proposte, inventano suoni e controllano il tuo lavoro. Ogni tua scelta li fa migliorare.</p>
     <div class="dw-agents" id="dw-agents"></div>
@@ -174,7 +174,7 @@
     <div class="status" id="dw-ds-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-clips" data-ws="voce">
+  <section class="dw-panel" id="dw-p-clips" data-adv="voce" data-ws="voce">
     <div class="dw-ph"><h3>Voce: prove e montaggio</h3><span class="tag m">Niente si perde</span></div>
     <div id="dw-cl-takes"></div>
     <div id="dw-cl-comp-box"></div>
@@ -218,6 +218,7 @@
     <div class="dw-more"><a href="#voce">Voce: autotune e caratteri</a><a href="#strumenti">Strumentario e Laboratorio</a><a href="#beatlab">Laboratorio batteria (batteria a passi, piano roll)</a><a href="#studio">Coach completo e percorso</a></div>
   </section>
 
+  <div class="dw-advbar" data-ws="testo base voce"><button class="btn" id="dw-adv">Mostra strumenti avanzati</button></div>
   <div class="dw-next" data-ws="testo"><button class="btn pri" data-next="base">Avanti: crea la base →</button></div>
   <div class="dw-next" data-ws="base"><button class="btn pri" data-next="voce">Avanti: registra la voce →</button></div>
   <div class="dw-next" data-ws="voce"><button class="btn pri" data-next="mix">Avanti: mix e salvataggio →</button></div>

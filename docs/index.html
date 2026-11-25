@@ -358,6 +358,8 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
 #pf-list .dw-prop .btn.sm,#pf-ad-list .dw-prop .btn.sm{width:auto;min-width:38px;padding:6px 8px;margin:0}
 #pf-list .dw-prop small{display:block;line-height:1.3}
 #pf-list input[type=range]{height:18px;margin:2px 0 0}
+.dw-advbar{display:flex;justify-content:center;margin:6px 0 2px}
+.dw-advbar .btn{background:transparent;border:1px dashed rgba(255,255,255,.22);font-size:13px;opacity:.85}
 
 /* ===== VOICE LAB (stile Cosmo: usa le variabili del tema) ===== */
 .vl .vl-auto{font-size:1.25rem;min-height:60px;margin:8px 0 4px;letter-spacing:.04em}
@@ -546,7 +548,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     <div id="dwp-out"></div>
     <details style="margin-top:10px"><summary class="small">Altre opzioni (ascolto dell'Orecchio, salva)</summary><div class="row" id="dwp-more" style="margin-top:8px"></div></details>
   </section>
-  <section class="dw-panel" id="dw-p-prod" data-ws="base voce">
+  <section class="dw-panel" id="dw-p-prod" data-adv="voce" data-ws="base voce">
     <div class="dw-ph"><h3>Produzione: effetti e voci</h3><span class="tag m">Dal tuo testo</span></div>
     <p class="small muted">L'IA legge ogni riga (immagini, emozioni, punchline) e mette suoni da film e interventi sulla tua voce a tempo con la base: eco, risposte pitchate, cori, voce scura, reverse, ad-lib. Tutto modificabile qui sotto.</p>
     <div class="row"><button class="btn pri" id="pf-auto">L'IA rilegge il testo</button><select id="pf-dens" aria-label="Quantità"><option value="0">Poco</option><option value="1" selected>Normale</option><option value="2">Tanto</option></select><label class="small"><input type="checkbox" id="pf-on" checked> Attivi</label></div>
@@ -561,7 +563,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     </details>
     <div class="status" id="pf-msg"></div>
   </section>
-  <section class="dw-panel" id="dw-p-extra" data-ws="testo">
+  <section class="dw-panel" id="dw-p-extra" data-adv="testo" data-ws="testo">
     <details><summary><b>Assistente testi (AI locale, opzionale)</b></summary><div id="dwx-ai" style="margin-top:8px"></div></details>
     <details style="margin-top:8px"><summary><b>Rime</b></summary><div id="dwx-rh" style="margin-top:8px"></div></details>
   </section>
@@ -576,7 +578,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     <div class="status" id="dw-var-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-talk" data-ws="testo base">
+  <section class="dw-panel" id="dw-p-talk" data-adv="testo base" data-ws="testo base">
     <div class="dw-ph"><h3>Agenti</h3><span class="tag m">Modifica davvero</span></div>
     <p class="small muted">Scrivi cosa vuoi cambiare: mixer, 808, melodia, effetti, voce, master, velocità, tonalità, stile. La modifica si sente subito; se non ti piace premi Annulla.</p>
     <div class="row"><select id="dw-ai-engine"><option value="regole">Regole (subito)</option><option value="significato">IA che capisce (gratis, anche iPhone)</option><option value="browser">IA che scrive nel browser (computer)</option><option value="ollama">IA Ollama sul Mac (gratis)</option></select><select id="dw-ai-model"></select><button class="btn sm" id="dw-ai-test">Prova collegamento</button></div>
@@ -585,7 +587,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     <div id="dw-talk-log"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-agents" data-ws="base">
+  <section class="dw-panel" id="dw-p-agents" data-adv="base" data-ws="base">
     <div class="dw-ph"><h3>Agenti al lavoro</h3><span class="tag a">Imparano da te</span></div>
     <p class="small muted">Cinque assistenti lavorano da soli mentre l'app è aperta, sul telefono, gratis. Preparano proposte, inventano suoni e controllano il tuo lavoro. Ogni tua scelta li fa migliorare.</p>
     <div class="dw-agents" id="dw-agents"></div>
@@ -631,7 +633,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     <div class="status" id="dw-ds-msg"></div>
   </section>
 
-  <section class="dw-panel" id="dw-p-clips" data-ws="voce">
+  <section class="dw-panel" id="dw-p-clips" data-adv="voce" data-ws="voce">
     <div class="dw-ph"><h3>Voce: prove e montaggio</h3><span class="tag m">Niente si perde</span></div>
     <div id="dw-cl-takes"></div>
     <div id="dw-cl-comp-box"></div>
@@ -675,6 +677,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
     <div class="dw-more"><a href="#voce">Voce: autotune e caratteri</a><a href="#strumenti">Strumentario e Laboratorio</a><a href="#beatlab">Laboratorio batteria (batteria a passi, piano roll)</a><a href="#studio">Coach completo e percorso</a></div>
   </section>
 
+  <div class="dw-advbar" data-ws="testo base voce"><button class="btn" id="dw-adv">Mostra strumenti avanzati</button></div>
   <div class="dw-next" data-ws="testo"><button class="btn pri" data-next="base">Avanti: crea la base →</button></div>
   <div class="dw-next" data-ws="base"><button class="btn pri" data-next="voce">Avanti: registra la voce →</button></div>
   <div class="dw-next" data-ws="voce"><button class="btn pri" data-next="mix">Avanti: mix e salvataggio →</button></div>
@@ -705,7 +708,7 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 12:00</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 12:08</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -13485,11 +13488,13 @@ body[data-mood="nostalgico"] { --mood-glow: rgba(20, 184, 166, .26); }
   function dwWsName() { var w = LIB.settings.ws; return ['testo', 'base', 'voce', 'mix', 'libreria'].indexOf(w) >= 0 ? w : 'testo'; }
   function dwWs(ws) {
     LIB.settings.ws = ws; persist();
-    $$('#v-daw [data-ws]').forEach(function (el) { el.hidden = (' ' + el.getAttribute('data-ws') + ' ').indexOf(' ' + ws + ' ') < 0; });
+    var adv = !!LIB.settings.adv; $$('#v-daw [data-ws]').forEach(function (el) { var a = el.getAttribute('data-adv'); el.hidden = (' ' + el.getAttribute('data-ws') + ' ').indexOf(' ' + ws + ' ') < 0 || (!adv && a && (' ' + a + ' ').indexOf(' ' + ws + ' ') >= 0); });
+    var ab = $('#dw-adv'); if (ab) ab.textContent = adv ? 'Nascondi strumenti avanzati' : 'Mostra strumenti avanzati';
     $$('#tabs a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-ws') === ws); });
     if (ws === 'base' || ws === 'voce' || ws === 'mix') setTimeout(function () { if (SESSION.base) { dwDraw(SESSION.base); prDraw(); } }, 30);
   }
 
+  $('#dw-adv').addEventListener('click', function () { LIB.settings.adv = !LIB.settings.adv; persist(); dwWs(dwWsName()); });
   /* ===== Studio a passi: porto qui i comandi del Cervello (stessi id, stessi ascolti) ===== */
   (function dwAdoptBrain() {
     function mv(id, to, wrapLabel) { var el = $('#' + id), t = $(to); if (!el || !t) return; if (wrapLabel) el = el.closest('label') || el; t.appendChild(el); }

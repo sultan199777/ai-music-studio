@@ -2085,11 +2085,13 @@
   function dwWsName() { var w = LIB.settings.ws; return ['testo', 'base', 'voce', 'mix', 'libreria'].indexOf(w) >= 0 ? w : 'testo'; }
   function dwWs(ws) {
     LIB.settings.ws = ws; persist();
-    $$('#v-daw [data-ws]').forEach(function (el) { el.hidden = (' ' + el.getAttribute('data-ws') + ' ').indexOf(' ' + ws + ' ') < 0; });
+    var adv = !!LIB.settings.adv; $$('#v-daw [data-ws]').forEach(function (el) { var a = el.getAttribute('data-adv'); el.hidden = (' ' + el.getAttribute('data-ws') + ' ').indexOf(' ' + ws + ' ') < 0 || (!adv && a && (' ' + a + ' ').indexOf(' ' + ws + ' ') >= 0); });
+    var ab = $('#dw-adv'); if (ab) ab.textContent = adv ? 'Nascondi strumenti avanzati' : 'Mostra strumenti avanzati';
     $$('#tabs a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-ws') === ws); });
     if (ws === 'base' || ws === 'voce' || ws === 'mix') setTimeout(function () { if (SESSION.base) { dwDraw(SESSION.base); prDraw(); } }, 30);
   }
 
+  $('#dw-adv').addEventListener('click', function () { LIB.settings.adv = !LIB.settings.adv; persist(); dwWs(dwWsName()); });
   /* ===== Studio a passi: porto qui i comandi del Cervello (stessi id, stessi ascolti) ===== */
   (function dwAdoptBrain() {
     function mv(id, to, wrapLabel) { var el = $('#' + id), t = $(to); if (!el || !t) return; if (wrapLabel) el = el.closest('label') || el; t.appendChild(el); }
