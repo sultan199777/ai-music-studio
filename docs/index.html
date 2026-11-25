@@ -607,6 +607,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
       <button class="dw-mode" data-sep="studio"><b>Studio</b><small>La voce più pulita (Mel-Band RoFormer, 474 MB). Consigliata sul computer.</small></button>
     </div>
     <p class="small muted" id="dw-sep-info"></p>
+    <label class="small">Quanto analizzo: <select id="dw-learn-secs"><option value="30">30 secondi (veloce)</option><option value="45">45 secondi (consigliato)</option><option value="90">90 secondi</option><option value="180">3 minuti (computer)</option></select></label><br>
     <label class="small"><input type="checkbox" id="dw-bt-on" checked> Battiti e battute precisi con <b>Beat This!</b> (rete neurale gratuita, 10 MB, si scarica la prima volta)</label>
     <div class="row"><label class="btn pri" for="dw-learn-file">Carica una canzone o un video</label><input type="file" id="dw-learn-file" accept="audio/*,video/*,.mov,.mp4,.m4a" hidden></div>
     <div class="dw-prog" id="dw-learn-bar" hidden><i></i></div>
@@ -714,7 +715,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 12:25</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 12:48</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -13455,9 +13456,10 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   async function sepAi(f, el) {
     var mode = sepMode();
     el.textContent = 'Leggo l\'audio del file…'; learnBar(0.01);
-    var d = await withTimeout(decodeStereo(f, 44100), 120000, 'il file non si apre (troppo lungo o formato video non letto)'), max = 44100 * 300;
+    var d = await withTimeout(decodeStereo(f, 44100), 120000, 'il file non si apre (troppo lungo o formato video non letto)'), max = 44100 * learnSecs();
     el.textContent = 'Preparo il modello di separazione…'; await tick();
-    if (d.L.length > max) { d.L = d.L.slice(0, max); if (d.R) d.R = d.R.slice(0, max); }
+    // si analizza un pezzo centrale (dove di solito ci sono strofa e ritornello): una canzone intera sul telefono richiede troppo tempo e memoria
+    if (d.L.length > max) { var a0 = Math.max(0, Math.min(d.L.length - max, Math.round(d.L.length * 0.3))); d.L = d.L.slice(a0, a0 + max); if (d.R) d.R = d.R.slice(a0, a0 + max); }
     var secs = Math.round(d.L.length / 44100);
     var last = Date.now(), alive = function () { last = Date.now(); };
     var r = await stallGuard(AiSeparator.separate(d.L, d.R || d.L, mode,
@@ -13469,8 +13471,10 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     return { sr: 44100, voice: voice, base: base, stems: st, rhythm: rhythm, orig: orig, ai: true,
       note: (mode === 'studio' ? 'Modalità Studio: voce con Mel-Band RoFormer, base divisa con SCNet.' : 'Modalità Rapida: SCNet.') + ' Modelli open source, tutto sul dispositivo. Ritmo misurato su batteria e basso separati.' };
   }
+  function learnSecs() { var v = +LIB.settings.learnSecs; return v >= 20 && v <= 300 ? v : 45; }
   async function sepFast(f, el) {
-    var d = await decodeStereo(f, 32000), sr = d.sr, i;
+    var d = await decodeStereo(f, 32000), sr = d.sr, i, mx = Math.round(sr * learnSecs());
+    if (d.L.length > mx) { var b0 = Math.max(0, Math.min(d.L.length - mx, Math.round(d.L.length * 0.3))); d.L = d.L.slice(b0, b0 + mx); if (d.R) d.R = d.R.slice(b0, b0 + mx); }
     var sep = await BeatLearn.separateAsync(d.L, d.R, sr, {}, function (p) { learnBar(0.05 + p * 0.6); });
     var bm = new Float32Array(sep.baseL.length), mono = new Float32Array(d.L.length);
     for (i = 0; i < bm.length; i++) bm[i] = (sep.baseL[i] + sep.baseR[i]) / 2;
@@ -13478,6 +13482,8 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     return { sr: sr, voice: sep.voice, base: bm, stems: null, rhythm: mono, orig: mono, ai: false, note: 'ATTENZIONE: l\'AI non è partita su questo dispositivo, ho usato il metodo semplice. Voce e base NON sono pulite: va bene solo per misurare il ritmo.' };
   }
   function normOnly(x, sr) { return BeatLearn.clean(x, sr, { denoise: 0 }).x; }
+  (function learnCrashNote() { try { var r = JSON.parse(localStorage.getItem('learnRunning') || 'null'); if (!r) return; localStorage.removeItem('learnRunning'); if (Date.now() - r.at > 3 * 3600e3) return; LIB.settings.learnSecs = Math.max(20, Math.round((r.secs || 45) * 0.6)); persist(); $('#dw-learn-msg').textContent = 'L\'ultima analisi di "' + r.name + '" si è interrotta: il telefono ha chiuso la pagina (memoria o schermo bloccato). Riprova: ora analizzo solo ' + LIB.settings.learnSecs + ' secondi. Tieni lo schermo acceso.'; } catch (e) {} })();
+  $('#dw-learn-secs').value = String(learnSecs()); $('#dw-learn-secs').addEventListener('change', function () { LIB.settings.learnSecs = +this.value; persist(); });
   $('#dw-bt-on').checked = LIB.settings.beatThis !== false; $('#dw-bt-on').addEventListener('change', function () { LIB.settings.beatThis = this.checked; persist(); });
   /* Beat This! (MIT): battiti e inizio battuta con una rete neurale da 10 MB, scaricata una volta sola */
   async function btGrid(x, sr, el) {
@@ -13489,6 +13495,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   $('#dw-learn-file').addEventListener('change', async function () {
     var f = this.files && this.files[0], el = $('#dw-learn-msg'); this.value = ''; if (!f) return;
     el.textContent = 'Apro "' + f.name + '"…'; learnBar(0.02); await tick(); dwStop(); stopPlay();
+    try { localStorage.setItem('learnRunning', JSON.stringify({ name: f.name, at: Date.now(), secs: learnSecs() })); } catch (e) {}
     try {
       var s, why = '';
       try { s = await sepAi(f, el); }
@@ -13504,6 +13511,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
       if (tuneM) { prof.tune = tuneM; prof.why.push('Voce: ' + tuneM.label + ' (scarto medio ' + tuneM.cents + ' cent dalla nota).'); }
       LEARN.cur = { name: f.name.replace(/\.[^.]+$/, '').slice(0, 40), prof: prof, voice: voice, base: base, orig: s.orig, stems: s.stems, sr: s.sr, note: s.note, vote: 0, ai: s.ai };
       learnBar(null); setTimeout(function () { varMake('', learnSpecs2(prof), '#dw-learn-msg'); }, 50); el.textContent = s.ai ? 'Fatto. Ascolta le parti separate, poi dimmi se il ritmo ti piace.' : 'Fatto, ma senza AI (' + why + '): voce e base non sono pulite.';
+      try { localStorage.removeItem('learnRunning'); } catch (e) {}
       learnRender(); coachRec('complete', coachCtx()); sepInfo();
     } catch (e) {
       learnBar(null);
