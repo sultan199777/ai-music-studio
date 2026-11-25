@@ -674,17 +674,19 @@
   $('#ear-go').addEventListener('click', function () { earRun(false); });
   $('#ear-out').addEventListener('click', async function (e) { if (e.target.id !== 'ear-fix') return; var r = earMeasure(), ch = earApply(r); $('#ear-out').innerHTML = '<p class="small">' + (ch.length ? 'Ho cambiato: ' + esc(ch.join(', ')) + '. Riascolto…' : 'Niente da cambiare.') + '</p>'; await tick(); await earRun(false); });
   /* sfondo ed emozione: espone l'umore sul body (la grafica la decide la schermata, in CSS con body[data-mood]) */
-  function applyMoodBg(m) { try { document.body.dataset.mood = m || ''; } catch (e) {} }
+  function applyMoodBg(m) { try { document.body.dataset.mood = ({ emo: 'malinconico', horror: 'dark', sognante: 'romantico', trionfale: 'euforico' })[m] || m || ''; } catch (e) {} }
   /* umore attuale: quello scelto dal Cervello, altrimenti misurato da tonalità e velocità della base */
   function moodNow() { var s = cur(), p = s.prod; if (s.moodTarget) return s.moodTarget; try { return Ear.moodOf({ mode: p.mode, bpm: p.bpm }).top; } catch (e) { return ''; } }
   /* ===== Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti) ===== */
   var BANNED_INST = { flute: 1, ocarina: 1, harmonica: 1, clarinet: 1, kalimba: 0 };
+  var SB_FORCE = { genre: null, preset: null };
+  function rxFor(pl, v, radical) { var st = Arranger.STYLES[pl.genre] || {}; return Remix.make(((pl.seed >>> 0) + (v || 0) * 7919 + (radical ? 104729 : 0)) >>> 0, { half: !st.snare || st.snare.length === 1, heavy: !!pl.heavy, mode: pl.mode }); }
   async function runBrain(again, fixedV, mel, radical) {
     var s = cur(), p = s.prod, m = $('#sb-msg'); s.recentG = s.recentG || [];
     if (radical) { fixedV = (s.brainV || 0) + 1; mel = (s.brainV || 0) + 7; }
     if (!s.lyrics.trim()) { m.textContent = 'Scrivi o incolla prima il testo (in alto): il cervello parte da quello.'; return; }
     s.brainV = fixedV != null ? fixedV : (again ? (s.brainV || 0) + 1 : 0); s.brainFor = SultanBrain.hash(s.lyrics.trim()); s.genreManual = false;
-    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel(), mood: $('#sb-mood').value || null, styleText: ($('#sb-style') || {}).value || '', avoid: (radical ? s.recentG.slice(-5) : []).concat(Taste.avoidList(tasteMem())) }); s.recentG.push(pl.genre); s.lastPlan = { genre: pl.genre, mode: pl.mode, heavy: !!pl.heavy, bpm: pl.bpm }; if (s.recentG.length > 12) s.recentG.shift(); s.moodTarget = pl.moodTarget; applyMoodBg(pl.moodTarget); persist();
+    var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel(), mood: $('#sb-mood').value || null, styleText: ($('#sb-style') || {}).value || '', forceGenre: SB_FORCE.genre || null, avoid: (radical ? s.recentG.slice(-5) : []).concat(Taste.avoidList(tasteMem())) }); s.recentG.push(pl.genre); s.lastPlan = { genre: pl.genre, mode: pl.mode, heavy: !!pl.heavy, bpm: pl.bpm }; if (s.recentG.length > 12) s.recentG.shift(); s.moodTarget = pl.moodTarget; applyMoodBg(pl.moodTarget); persist();
     p.heavy = !!pl.heavy; p.melSeed = mel || 0; p.sig = SigFx.pick({ styleText: ($('#sb-style') || {}).value || '', seed: pl.seed, scenes: pl.scenes, genre: pl.genre }); p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
     var res = Coach.suggest(coachState(), coachCands(p.genre), { emotion: pl.scene, seed: pl.seed }), R = Instruments.RECIPES[p.genre] || {};
     ['melodia', 'accordi', 'pad'].forEach(function (role) { if (BANNED_INST[res.inst[role]]) res.inst[role] = (R[role] || ['piano'])[0]; });
@@ -693,10 +695,10 @@
       s.modes = s.modes || {}; var sm0 = SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: {} });
       sm0.lines.forEach(function (ln) { if (!s.modes[ln.text]) s.modes[ln.text] = (ln.section === 'ritornello' || ln.section === 'bridge') ? 'canta' : 'parla'; }); }
     /* imparato dalle basi che ti piacciono (solo numeri): ritmo, cassa, rullante, giro di accordi, tempo. «Stravolgi» li lascia da parte per darti qualcosa di diverso. */
-    var lp = radical ? null : learnPlan(), learnTxt = '';
+    var lp = (radical || s.brainV > 0) ? null : learnPlan(), learnTxt = '', rx = rxFor(pl, s.brainV, radical);
     if (lp && lp.from) { p.groove = lp.groove; p.prog = lp.prog; p.tune = lp.tune; p.fromLearn = lp.from; if (Math.abs(lp.bpm - pl.bpm) <= 30) p.bpm = Math.round((pl.bpm + 2 * lp.bpm) / 3); if (lp.from >= 2) p.mode = lp.mode;
       learnTxt = '<br><span class="tag m">Misurato</span> Ho usato i numeri di ' + lp.from + ' basi che ti piacciono: cassa sui passi ' + lp.groove.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + (lp.prog ? ', giro ' + BeatLearn.progName(lp.prog, lp.mode) : '') + ', ' + p.bpm + ' BPM.'; }
-    else { if (p.fromLearn) { p.groove = null; p.prog = null; p.fromLearn = 0; } learnTxt = learnList().some(function (r) { return r.vote > 0; }) ? '' : '<br><span class="small muted">Non ho ancora basi imparate: caricane una in Libreria e premi ♥ per farmi imparare ritmo e accordi.</span>'; }
+    else { p.groove = rx.groove; p.prog = null; p.tune = rx.tune; p.fromLearn = 0; if (s.brainV > 0 || radical) p.melSeed = mel != null ? mel : rx.melSeed; learnTxt = '<br><span class="tag m">Misurato</span> Versione ' + (s.brainV + 1) + ': ' + esc(rx.label) + '.' + (p.sig && p.sig.length ? ' Effetti: ' + esc(([].concat(p.sig)).join(', ')) + '.' : '') + (learnList().some(function (r) { return r.vote > 0; }) ? '' : '<br><span class="small muted">Non ho ancora basi imparate: caricane una in Libreria e premi ♥ per farmi imparare ritmo e accordi.</span>'); }
     p.inst = res.inst; persist(); fillBase();
     m.innerHTML = '<b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + pl.mode + '<br>' + pl.why.map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Strumenti: ' + ['melodia', 'accordi', 'pad'].map(function (r) { return r + ' ' + esc(instName(p.inst[r])); }).join(', ') + '. Se non ti piace premi "Altra versione dal testo".' + learnTxt + '<div class="row" style="margin-top:8px"><button class="chip" data-taste="1">♥ Mi piace</button><button class="chip" data-taste="-1">✕ Scarta e dammene un\'altra</button></div><div class="small muted" id="sb-taste">' + esc(Taste.summary(tasteMem())) + '</div>';
     await makeAndPlay(false);
@@ -704,7 +706,7 @@
   }
   $('#sb-mood').addEventListener('change', function () { $('#bl-mood').value = this.value; });
   $('#bl-mood').addEventListener('change', function () { $('#sb-mood').value = this.value; });
-  $('#sb-make').addEventListener('click', function () { runBrain(false); });
+  $('#sb-make').addEventListener('click', function () { var s = cur(); runBrain(!!(s.lyrics && s.brainFor === SultanBrain.hash(s.lyrics.trim()))); });
   $('#sb-wild').addEventListener('click', function () { runBrain(false, null, null, true); });
   /* quello che scrivi nel campo stile si applica da solo (Invio o quando esci dal campo) */
   var sbLast = '';
@@ -717,8 +719,8 @@
     if (reset) { SB_N = 0; box.innerHTML = '<ul class="clean small" id="sb-ul"></ul><div class="row"><button class="btn sm" id="sb-more">Ancora proposte (non finiscono mai)</button></div>'; }
     var a = analysisOf(s), st = ($('#sb-style') || {}).value || '', h = '', i;
     for (i = SB_N; i < SB_N + 6; i++) {
-      var pl = SultanBrain.plan(s.lyrics, a, { variant: i, profile: arModel(), mood: $('#sb-mood').value || null, styleText: st, avoid: Taste.avoidList(tasteMem()) });
-      h += '<li>' + (i + 1) + '. <b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + NOTES[pl.tonic] + ' ' + pl.mode + (pl.heavy ? ' · pesante' : '') + ' <button class="chip" data-sb-v="' + i + '" style="min-height:28px;padding:2px 10px">Ascolta</button> <button class="chip" data-sb-like="' + i + '" style="min-height:28px;padding:2px 10px">♥</button><button class="chip" data-sb-nope="' + i + '" style="min-height:28px;padding:2px 10px">✕</button></li>';
+      var pl = SultanBrain.plan(s.lyrics, a, { variant: i, profile: arModel(), mood: $('#sb-mood').value || null, styleText: st, forceGenre: SB_FORCE.genre || null, avoid: Taste.avoidList(tasteMem()) });
+      h += '<li>' + (i + 1) + '. <b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + NOTES[pl.tonic] + ' ' + pl.mode + (pl.heavy ? ' · pesante' : '') + '<br><small class="muted">' + esc(rxFor(pl, i, false).label) + '</small><br><button class="chip" data-sb-v="' + i + '" style="min-height:28px;padding:2px 10px">Ascolta</button> <button class="chip" data-sb-like="' + i + '" style="min-height:28px;padding:2px 10px">♥</button><button class="chip" data-sb-nope="' + i + '" style="min-height:28px;padding:2px 10px">✕</button></li>';
     }
     SB_N += 6; $('#sb-ul').insertAdjacentHTML('beforeend', h);
   }
@@ -737,6 +739,36 @@
     if (v < 0) runBrain(false, null, null, true); else b.textContent = '♥ salvato';
   });
   $('#sb-again').addEventListener('click', function () { runBrain(true); });
+  /* Lista degli stili: li propone l'app dal testo, tu tocchi. Consigliati, atmosfere (artisti, solo numeri) e tutti gli stili. */
+  function sbChips() {
+    var box = $('#sb-chips'); if (!box) return; var s = cur(), sc = {}, h = '', on = function (c) { return c ? ' on' : ''; };
+    if (s.lyrics && s.lyrics.trim()) { try { sc = SultanBrain.plan(s.lyrics, analysisOf(s), { mood: $('#sb-mood').value || null }).scores || {}; } catch (e) {} }
+    var gs = Object.keys(Arranger.STYLES), rec = gs.slice().sort(function (a, b) { return (sc[b] || 0) - (sc[a] || 0); }).slice(0, 6);
+    var chip = function (g) { return '<button class="chip' + on(SB_FORCE.genre === g) + '" data-sb-g="' + g + '">' + esc(Arranger.STYLES[g].label) + '</button>'; };
+    h += '<h4>Stile: lo decide il testo, oppure scegli</h4><button class="chip' + on(!SB_FORCE.genre && !SB_FORCE.preset) + '" data-sb-g="">Libero · decide il testo</button>';
+    h += '<h4>Consigliati per il tuo testo</h4>' + (s.lyrics && s.lyrics.trim() ? rec.map(chip).join('') : '<span class="small muted">Scrivi il testo e te li consiglio.</span>');
+    if (window.StylePresets) { var g = {}; StylePresets.LIST.forEach(function (pr) { (g[pr.gruppo] = g[pr.gruppo] || []).push(pr); });
+      h += '<details><summary class="small"><b>Atmosfere</b> (' + StylePresets.LIST.length + ', descritte con numeri: tempo, ritmo, suoni. Non copiano canzoni)</summary>' + Object.keys(g).map(function (k) { return '<h4>' + esc(k) + '</h4>' + g[k].map(function (pr) { return '<button class="chip' + on(SB_FORCE.preset === pr.id) + '" data-sb-p="' + pr.id + '">' + esc(pr.nome) + '</button>'; }).join(''); }).join('') + '</details>'; }
+    h += '<details><summary class="small"><b>Tutti gli stili</b> (' + gs.length + ')</summary>' + gs.map(chip).join('') + '</details>';
+    box.innerHTML = h;
+  }
+  async function sbPreset(id) {
+    var pr = StylePresets.byId(id); if (!pr) return; var sp = StylePresets.variant(pr, Math.floor(Math.random() * 1e9)), p = cur().prod, m = $('#sb-msg');
+    stopPlay(); SB_FORCE = { genre: null, preset: id };
+    p.genre = sp.genre; p.bpm = sp.bpm; p.seed = sp.seed; p.inst = Object.assign({}, sp.inst); p.kit = sp.kit; p.arpPattern = sp.arpPattern; if (sp.mode) p.mode = sp.mode; if (sp.tonic != null) p.tonic = sp.tonic; p.tune = sp.tune || null; p.prog = sp.prog || null; p.bassStyle = sp.bassStyle; p.atmNome = sp.nome; p.mix = null; p.sounds = 'campioni';
+    var st = Arranger.STYLES[p.genre] || {}, rx = Remix.make((sp.seed >>> 0) + 31, { half: !st.snare || st.snare.length === 1, heavy: !!p.heavy, mode: p.mode });
+    p.groove = sp.groove || rx.groove; p.melSeed = rx.melSeed; p.heavy = ['trap', 'trapdark', 'drill', 'brooklyn', 'street', 'rage', 'phonk'].indexOf(p.genre) >= 0;
+    persist(); try { fillInst(); } catch (e) {} fillBase(); sbChips();
+    m.innerHTML = '<b>' + esc(sp.nome || pr.nome) + '</b> · ' + p.bpm + ' BPM · ' + p.mode + '<br><span class="tag i">Ipotesi</span> ' + esc(pr.spiega || '') + '<br><span class="tag m">Misurato</span> ' + esc(rx.label) + '.';
+    await makeAndPlay(false);
+  }
+  $('#sb-chips').addEventListener('click', function (e) {
+    var b = e.target && e.target.closest && e.target.closest('button'); if (!b) return;
+    if (b.hasAttribute('data-sb-g')) { SB_FORCE = { genre: b.getAttribute('data-sb-g') || null, preset: null }; sbChips(); var s = cur(); if (s.lyrics && s.lyrics.trim()) runBrain(true); else $('#sb-msg').textContent = 'Scrivi prima il testo: poi creo la base in questo stile.'; }
+    else if (b.hasAttribute('data-sb-p')) sbPreset(b.getAttribute('data-sb-p'));
+  });
+  var sbChipsT; function sbChipsLater() { clearTimeout(sbChipsT); sbChipsT = setTimeout(sbChips, 600); }
+  ['#dw-lyrics', '#st-lyrics'].forEach(function (q) { var el = $(q); if (el) el.addEventListener('input', sbChipsLater); }); $('#sb-mood').addEventListener('change', sbChips); setTimeout(sbChips, 1500);
   /* il testo decide la base: se non hai scelto tu il genere a mano, parte il Cervello Sultan (una base diversa per ogni testo) */
   function brainFirst(again) { var s = cur(); if (s.lyrics && s.lyrics.trim() && !s.genreManual && (again || s.brainFor !== SultanBrain.hash(s.lyrics.trim()))) { runBrain(again && s.brainFor === SultanBrain.hash(s.lyrics.trim())); return true; } return false; }
   $('#b-play').addEventListener('click', function () { if (!brainFirst(false)) makeAndPlay(false); });
@@ -2127,7 +2159,7 @@
     function mv(id, to, wrapLabel) { var el = $('#' + id), t = $(to); if (!el || !t) return; if (wrapLabel) el = el.closest('label') || el; t.appendChild(el); }
     ['sb-style', 'sb-mood'].forEach(function (id) { mv(id, '#dwb-fields', true); });
     ['sb-make', 'sb-wild', 'sb-six', 'sb-again'].forEach(function (id) { mv(id, '#dwb-actions'); });
-    ['sb-list', 'sb-msg'].forEach(function (id) { mv(id, '#dwb-out'); });
+    ['sb-chips', 'sb-list', 'sb-msg'].forEach(function (id) { mv(id, '#dwb-out'); });
     ['b-play', 'b-mel', 'b-new', 'b-stop'].forEach(function (id) { mv(id, '#dwp-actions'); });
     ['b-status', 'b-out', 'ear-out'].forEach(function (id) { mv(id, '#dwp-out'); });
     ['ear-go', 'b-save'].forEach(function (id) { mv(id, '#dwp-more'); });
