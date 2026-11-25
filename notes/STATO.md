@@ -199,3 +199,8 @@ Ancora da fare: piano roll accordi/arpeggio, trascinare note voce (stile Melodyn
 - Misure su WAV esportati (scratchpad/qa.py): prima batteria e 808 25 dB sopra melodia/accordi (base "impastata"); ora bilanciamento automatico per traccia in `dwBuffers` (RMS di riferimento) → melodia circa 9 dB sotto la batteria; filtro passa-alto per traccia (`hp`, accordi/arpeggio/melodia/pad 170-220 Hz, voce 90 Hz); saturazione dei preset ridotta; `mixV=2` riapplica il preset pulito ai progetti vecchi. Nessun clipping, crest 11-13 dB.
 - 11 stili nuovi nell'arrangiatore (Plugg, Rage, Jersey club, Afro trap, Reggaeton, Phonk, Emo rap, R&B lento, Cloud rap, Detroit, Lo-fi) con ricette e kit: 21 stili in totale.
 - Pannello Varianti (Base): 8 varianti dello stile o 8 stili diversi in ~3 s, ▶ e Usa, infinite (si rigenerano).
+
+## Separazione e proposte automatiche (25/11)
+- Misurato su MUSDB (2 brani): rifinitura Wiener dopo SCNet PEGGIORA (voce −1,4 dB), più passaggi (shifts) +0,1 dB, SCNet+HTDemucs insieme +0,1 dB → non adottati. Unico salto vero: Mel-RoFormer (+2-3 dB voce).
+- Separazione a pezzi di 40 s con 2 s di sovrapposizione sfumata (memoria bassa su iPhone), canzoni fino a 5 minuti; modalità Studio (RoFormer) scelta da sola se c'è WebGPU.
+- Dopo aver imparato una canzone l'app compone da sola 6 basi nuove nel suo stile (BPM, cassa, rullante, swing, giro armonico, kit), sulla forma del testo dell'utente; ▶ e Usa (porta allo Studio).
