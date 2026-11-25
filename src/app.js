@@ -2060,6 +2060,7 @@
   function normOnly(x, sr) { return BeatLearn.clean(x, sr, { denoise: 0 }).x; }
   (function learnCrashNote() { try { var r = JSON.parse(localStorage.getItem('learnRunning') || 'null'); if (!r) return; localStorage.removeItem('learnRunning'); if (Date.now() - r.at > 3 * 3600e3) return; if ((r.secs || 0) >= 300) { $('#dw-learn-msg').textContent = 'La separazione di "' + r.name + '" si è interrotta (il telefono ha chiuso la pagina). Ricarica lo STESSO file: riparto dai pezzi già finiti, non da capo.'; return; } LIB.settings.learnSecs = Math.max(20, Math.round((r.secs || 40) * 0.6)); persist(); $('#dw-learn-msg').textContent = 'L\'ultima analisi di "' + r.name + '" si è interrotta: il telefono ha chiuso la pagina (memoria o schermo bloccato). Riprova: ora analizzo solo ' + LIB.settings.learnSecs + ' secondi. Tieni lo schermo acceso.'; } catch (e) {} })();
   $('#dw-learn-secs').value = String(learnSecs()); $('#dw-learn-secs').addEventListener('change', function () { LIB.settings.learnSecs = +this.value; persist(); });
+  $('#dw-tr-auto').checked = LIB.settings.trAuto !== false; $('#dw-tr-auto').addEventListener('change', function () { LIB.settings.trAuto = this.checked; persist(); });
   $('#dw-bt-on').checked = LIB.settings.beatThis !== false; $('#dw-bt-on').addEventListener('change', function () { LIB.settings.beatThis = this.checked; persist(); });
   /* Beat This! (MIT): battiti e inizio battuta con una rete neurale da 10 MB, scaricata una volta sola */
   async function btGrid(x, sr, el) {
@@ -2092,7 +2093,9 @@
       if (tuneM) { prof.tune = tuneM; prof.why.push('Voce: ' + tuneM.label + ' (scarto medio ' + tuneM.cents + ' cent dalla nota).'); }
       LEARN.cur = { name: f.name.replace(/\.[^.]+$/, '').slice(0, 40), prof: prof, voice: voice, base: base, orig: s.orig, stems: s.stems, sr: s.sr, note: s.note, vote: 1, ai: s.ai };
       var rec = { id: uid(), name: LEARN.cur.name, artist: art, prof: prof, vote: 1, at: Date.now() }, LL = learnList(); LL.push(rec); if (LL.length > 120) LL.shift(); LEARN.cur.recId = rec.id; persist();
-      learnBar(null); if (last) setTimeout(function () { var fp = folderProf(art); varMake('', learnSpecs2(fp || prof, varCount()), '#dw-learn-msg'); }, 50); el.textContent = s.ai ? 'Fatto. Ascolta le parti separate, poi dimmi se il ritmo ti piace.' : 'Fatto, ma senza AI (' + why + '): voce e base non sono pulite.';
+      learnBar(null);
+      if ($('#dw-tr-auto') && $('#dw-tr-auto').checked && s.ai) { try { localStorage.removeItem('learnRunning'); } catch (x) {} await learnLyrics(LEARN.cur, 'italian'); }
+      if (last) setTimeout(function () { var fp = folderProf(art); varMake('', learnSpecs2(fp || prof, varCount()), '#dw-learn-msg'); }, 50); el.textContent = s.ai ? 'Fatto. Ascolta le parti separate' + (LEARN.cur.tr ? ' e leggi il testo studiato' : '') + ': la canzone è nella cartella «' + art + '».' : 'Fatto, ma senza AI (' + why + '): voce e base non sono pulite.';
       try { localStorage.removeItem('learnRunning'); } catch (e) {}
       learnRender(); coachRec('complete', coachCtx()); sepInfo();
     } catch (e) {
@@ -2114,14 +2117,20 @@
       '<details class="small"><summary>Parole trascritte (solo per studiare, non vengono salvate)</summary><p class="muted">' + c.tr.lines.map(function (l) { return esc(l.text); }).join('<br>') + '</p></details>';
   }
   $('#dw-learn-cur').addEventListener('click', async function (e) {
-    if (!e.target.closest('#dw-tr-go')) return; var c = LEARN.cur, el = $('#dw-learn-msg'); if (!c) return;
-    var lang = $('#dw-tr-lang').value; el.textContent = 'Preparo Whisper (la prima volta scarico circa 80 MB)…'; learnBar(0.02);
+    if (!e.target.closest('#dw-tr-go')) return; await learnLyrics(LEARN.cur, $('#dw-tr-lang').value);
+  });
+  async function learnLyrics(c, lang) {
+    var el = $('#dw-learn-msg'); if (!c) return; lang = lang || 'italian'; el.textContent = 'Preparo Whisper (la prima volta scarico circa 80 MB)…'; learnBar(0.02);
     try {
       var tr = await Transcribe.run(c.voice, c.sr, { language: lang, onProgress: function (a, b) { if (b) { el.textContent = 'Scarico Whisper: ' + Math.round(a / 1048576) + ' di ' + Math.round(b / 1048576) + ' MB (solo la prima volta)…'; learnBar(0.02 + 0.4 * a / b); } } });
       c.tr = tr; c.prof.lyr = lyricStats(tr); learnBar(null);
-      el.textContent = tr.text ? 'Testo studiato: le misure entrano nel profilo quando premi Mi piace / Non mi piace.' : 'Non ho sentito parole chiare in questa voce.'; learnRender();
+      var rec = learnList().filter(function (r) { return r.id === c.recId; })[0], art = rec ? rec.artist : '';
+      if (rec) rec.prof.lyr = c.prof.lyr;
+      if (tr.text && art && art !== 'Senza cartella') { var st = arStore(), ar = st[art] || (st[art] = { acc: ArtistLab.newAcc(), on: false }), me = ArtistLab.measure(tr.text); if (me.lines) { ar.acc = ArtistLab.merge(ar.acc, me); WordBank.learn(wbStore(), tr.text); } }
+      persist();
+      el.textContent = tr.text ? 'Testo studiato' + (art && art !== 'Senza cartella' ? ' e aggiunto alla cartella testi «' + art + '» (solo numeri e parole singole per le rime): in 1 Testo puoi attivarla come stile' : '') + '.' : 'Non ho sentito parole chiare in questa voce.'; learnRender();
     } catch (err) { learnBar(null); el.textContent = 'Trascrizione non riuscita (' + (err && err.message || 'memoria') + ').'; }
-  });
+  }
   function profLine(p) { return p.bpm + ' BPM · ' + (p.key ? p.key.name : 'tonalità incerta') + (p.prog ? ' · giro ' + BeatLearn.progName(p.prog, p.key && p.key.mode) : '') + ' · simile a: ' + (Arranger.STYLES[p.style] ? Arranger.STYLES[p.style].label : p.style); }
   function learnRender() {
     var c = LEARN.cur, h = '';
@@ -2137,6 +2146,7 @@
     $('#dw-learn-cur').innerHTML = h;
     var dl = $('#dw-learn-arts0'); if (dl) { var nm = learnArtists().filter(function (x) { return x !== 'Senza cartella'; }).concat(StylePresets.LIST.map(function (p) { return p.nome.replace(/^Tipo /, '').replace(/ \(.*\)$/, ''); })); dl.innerHTML = nm.filter(function (v, i) { return nm.indexOf(v) === i; }).map(function (x) { return '<option value="' + esc(x) + '">'; }).join(''); }
     var a0 = $('#dw-learn-art0'); if (a0 && !a0.value && LIB.settings.learnArt) a0.value = LIB.settings.learnArt;
+    try { varStyleRender(); } catch (e) {}
     var L = learnList(), arts = learnArtists();
     $('#dw-learn-list').innerHTML = L.length ? arts.map(function (a) {
       var items = L.map(function (r, i) { return [r, i]; }).filter(function (x) { return (x[0].artist || 'Senza cartella') === a; }), lk = items.filter(function (x) { return x[0].vote > 0; }).length;
@@ -2243,7 +2253,8 @@
     el.textContent = given ? VAR.list.length + ' basi nuove pronte, sul tuo testo: ascoltale e scegli con Usa. Premi ancora per altre diverse.' : VAR.list.length + ' varianti pronte: ascoltale, scegli con Usa. Premi ancora per altre 8 nuove.'; VAR.busy = false;
   }
   function varName(sp) { return (sp.nome || (Arranger.STYLES[sp.genre] ? Arranger.STYLES[sp.genre].label : sp.genre)) + ' · ' + sp.bpm + ' BPM' + (sp.prog ? ' · giro ' + StylePresets.progName(sp.prog, sp.mode) : ''); }
-  function atmRender() { var g = {}; StylePresets.LIST.forEach(function (p) { (g[p.gruppo] = g[p.gruppo] || []).push(p); }); $('#dw-var-atm').innerHTML = Object.keys(g).map(function (k) { return '<p class="small muted" style="margin:8px 0 4px">' + esc(k) + '</p><div class="chips">' + g[k].map(function (p) { return '<button class="chip" data-atm="' + p.id + '" title="' + esc(p.spiega) + '">' + esc(p.nome.replace(/^Tipo /, '')) + '</button>'; }).join('') + '</div>'; }).join(''); }
+  $('#dw-var-style').addEventListener('change', function () { LIB.settings.varStyle = this.value; persist(); });
+  function atmRender() { varStyleRender(); var g = {}; StylePresets.LIST.forEach(function (p) { (g[p.gruppo] = g[p.gruppo] || []).push(p); }); $('#dw-var-atm').innerHTML = Object.keys(g).map(function (k) { return '<p class="small muted" style="margin:8px 0 4px">' + esc(k) + '</p><div class="chips">' + g[k].map(function (p) { return '<button class="chip" data-atm="' + p.id + '" title="' + esc(p.spiega) + '">' + esc(p.nome.replace(/^Tipo /, '')) + '</button>'; }).join('') + '</div>'; }).join(''); }
   function varRender() {
     var lp = $('#dw-learn-prop'); $('#dw-var-list').innerHTML = (lp ? lp.innerHTML = varHtml() : varHtml());
   }
@@ -2255,7 +2266,10 @@
   function varClick(e) {
     var b = e.target.closest('button'); if (!b) return;
     var cnt = +(($('#dw-var-n') || {}).value || 8);
-    if (b.id === 'dw-var-same') { var ss = []; for (var q = 0; q < cnt; q++) ss.push(varSpec(cur().prod.genre, true)); varMake('', ss); } else if (b.id === 'dw-var-other') varMake('', StylePresets.pickMany(cnt, textWeights(), Date.now() % 1e9));
+    if (b.id === 'dw-var-same') { var ss = []; for (var q = 0; q < cnt; q++) ss.push(varSpec(cur().prod.genre, true)); varMake('', ss); } else if (b.id === 'dw-var-other') { var vs = ($('#dw-var-style') || {}).value || '';
+      if (vs.slice(0, 2) === 'f:' && folderProf(vs.slice(2))) varMake('', learnSpecs2(folderProf(vs.slice(2)), cnt));
+      else if (vs.slice(0, 2) === 'a:') varMake('', StylePresets.pickMany(cnt, null, Date.now() % 1e9, vs.slice(2)));
+      else varMake('', StylePresets.pickMany(cnt, textWeights(), Date.now() % 1e9)); }
     if (b.getAttribute('data-atm')) { varMake('', StylePresets.pickMany(cnt, null, Date.now() % 1e9, b.getAttribute('data-atm'))); $('#dw-var-msg').textContent = 'Compongo varianti ' + StylePresets.byId(b.getAttribute('data-atm')).nome + '…'; }
     var vp = b.getAttribute('data-vp'), vu = b.getAttribute('data-vu');
     if (vp != null) { var s1 = VAR.list[+vp]; dwStop(true); playBuf(s1.mix, s1.sr); $('#dw-var-msg').textContent = 'Ascolti: ' + varName(s1); }
@@ -2271,6 +2285,13 @@
   $('#dw-p-learn').addEventListener('click', function (e) { if (e.target.closest('[data-vp],[data-vu]')) varClick(e); });
   // proposte automatiche dopo aver imparato una canzone: stile, ritmo, giro armonico e tempo misurati, strumenti nostri
   // quanto ogni stile base si adatta al testo (cervello Sultan dell'altra chat: punteggi per genere)
+  function varStyleRender() {
+    var sel = $('#dw-var-style'); if (!sel) return; var v = sel.value || LIB.settings.varStyle || '';
+    var folders = learnArtists().filter(function (a) { return a !== 'Senza cartella' && folderProf(a); });
+    sel.innerHTML = '<option value="">Lo decide il mio testo</option>' + (folders.length ? '<optgroup label="Le mie cartelle (imparate)">' + folders.map(function (a) { return '<option value="f:' + esc(a) + '">' + esc(a) + ' (' + folderProf(a).count + ')</option>'; }).join('') + '</optgroup>' : '') +
+      '<optgroup label="Atmosfere">' + StylePresets.LIST.map(function (p) { return '<option value="a:' + p.id + '">' + esc(p.nome.replace(/^Tipo /, '')) + '</option>'; }).join('') + '</optgroup>';
+    sel.value = v; if (sel.value !== v) sel.value = '';
+  }
   function textWeights() {
     var s0 = cur(); if (!(s0.lyrics || '').trim()) return null; if (!window.SultanBrain) return pfImageWeights(s0.lyrics, null);
     try { var pl = SultanBrain.plan(s0.lyrics, analysisOf(s0), {}), sc = pl.scores || {}, mx = Math.max.apply(null, Object.keys(sc).map(function (k) { return sc[k]; }).concat([1])), w = {};
