@@ -6,15 +6,16 @@ Leggi questo file PRIMA di aprire i sorgenti: dice dove sta ogni cosa.
 
 | File | Righe | Scopo | Esporta |
 |---|---|---|---|
-| ai-separator.js | 106 | Separazione AI v2 (gratuita, open source, tutto sul dispositivo). Motore: unblend (MIT) + onnxruntime-web 1.26 (MIT), file in unblend/ e ort126/ accanto alla pagina. Modelli (scaricati UNA volta da Hugging Face e tenuti  |  |
-| app.body.html | 624 |  |  |
-| app.css | 359 |  |  |
-| app.js | 3011 | ================= Dati e salvataggio ================= |  |
-| app.shell.html | 65 |  |  |
+| ai-separator.js | 120 | Separazione AI v2 (gratuita, open source, tutto sul dispositivo). Motore: unblend (MIT) + onnxruntime-web 1.26 (MIT), file in unblend/ e ort126/ accanto alla pagina. Modelli (scaricati UNA volta da Hugging Face e tenuti  |  |
+| app.body.html | 667 |  |  |
+| app.css | 367 |  |  |
+| app.js | 3400 | ================= Dati e salvataggio ================= |  |
+| app.shell.html | 71 |  |  |
 | app.template.html | 1169 |  |  |
-| arranger.js | 736 | Arrangiatore: costruisce basi ORIGINALI con una struttura vera (intro, strofa, pre, ritornello, bridge, outro) e direzioni di stile diverse. Tutto è sintetizzato dal programma (nessun campione, nessun brano altrui). | generate: generate, planStructure: planStructure, STYLES: STYLES, SECTIONS: SEC, ARP: ARP, ARP_STYLE: ARP_STYLE |
+| arranger.js | 741 | Arrangiatore: costruisce basi ORIGINALI con una struttura vera (intro, strofa, pre, ritornello, bridge, outro) e direzioni di stile diverse. Tutto è sintetizzato dal programma (nessun campione, nessun brano altrui). | generate: generate, planStructure: planStructure, STYLES: STYLES, SECTIONS: SEC, ARP: ARP, ARP_STYLE: ARP_STYLE |
 | artist-lab.js | 110 | Cartelle artista: impara lo STILE da testi che carichi tu, con SOLO statistiche. Di ogni testo si misurano numeri (sillabe per riga, rime, ripetizioni, ricchezza delle parole, quali "mondi" ricorrono e quali stanno insie | measure: measure, merge: merge, finalize: finalize, blend: blend, compare: compare, newAcc: newAcc, SCENE_IT: SCENE_IT |
 | audio-analysis.js | 223 | Analisi audio della voce (Modulo 1, solo parte MISURABILE con calcolo diretto). Misura: livello, picco, clipping, dinamica, altezza delle note (pitch), estensione e scostamento dall'intonazione "temperata" (La = 440 Hz). | analyze: analyze, detectPitch: detectPitch, synthExample: synthExample, freqToMidi: freqToMidi, midiToFreq: midiToFreq, midiToName: midiToName |
+| auto-sections.js | 94 | Sezioni automatiche: se nel testo NON ci sono i titoli tra parentesi, l'app li mette da sola.  - Titolo: la prima riga se è corta, da sola (riga vuota dopo) o è una data/numero ("25 maggio"). Non resta nel testo cantato. | label: label, summary: summary, hasTags: hasTags, takeTitle: takeTitle |
 | autotune.js | 421 | Autotune (correzione dell'intonazione) con la tecnica PSOLA. 1. Si misura l'altezza della voce nel tempo (AudioAnalysis). 2. Per ogni istante si sceglie la nota "giusta" più vicina nella scala scelta. | correct: correct, scaleMask: scaleMask, quantizeMidi: quantizeMidi, stepUp: stepUp, track: track, measure: measure, detectKey: detectKey |
 | backing.js | 291 | Generatore di basi musicali ORIGINALI (batteria, basso, accordi, pad, melodia). Tutto è sintetizzato dal programma con onde semplici: non usa registrazioni, campioni o brani di altri. Il risultato è una bozza utile per c | generate: generate, mix: mix, withVoice: withVoice, resampleLinear: resampleLinear, GENRES: GENRES, chordName: chordName, NAMES: NAMES |
 | base-analysis.js | 119 | Analisi di una base musicale importata (audio con più strumenti insieme): velocità (BPM) e tonalità STIMATE. BPM: si misura quanto spesso l'energia sale di colpo (colpi di batteria, accordi) | analyze: analyze, estimateBpm: estimateBpm |
@@ -37,23 +38,27 @@ Leggi questo file PRIMA di aprire i sorgenti: dice dove sta ogni cosa.
 | clip-fx.js | 79 | Effetti del videoclip a tempo di musica: calcolo puro, senza disegno. Dato il tempo trascorso e i battiti al minuto, dice quanto ingrandire l'immagine, quanto farla vibrare e quale riga del testo mostrare. | beatState: beatState, lyricAt: lyricAt, frame: frame, timeline: timeline, lineAt: lineAt |
 | clips.js | 64 | Clip della voce: montaggio non distruttivo come nei DAW (Pro Tools, Logic). Una clip = un pezzo di una prova (take) messo in un punto della canzone:   {take, start (s nella canzone), offset (s dentro la prova), len (s),  | XF: XF, clip: clip, whole: whole, split: split, compByLines: compByLines, render: render, end: end |
 | coach.js | 166 | Coach: impara dai tuoi gesti e ti insegna. Gira tutto sul telefono, senza servizi a pagamento. 1. IMPARA (preferenze): ogni gesto è un voto.    mi piace +3 · non mi piace -3 · base salvata +2 · voce registrata sulla base | fresh: fresh, record: record, suggest: suggest, profile: profile, lessons: lessons, learn: learn, progress: progress, features: features, compatible: compatible, SKILLS: SKILLS, WEIGHTS: W |
+| dna.js | 167 | MUSICAL DNA ENGINE: ogni stile è un elenco di NUMERI (velocità, swing, densità cassa, rullante, hi-hat, 808, giro armonico…).  - PROFILES: 24 profili di artisti e famiglie. Sono caratteristiche GENERALI di genere (ipotes | FIELDS: FIELDS, ORDER: ORDER, LIST: LIST, byId: byId, neutral: neutral, sanitize: sanitize, fuse: fuse, emotion: emotion, applyEmotion: applyEmotion, toProd: toProd, describe: describe, EMOS: EMOS |
 | ear.js | 191 | Orecchio di Sultan: "ascolto" con strumenti di misura, come fa un fonico con gli analizzatori. Io non ho orecchie, ma posso MISURARE il suono: livello, dinamica, quanta energia c'è in basso (sub, 808), al centro e in alt | lufs: lufs, listenVoice: listenVoice, moodOf: moodOf, MOODS: MOODS, listen: listen, spectrum: spectrum, BANDS: BANDS, REF: REF |
 | formant.js | 98 | Formant shift (cambio del TIMBRO senza cambiare la nota) con il metodo del CEPSTRUM. Idea: lo spettro della voce = "inviluppo" (la forma della gola e della bocca: i formanti) x "armoniche" (la nota). Si stima l'inviluppo | shift: shift, fft: fft |
-| instruments.js | 306 | Strumenti: catalogo spiegato + campionatore (sampler) + chitarre sintetizzate. - I campioni veri vengono da VSCO-2-CE e VCSL (Versilian Studios, licenza CC0):   ogni strumento è un file assets/inst/<id>.json (nel sito: i |  |
+| guide-voice.js | 126 | Voce guida: una voce maschile SINTETICA che canta/rappa il tuo testo sulla base, a tempo con le parole e intonata sulla scala della base (effetto autotune duro). Serve per sentire come potrebbe suonare il testo e capire  | syllabify: syllabify, render: render, measureF0: measureF0, hzToMidi: hzToMidi, midiToHz: midiToHz |
+| instruments.js | 342 | Strumenti: catalogo spiegato + campionatore (sampler) + chitarre sintetizzate. - I campioni veri vengono da VSCO-2-CE e VCSL (Versilian Studios, licenza CC0):   ogni strumento è un file assets/inst/<id>.json (nel sito: i |  |
 | key-detect.js | 73 | Riconoscimento della tonalità dalla voce (stima). Metodo: istogramma delle 12 note (senza ottava) pesato sul tempo, confrontato con i profili di Krumhansl-Kessler per le 12 tonalità maggiori e le 12 minori. | detect: detect, fromHistogram: fromHistogram, NAMES: NAMES |
-| local-ai.js | 81 | Assistente testi con AI locale (opzionale). Usa WebLLM (Apache 2.0) con modelli Qwen2.5 (Apache 2.0): il modello si scarica UNA volta sul telefono e gira lì (WebGPU). Nessun testo parte verso server. Il cervello Sultan ( | recommend: recommend, pingOllama: pingOllama, useOllama: useOllama, MODELS: MODELS, TASKS: TASKS, supported: supported, buildPrompt: buildPrompt, clean: clean, load: load, ask: ask, LIB_URL: LIB_URL |
+| local-ai.js | 96 | Assistente testi con AI locale (opzionale). Usa WebLLM (Apache 2.0) con modelli Qwen2.5 (Apache 2.0): il modello si scarica UNA volta sul telefono e gira lì (WebGPU). Nessun testo parte verso server. Il cervello Sultan ( | recommend: recommend, pingOllama: pingOllama, useOllama: useOllama, MODELS: MODELS, TASKS: TASKS, supported: supported, buildPrompt: buildPrompt, clean: clean, load: load, ask: ask, LIB_URL: LIB_URL |
 | lyrics-engine.js | 425 | Motore di analisi dei testi (Modulo 3 e parte del Modulo 4). Tutto qui è calcolato con regole semplici sulla lingua italiana, senza servizi esterni. Sono EURISTICHE: il conteggio delle sillabe può sbagliare | countSyllables: countSyllables, lineSyllables: lineSyllables, rhymeKey: rhymeKey, rhymeRelation: rhymeRelation, tokenize: tokenize, parseStanzas: parseStanzas, analyze: analyze |
 | lyrics-to-base.js | 58 | Dal testo a una base consigliata: genere, scala e velocità. È un'IPOTESI costruita sul tono emotivo (dizionario di parole) e sulla lunghezza delle righe. Serve come punto di partenza, non come verità. | suggest: suggest |
 | manga-filter.js | 191 | Filtro "fumetto" per immagini: stile cartoon a colori, stile neon (nero, viola, fucsia) e manga a retino. È un filtro grafico che gira sul tuo dispositivo, NON un'intelligenza artificiale: non ridisegna il volto, non cre | apply: apply |
 | master-pro.js | 95 | Mastering stereo (calcolo sul file):  1. compressore multibanda a 3 bande (incroci 150 Hz e 3 kHz, filtri Linkwitz-Riley 4° ordine: le bande sommate ridanno il segnale);  2. larghezza stereo (mid/side) con i bassi sotto  | TARGETS: TARGETS, DEF: DEF, BANDS: BANDS, split3: split3, limiter: limiter, correlation: correlation, spectrum: spectrum, compare: compare, mono: mono, process: process |
 | master.js | 72 | Catena di master: filtro sui bassi, correzione di tono leggera, compressione "colla", saturazione morbida, regolazione del volume medio e limitatore sul picco. Serve a far suonare la base (o il mix con la voce) più piena | process: process, PRESETS: PRESETS, rmsDb: rmsDb, peakDb: peakDb |
 | mixer.js | 147 | Mixer a canali dello Studio (Web Audio). Ogni traccia ha la sua catena:   volume → EQ 3 bande (bassi 120 Hz, medi regolabili, alti 8 kHz) → compressore → saturazione → sidechain (solo dove serve)   → panoramica → uscita; | autoPoints: autoPoints, CH: CH, LIMITS: LIMITS, LABELS: LABELS, PRESETS: PRESETS, channel: channel, preset: preset, satCurve: satCurve, duckCurve: duckCurve, impulse: impulse, build: build |
+| omino.js | 73 | L'omino che canta: mostra COME e QUANDO cantare sulla base, a tempo con lo Studio. Dalla mappa della canzone (righe e parole con inizio/fine in secondi) calcola in ogni istante:  bocca (aperta sulle parole, più aperta su | state: state, draw: draw |
 | pitch-editor.js | 79 | Editor delle note (stile "piano roll"): divide la voce misurata in note singole e prepara le note da passare all'autotune. Ogni nota ha:   midi    nota cantata (misurata, mediana dei frame, può essere decimale) | segment: segment, snap: snap, resnap: resnap, offsetCents: offsetCents |
 | polish.js | 154 | Rifinitura della voce: filtro dei bassi, equalizzatore, compressore, eco e riverbero. Tutto calcolato dal programma con filtri standard (biquad) e un riverbero a linee di ritardo. Non è un plugin da studio professionale, | process: process, denoise: denoise, highpass: highpass, peaking: peaking, highShelf: highShelf, compress: compress, reverb: reverb, echo: echo, PRESETS: PRESETS |
-| prod-fx.js | 439 | Produzione: effetti cinematografici/ambientali + interventi vocali (eco, risposte, cori, voce scura, reverse, ad-lib) scelti DAL TESTO e messi a tempo sulla base. Tutto sintetizzato da zero (nessun campione, nessun dirit | SOUNDS: SOUNDS, VOX: VOX, LEX: LEX, readLine: readLine, plan: plan, renderSfx: renderSfx, renderVox: renderVox, lastWord: lastWord, pitch: pitch, sound: sound, names: names, rng: rng |
+| prod-fx.js | 448 | Produzione: effetti cinematografici/ambientali + interventi vocali (eco, risposte, cori, voce scura, reverse, ad-lib) scelti DAL TESTO e messi a tempo sulla base. Tutto sintetizzato da zero (nessun campione, nessun dirit | SOUNDS: SOUNDS, VOX: VOX, LEX: LEX, readLine: readLine, plan: plan, renderSfx: renderSfx, renderVox: renderVox, lastWord: lastWord, pitch: pitch, sound: sound, names: names, rng: rng |
 | producer-actions.js | 179 | AI Producer: trasforma un comando scritto in italiano in modifiche REALI alla base. Riconosce un elenco limitato di richieste (vedi HELP). Quello che non riconosce non viene eseguito: l'app lo passa a Claude come consigl | interpret: interpret, HELP: HELP, LEVEL_KEYS: LEVEL_KEYS, cloneState: cloneState |
 | promo-plan.js | 125 | Piano di promozione di una canzone (30 giorni), costruito dai dati del brano. Non usa servizi esterni e non pubblica nulla: produce un calendario di contenuti con piattaforma, formato, data, orario suggerito, didascalia  | generate: generate, toCsv: toCsv, TEMPLATE: TEMPLATE |
 | realtime-tune.js | 120 | Autotune LEGGERO in tempo reale (SPERIMENTALE) per il monitor in cuffia. Funziona così: misura l'altezza della voce con la stessa idea di McLeod (autocorrelazione normalizzata, finestra ~37 ms su audio ridotto a ~12 kHz) | createCore: createCore, workletSource: workletSource |
+| remix.js | 57 | Remix: stravolge davvero la base. Da un seme (testo + numero di versione) costruisce ritmo di cassa, rullante, hi-hat, giro di accordi, mix e seme melodico. Ogni versione è un'altra, ma resta nello stile. make(seed, opt) | make: make, distance: distance, progName: progName, KICKS: KICKS, PROG_MIN: PROG_MIN, PROG_MAJ: PROG_MAJ |
 | samples-data.js | 2 | campioni batteria CC0 codificati | dati |
 | sig-fx.js | 73 | Effetti "firma" delle basi trap/drill moderne, tutti SINTETIZZATI da zero (nessun campione, nessun diritto di terzi):  sirena (ambulanza/polizia), sparo, mitraglia (raffica), coro lirico (intro stile opera), filtro "focu | SIG: SIG, siren: siren, gunshot: gunshot, machinegun: machinegun, choir: choir, focus: focus, pick: pick, rng: rng |
 | sing-guide.js | 70 | Guida al canto: dal testo + base (mappa della canzone) a un foglio di istruzioni riga per riga. Per ogni riga: quando entrare (battuta e secondi), come dirla (rap parlato / cantato / tenuto), quanto tenere l'ultima parol | build: build, check: check, activity: activity, FAST: FAST |
@@ -63,8 +68,9 @@ Leggi questo file PRIMA di aprire i sorgenti: dice dove sta ogni cosa.
 | studio-ai.js | 105 | Intelligenza artificiale LOCALE e gratuita per gli agenti dello Studio (niente abbonamenti, niente chiavi). Due motori:  - "ollama": Ollama sul Mac (https://ollama.com), modello consigliato qwen2.5:7b (buon italiano). | semantic: semantic, EXTRA: EXTRA, MODELS: MODELS, COMANDI: COMANDI, messages: messages, parse: parse, think: think, pingOllama: pingOllama |
 | style-card.js | 114 | Scheda di stile: misura caratteristiche GENERICHE di una canzone di riferimento (tempo, peso del basso, luminosità, densità ritmica, crescita di energia) e le trasforma in parametri per l'arrangiatore. Si possono mescola | measure: measure, blend: blend, toParams: toParams, normBpm: normBpm |
 | style-presets.js | 88 | Atmosfere "tipo …": caratteristiche di GENERE associate ad artisti e scene (velocità, strumenti, batteria, accordi, umore). Non copiano nessuna base o melodia: sono punti di partenza per basi nuove e originali. Ogni atmo | LIST: LIST, PROGS: PROGS, byId: byId, variant: variant, pickMany: pickMany, progName: progName |
-| sultan-brain.js | 157 | Cervello Sultan: legge il TESTO e decide da solo come deve suonare la base. Non è un modello di linguaggio: è un sistema di regole misurabili, tutto sul telefono, tutto spiegabile. 1. SCENE: conta nel testo parole di mon | MOOD: MOOD, parseStyle: parseStyle, plan: plan, styleScores: styleScores, words: words, BASE_BPM: BASE_BPM, hash: hash, NAMES: NAMES, GENRES: GENRES, LEX: LEX |
-| synth-design.js | 166 | Designer di suoni (sintesi calcolata qui, nessun campione):  - SYNTH wavetable: 4 forme d'onda (sinusoide → dente di sega → quadra → "vocale") e si scorre tra loro con    "Posizione"; un LFO muove la posizione (movimento | fm: fm, PRO: PRO, KITS: KITS, kitRender: kitRender, B808_PRESETS: B808_PRESETS, PERC: PERC, percEvents: percEvents, voiceInstrument: voiceInstrument, TABLES: TABLES, SYNTH_DEF: SYNTH_DEF, SYNTH_PRESET |
+| sultan-brain.js | 167 | Cervello Sultan: legge il TESTO e decide da solo come deve suonare la base. Non è un modello di linguaggio: è un sistema di regole misurabili, tutto sul telefono, tutto spiegabile. 1. SCENE: conta nel testo parole di mon | MOOD: MOOD, parseStyle: parseStyle, plan: plan, styleScores: styleScores, words: words, BASE_BPM: BASE_BPM, hash: hash, NAMES: NAMES, GENRES: GENRES, LEX: LEX |
+| synth-design.js | 205 | Designer di suoni (sintesi calcolata qui, nessun campione):  - SYNTH wavetable: 4 forme d'onda (sinusoide → dente di sega → quadra → "vocale") e si scorre tra loro con    "Posizione"; un LFO muove la posizione (movimento | fm: fm, PRO: PRO, KITS: KITS, kitRender: kitRender, B808_PRESETS: B808_PRESETS, PERC: PERC, percEvents: percEvents, voiceInstrument: voiceInstrument, TABLES: TABLES, SYNTH_DEF: SYNTH_DEF, SYNTH_PRESET |
+| taste.js | 56 | Gusto: impara dai ♥ e ✕ che metti alle basi generate. Salva SOLO numeri (stile, tonalità, pesantezza, BPM), mai audio né testi. newMem() → memoria vuota; vote(mem, plan, +1/-1) → nuova memoria; profile(mem) → profilo per | newMem: newMem, vote: vote, weights: weights, profile: profile, avoidList: avoidList, bpmRange: bpmRange, summary: summary, reset: reset |
 | timing.js | 43 | Correzione del tempo: misura di quanto la voce è in anticipo o in ritardo rispetto alla griglia della base (semicrome al BPM del progetto) e sposta la voce. Si assume che la registrazione parta insieme alla base. Misurat | onsets: onsets, measure: measure, shift: shift |
 | transcribe.js | 44 | Trascrizione delle parole cantate: Whisper (OpenAI, licenza MIT) eseguito sul dispositivo con transformers.js (Hugging Face, Apache-2.0). Gratis, niente server: il modello si scarica una volta. Serve per STUDIARE il meto |  |
 | video-ideas.js | 87 | Idee per il videoclip, costruite sul brano: concetto visivo, struttura a battute (con i secondi calcolati dal tempo), inquadrature da girare con l'iPhone, montaggio e cose da evitare. | generate: generate, MOODS: MOODS |
@@ -86,45 +92,48 @@ Leggi questo file PRIMA di aprire i sorgenti: dice dove sta ogni cosa.
 - 324: Studio: testo
 - 380: Guida alla voce: canta / parla / allunga
 - 411: Studio: base
-- 514: Rime dal dizionario personale
-- 519: Assistente testi (AI locale, opzionale)
-- 571: Cartelle artista: stile misurato dai testi caricati (solo numeri)
-- 625: Cervello Sultan nel Beat Lab
-- 636: Orecchio di Sultan: ascolto con strumenti di misura
-- 672: Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti)
-- 730: Strumenti veri
-- 929: Coach
-- 1015: Studio (DAW): tracce, trasporto, testo, agenti
-- 1165: registrazione nello Studio
-- 1207: scelta strumento (foglio)
-- 1237: agenti
-- 1344: comandi
-- 1383: Parla con lo Studio: frasi → modifiche vere, con Accetta / Annulla
-- 1457: Mastering professionale, riferimento A/B, tracce separate
-- 1504: Designer suoni: synth, 808, effetti di transizione
-- 1591: Piano roll nello Studio (melodia e basso 808)
-- 1688: Voce: prove e montaggio (clip)
-- 1752: Mixer a canali (stessa catena per ascolto e file salvato)
-- 1856: Microfono nello Studio: pulito o autotune, tutto modificabile
-- 1928: Impara da una base
-- 2095: Studio a passi: porto qui i comandi del Cervello (stessi id, stessi ascolti)
-- 2107: Varianti: 8 basi diverse alla volta, da ascoltare e scegliere (senza limite: premi ancora)
-- 2191: Ispettore della traccia: un tocco sulla traccia → Suono · Note · Canale
-- 2237: Produzione: effetti da film e interventi vocali scelti dal testo (ProdFx), modificabili a mano
-- 2370: AI Producer
-- 2429: Vocal Studio
-- 2462: Registrazione con il microfono vero (solo nella versione app; dentro Claude il microfono è bloccato)
-- 2795: VOICE LAB (cablaggio): il codice sta in src/voice-chain.js, src/voice-lab.js, src/realtime-tune.js
-- 2799: fine VOICE LAB
-- 2801: Video
-- 2891: Marketing e Social
-- 2956: Libreria
-- 2971: Impostazioni
-- 3003: Avvio
+- 516: Rime dal dizionario personale
+- 521: Assistente testi (AI locale, opzionale)
+- 590: Cartelle artista: stile misurato dai testi caricati (solo numeri)
+- 650: Cervello Sultan nel Beat Lab
+- 661: Orecchio di Sultan: ascolto con strumenti di misura
+- 699: Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti)
+- 709: Voce guida: voce maschile sintetica sulla base (impara solo l'altezza della tua voce)
+- 738: Controllo del telefono: gira SUL tuo iPhone e dice cosa funziona (Misurato)
+- 791: MUSICAL DNA ENGINE: mescola stili (numeri), emozioni del testo → base vera
+- 940: Strumenti veri
+- 1139: Coach
+- 1225: Studio (DAW): tracce, trasporto, testo, agenti
+- 1393: registrazione nello Studio
+- 1435: scelta strumento (foglio)
+- 1465: agenti
+- 1572: comandi
+- 1611: Parla con lo Studio: frasi → modifiche vere, con Accetta / Annulla
+- 1685: Mastering professionale, riferimento A/B, tracce separate
+- 1732: Designer suoni: synth, 808, effetti di transizione
+- 1819: Piano roll nello Studio (melodia e basso 808)
+- 1916: Voce: prove e montaggio (clip)
+- 1980: Mixer a canali (stessa catena per ascolto e file salvato)
+- 2084: Microfono nello Studio: pulito o autotune, tutto modificabile
+- 2156: Impara da una base
+- 2424: Studio a passi: porto qui i comandi del Cervello (stessi id, stessi ascolti)
+- 2436: Varianti: 8 basi diverse alla volta, da ascoltare e scegliere (senza limite: premi ancora)
+- 2578: Ispettore della traccia: un tocco sulla traccia → Suono · Note · Canale
+- 2624: Produzione: effetti da film e interventi vocali scelti dal testo (ProdFx), modificabili a mano
+- 2759: AI Producer
+- 2818: Vocal Studio
+- 2851: Registrazione con il microfono vero (solo nella versione app; dentro Claude il microfono è bloccato)
+- 3184: VOICE LAB (cablaggio): il codice sta in src/voice-chain.js, src/voice-lab.js, src/realtime-tune.js
+- 3188: fine VOICE LAB
+- 3190: Video
+- 3280: Marketing e Social
+- 3345: Libreria
+- 3360: Impostazioni
+- 3392: Avvio
 
 ## Funzioni principali di app.js (riga: nome)
 
-esc:5, fmt:6, cap:7, tick:8, sleep:9, tag:13, today:14, uid:15, defaultProd:23, newSong:26, cur:29, persist:38, flush:44, sanitize:52, load:64, getCtx:93, makeBuffer:98, stopPlay:103, playBuf:110, getDl:127, saveFile:128, wavBlob:140, saveAudio:148, toMono:165, decode:171, initSample:184, ask:188, songContext:192, route:210, applyMood:232, lyricLines:267, analysisOf:268, topMood:269, songCard:272, inFolder:278, renderAnalysis:326, meter:354, renderGuide:382, followBars:413, fillBase:418, syncKar:430, songMap:451, getBase:456, activeTake:461, buildMix:463, karaokeTick:482, makeAndPlay:496, wbStore:515, wbLearnSongs:516, rhChips:517, arStore:572, arModel:573, beatProfile:581, arBars:588, arRender:589, arAdd:605, blBrain:626, earMeasure:637, earApply:638, earHtml:645, earMoodNote:653, earRun:659, applyMoodBg:671, runBrain:674, sbAuto:698, sbMore:702, brainFirst:719, instName:732, noteNm:733, labRec:734, loadInst:735, ensureInst:742, instOptions:748, refreshInstSelects:761, instInfo:764, fillInst:769, applyRecipe:777, previewInst:788, labOptions:800, labCurrent:805, labSet:811, renderKnobs:817, labPlayRec:823, renderLab:828, sgGuide:904, sgCue:905, sgRender:906, lyricHtml:920, coachState:930, coachCtx:931, coachRec:935, coachName:936, coachCands:944, coachMeasure:966, coachCheck:984, coachFix:999, renderCoach:1009, lvl:1029, dwFill:1030, dwLyInfo:1044, dwSteps:1048, dwBase:1053, voiceTake:1057, dwBuffers:1058, gainFor:1082, dwGains:1089, dwStop:1090, dwPlay:1097, dwPos:1118, dwDraw:1126, dwRefresh:1161, dwChanged:1163, dwRecord:1166, dwRecStop:1183, sheetOpen:1209, sheetRender:1210, agentsRender:1239, agentTecnico:1256, agentAscoltatore:1273, coachSummary:1282, wait:1283, agentsRun:1284, talkRender:1385, aiSet:1392, aiRender:1393, runCommands:1407, talkState:1419, talkGo:1423, talkApply:1445, mpSet:1459, mpRender:1460, mpMake:1476, synthRegister:1505, dsSliders:1512, dsRender:1513, voxRegister:1574, voxMake:1579, extraFxBufs:1590, prNotes:1595, prGenerated:1596, inScale:1597, chordsDraw:1599, drumDefault:1618, drumDraw:1624, prDraw:1630, prSave:1651, prStepMidi:1652, realTakes:1689, takeById:1690, vclips:1691, vclipKey:1696, vclipBuffer:1697, setClips:1702, fmtS:1703, clipsRender:1705, mixSet:1754, dwGraph:1761, mixRender:1776, mixFmt:1786, autoRender:1801, verRender:1817, dwRender:1828, wavStereo:1837, dwExport:1845, micSet:1857, micRender:1864, takeChords:1885, micApply:1890, learnList:1930, decodeStereo:1931, learnBar:1939, sepMode:1940, sepInfo:1942, stMono:1950, sepAi:1951, sepFast:1966, normOnly:1974, btGrid:1977, lyricStats:2008, trHtml:2015, profLine:2029, learnRender:2030, learnArtists:2069, learnPlan:2070, learnUse:2071, dwWsName:2085, dwWs:2086, rnd:2109, varSpec:2110, varMake:2116, varName:2134, atmRender:2135, varRender:2136, varHtml:2139, varClick:2144, textWeights:2163, pfImageWeights:2169, learnSpecs2:2176, learnSpecs:2183, inspSuono:2198, inspTab:2206, inspOpen:2212, projLine:2230, pfHash:2239, pfPlan:2240, pfKey:2250, pfCount:2251, pfGo:2252, pfName:2253, pfWhere:2254, pfChanged:2259, pfRender:2260, pfAdRender:2275, renderRefs:2337, chatPush:2372, renderChat:2373, renderHist:2377, snapshot:2381, producerGo:2382, localAdvice:2405, setAT:2434, addTake:2442, micOk:2464, tdb:2465, dbTake:2476, restoreTakes:2486, recUi:2499, startRec:2502, finishRec:2548, renderTakes:2589, selectTake:2603, renderTakeAnalysis:2615, cssv:2633, drawPitch:2634, noteName:2704, geom:2705, drawNotes:2712, renderNotes:2739, playTone:2749, noteAtX:2755, ptr:2756, endDrag:2767, rescale:2780, filterPhoto:2803, soon:2818, wrap:2821, drawClip:2822, clipMix:2845, renderIdeas:2871, copyText:2893, post:2898, findItem:2905, postEvents:2906, genPlan:2914, renderPlan:2924, refreshSocial:2937, applyTheme:2972, renderSettings:2977, start:3004
+esc:5, fmt:6, cap:7, tick:8, sleep:9, tag:13, today:14, uid:15, defaultProd:23, newSong:26, cur:29, persist:38, flush:44, sanitize:52, load:64, getCtx:93, makeBuffer:98, stopPlay:103, playBuf:110, getDl:127, saveFile:128, wavBlob:140, saveAudio:148, toMono:165, decode:171, initSample:184, ask:188, songContext:192, route:210, applyMood:232, lyricLines:267, analysisOf:268, topMood:269, songCard:272, inFolder:278, renderAnalysis:326, meter:354, renderGuide:382, followBars:413, fillBase:418, syncKar:430, songMap:451, getBase:456, activeTake:461, buildMix:463, karaokeTick:482, makeAndPlay:496, wbStore:517, wbLearnSongs:518, rhChips:519, arStore:591, tasteMem:592, arModel:593, arModel0:598, beatProfile:606, arBars:613, arRender:614, arAdd:630, blBrain:651, earMeasure:662, earApply:663, earHtml:670, earMoodNote:678, earRun:684, applyMoodBg:696, moodNow:698, autoSecs:702, gvS:710, gvAdd:711, rxFor:766, runBrain:767, dnaSaved:793, dnaOpts:794, dnaParts:800, dnaBuild:804, dnaSliders:811, dnaCreate:814, atmQuick:842, sbAuto:856, sbMore:860, sbChips:887, sbPreset:899, brainFirst:917, instName:942, noteNm:943, labRec:944, loadInst:945, ensureInst:952, instOptions:958, refreshInstSelects:971, instInfo:974, fillInst:979, applyRecipe:987, previewInst:998, labOptions:1010, labCurrent:1015, labSet:1021, renderKnobs:1027, labPlayRec:1033, renderLab:1038, sgGuide:1114, sgCue:1115, sgRender:1116, lyricHtml:1130, coachState:1140, coachCtx:1141, coachRec:1145, coachName:1146, coachCands:1154, coachMeasure:1176, coachCheck:1194, coachFix:1209, renderCoach:1219, lvl:1239, dwFill:1240, dwLyInfo:1254, dwSteps:1258, dwBase:1270, voiceTake:1274, dwBuffers:1275, gainFor:1299, dwGains:1306, dwStop:1307, dwPlay:1315, ominoTick:1339, dwPos:1345, dwDraw:1354, dwRefresh:1389, dwChanged:1391, dwRecord:1394, dwRecStop:1411, sheetOpen:1437, sheetRender:1438, agentsRender:1467, agentTecnico:1484, agentAscoltatore:1501, coachSummary:1510, wait:1511, agentsRun:1512, talkRender:1613, aiSet:1620, aiRender:1621, runCommands:1635, talkState:1647, talkGo:1651, talkApply:1673, mpSet:1687, mpRender:1688, mpMake:1704, synthRegister:1733, dsSliders:1740, dsRender:1741, voxRegister:1802, voxMake:1807, extraFxBufs:1818, prNotes:1823, prGenerated:1824, inScale:1825, chordsDraw:1827, drumDefault:1846, drumDraw:1852, prDraw:1858, prSave:1879, prStepMidi:1880, realTakes:1917, takeById:1918, vclips:1919, vclipKey:1924, vclipBuffer:1925, setClips:1930, fmtS:1931, clipsRender:1933, mixSet:1982, dwGraph:1989, mixRender:2004, mixFmt:2014, autoRender:2029, verRender:2045, dwRender:2056, wavStereo:2065, dwExport:2073, micSet:2085, micRender:2092, takeChords:2113, micApply:2118, learnList:2158, decodeStereo:2159, learnBar:2167, sepMode:2168, sepInfo:2170, stMono:2178, withTimeout:2179, stallGuard:2181, sepAi:2182, learnSecs:2203, sepDb:2206, sepIdb:2207, wakeOn:2208, sepServer:2211, sepFast:2244, normOnly:2253, btGrid:2266, learnOne:2277, lyricStats:2308, trHtml:2315, learnLyrics:2323, lyricsDone:2332, profLine:2342, learnRender:2343, varCount:2386, folderProf:2388, learnArtists:2398, learnPlan:2399, learnUse:2400, dwWsName:2414, dwWs:2415, rnd:2438, varSpec:2439, varMake:2445, varName:2463, atmRender:2466, varRender:2467, varHtml:2470, varClick:2475, refSet:2501, refApply:2506, varStyleRender:2523, textWeights:2531, pfImageWeights:2537, learnSpecs2:2546, learnSpecs:2570, inspSuono:2585, inspTab:2593, inspOpen:2599, projLine:2617, pfSig:2627, pfHash:2628, pfPlan:2629, pfKey:2639, pfCount:2640, pfGo:2641, pfName:2642, pfWhere:2643, pfChanged:2648, pfRender:2649, pfAdRender:2664, renderRefs:2726, chatPush:2761, renderChat:2762, renderHist:2766, snapshot:2770, producerGo:2771, localAdvice:2794, setAT:2823, addTake:2831, micOk:2853, tdb:2854, dbTake:2865, restoreTakes:2875, recUi:2888, startRec:2891, finishRec:2937, renderTakes:2978, selectTake:2992, renderTakeAnalysis:3004, cssv:3022, drawPitch:3023, noteName:3093, geom:3094, drawNotes:3101, renderNotes:3128, playTone:3138, noteAtX:3144, ptr:3145, endDrag:3156, rescale:3169, filterPhoto:3192, soon:3207, wrap:3210, drawClip:3211, clipMix:3234, renderIdeas:3260, copyText:3282, post:3287, findItem:3294, postEvents:3295, genPlan:3303, renderPlan:3313, refreshSocial:3326, applyTheme:3361, renderSettings:3366, start:3393
 
 ## tests/
 
@@ -132,6 +141,7 @@ esc:5, fmt:6, cap:7, tick:8, sleep:9, tag:13, today:14, uid:15, defaultProd:23, 
 - arranger.test.js: 21 test
 - artist-lab.test.js: 7 test
 - audio-analysis.test.js: 8 test
+- auto-sections.test.js: 9 test
 - autotune-chords.test.js: 1 test
 - autotune-key.test.js: 13 test
 - autotune-voice.test.js: 11 test
@@ -144,22 +154,27 @@ esc:5, fmt:6, cap:7, tick:8, sleep:9, tag:13, today:14, uid:15, defaultProd:23, 
 - beatlab-patterns.test.js: 5 test
 - beatlab-sampler.test.js: 6 test
 - beatlab-theory.test.js: 5 test
+- brain-force.test.js: 4 test
 - clips.test.js: 4 test
 - coach.test.js: 6 test
+- dna.test.js: 8 test
 - ear.test.js: 9 test
+- guide-voice.test.js: 7 test
 - instruments.test.js: 6 test
-- local-ai.test.js: 5 test
+- local-ai.test.js: 9 test
 - lyrics-base-clip.test.js: 8 test
 - lyrics-engine.test.js: 12 test
 - master-pro.test.js: 4 test
 - master.test.js: 6 test
 - melody.test.js: 3 test
 - mixer.test.js: 5 test
+- omino.test.js: 1 test
 - pitch-video.test.js: 7 test
 - polish.test.js: 8 test
-- prod-fx.test.js: 6 test
+- prod-fx.test.js: 7 test
 - producer-promo.test.js: 16 test
 - realtime-tune.test.js: 4 test
+- remix.test.js: 4 test
 - sig-fx.test.js: 6 test
 - sing-guide.test.js: 3 test
 - song-map.test.js: 4 test
@@ -170,6 +185,7 @@ esc:5, fmt:6, cap:7, tick:8, sleep:9, tag:13, today:14, uid:15, defaultProd:23, 
 - style-presets.test.js: 3 test
 - sultan-brain.test.js: 8 test
 - synth-design.test.js: 6 test
+- taste.test.js: 6 test
 - timing.test.js: 3 test
 - voice-chain.test.js: 15 test
 - voice-fx.test.js: 3 test

@@ -61,3 +61,6 @@ Chitarre (acustica, classica, elettrica pulita): sintetizzate (Karplus-Strong), 
 Da VCSL e VSCO-2-CE (Versilian Studios, **CC0 1.0**, nessun credito obbligatorio), convertiti con tools/build-instruments.py:
 harpsi (clavicembalo), kawai (gran coda), pipeorgan, xylo, vibbow, mbira, psaltbow, psaltpluck, vlnspic, cellospic, vlntrem, cellotrem, violin, bassarco, tuba, hornmute, tbnstac, bassoon.
 Più 39 nuovi suoni Synth Pro sintetizzati da zero (nessuna licenza di terzi).
+
+## Spazio di separazione (space/, 25/11)
+audio-separator (MIT), htdemucs (Meta, MIT), Mel-Band RoFormer vocals di Kimberley Jensen (MIT secondo la scheda huggingface.co/KimberleyJSN/melbandroformer), faster-whisper (MIT) + Whisper small (MIT), gradio (Apache 2.0), @gradio/client (ISC).
