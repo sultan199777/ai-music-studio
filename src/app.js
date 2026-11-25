@@ -857,6 +857,42 @@
     $('#dna-reset').addEventListener('click', function () { DNAUI.over = {}; dnaSliders(dnaBuild().dna); });
     $('#dna-save').addEventListener('click', function () { var nm = ($('#dna-name').value || '').trim().slice(0, 40); if (!nm) { $('#dna-msg').textContent = 'Scrivi un nome per il tuo stile.'; return; } var b = dnaBuild(); dnaSaved().push({ name: nm, dna: b.dna, at: Date.now() }); persist(); $$('#dna-rows select').forEach(function (sel, i) { var v = sel.value; dnaOpts(sel, i > 0); sel.value = v; }); $('#dna-msg').textContent = 'Salvato «' + nm + '». Lo trovi in «I miei stili» in ogni menu: puoi rimescolarlo con altri.'; });
   })();
+  /* ===== Studio pulito: un tasto solo + la squadra di AI che mostra cosa ha deciso ===== */
+  var ONE = { mode: 'auto' };
+  function oneMode(m) {
+    ONE.mode = m; LIB.settings.oneMode = m; var v = $('#v-daw'); v.classList.toggle('one-auto', m === 'auto'); v.classList.toggle('one-dna', m === 'dna');
+    $$('#one-mode button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-m') === m); });
+    $('#one-sub2').textContent = m === 'auto' ? 'dal tuo testo' : 'con gli stili che hai scelto';
+  }
+  function agent(ico, name, txt, tag, off) { return '<div class="ag"><i>' + ico + '</i><div><b>' + esc(name) + '</b> <span class="tag ' + (tag === 'Misurato' ? 'm' : 'i') + '">' + tag + '</span><p' + (off ? ' class="off"' : '') + '>' + txt + '</p></div></div>'; }
+  async function teamReport() {
+    var el = $('#one-team'); if (!el) return; var s = cur(), p = s.prod, rows = [], G = ALLG[p.genre] || { label: p.genre };
+    var em = DNA.emotion(s.lyrics || ''), emTxt = em.found ? em.top.slice(0, 3).map(function (e) { return e + ' ' + Math.round(em.share[e] * 100) + '%'; }).join(', ') + ' (' + em.found + ' parole di emozione su ' + em.words + ')' : 'poche parole di emozione: decido dallo stile e dalla forma del testo';
+    rows.push(agent('💭', 'Lettore di emozioni', 'Nel tuo testo: ' + esc(emTxt) + '.', 'Misurato'));
+    rows.push(agent('🧠', 'Cervello', esc(G.label) + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode + (p.heavy ? ' · 808 pesante' : '') + '. Ha scelto lo stile leggendo scene e forma del testo' + (s.genreManual ? ' (stile scelto da te o dal mix)' : '') + '.', 'Ipotesi'));
+    var g = p.groove; rows.push(agent('🥁', 'Compositore', g && g.kickPats ? 'Cassa sui passi ' + g.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + ', rullante ' + (g.snare || []).map(function (x) { return x + 1; }).join(', ') + (p.prog ? ', giro ' + Remix.progName(p.prog, p.mode) : '') + '. Nuovo a ogni pressione.' : 'Ritmo dello stile ' + esc(G.label) + '.', 'Misurato'));
+    var nl = (LIB.settings.learned || []).filter(function (x) { return x.vote > 0; }).length;
+    rows.push(agent('📚', 'Memoria delle basi', nl ? (p.fromLearn ? 'Ho usato i numeri di ' + p.fromLearn + ' basi studiate (' + nl + ' in libreria).' : nl + ' basi studiate in libreria: le uso nella prima base «Automatico»; qui questa versione è nuova.') : 'Nessuna base studiata ancora. In Libreria carichi una canzone o un video e imparo il ritmo.', nl ? 'Misurato' : 'Ipotesi', !nl));
+    rows.push(agent('❤', 'Gusto', Taste.summary(tasteMem()), 'Misurato', !tasteMem().n));
+    var llm = $('#ai-v') && !$('#ai-v').disabled;
+    rows.push(agent('✨', 'Modello di linguaggio locale', llm ? 'Pronto: nel passo Testo migliora righe, trova rime e scrive ritornelli.' : 'Spento. Si attiva nel passo Testo (scarica un modello una volta sola, serve un telefono con WebGPU: non verificato sul tuo).', 'Ipotesi', !llm));
+    el.innerHTML = '<h4>La squadra che ha lavorato</h4>' + rows.join('') + '<div id="one-ear"></div>'; 
+    try { var r = await earRun(true); if (r && r.findings) $('#one-ear').innerHTML = agent('👂', 'Orecchio', r.findings.length ? r.findings.length + ' cose da controllare (volumi, bilanciamento): i dettagli sono sotto, nel riquadro «Ascolta».' : 'Ho misurato volumi e bilanciamento: tutto in ordine.', 'Misurato'); } catch (e) {}
+  }
+  (function oneInit() {
+    if (!$('#one-go')) return;
+    oneMode(LIB.settings.oneMode === 'dna' ? 'dna' : 'auto');
+    $('#one-mode').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) oneMode(b.getAttribute('data-m')); });
+    $('#one-go').addEventListener('click', async function () {
+      var s = cur(), st = $('#one-status'); if (!(s.lyrics || '').trim() && ONE.mode === 'auto') { st.textContent = 'Scrivi o incolla prima il testo (passo 1): da lì parto.'; return; }
+      st.textContent = 'Sto componendo…'; this.disabled = true; var self = this;
+      try { if (ONE.mode === 'dna') await dnaCreate(true); else { $('#b-play').click(); await sleepMs(300); while (document.querySelector('#b-status') && /Sto componendo|Aggiungo/.test($('#b-status').textContent)) await sleepMs(300); await sleepMs(700); } st.textContent = 'Pronto. Premi ancora per una base nuova.'; teamReport(); }
+      catch (e) { st.textContent = 'Non sono riuscito: ' + ((e && e.message) || e); } self.disabled = false;
+    });
+    $('#one-to-learn').addEventListener('click', function (e) { e.preventDefault(); dwWs('libreria'); window.scrollTo(0, 0); });
+    $('#one-to-voice').addEventListener('click', function (e) { e.preventDefault(); dwWs('voce'); window.scrollTo(0, 0); });
+  })();
+  function sleepMs(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   $('#sb-mood').addEventListener('change', function () { $('#bl-mood').value = this.value; });
   $('#bl-mood').addEventListener('change', function () { $('#sb-mood').value = this.value; });
   /* base nuova da un'atmosfera (quella scelta in «Suona come», altrimenti trap/drill/street a caso): stravolge davvero

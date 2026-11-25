@@ -369,6 +369,33 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
 
 #sb-chips .chip{margin:3px 4px 3px 0}#sb-chips .chip.on{outline:2px solid var(--acc,#8b5cf6)}#sb-chips h4{margin:12px 0 4px;font-size:.9rem}
 
+/* ===== Studio pulito: passo Base ===== */
+#v-daw.one-auto #dw-p-dna{display:none!important}
+#v-daw.one-dna #dw-p-brain{display:none!important}
+#dwb-actions,#b-play,#b-new,#dna-go,#dna-again{display:none!important}
+.one{padding:20px 16px 16px!important;background:linear-gradient(160deg,rgba(124,92,255,.16),rgba(20,16,36,.0) 60%),var(--card)!important;border-radius:24px!important;border:1px solid rgba(167,139,250,.35)!important}
+.one-kick{font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.65;margin-bottom:4px}
+.one-h{margin:0 0 6px;font-size:26px;line-height:1.1;letter-spacing:-.02em}
+.one-sub{margin:0 0 14px;font-size:14px;opacity:.85;line-height:1.4}
+.one-seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(0,0,0,.28);padding:5px;border-radius:16px;margin-bottom:14px}
+.one-seg button{border:0;background:transparent;color:inherit;border-radius:12px;padding:10px 8px;text-align:center;display:flex;flex-direction:column;gap:2px;font:inherit;cursor:pointer}
+.one-seg button b{font-size:15px}.one-seg button small{font-size:11px;opacity:.65}
+.one-seg button.on{background:rgba(167,139,250,.28);box-shadow:inset 0 0 0 1px rgba(196,181,253,.6)}
+.one-cta{width:100%;display:flex;align-items:center;gap:14px;border:0;cursor:pointer;color:#fff;padding:18px 20px;border-radius:20px;background:linear-gradient(135deg,#8b5cf6,#ec4899);box-shadow:0 10px 30px rgba(139,92,246,.45);font:inherit;text-align:left}
+.one-cta:active{transform:scale(.985)}
+.one-cta b{display:block;font-size:22px;letter-spacing:-.01em}.one-cta small{display:block;font-size:12px;opacity:.85}
+.one-ico{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.22);display:grid;place-items:center;font-size:18px;flex:none}
+.one-status{min-height:1.2em;margin-top:10px;opacity:.85}
+.one-team{margin-top:12px;display:grid;gap:8px}
+.one-team .ag{display:grid;grid-template-columns:34px 1fr;gap:10px;padding:10px 12px;background:rgba(0,0,0,.22);border-radius:14px;border:1px solid rgba(255,255,255,.07)}
+.one-team .ag i{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:rgba(167,139,250,.22);font-style:normal;font-size:16px}
+.one-team .ag b{font-size:13px}.one-team .ag p{margin:2px 0 0;font-size:12.5px;line-height:1.35;opacity:.85}
+.one-team .ag .off{opacity:.6}
+.one-team h4{margin:6px 0 0;font-size:12px;letter-spacing:.1em;text-transform:uppercase;opacity:.6;font-weight:600}
+.one-links{margin-top:12px;opacity:.8}
+
+.learn-seq{margin:6px 0 12px;padding-left:20px;line-height:1.5;opacity:.9}.learn-seq li{margin:2px 0}
+
 /* ===== VOICE LAB (stile Cosmo: usa le variabili del tema) ===== */
 .vl .vl-auto{font-size:1.25rem;min-height:60px;margin:8px 0 4px;letter-spacing:.04em}
 .vl .vl-hint{margin:2px 0 8px}
@@ -543,8 +570,21 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     <div class="status" id="dw-tmsg"></div>
   </section>
 
+  <section class="dw-panel one" id="dw-p-one" data-ws="base">
+    <div class="one-kick">Passo 2 di 4</div>
+    <h2 class="one-h">Crea la tua base</h2>
+    <p class="one-sub">Leggo il testo, scelgo lo stile e compongo. <b>Ogni volta che premi, nasce una base nuova.</b></p>
+    <div class="one-seg" id="one-mode" role="tablist">
+      <button class="on" data-m="auto" role="tab"><b>Automatico</b><small>decide il tuo testo</small></button>
+      <button data-m="dna" role="tab"><b>Mescolo io</b><small>stili e numeri</small></button>
+    </div>
+    <button class="one-cta" id="one-go"><span class="one-ico">▶</span><span><b>Crea base</b><small id="one-sub2">dal tuo testo</small></span></button>
+    <div id="one-status" class="small one-status" aria-live="polite"></div>
+    <div class="one-team" id="one-team"></div>
+    <div class="one-links small">Hai voglia di imparare da altre canzoni? <a href="#daw" id="one-to-learn">Vai a Libreria</a> · Dopo la base: <a href="#daw" id="one-to-voice">canta la voce</a></div>
+  </section>
   <section class="dw-panel" id="dw-p-brain" data-ws="base">
-    <div class="dw-ph"><h3>A · Automatico: lascia decidere al testo</h3><span class="tag i">Cervello Sultan</span></div>
+    <div class="dw-ph"><h3>Stile e umore</h3><span class="tag i">Facoltativo</span></div>
     <p class="small muted">Scrivi lo stile che vuoi (es. "trap dark") oppure lascia vuoto: il testo decide. Poi premi il tasto grande.</p>
     <label class="f"><span><b>Suona come</b> (le tue cartelle imparate dai video, o un'atmosfera)</span><select id="dw-ref"><option value="">Lo decide il mio testo</option></select></label><p class="small muted" id="dw-ref-msg"></p>
     <div id="dwb-fields"></div>
@@ -552,7 +592,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     <div id="dwb-out"></div>
   </section>
   <section class="dw-panel" id="dw-p-dna" data-ws="base">
-    <div class="dw-ph"><h3>B · DNA musicale: mescola gli stili</h3><span class="tag m">Numeri</span></div>
+    <div class="dw-ph"><h3>Mescola gli stili (DNA musicale)</h3><span class="tag m">Numeri</span></div>
     <div class="row"><button class="btn pri" id="dna-ai">Consigliami 3 mix dal mio testo</button></div><div id="dna-ai-out" class="small"></div>
     <p class="small muted">Ogni stile è un elenco di numeri (tempo, cassa, rullante, hi-hat, 808, buio…). Scegli fino a 3 stili e quanto pesa ciascuno: nasce uno stile nuovo. Il testo può spostare i numeri (malinconia, rabbia, euforia…).</p>
     <div id="dna-rows"></div>
@@ -622,6 +662,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
 
   <section class="dw-panel" id="dw-p-learn" data-ws="libreria">
     <div class="dw-ph"><h3>Impara da una base</h3><span class="tag a">Solo misure, niente copie</span></div>
+    <ol class="learn-seq small"><li><b>Carica</b> una canzone o un video (sotto, tasto «2»).</li><li><b>Separo</b> voce e base sul tuo telefono.</li><li><b>Misuro</b> ritmo, accordi, tempo: solo numeri.</li><li><b>Uso</b> quei numeri nel passo 2 Base, quando premi «Crea base».</li></ol>
     <p class="small muted">Carica una canzone o un video che ti piace. Mettila in una <b>cartella</b> (un artista o un genere): ogni cartella diventa uno stile da cui creare basi nuove. La divido in <b>voce</b> e <b>base</b>, le ripulisco e misuro il ritmo: velocità, cassa, rullante, hi-hat, bassi. Dimmi se ti piace o no. Tengo solo i numeri, mai l'audio, e la base nuova è tua e originale.</p>
     <div class="dw-modes" id="dw-sep-modes">
       <button class="dw-mode on" data-sep="rapida"><b>Rapida</b><small>Per il telefono. Modello SCNet (27 MB): voce, batteria, basso e resto.</small></button>
@@ -746,7 +787,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 16:40</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 16:49</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -13031,6 +13072,42 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     $('#dna-reset').addEventListener('click', function () { DNAUI.over = {}; dnaSliders(dnaBuild().dna); });
     $('#dna-save').addEventListener('click', function () { var nm = ($('#dna-name').value || '').trim().slice(0, 40); if (!nm) { $('#dna-msg').textContent = 'Scrivi un nome per il tuo stile.'; return; } var b = dnaBuild(); dnaSaved().push({ name: nm, dna: b.dna, at: Date.now() }); persist(); $$('#dna-rows select').forEach(function (sel, i) { var v = sel.value; dnaOpts(sel, i > 0); sel.value = v; }); $('#dna-msg').textContent = 'Salvato «' + nm + '». Lo trovi in «I miei stili» in ogni menu: puoi rimescolarlo con altri.'; });
   })();
+  /* ===== Studio pulito: un tasto solo + la squadra di AI che mostra cosa ha deciso ===== */
+  var ONE = { mode: 'auto' };
+  function oneMode(m) {
+    ONE.mode = m; LIB.settings.oneMode = m; var v = $('#v-daw'); v.classList.toggle('one-auto', m === 'auto'); v.classList.toggle('one-dna', m === 'dna');
+    $$('#one-mode button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-m') === m); });
+    $('#one-sub2').textContent = m === 'auto' ? 'dal tuo testo' : 'con gli stili che hai scelto';
+  }
+  function agent(ico, name, txt, tag, off) { return '<div class="ag"><i>' + ico + '</i><div><b>' + esc(name) + '</b> <span class="tag ' + (tag === 'Misurato' ? 'm' : 'i') + '">' + tag + '</span><p' + (off ? ' class="off"' : '') + '>' + txt + '</p></div></div>'; }
+  async function teamReport() {
+    var el = $('#one-team'); if (!el) return; var s = cur(), p = s.prod, rows = [], G = ALLG[p.genre] || { label: p.genre };
+    var em = DNA.emotion(s.lyrics || ''), emTxt = em.found ? em.top.slice(0, 3).map(function (e) { return e + ' ' + Math.round(em.share[e] * 100) + '%'; }).join(', ') + ' (' + em.found + ' parole di emozione su ' + em.words + ')' : 'poche parole di emozione: decido dallo stile e dalla forma del testo';
+    rows.push(agent('💭', 'Lettore di emozioni', 'Nel tuo testo: ' + esc(emTxt) + '.', 'Misurato'));
+    rows.push(agent('🧠', 'Cervello', esc(G.label) + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode + (p.heavy ? ' · 808 pesante' : '') + '. Ha scelto lo stile leggendo scene e forma del testo' + (s.genreManual ? ' (stile scelto da te o dal mix)' : '') + '.', 'Ipotesi'));
+    var g = p.groove; rows.push(agent('🥁', 'Compositore', g && g.kickPats ? 'Cassa sui passi ' + g.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + ', rullante ' + (g.snare || []).map(function (x) { return x + 1; }).join(', ') + (p.prog ? ', giro ' + Remix.progName(p.prog, p.mode) : '') + '. Nuovo a ogni pressione.' : 'Ritmo dello stile ' + esc(G.label) + '.', 'Misurato'));
+    var nl = (LIB.settings.learned || []).filter(function (x) { return x.vote > 0; }).length;
+    rows.push(agent('📚', 'Memoria delle basi', nl ? (p.fromLearn ? 'Ho usato i numeri di ' + p.fromLearn + ' basi studiate (' + nl + ' in libreria).' : nl + ' basi studiate in libreria: le uso nella prima base «Automatico»; qui questa versione è nuova.') : 'Nessuna base studiata ancora. In Libreria carichi una canzone o un video e imparo il ritmo.', nl ? 'Misurato' : 'Ipotesi', !nl));
+    rows.push(agent('❤', 'Gusto', Taste.summary(tasteMem()), 'Misurato', !tasteMem().n));
+    var llm = $('#ai-v') && !$('#ai-v').disabled;
+    rows.push(agent('✨', 'Modello di linguaggio locale', llm ? 'Pronto: nel passo Testo migliora righe, trova rime e scrive ritornelli.' : 'Spento. Si attiva nel passo Testo (scarica un modello una volta sola, serve un telefono con WebGPU: non verificato sul tuo).', 'Ipotesi', !llm));
+    el.innerHTML = '<h4>La squadra che ha lavorato</h4>' + rows.join('') + '<div id="one-ear"></div>'; 
+    try { var r = await earRun(true); if (r && r.findings) $('#one-ear').innerHTML = agent('👂', 'Orecchio', r.findings.length ? r.findings.length + ' cose da controllare (volumi, bilanciamento): i dettagli sono sotto, nel riquadro «Ascolta».' : 'Ho misurato volumi e bilanciamento: tutto in ordine.', 'Misurato'); } catch (e) {}
+  }
+  (function oneInit() {
+    if (!$('#one-go')) return;
+    oneMode(LIB.settings.oneMode === 'dna' ? 'dna' : 'auto');
+    $('#one-mode').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) oneMode(b.getAttribute('data-m')); });
+    $('#one-go').addEventListener('click', async function () {
+      var s = cur(), st = $('#one-status'); if (!(s.lyrics || '').trim() && ONE.mode === 'auto') { st.textContent = 'Scrivi o incolla prima il testo (passo 1): da lì parto.'; return; }
+      st.textContent = 'Sto componendo…'; this.disabled = true; var self = this;
+      try { if (ONE.mode === 'dna') await dnaCreate(true); else { $('#b-play').click(); await sleepMs(300); while (document.querySelector('#b-status') && /Sto componendo|Aggiungo/.test($('#b-status').textContent)) await sleepMs(300); await sleepMs(700); } st.textContent = 'Pronto. Premi ancora per una base nuova.'; teamReport(); }
+      catch (e) { st.textContent = 'Non sono riuscito: ' + ((e && e.message) || e); } self.disabled = false;
+    });
+    $('#one-to-learn').addEventListener('click', function (e) { e.preventDefault(); dwWs('libreria'); window.scrollTo(0, 0); });
+    $('#one-to-voice').addEventListener('click', function (e) { e.preventDefault(); dwWs('voce'); window.scrollTo(0, 0); });
+  })();
+  function sleepMs(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   $('#sb-mood').addEventListener('change', function () { $('#bl-mood').value = this.value; });
   $('#bl-mood').addEventListener('change', function () { $('#sb-mood').value = this.value; });
   /* base nuova da un'atmosfera (quella scelta in «Suona come», altrimenti trap/drill/street a caso): stravolge davvero
