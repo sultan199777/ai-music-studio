@@ -76,8 +76,21 @@
     <div class="status" id="dw-tmsg"></div>
   </section>
 
+  <section class="dw-panel one" id="dw-p-one" data-ws="base">
+    <div class="one-kick">Passo 2 di 4</div>
+    <h2 class="one-h">Crea la tua base</h2>
+    <p class="one-sub">Leggo il testo, scelgo lo stile e compongo. <b>Ogni volta che premi, nasce una base nuova.</b></p>
+    <div class="one-seg" id="one-mode" role="tablist">
+      <button class="on" data-m="auto" role="tab"><b>Automatico</b><small>decide il tuo testo</small></button>
+      <button data-m="dna" role="tab"><b>Mescolo io</b><small>stili e numeri</small></button>
+    </div>
+    <button class="one-cta" id="one-go"><span class="one-ico">▶</span><span><b>Crea base</b><small id="one-sub2">dal tuo testo</small></span></button>
+    <div id="one-status" class="small one-status" aria-live="polite"></div>
+    <div class="one-team" id="one-team"></div>
+    <div class="one-links small">Hai voglia di imparare da altre canzoni? <a href="#daw" id="one-to-learn">Vai a Libreria</a> · Dopo la base: <a href="#daw" id="one-to-voice">canta la voce</a></div>
+  </section>
   <section class="dw-panel" id="dw-p-brain" data-ws="base">
-    <div class="dw-ph"><h3>A · Automatico: lascia decidere al testo</h3><span class="tag i">Cervello Sultan</span></div>
+    <div class="dw-ph"><h3>Stile e umore</h3><span class="tag i">Facoltativo</span></div>
     <p class="small muted">Scrivi lo stile che vuoi (es. "trap dark") oppure lascia vuoto: il testo decide. Poi premi il tasto grande.</p>
     <label class="f"><span><b>Suona come</b> (le tue cartelle imparate dai video, o un'atmosfera)</span><select id="dw-ref"><option value="">Lo decide il mio testo</option></select></label><p class="small muted" id="dw-ref-msg"></p>
     <div id="dwb-fields"></div>
@@ -85,7 +98,7 @@
     <div id="dwb-out"></div>
   </section>
   <section class="dw-panel" id="dw-p-dna" data-ws="base">
-    <div class="dw-ph"><h3>B · DNA musicale: mescola gli stili</h3><span class="tag m">Numeri</span></div>
+    <div class="dw-ph"><h3>Mescola gli stili (DNA musicale)</h3><span class="tag m">Numeri</span></div>
     <div class="row"><button class="btn pri" id="dna-ai">Consigliami 3 mix dal mio testo</button></div><div id="dna-ai-out" class="small"></div>
     <p class="small muted">Ogni stile è un elenco di numeri (tempo, cassa, rullante, hi-hat, 808, buio…). Scegli fino a 3 stili e quanto pesa ciascuno: nasce uno stile nuovo. Il testo può spostare i numeri (malinconia, rabbia, euforia…).</p>
     <div id="dna-rows"></div>
@@ -156,6 +169,7 @@
 
   <section class="dw-panel" id="dw-p-learn" data-ws="libreria">
     <div class="dw-ph"><h3>Impara da una base</h3><span class="tag a">Solo misure, niente copie</span></div>
+    <ol class="learn-seq small"><li><b>Carica</b> una canzone o un video (sotto, tasto «2»).</li><li><b>Separo</b> voce e base sul tuo telefono.</li><li><b>Misuro</b> ritmo, accordi, tempo: solo numeri.</li><li><b>Uso</b> quei numeri nel passo 2 Base, quando premi «Crea base».</li></ol>
     <p class="small muted">Carica una canzone o un video che ti piace. Mettila in una <b>cartella</b> (un artista o un genere): ogni cartella diventa uno stile da cui creare basi nuove. La divido in <b>voce</b> e <b>base</b>, le ripulisco e misuro il ritmo: velocità, cassa, rullante, hi-hat, bassi. Dimmi se ti piace o no. Tengo solo i numeri, mai l'audio, e la base nuova è tua e originale.</p>
     <div class="dw-modes" id="dw-sep-modes">
       <button class="dw-mode on" data-sep="rapida"><b>Rapida</b><small>Per il telefono. Modello SCNet (27 MB): voce, batteria, basso e resto.</small></button>
