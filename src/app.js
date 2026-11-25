@@ -484,9 +484,23 @@
   }
   /* iPhone: base a 24 kHz (25% di memoria in meno, misurata); computer: 32 kHz */
   var BASE_SR = (function () { try { return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ? 24000 : 32000; } catch (e) { return 32000; } })();
+  /* ogni base nuova (seme nuovo) evita kit e strumenti delle ULTIME 3 basi: niente più «sempre la stessa base» */
+  function varietyGuard(p) {
+    if (p.seed === LIB.settings.lastSeed) return; LIB.settings.lastSeed = p.seed; var H = LIB.settings.baseHist || (LIB.settings.baseHist = []);
+    var kits = Object.keys(SynthDesign.KITS), R = Instruments.RECIPES[p.genre] || {}, sd = (p.seed >>> 0) || 1;
+    var usedK = H.slice(-2).map(function (h) { return h.kit; });
+    if (!p.kitManual) { var opts = kits.filter(function (k) { return usedK.indexOf(k) < 0; }); if (R.kit && usedK.indexOf(R.kit) < 0 && sd % 3) p.kit = R.kit; else p.kit = (opts.length ? opts : kits)[sd % (opts.length || kits.length)]; }
+    var inst = p.inst = Object.assign({}, p.inst || {});
+    ['melodia', 'accordi', 'pad', 'arpeggio'].forEach(function (role, k) {
+      var used = H.slice(-5).map(function (h) { return h.inst && h.inst[role]; }), l = (R[role] || []).filter(function (id) { return !BANNED_INST[id]; });
+      if (used.indexOf(inst[role]) < 0 || l.length < 2) return; var fresh = l.filter(function (id) { return used.indexOf(id) < 0; });
+      inst[role] = (fresh.length ? fresh : l)[(sd >> (k * 3)) % (fresh.length || l.length)];
+    });
+    H.push({ kit: p.kit, inst: Object.assign({}, inst) }); if (H.length > 6) H.shift();
+  }
   function getBase() {
-    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, p.leadRest, pfSig(p).join(), p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.kit, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: BASE_SR, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, leadRest: typeof p.leadRest === 'number' ? p.leadRest : undefined, sig: pfSig(p), bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, drumRender: p.kit && SynthDesign.KITS[p.kit] ? function (part, o, s2) { return SynthDesign.kitRender(p.kit, part, o, s2); } : undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
+    var p = cur().prod; try { varietyGuard(p); } catch (e) {} var map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, p.leadRest, pfSig(p).join(), p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.kit, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: BASE_SR, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, leadRest: typeof p.leadRest === 'number' ? p.leadRest : undefined, sig: pfSig(p), bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, drumRender: p.kit && SynthDesign.KITS[p.kit] ? function (part, o, s2) { return SynthDesign.kitRender(p.kit, part, o, s2, p.seed); } : undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -530,6 +544,7 @@
     if (newVariant) p.seed++;
     st.textContent = 'Sto componendo la base…'; await tick();
     await ensureInst();
+    if ($('#dw-play')) { try { stopPlay(); SESSION.baseKey = ''; DW.bufKey = ''; await dwPlay(0); st.textContent = ''; SESSION.baseMade = true; try { dwSteps(); projLine(); } catch (e) {} var om = $('#dw-p-omino'); if (om) om.classList.remove('fold'); return { ok: true }; } catch (e) { /* se lo Studio non riesce, uso il lettore semplice */ } }
     try {
       var mx = buildMix({ voice: false });
       if (gvS().on && !SESSION.useImported && cur().lyrics && cur().lyrics.trim()) { st.textContent = 'Aggiungo la voce guida…'; await tick(); mx = gvAdd(mx); }
@@ -2801,7 +2816,7 @@
   $('#dw-insp').addEventListener('click', function (e) {
     if (e.target === this || e.target.id === 'dw-in-x') { this.hidden = true; return; }
     var t = e.target.closest('[data-int]'); if (t) { inspTab(t.getAttribute('data-int')); return; }
-    var kb = e.target.closest('[data-kit]'); if (kb) { var pk = cur().prod; if (kb.getAttribute('data-kit')) pk.kit = kb.getAttribute('data-kit'); else { delete pk.kit; pk.sounds = 'campioni'; } dwStop(); dwChanged(true); inspSuono(LANES[0]); return; }
+    var kb = e.target.closest('[data-kit]'); if (kb) { var pk = cur().prod; if (kb.getAttribute('data-kit')) { pk.kit = kb.getAttribute('data-kit'); pk.kitManual = true; } else { delete pk.kit; pk.kitManual = true; pk.sounds = 'campioni'; } dwStop(); dwChanged(true); inspSuono(LANES[0]); return; }
     var b = e.target.closest('[data-ins]'); if (!b) return; var a = b.getAttribute('data-ins'), L = LANES.filter(function (x) { return x.id === INSP.lane; })[0], p = cur().prod;
     if (a === 'choose') sheetOpen(L.role);
     else if (a === 'lib' || a === 'perc' || a === '808') { this.hidden = true; DS.tab = a === 'perc' ? 'perc' : (a === '808' ? '808' : 'synth'); dwWs('libreria'); dsRender(); setTimeout(function () { $('#dw-p-design').scrollIntoView({ behavior: 'smooth' }); }, 50); }

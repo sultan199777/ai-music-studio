@@ -183,8 +183,16 @@
   };
   function lp1(y, sr, f) { if (!f) return y; var a = 1 - Math.exp(-2 * Math.PI * f / sr), z = 0; for (var i = 0; i < y.length; i++) { z += a * (y[i] - z); y[i] = z; } return y; }
   function hp1(y, sr, f) { var a = Math.exp(-2 * Math.PI * f / sr), px = 0, py = 0; for (var i = 0; i < y.length; i++) { var v = a * (py + y[i] - px); px = y[i]; py = v; y[i] = v; } return y; }
-  function kitRender(kitId, part, o, sr) {
-    var K = KITS[kitId] || KITS.trap, r = noise(31 + part.length), i, n, y;
+  /* var (seme della base): ogni base ha la SUA batteria. Accordatura, lunghezza, colpo e brillantezza cambiano un po' (±20%),
+     così due basi dello stesso kit non suonano identiche (prima il kit era sempre uguale: «sempre la stessa base»). */
+  function kitVary(K, v) {
+    if (!v) return K; var a = (v >>> 0) || 1, rr = function () { a = (a * 1103515245 + 12345) >>> 0; return a / 4294967296; }, j = function (x, amt) { return x * (1 + (rr() - 0.5) * 2 * amt); };
+    var C = JSON.parse(JSON.stringify(K)); C.kick.f0 = j(C.kick.f0, 0.2); C.kick.f1 = j(C.kick.f1, 0.15); C.kick.decay = j(C.kick.decay, 0.25); C.kick.drive = j(C.kick.drive, 0.25); C.kick.click = j(C.kick.click, 0.4);
+    C.snare.tone = j(C.snare.tone, 0.2); C.snare.decay = j(C.snare.decay, 0.3); C.snare.bp = j(C.snare.bp, 0.25); C.snare.toneAmt = j(C.snare.toneAmt, 0.3);
+    if (C.clap) { C.clap.bp = j(C.clap.bp, 0.25); C.clap.decay = j(C.clap.decay, 0.3); } C.hat.decay = j(C.hat.decay, 0.35); C.hat.hp = j(C.hat.hp, 0.15); return C;
+  }
+  function kitRender(kitId, part, o, sr, v) {
+    var K = kitVary(KITS[kitId] || KITS.trap, v), r = noise(31 + part.length + (v ? v % 97 : 0)), i, n, y;
     if (part === 'kick') { var k = K.kick, ph = 0; n = Math.round(((o && o.big) ? k.decay * 1.6 : k.decay) * sr * 1.6); y = new Float32Array(n);
       for (i = 0; i < n; i++) { var t = i / sr; ph += 2 * Math.PI * (k.f1 + (k.f0 - k.f1) * Math.exp(-t * k.sweep)) / sr; y[i] = Math.tanh(k.drive * (Math.sin(ph) * Math.exp(-t / k.decay) + k.click * r() * Math.exp(-t * 400))) / Math.tanh(k.drive) * Math.min(1, i / 20); }
       return lp1(y, sr, k.lp); }

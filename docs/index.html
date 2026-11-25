@@ -910,7 +910,7 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 18:17</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 18:39</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -9190,8 +9190,16 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
   };
   function lp1(y, sr, f) { if (!f) return y; var a = 1 - Math.exp(-2 * Math.PI * f / sr), z = 0; for (var i = 0; i < y.length; i++) { z += a * (y[i] - z); y[i] = z; } return y; }
   function hp1(y, sr, f) { var a = Math.exp(-2 * Math.PI * f / sr), px = 0, py = 0; for (var i = 0; i < y.length; i++) { var v = a * (py + y[i] - px); px = y[i]; py = v; y[i] = v; } return y; }
-  function kitRender(kitId, part, o, sr) {
-    var K = KITS[kitId] || KITS.trap, r = noise(31 + part.length), i, n, y;
+  /* var (seme della base): ogni base ha la SUA batteria. Accordatura, lunghezza, colpo e brillantezza cambiano un po' (±20%),
+     così due basi dello stesso kit non suonano identiche (prima il kit era sempre uguale: «sempre la stessa base»). */
+  function kitVary(K, v) {
+    if (!v) return K; var a = (v >>> 0) || 1, rr = function () { a = (a * 1103515245 + 12345) >>> 0; return a / 4294967296; }, j = function (x, amt) { return x * (1 + (rr() - 0.5) * 2 * amt); };
+    var C = JSON.parse(JSON.stringify(K)); C.kick.f0 = j(C.kick.f0, 0.2); C.kick.f1 = j(C.kick.f1, 0.15); C.kick.decay = j(C.kick.decay, 0.25); C.kick.drive = j(C.kick.drive, 0.25); C.kick.click = j(C.kick.click, 0.4);
+    C.snare.tone = j(C.snare.tone, 0.2); C.snare.decay = j(C.snare.decay, 0.3); C.snare.bp = j(C.snare.bp, 0.25); C.snare.toneAmt = j(C.snare.toneAmt, 0.3);
+    if (C.clap) { C.clap.bp = j(C.clap.bp, 0.25); C.clap.decay = j(C.clap.decay, 0.3); } C.hat.decay = j(C.hat.decay, 0.35); C.hat.hp = j(C.hat.hp, 0.15); return C;
+  }
+  function kitRender(kitId, part, o, sr, v) {
+    var K = kitVary(KITS[kitId] || KITS.trap, v), r = noise(31 + part.length + (v ? v % 97 : 0)), i, n, y;
     if (part === 'kick') { var k = K.kick, ph = 0; n = Math.round(((o && o.big) ? k.decay * 1.6 : k.decay) * sr * 1.6); y = new Float32Array(n);
       for (i = 0; i < n; i++) { var t = i / sr; ph += 2 * Math.PI * (k.f1 + (k.f0 - k.f1) * Math.exp(-t * k.sweep)) / sr; y[i] = Math.tanh(k.drive * (Math.sin(ph) * Math.exp(-t / k.decay) + k.click * r() * Math.exp(-t * 400))) / Math.tanh(k.drive) * Math.min(1, i / 20); }
       return lp1(y, sr, k.lp); }
@@ -13051,9 +13059,23 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
   }
   /* iPhone: base a 24 kHz (25% di memoria in meno, misurata); computer: 32 kHz */
   var BASE_SR = (function () { try { return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ? 24000 : 32000; } catch (e) { return 32000; } })();
+  /* ogni base nuova (seme nuovo) evita kit e strumenti delle ULTIME 3 basi: niente più «sempre la stessa base» */
+  function varietyGuard(p) {
+    if (p.seed === LIB.settings.lastSeed) return; LIB.settings.lastSeed = p.seed; var H = LIB.settings.baseHist || (LIB.settings.baseHist = []);
+    var kits = Object.keys(SynthDesign.KITS), R = Instruments.RECIPES[p.genre] || {}, sd = (p.seed >>> 0) || 1;
+    var usedK = H.slice(-2).map(function (h) { return h.kit; });
+    if (!p.kitManual) { var opts = kits.filter(function (k) { return usedK.indexOf(k) < 0; }); if (R.kit && usedK.indexOf(R.kit) < 0 && sd % 3) p.kit = R.kit; else p.kit = (opts.length ? opts : kits)[sd % (opts.length || kits.length)]; }
+    var inst = p.inst = Object.assign({}, p.inst || {});
+    ['melodia', 'accordi', 'pad', 'arpeggio'].forEach(function (role, k) {
+      var used = H.slice(-3).map(function (h) { return h.inst && h.inst[role]; }), l = (R[role] || []).filter(function (id) { return !BANNED_INST[id]; });
+      if (used.indexOf(inst[role]) < 0 || l.length < 2) return; var fresh = l.filter(function (id) { return used.indexOf(id) < 0; });
+      inst[role] = (fresh.length ? fresh : l)[(sd >> (k * 3)) % (fresh.length || l.length)];
+    });
+    H.push({ kit: p.kit, inst: Object.assign({}, inst) }); if (H.length > 6) H.shift();
+  }
   function getBase() {
-    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, p.leadRest, pfSig(p).join(), p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.kit, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: BASE_SR, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, leadRest: typeof p.leadRest === 'number' ? p.leadRest : undefined, sig: pfSig(p), bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, drumRender: p.kit && SynthDesign.KITS[p.kit] ? function (part, o, s2) { return SynthDesign.kitRender(p.kit, part, o, s2); } : undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
+    var p = cur().prod; try { varietyGuard(p); } catch (e) {} var map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, p.leadRest, pfSig(p).join(), p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.kit, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: BASE_SR, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, leadRest: typeof p.leadRest === 'number' ? p.leadRest : undefined, sig: pfSig(p), bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, drumRender: p.kit && SynthDesign.KITS[p.kit] ? function (part, o, s2) { return SynthDesign.kitRender(p.kit, part, o, s2, p.seed); } : undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -13097,6 +13119,7 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
     if (newVariant) p.seed++;
     st.textContent = 'Sto componendo la base…'; await tick();
     await ensureInst();
+    if ($('#dw-play')) { try { stopPlay(); SESSION.baseKey = ''; DW.bufKey = ''; await dwPlay(0); st.textContent = ''; SESSION.baseMade = true; try { dwSteps(); projLine(); } catch (e) {} var om = $('#dw-p-omino'); if (om) om.classList.remove('fold'); return { ok: true }; } catch (e) { /* se lo Studio non riesce, uso il lettore semplice */ } }
     try {
       var mx = buildMix({ voice: false });
       if (gvS().on && !SESSION.useImported && cur().lyrics && cur().lyrics.trim()) { st.textContent = 'Aggiungo la voce guida…'; await tick(); mx = gvAdd(mx); }
@@ -15368,7 +15391,7 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
   $('#dw-insp').addEventListener('click', function (e) {
     if (e.target === this || e.target.id === 'dw-in-x') { this.hidden = true; return; }
     var t = e.target.closest('[data-int]'); if (t) { inspTab(t.getAttribute('data-int')); return; }
-    var kb = e.target.closest('[data-kit]'); if (kb) { var pk = cur().prod; if (kb.getAttribute('data-kit')) pk.kit = kb.getAttribute('data-kit'); else { delete pk.kit; pk.sounds = 'campioni'; } dwStop(); dwChanged(true); inspSuono(LANES[0]); return; }
+    var kb = e.target.closest('[data-kit]'); if (kb) { var pk = cur().prod; if (kb.getAttribute('data-kit')) { pk.kit = kb.getAttribute('data-kit'); pk.kitManual = true; } else { delete pk.kit; pk.kitManual = true; pk.sounds = 'campioni'; } dwStop(); dwChanged(true); inspSuono(LANES[0]); return; }
     var b = e.target.closest('[data-ins]'); if (!b) return; var a = b.getAttribute('data-ins'), L = LANES.filter(function (x) { return x.id === INSP.lane; })[0], p = cur().prod;
     if (a === 'choose') sheetOpen(L.role);
     else if (a === 'lib' || a === 'perc' || a === '808') { this.hidden = true; DS.tab = a === 'perc' ? 'perc' : (a === '808' ? '808' : 'synth'); dwWs('libreria'); dsRender(); setTimeout(function () { $('#dw-p-design').scrollIntoView({ behavior: 'smooth' }); }, 50); }
