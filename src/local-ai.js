@@ -13,13 +13,18 @@
   var LIB_URL = 'https://esm.run/@mlc-ai/web-llm@0.2.79';
   var MODELS = [
     { id: 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC', label: 'Leggero (circa 300 MB)', note: 'Veloce, italiano così così' },
-    { id: 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC', label: 'Più forte (circa 1 GB)', note: 'Italiano migliore, pesa e scalda di più' }
+    { id: 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC', label: 'Più forte (circa 1 GB)', note: 'Italiano migliore, pesa e scalda di più' },
+    { id: 'Qwen3-1.7B-q4f16_1-MLC', label: 'Nuovo Qwen3 (circa 1,2 GB)', note: 'Apache 2.0, 100+ lingue; NON ancora provato sul telefono' },
+    { id: 'Qwen3-0.6B-q4f16_1-MLC', label: 'Nuovo Qwen3 piccolo (circa 450 MB)', note: 'Apache 2.0; NON ancora provato sul telefono' }
   ];
   var TASKS = {
     versioni: 'Riscrivi la riga in 3 versioni diverse, con lo stesso numero di sillabe (circa {syll}) e lo stesso significato, parole nuove.',
     punchline: 'Scrivi 3 punchline (frase a effetto, doppio senso o immagine forte) che possano chiudere questa riga o seguirla. Massimo {syll} sillabe ciascuna.',
-    continua: 'Scrivi 3 possibili righe successive (circa {syll} sillabe) che portino avanti la storia e finiscano con una di queste rime: {rime}.'
+    continua: 'Scrivi 3 possibili righe successive (circa {syll} sillabe) che portino avanti la storia e finiscano con una di queste rime: {rime}.',
+    migliora: 'Migliora la riga in 3 modi: immagine più forte e concreta, niente parole generiche, stesse sillabe (circa {syll}) e, se puoi, stessa rima finale.',
+    ritornello: 'Scrivi UN ritornello di 4 righe corte (massimo {syll} sillabe ciascuna), orecchiabile, con una frase gancio che torna due volte. Parti dai temi e dalle parole delle strofe qui sopra, senza ripeterle uguali.'
   };
+  var MAXTOK = { versioni: 90, punchline: 90, migliora: 90, continua: 110, ritornello: 150 };
   /* Quale modello Ollama consigliare in base alla RAM del computer (stime da guide 2026: RAM totale meno 3-4 GB per il sistema; Ipotesi) */
   function recommend(ramGb) {
     ramGb = +ramGb || 8;
@@ -36,12 +41,17 @@
     var sys = 'Sei Sultan, un autore di testi rap e trap italiani. Scrivi in italiano, in gergo di strada credibile, senza copiare canzoni esistenti. ' +
       'Genere: ' + (c.genre || 'trap') + '. Umore: ' + (c.mood || 'dark') + '. ' + (c.artistNote ? 'Stile misurato: ' + c.artistNote + '. ' : '') +
       'Rispondi SOLO con 3 righe, una per riga, senza numeri, senza spiegazioni, senza virgolette.';
-    var user = (c.context ? 'Testo finora:\n' + c.context + '\n\n' : '') + 'Riga: «' + (c.line || '') + '»\n' + t;
+    if (task === 'ritornello') sys = sys.replace('Rispondi SOLO con 3 righe, una per riga', 'Rispondi SOLO con 4 righe, una per riga');
+    if (c.taste) sys += ' Gusti dell\'utente (misurati dai suoi voti): ' + c.taste + '.';
+    if (c.scenes) sys += ' Temi del testo: ' + c.scenes + '.';
+    var user = (c.context ? 'Testo finora:\n' + c.context + '\n\n' : '') + (c.line ? 'Riga: «' + c.line + '»\n' : '') + t;
+    if (/^qwen3/i.test(c.model || '')) user += ' /no_think'; /* Qwen3 ragiona a voce alta: così risponde subito */
     return [{ role: 'system', content: sys }, { role: 'user', content: user }];
   }
   /* Toglie numeri, elenchi, virgolette, righe vuote o in altre lingue evidenti; tiene al massimo 3 righe. */
-  function clean(text, line) {
+  function clean(text, line, max) {
     var out = [], seen = {};
+    text = String(text || '').replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<\/?think>/gi, '');
     String(text || '').split(/\r?\n/).forEach(function (l) {
       l = l.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').replace(/^["«»“”']+|["«»“”']+$/g, '').trim();
       if (l.length < 6 || l.length > 140) return;
@@ -50,8 +60,9 @@
       var k = l.toLowerCase(); if (seen[k] || (line && k === String(line).toLowerCase().trim())) return;
       seen[k] = 1; out.push(l);
     });
-    return out.slice(0, 3);
+    return out.slice(0, max || 3);
   }
+  function finish(task, text, line) { if (task === 'ritornello') { var r = clean(text, line, 4); return r.length >= 2 ? [r.join('\n')] : []; } return clean(text, line, 3); }
   /* Ollama (gratuito, sul tuo computer, http://localhost:11434): modelli più grandi = italiano migliore. Nessuna chiave. */
   var OLLAMA = 'http://localhost:11434', ollamaModel = null;
   async function pingOllama(url) {
@@ -69,12 +80,12 @@
   }
   async function ask(task, ctx) {
     if (ollamaModel) {
-      var rr = await fetch(OLLAMA + '/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ollamaModel, stream: false, messages: buildPrompt(task, ctx), options: { temperature: 0.9, top_p: 0.92, num_predict: 200 } }) });
-      if (!rr.ok) throw new Error('Ollama ha risposto ' + rr.status); var jj = await rr.json(); return clean(jj.message && jj.message.content, ctx && ctx.line);
+      var rr = await fetch(OLLAMA + '/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ollamaModel, stream: false, messages: buildPrompt(task, Object.assign({}, ctx, { model: ollamaModel })), options: { temperature: 0.9, top_p: 0.92, num_predict: (MAXTOK[task] || 120) + 60 } }) });
+      if (!rr.ok) throw new Error('Ollama ha risposto ' + rr.status); var jj = await rr.json(); return finish(task, jj.message && jj.message.content, ctx && ctx.line);
     }
     if (!engine) throw new Error('Assistente non attivo');
-    var r = await engine.chat.completions.create({ messages: buildPrompt(task, ctx), temperature: 0.9, top_p: 0.92, max_tokens: 160 });
-    return clean(r.choices[0].message.content, ctx && ctx.line);
+    var r = await engine.chat.completions.create({ messages: buildPrompt(task, Object.assign({}, ctx, { model: loadedId })), temperature: 0.85, top_p: 0.9, max_tokens: MAXTOK[task] || 100 });
+    return finish(task, r.choices[0].message.content, ctx && ctx.line);
   }
   return { recommend: recommend, pingOllama: pingOllama, useOllama: useOllama, MODELS: MODELS, TASKS: TASKS, supported: supported, buildPrompt: buildPrompt, clean: clean, load: load, ask: ask, LIB_URL: LIB_URL };
 });

@@ -22,3 +22,21 @@ test('Ollama: modello scelto e risposta pulita (finto server)', async () => {
 test('consiglio per RAM: più RAM, modello più grande', () => {
   assert.equal(L.recommend(8).model, 'qwen2.5:3b'); assert.equal(L.recommend(16).model, 'qwen2.5:7b'); assert.equal(L.recommend(32).model, 'qwen2.5:32b');
 });
+test('Qwen3: /no_think nel prompt e i pensieri <think> vengono tolti dalla risposta', () => {
+  const m = L.buildPrompt('versioni', { line: 'Sono nato in strada', model: 'Qwen3-1.7B-q4f16_1-MLC' });
+  assert.match(m[1].content, /\/no_think/);
+  assert.doesNotMatch(L.buildPrompt('versioni', { line: 'x', model: 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC' })[1].content, /no_think/);
+  assert.deepEqual(L.clean('<think>ragiono molto qui dentro</think>\nIl buio mi chiama per nome\nCorro dietro ai soldi e al tempo'), ['Il buio mi chiama per nome', 'Corro dietro ai soldi e al tempo']);
+});
+test('nuovi compiti: ritornello (4 righe, un solo blocco) e migliora; i gusti e i temi entrano nel prompt', async () => {
+  assert.ok(L.TASKS.ritornello && L.TASKS.migliora);
+  const m = L.buildPrompt('ritornello', { genre: 'drill', mood: 'dark', syll: 8, taste: 'ti piacciono drill', scenes: 'strada, dolore', context: 'Notte in strada' });
+  assert.match(m[0].content, /4 righe/); assert.match(m[0].content, /ti piacciono drill/); assert.match(m[0].content, /strada, dolore/);
+  global.fetch = async (u) => /tags/.test(u) ? { ok: true, json: async () => ({ models: [{ name: 'qwen2.5:7b' }] }) } : { ok: true, json: async () => ({ message: { content: 'Dark nel cuore, la città\nSirene nella notte\nNon mi fermo mai più\nDark nel cuore, la città\nQuinta riga di troppo qui' } }) };
+  await L.useOllama(); const r = await L.ask('ritornello', { genre: 'drill' });
+  assert.equal(r.length, 1); assert.equal(r[0].split('\n').length, 4); delete global.fetch;
+});
+test('la lista modelli contiene Qwen3 con licenza dichiarata e avviso di non provato', () => {
+  const q3 = L.MODELS.filter((x) => /^Qwen3/.test(x.id)); assert.ok(q3.length >= 1); q3.forEach((x) => assert.match(x.note, /non ancora provato/i));
+  assert.match(L.MODELS[0].id, /Qwen2\.5-0\.5B/); /* il primo (iPhone) resta il più leggero */
+});

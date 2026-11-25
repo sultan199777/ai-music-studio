@@ -724,7 +724,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 13:06</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 13:21</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -773,7 +773,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     <label class="f"><span>Se usi Ollama: quanta RAM ha il tuo computer?</span><select id="ai-ram"><option value="8">8 GB</option><option value="16">16 GB</option><option value="24">24 GB</option><option value="32">32 GB o più</option></select></label><p class="small muted" id="ai-ramnote">Scegli la RAM e ti dico quale modello conviene.</p>
     <div class="row"><button class="btn pri" id="ai-on">Attiva (scarica il modello)</button></div>
     <div class="status" id="ai-msg"></div>
-    <div class="row"><button class="btn" id="ai-v" disabled>3 versioni della riga</button><button class="btn" id="ai-p" disabled>Punchline</button><button class="btn" id="ai-c" disabled>Riga dopo</button></div>
+    <div class="row"><button class="btn" id="ai-v" disabled>3 versioni della riga</button><button class="btn" id="ai-p" disabled>Punchline</button><button class="btn" id="ai-c" disabled>Riga dopo</button><button class="btn" id="ai-m" disabled>Migliora la riga</button><button class="btn" id="ai-r" disabled>Scrivi un ritornello</button></div>
     <div id="ai-out"></div>
   </div>
   <div class="card" id="rh-card"><div class="card-head"><h3>Rime</h3><span class="tag m">Dalle tue parole</span></div>
@@ -1087,7 +1087,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">334 test automatici superati su 334 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">346 test automatici superati su 346 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -5138,6 +5138,100 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
 });
 
 /*
+ * Sezioni automatiche: se nel testo NON ci sono i titoli tra parentesi, l'app li mette da sola.
+ *  - Titolo: la prima riga se è corta, da sola (riga vuota dopo) o è una data/numero ("25 maggio"). Non resta nel testo cantato.
+ *  - Ritornello: blocchi che si ripetono uguali (anche una sola riga ripetuta in blocchi diversi); se nessun blocco si ripete,
+ *    il primo blocco quando è più corto degli altri (si scrive di solito prima).
+ *  - Dentro un blocco senza righe vuote: la sequenza di righe che ritorna più volte è il ritornello, il resto sono strofe.
+ *  - Non indovina quando non sa: confidence 'bassa' e una nota. Se ci sono già i titoli [..], non tocca niente.
+ * label(text) → { changed, title, text, sections:[{type,lines}], notes:[...], confidence }
+ * Sono IPOTESI di mestiere: l'utente può sempre cambiare i titoli tra parentesi.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.AutoSections = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  function norm(l) { return String(l).toLowerCase().replace(/[^a-zàèéìíòóùú0-9' ]/g, '').replace(/\s+/g, ' ').trim(); }
+  function hasTags(t) { return /^\s*\[[^\]]+\]\s*$/m.test(t); }
+  function words(l) { return l.trim().split(/\s+/).filter(Boolean); }
+  function median(a) { var s = a.slice().sort(function (x, y) { return x - y; }); return s.length ? s[Math.floor(s.length / 2)] : 0; }
+
+  function splitBlocks(lines) {
+    var blocks = [], cur = [];
+    lines.forEach(function (l) { if (!l.trim()) { if (cur.length) blocks.push(cur); cur = []; } else cur.push(l.trim()); });
+    if (cur.length) blocks.push(cur); return blocks;
+  }
+  /* titolo: "Titolo: ...", oppure prima riga corta da sola o data */
+  function takeTitle(rawLines) {
+    var i = 0; while (i < rawLines.length && !rawLines[i].trim()) i++;
+    if (i >= rawLines.length) return { title: '', rest: rawLines };
+    var first = rawLines[i].trim(), m = first.match(/^(titolo|title)\s*[:\-–]\s*(.+)$/i);
+    if (m) return { title: m[2].trim(), rest: rawLines.slice(i + 1) };
+    var alone = i + 1 >= rawLines.length || !rawLines[i + 1].trim(), dateLike = /^\d{1,2}(\s|\/|\.|-)/.test(first) || /^\d+$/.test(first);
+    var w = words(first);
+    if (w.length <= 5 && first.length <= 40 && !/[,;:!?]$/.test(first) && (alone || (dateLike && w.length <= 3)) && rawLines.slice(i + 1).some(function (l) { return l.trim(); })) {
+      var again = rawLines.slice(i + 1).some(function (l) { return norm(l) === norm(first); }); /* se la riga ritorna nel testo è un verso, non un titolo */
+      if (!again) return { title: first, rest: rawLines.slice(i + 1) };
+    }
+    return { title: '', rest: rawLines.slice(i) };
+  }
+  /* un blocco unico: cerca la sequenza di righe (almeno 2) che ritorna */
+  function splitSingle(lines) {
+    var n = lines.map(norm), best = null, L, i, j;
+    for (L = Math.floor(n.length / 2); L >= 2 && !best; L--) {
+      for (i = 0; i + L <= n.length && !best; i++) {
+        var seq = n.slice(i, i + L).join('|'); if (!seq.replace(/\|/g, '')) continue;
+        for (j = i + L; j + L <= n.length; j++) { if (n.slice(j, j + L).join('|') === seq) { best = { L: L, start: i }; break; } }
+      }
+    }
+    if (!best) return null;
+    var seq2 = n.slice(best.start, best.start + best.L).join('|'), occ = [];
+    for (i = 0; i + best.L <= n.length; i++) { if (n.slice(i, i + best.L).join('|') === seq2) { occ.push(i); i += best.L - 1; } }
+    var out = [], pos = 0;
+    occ.forEach(function (o) { if (o > pos) out.push({ type: 'strofa', lines: lines.slice(pos, o) }); out.push({ type: 'ritornello', lines: lines.slice(o, o + best.L) }); pos = o + best.L; });
+    if (pos < lines.length) out.push({ type: 'strofa', lines: lines.slice(pos) });
+    return out;
+  }
+  function labelBlocks(blocks, notes) {
+    var count = {}; blocks.forEach(function (b) { b.forEach(function (l) { var k = norm(l); count[k] = (count[k] || 0) + 1; }); });
+    var rep = blocks.map(function (b) { var r = 0; b.forEach(function (l) { var k = norm(l); if (k && count[k] >= 2) r++; }); return r / b.length; });
+    var types = blocks.map(function (b, i) { return rep[i] >= 0.5 ? 'ritornello' : 'strofa'; }), conf = 'bassa';
+    if (types.indexOf('ritornello') >= 0) { conf = 'alta'; notes.push('Ritornello: le righe che ritornano uguali.'); }
+    else if (blocks.length >= 2) {
+      var lens = blocks.map(function (b) { return b.length; }), rest = lens.slice(1), md = median(rest);
+      if (lens[0] <= 6 && lens[0] <= 0.75 * md) { types[0] = 'ritornello'; conf = 'media'; notes.push('Ritornello: il primo blocco, più corto delle strofe (si scrive di solito prima).'); }
+      else notes.push('Nessuna riga si ripete: non so dove sia il ritornello. Se c\'è, scrivi [Ritornello] sopra.');
+    }
+    return { types: types, conf: conf };
+  }
+  function label(text) {
+    text = String(text || ''); var res = { changed: false, title: '', text: text, sections: [], notes: [], confidence: 'bassa' };
+    if (!text.trim() || hasTags(text)) { if (hasTags(text)) res.notes.push('Ci sono già i titoli tra parentesi: non cambio niente.'); return res; }
+    var t = takeTitle(text.split(/\r?\n/)); res.title = t.title;
+    var blocks = splitBlocks(t.rest); if (!blocks.length) return res;
+    var sections;
+    if (blocks.length === 1) {
+      sections = splitSingle(blocks[0]);
+      if (sections) { res.confidence = 'media'; res.notes.push('Un blocco solo: ho separato la parte che ritorna (ritornello) dal resto.'); }
+      else { sections = [{ type: 'strofa', lines: blocks[0] }]; res.notes.push('Un blocco senza ripetizioni: tutto strofa.'); }
+    } else {
+      var lb = labelBlocks(blocks, res.notes); res.confidence = lb.conf;
+      sections = blocks.map(function (b, i) { return { type: lb.types[i], lines: b }; });
+    }
+    res.sections = sections;
+    res.text = sections.map(function (s) { return '[' + (s.type === 'ritornello' ? 'Ritornello' : 'Strofa') + ']\n' + s.lines.join('\n'); }).join('\n\n');
+    res.changed = true; return res;
+  }
+  function summary(r) {
+    if (!r || !r.changed) return '';
+    var rit = r.sections.filter(function (s) { return s.type === 'ritornello'; }).length, str = r.sections.length - rit;
+    return (r.title ? 'Titolo «' + r.title + '». ' : '') + str + (str === 1 ? ' strofa, ' : ' strofe, ') + rit + (rit === 1 ? ' ritornello' : ' ritornelli') + '. ' + r.notes.join(' ');
+  }
+  return { label: label, summary: summary, hasTags: hasTags, takeTitle: takeTitle };
+});
+
+/*
  * Produzione: effetti cinematografici/ambientali + interventi vocali (eco, risposte, cori, voce scura, reverse, ad-lib)
  * scelti DAL TESTO e messi a tempo sulla base. Tutto sintetizzato da zero (nessun campione, nessun diritto di terzi).
  * - SOUNDS: libreria (temporale, pioggia, supercar V12/V8, passaggio, elicottero, sirena, spari, raffica, impatti,
@@ -5743,13 +5837,18 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   var LIB_URL = 'https://esm.run/@mlc-ai/web-llm@0.2.79';
   var MODELS = [
     { id: 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC', label: 'Leggero (circa 300 MB)', note: 'Veloce, italiano così così' },
-    { id: 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC', label: 'Più forte (circa 1 GB)', note: 'Italiano migliore, pesa e scalda di più' }
+    { id: 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC', label: 'Più forte (circa 1 GB)', note: 'Italiano migliore, pesa e scalda di più' },
+    { id: 'Qwen3-1.7B-q4f16_1-MLC', label: 'Nuovo Qwen3 (circa 1,2 GB)', note: 'Apache 2.0, 100+ lingue; NON ancora provato sul telefono' },
+    { id: 'Qwen3-0.6B-q4f16_1-MLC', label: 'Nuovo Qwen3 piccolo (circa 450 MB)', note: 'Apache 2.0; NON ancora provato sul telefono' }
   ];
   var TASKS = {
     versioni: 'Riscrivi la riga in 3 versioni diverse, con lo stesso numero di sillabe (circa {syll}) e lo stesso significato, parole nuove.',
     punchline: 'Scrivi 3 punchline (frase a effetto, doppio senso o immagine forte) che possano chiudere questa riga o seguirla. Massimo {syll} sillabe ciascuna.',
-    continua: 'Scrivi 3 possibili righe successive (circa {syll} sillabe) che portino avanti la storia e finiscano con una di queste rime: {rime}.'
+    continua: 'Scrivi 3 possibili righe successive (circa {syll} sillabe) che portino avanti la storia e finiscano con una di queste rime: {rime}.',
+    migliora: 'Migliora la riga in 3 modi: immagine più forte e concreta, niente parole generiche, stesse sillabe (circa {syll}) e, se puoi, stessa rima finale.',
+    ritornello: 'Scrivi UN ritornello di 4 righe corte (massimo {syll} sillabe ciascuna), orecchiabile, con una frase gancio che torna due volte. Parti dai temi e dalle parole delle strofe qui sopra, senza ripeterle uguali.'
   };
+  var MAXTOK = { versioni: 90, punchline: 90, migliora: 90, continua: 110, ritornello: 150 };
   /* Quale modello Ollama consigliare in base alla RAM del computer (stime da guide 2026: RAM totale meno 3-4 GB per il sistema; Ipotesi) */
   function recommend(ramGb) {
     ramGb = +ramGb || 8;
@@ -5766,12 +5865,17 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     var sys = 'Sei Sultan, un autore di testi rap e trap italiani. Scrivi in italiano, in gergo di strada credibile, senza copiare canzoni esistenti. ' +
       'Genere: ' + (c.genre || 'trap') + '. Umore: ' + (c.mood || 'dark') + '. ' + (c.artistNote ? 'Stile misurato: ' + c.artistNote + '. ' : '') +
       'Rispondi SOLO con 3 righe, una per riga, senza numeri, senza spiegazioni, senza virgolette.';
-    var user = (c.context ? 'Testo finora:\n' + c.context + '\n\n' : '') + 'Riga: «' + (c.line || '') + '»\n' + t;
+    if (task === 'ritornello') sys = sys.replace('Rispondi SOLO con 3 righe, una per riga', 'Rispondi SOLO con 4 righe, una per riga');
+    if (c.taste) sys += ' Gusti dell\'utente (misurati dai suoi voti): ' + c.taste + '.';
+    if (c.scenes) sys += ' Temi del testo: ' + c.scenes + '.';
+    var user = (c.context ? 'Testo finora:\n' + c.context + '\n\n' : '') + (c.line ? 'Riga: «' + c.line + '»\n' : '') + t;
+    if (/^qwen3/i.test(c.model || '')) user += ' /no_think'; /* Qwen3 ragiona a voce alta: così risponde subito */
     return [{ role: 'system', content: sys }, { role: 'user', content: user }];
   }
   /* Toglie numeri, elenchi, virgolette, righe vuote o in altre lingue evidenti; tiene al massimo 3 righe. */
-  function clean(text, line) {
+  function clean(text, line, max) {
     var out = [], seen = {};
+    text = String(text || '').replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<\/?think>/gi, '');
     String(text || '').split(/\r?\n/).forEach(function (l) {
       l = l.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').replace(/^["«»“”']+|["«»“”']+$/g, '').trim();
       if (l.length < 6 || l.length > 140) return;
@@ -5780,8 +5884,9 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
       var k = l.toLowerCase(); if (seen[k] || (line && k === String(line).toLowerCase().trim())) return;
       seen[k] = 1; out.push(l);
     });
-    return out.slice(0, 3);
+    return out.slice(0, max || 3);
   }
+  function finish(task, text, line) { if (task === 'ritornello') { var r = clean(text, line, 4); return r.length >= 2 ? [r.join('\n')] : []; } return clean(text, line, 3); }
   /* Ollama (gratuito, sul tuo computer, http://localhost:11434): modelli più grandi = italiano migliore. Nessuna chiave. */
   var OLLAMA = 'http://localhost:11434', ollamaModel = null;
   async function pingOllama(url) {
@@ -5799,12 +5904,12 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   }
   async function ask(task, ctx) {
     if (ollamaModel) {
-      var rr = await fetch(OLLAMA + '/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ollamaModel, stream: false, messages: buildPrompt(task, ctx), options: { temperature: 0.9, top_p: 0.92, num_predict: 200 } }) });
-      if (!rr.ok) throw new Error('Ollama ha risposto ' + rr.status); var jj = await rr.json(); return clean(jj.message && jj.message.content, ctx && ctx.line);
+      var rr = await fetch(OLLAMA + '/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: ollamaModel, stream: false, messages: buildPrompt(task, Object.assign({}, ctx, { model: ollamaModel })), options: { temperature: 0.9, top_p: 0.92, num_predict: (MAXTOK[task] || 120) + 60 } }) });
+      if (!rr.ok) throw new Error('Ollama ha risposto ' + rr.status); var jj = await rr.json(); return finish(task, jj.message && jj.message.content, ctx && ctx.line);
     }
     if (!engine) throw new Error('Assistente non attivo');
-    var r = await engine.chat.completions.create({ messages: buildPrompt(task, ctx), temperature: 0.9, top_p: 0.92, max_tokens: 160 });
-    return clean(r.choices[0].message.content, ctx && ctx.line);
+    var r = await engine.chat.completions.create({ messages: buildPrompt(task, Object.assign({}, ctx, { model: loadedId })), temperature: 0.85, top_p: 0.9, max_tokens: MAXTOK[task] || 100 });
+    return finish(task, r.choices[0].message.content, ctx && ctx.line);
   }
   return { recommend: recommend, pingOllama: pingOllama, useOllama: useOllama, MODELS: MODELS, TASKS: TASKS, supported: supported, buildPrompt: buildPrompt, clean: clean, load: load, ask: ask, LIB_URL: LIB_URL };
 });
@@ -12152,7 +12257,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     var sel = $('#ai-model'); if (!sel) return;
     sel.innerHTML = '<option value="ollama">Ollama sul computer (migliore, se lo hai)</option>' + LocalAI.MODELS.map(function (m) { return '<option value="' + m.id + '">' + m.label + ' · ' + m.note + '</option>'; }).join('');
     var ramBox = $('#ai-ram'); if (ramBox) ramBox.addEventListener('change', function () { var r = LocalAI.recommend(ramBox.value); $('#ai-ramnote').innerHTML = r.note + ' Comando da scrivere nel Terminale: <span class="mono">ollama pull ' + r.model + '</span>'; });
-    function ready(on) { ['#ai-v', '#ai-p', '#ai-c'].forEach(function (i) { $(i).disabled = !on; }); }
+    function ready(on) { ['#ai-v', '#ai-p', '#ai-c', '#ai-m', '#ai-r'].forEach(function (i) { var el = $(i); if (el) el.disabled = !on; }); }
     var LINE = '';
     function lyTa() { var d = $('#dw-lyrics'); return d && d.offsetParent ? d : $('#st-lyrics'); }
     function pickLine() {
@@ -12169,12 +12274,13 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
       catch (e) { m.textContent = 'Non è partito: ' + (e && e.message ? e.message : e); this.disabled = false; }
     });
     async function go(task) {
-      var line = pickLine(), out = $('#ai-out'); if (!line) { out.innerHTML = '<p class="small">Scrivi o seleziona prima una riga.</p>'; return; }
+      var line = pickLine(), out = $('#ai-out'); if (!line && task !== 'ritornello') { out.innerHTML = '<p class="small">Scrivi o seleziona prima una riga.</p>'; return; }
       var s = cur(), M = arModel(), last = line.replace(/[^\wàèéìíòóùú\s']/gi, ' ').trim().split(/\s+/).pop(), rh = [];
       try { wbLearnSongs(); var r = WordBank.rhymes(wbStore(), last, { max: 8 }); rh = (r.rhyme || []).map(function (x) { return x.w || x; }); } catch (e) {}
       out.innerHTML = '<p class="small">Penso…</p>';
       try {
-        var res = await LocalAI.ask(task, { line: line, context: lyricLines(s.lyrics).slice(-6).join('\n'), genre: (ALLG[s.prod.genre] || {}).label || s.prod.genre, mood: s.moodTarget || 'dark', syll: (LyricsEngine.lineSyllables(line) || {}).metric || 10, rhymes: rh, artistNote: M ? M.mood : '' });
+        var sc = {}; try { sc = SultanBrain.plan(s.lyrics, analysisOf(s), {}).scenes || {}; } catch (e) {} var topSc = Object.keys(sc).filter(function (k) { return sc[k] > 0; }).sort(function (a, b) { return sc[b] - sc[a]; }).slice(0, 3).join(', ');
+        var res = await LocalAI.ask(task, { taste: Taste.summary(tasteMem()), scenes: topSc, line: line || '', context: lyricLines(s.lyrics).slice(task === 'ritornello' ? -14 : -6).join('\n'), genre: (ALLG[s.prod.genre] || {}).label || s.prod.genre, mood: s.moodTarget || 'dark', syll: line ? ((LyricsEngine.lineSyllables(line) || {}).metric || 10) : 8, rhymes: rh, artistNote: M ? M.mood : '' });
         out.innerHTML = res.length ? '<ul class="clean small">' + res.map(function (x, i) { return '<li>' + esc(x) + ' <button class="chip" data-ai-use="' + i + '" style="min-height:28px;padding:2px 10px">Usa</button></li>'; }).join('') + '</ul><p class="small muted"><span class="tag i">Ipotesi</span> Sono bozze di un modello piccolo: controlla senso e rime.</p>' : '<p class="small">Nessuna proposta utile, riprova.</p>';
         out._res = res; out._line = line; out._task = task;
       } catch (e) { out.innerHTML = '<p class="small">Errore: ' + esc(e && e.message ? e.message : e) + '</p>'; }
@@ -12182,10 +12288,12 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     $('#ai-v').addEventListener('click', function () { go('versioni'); });
     $('#ai-p').addEventListener('click', function () { go('punchline'); });
     $('#ai-c').addEventListener('click', function () { go('continua'); });
+    $('#ai-m').addEventListener('click', function () { go('migliora'); });
+    $('#ai-r').addEventListener('click', function () { go('ritornello'); });
     $('#ai-out').addEventListener('click', function (e) {
       var i = e.target && e.target.getAttribute && e.target.getAttribute('data-ai-use'); if (i == null) return;
       var out = $('#ai-out'), txt = out._res[+i], s = cur(), ta = lyTa();
-      s.lyrics = out._task === 'continua' ? s.lyrics.replace(/\s+$/, '') + '\n' + txt : s.lyrics.replace(out._line, txt);
+      s.lyrics = out._task === 'continua' ? s.lyrics.replace(/\s+$/, '') + '\n' + txt : out._task === 'ritornello' ? s.lyrics.replace(/\s+$/, '') + '\n\n[Ritornello]\n' + txt : s.lyrics.replace(out._line, txt);
       if (ta) { ta.value = s.lyrics; ta.dispatchEvent(new Event('input', { bubbles: true })); } persist(); out.insertAdjacentHTML('beforeend', '<p class="small">Inserita nel testo.</p>');
     });
   })();
@@ -12310,12 +12418,21 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   function moodNow() { var s = cur(), p = s.prod; if (s.moodTarget) return s.moodTarget; try { return Ear.moodOf({ mode: p.mode, bpm: p.bpm }).top; } catch (e) { return ''; } }
   /* ===== Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti) ===== */
   var BANNED_INST = { flute: 1, ocarina: 1, harmonica: 1, clarinet: 1, kalimba: 0 };
+  /* se nel testo mancano i titoli [Strofa]/[Ritornello], li mette l'app (e toglie il titolo dal testo cantato) */
+  function autoSecs() {
+    var s = cur(); if (!s.lyrics || !s.lyrics.trim() || typeof AutoSections === 'undefined') return '';
+    var r = AutoSections.label(s.lyrics); if (!r.changed) return '';
+    s.lyrics = r.text; ['#dw-lyrics', '#st-lyrics'].forEach(function (q) { var el = $(q); if (el) el.value = r.text; });
+    if (r.title && (!s.title || /^(nuova canzone|senza titolo)/i.test(s.title))) { s.title = r.title; ['#dw-name', '#st-title'].forEach(function (q) { var el = $(q); if (el) el.value = r.title; }); var ts = $('#top-song'); if (ts) ts.textContent = r.title; }
+    persist(); return '<span class="tag i">Ipotesi</span> ' + esc(AutoSections.summary(r)) + ' Puoi cambiare i titoli tra parentesi.';
+  }
   var SB_FORCE = { genre: null, preset: null };
   function rxFor(pl, v, radical) { var st = Arranger.STYLES[pl.genre] || {}; return Remix.make(((pl.seed >>> 0) + (v || 0) * 7919 + (radical ? 104729 : 0)) >>> 0, { half: !st.snare || st.snare.length === 1, heavy: !!pl.heavy, mode: pl.mode }); }
   async function runBrain(again, fixedV, mel, radical) {
     var s = cur(), p = s.prod, m = $('#sb-msg'); s.recentG = s.recentG || [];
     if (radical) { fixedV = (s.brainV || 0) + 1; mel = (s.brainV || 0) + 7; }
     if (!s.lyrics.trim()) { m.textContent = 'Scrivi o incolla prima il testo (in alto): il cervello parte da quello.'; return; }
+    var secTxt = autoSecs();
     s.brainV = fixedV != null ? fixedV : (again ? (s.brainV || 0) + 1 : 0); s.brainFor = SultanBrain.hash(s.lyrics.trim()); s.genreManual = false;
     var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel(), mood: $('#sb-mood').value || null, styleText: ($('#sb-style') || {}).value || '', forceGenre: SB_FORCE.genre || null, avoid: (radical ? s.recentG.slice(-5) : []).concat(Taste.avoidList(tasteMem())) }); s.recentG.push(pl.genre); s.lastPlan = { genre: pl.genre, mode: pl.mode, heavy: !!pl.heavy, bpm: pl.bpm }; if (s.recentG.length > 12) s.recentG.shift(); s.moodTarget = pl.moodTarget; applyMoodBg(pl.moodTarget); persist();
     p.heavy = !!pl.heavy; p.melSeed = mel || 0; p.sig = SigFx.pick({ styleText: ($('#sb-style') || {}).value || '', seed: pl.seed, scenes: pl.scenes, genre: pl.genre }); p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
@@ -12331,7 +12448,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
       learnTxt = '<br><span class="tag m">Misurato</span> Ho usato i numeri di ' + lp.from + ' basi che ti piacciono: cassa sui passi ' + lp.groove.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + (lp.prog ? ', giro ' + BeatLearn.progName(lp.prog, lp.mode) : '') + ', ' + p.bpm + ' BPM.'; }
     else { p.groove = rx.groove; p.prog = null; p.tune = rx.tune; p.fromLearn = 0; if (s.brainV > 0 || radical) p.melSeed = mel != null ? mel : rx.melSeed; learnTxt = '<br><span class="tag m">Misurato</span> Versione ' + (s.brainV + 1) + ': ' + esc(rx.label) + '.' + (p.sig && p.sig.length ? ' Effetti: ' + esc(([].concat(p.sig)).join(', ')) + '.' : '') + (learnList().some(function (r) { return r.vote > 0; }) ? '' : '<br><span class="small muted">Non ho ancora basi imparate: caricane una in Libreria e premi ♥ per farmi imparare ritmo e accordi.</span>'); }
     p.inst = res.inst; persist(); fillBase();
-    m.innerHTML = '<b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + pl.mode + '<br>' + pl.why.map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Strumenti: ' + ['melodia', 'accordi', 'pad'].map(function (r) { return r + ' ' + esc(instName(p.inst[r])); }).join(', ') + '. Se non ti piace premi "Altra versione dal testo".' + learnTxt + '<div class="row" style="margin-top:8px"><button class="chip" data-taste="1">♥ Mi piace</button><button class="chip" data-taste="-1">✕ Scarta e dammene un\'altra</button></div><div class="small muted" id="sb-taste">' + esc(Taste.summary(tasteMem())) + '</div>';
+    m.innerHTML = '<b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + pl.mode + '<br>' + pl.why.map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Strumenti: ' + ['melodia', 'accordi', 'pad'].map(function (r) { return r + ' ' + esc(instName(p.inst[r])); }).join(', ') + '. Se non ti piace premi "Altra versione dal testo".' + (secTxt ? '<br>' + secTxt : '') + learnTxt + '<div class="row" style="margin-top:8px"><button class="chip" data-taste="1">♥ Mi piace</button><button class="chip" data-taste="-1">✕ Scarta e dammene un\'altra</button></div><div class="small muted" id="sb-taste">' + esc(Taste.summary(tasteMem())) + '</div>';
     await makeAndPlay(false);
     earRun(true);
   }
@@ -12347,6 +12464,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   var SB_N = 0;
   function sbMore(reset) {
     var s = cur(), box = $('#sb-list'); if (!s.lyrics.trim()) { box.innerHTML = '<p class="small">Scrivi prima il testo.</p>'; return; }
+    autoSecs();
     if (reset) { SB_N = 0; box.innerHTML = '<ul class="clean small" id="sb-ul"></ul><div class="row"><button class="btn sm" id="sb-more">Ancora proposte (non finiscono mai)</button></div>'; }
     var a = analysisOf(s), st = ($('#sb-style') || {}).value || '', h = '', i;
     for (i = SB_N; i < SB_N + 6; i++) {

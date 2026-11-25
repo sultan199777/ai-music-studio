@@ -521,7 +521,7 @@
     var sel = $('#ai-model'); if (!sel) return;
     sel.innerHTML = '<option value="ollama">Ollama sul computer (migliore, se lo hai)</option>' + LocalAI.MODELS.map(function (m) { return '<option value="' + m.id + '">' + m.label + ' · ' + m.note + '</option>'; }).join('');
     var ramBox = $('#ai-ram'); if (ramBox) ramBox.addEventListener('change', function () { var r = LocalAI.recommend(ramBox.value); $('#ai-ramnote').innerHTML = r.note + ' Comando da scrivere nel Terminale: <span class="mono">ollama pull ' + r.model + '</span>'; });
-    function ready(on) { ['#ai-v', '#ai-p', '#ai-c'].forEach(function (i) { $(i).disabled = !on; }); }
+    function ready(on) { ['#ai-v', '#ai-p', '#ai-c', '#ai-m', '#ai-r'].forEach(function (i) { var el = $(i); if (el) el.disabled = !on; }); }
     var LINE = '';
     function lyTa() { var d = $('#dw-lyrics'); return d && d.offsetParent ? d : $('#st-lyrics'); }
     function pickLine() {
@@ -538,12 +538,13 @@
       catch (e) { m.textContent = 'Non è partito: ' + (e && e.message ? e.message : e); this.disabled = false; }
     });
     async function go(task) {
-      var line = pickLine(), out = $('#ai-out'); if (!line) { out.innerHTML = '<p class="small">Scrivi o seleziona prima una riga.</p>'; return; }
+      var line = pickLine(), out = $('#ai-out'); if (!line && task !== 'ritornello') { out.innerHTML = '<p class="small">Scrivi o seleziona prima una riga.</p>'; return; }
       var s = cur(), M = arModel(), last = line.replace(/[^\wàèéìíòóùú\s']/gi, ' ').trim().split(/\s+/).pop(), rh = [];
       try { wbLearnSongs(); var r = WordBank.rhymes(wbStore(), last, { max: 8 }); rh = (r.rhyme || []).map(function (x) { return x.w || x; }); } catch (e) {}
       out.innerHTML = '<p class="small">Penso…</p>';
       try {
-        var res = await LocalAI.ask(task, { line: line, context: lyricLines(s.lyrics).slice(-6).join('\n'), genre: (ALLG[s.prod.genre] || {}).label || s.prod.genre, mood: s.moodTarget || 'dark', syll: (LyricsEngine.lineSyllables(line) || {}).metric || 10, rhymes: rh, artistNote: M ? M.mood : '' });
+        var sc = {}; try { sc = SultanBrain.plan(s.lyrics, analysisOf(s), {}).scenes || {}; } catch (e) {} var topSc = Object.keys(sc).filter(function (k) { return sc[k] > 0; }).sort(function (a, b) { return sc[b] - sc[a]; }).slice(0, 3).join(', ');
+        var res = await LocalAI.ask(task, { taste: Taste.summary(tasteMem()), scenes: topSc, line: line || '', context: lyricLines(s.lyrics).slice(task === 'ritornello' ? -14 : -6).join('\n'), genre: (ALLG[s.prod.genre] || {}).label || s.prod.genre, mood: s.moodTarget || 'dark', syll: line ? ((LyricsEngine.lineSyllables(line) || {}).metric || 10) : 8, rhymes: rh, artistNote: M ? M.mood : '' });
         out.innerHTML = res.length ? '<ul class="clean small">' + res.map(function (x, i) { return '<li>' + esc(x) + ' <button class="chip" data-ai-use="' + i + '" style="min-height:28px;padding:2px 10px">Usa</button></li>'; }).join('') + '</ul><p class="small muted"><span class="tag i">Ipotesi</span> Sono bozze di un modello piccolo: controlla senso e rime.</p>' : '<p class="small">Nessuna proposta utile, riprova.</p>';
         out._res = res; out._line = line; out._task = task;
       } catch (e) { out.innerHTML = '<p class="small">Errore: ' + esc(e && e.message ? e.message : e) + '</p>'; }
@@ -551,10 +552,12 @@
     $('#ai-v').addEventListener('click', function () { go('versioni'); });
     $('#ai-p').addEventListener('click', function () { go('punchline'); });
     $('#ai-c').addEventListener('click', function () { go('continua'); });
+    $('#ai-m').addEventListener('click', function () { go('migliora'); });
+    $('#ai-r').addEventListener('click', function () { go('ritornello'); });
     $('#ai-out').addEventListener('click', function (e) {
       var i = e.target && e.target.getAttribute && e.target.getAttribute('data-ai-use'); if (i == null) return;
       var out = $('#ai-out'), txt = out._res[+i], s = cur(), ta = lyTa();
-      s.lyrics = out._task === 'continua' ? s.lyrics.replace(/\s+$/, '') + '\n' + txt : s.lyrics.replace(out._line, txt);
+      s.lyrics = out._task === 'continua' ? s.lyrics.replace(/\s+$/, '') + '\n' + txt : out._task === 'ritornello' ? s.lyrics.replace(/\s+$/, '') + '\n\n[Ritornello]\n' + txt : s.lyrics.replace(out._line, txt);
       if (ta) { ta.value = s.lyrics; ta.dispatchEvent(new Event('input', { bubbles: true })); } persist(); out.insertAdjacentHTML('beforeend', '<p class="small">Inserita nel testo.</p>');
     });
   })();
@@ -679,12 +682,21 @@
   function moodNow() { var s = cur(), p = s.prod; if (s.moodTarget) return s.moodTarget; try { return Ear.moodOf({ mode: p.mode, bpm: p.bpm }).top; } catch (e) { return ''; } }
   /* ===== Cervello Sultan: dal testo alla base (stile, velocità, tonalità, strumenti) ===== */
   var BANNED_INST = { flute: 1, ocarina: 1, harmonica: 1, clarinet: 1, kalimba: 0 };
+  /* se nel testo mancano i titoli [Strofa]/[Ritornello], li mette l'app (e toglie il titolo dal testo cantato) */
+  function autoSecs() {
+    var s = cur(); if (!s.lyrics || !s.lyrics.trim() || typeof AutoSections === 'undefined') return '';
+    var r = AutoSections.label(s.lyrics); if (!r.changed) return '';
+    s.lyrics = r.text; ['#dw-lyrics', '#st-lyrics'].forEach(function (q) { var el = $(q); if (el) el.value = r.text; });
+    if (r.title && (!s.title || /^(nuova canzone|senza titolo)/i.test(s.title))) { s.title = r.title; ['#dw-name', '#st-title'].forEach(function (q) { var el = $(q); if (el) el.value = r.title; }); var ts = $('#top-song'); if (ts) ts.textContent = r.title; }
+    persist(); return '<span class="tag i">Ipotesi</span> ' + esc(AutoSections.summary(r)) + ' Puoi cambiare i titoli tra parentesi.';
+  }
   var SB_FORCE = { genre: null, preset: null };
   function rxFor(pl, v, radical) { var st = Arranger.STYLES[pl.genre] || {}; return Remix.make(((pl.seed >>> 0) + (v || 0) * 7919 + (radical ? 104729 : 0)) >>> 0, { half: !st.snare || st.snare.length === 1, heavy: !!pl.heavy, mode: pl.mode }); }
   async function runBrain(again, fixedV, mel, radical) {
     var s = cur(), p = s.prod, m = $('#sb-msg'); s.recentG = s.recentG || [];
     if (radical) { fixedV = (s.brainV || 0) + 1; mel = (s.brainV || 0) + 7; }
     if (!s.lyrics.trim()) { m.textContent = 'Scrivi o incolla prima il testo (in alto): il cervello parte da quello.'; return; }
+    var secTxt = autoSecs();
     s.brainV = fixedV != null ? fixedV : (again ? (s.brainV || 0) + 1 : 0); s.brainFor = SultanBrain.hash(s.lyrics.trim()); s.genreManual = false;
     var a = analysisOf(s), pl = SultanBrain.plan(s.lyrics, a, { variant: s.brainV, profile: arModel(), mood: $('#sb-mood').value || null, styleText: ($('#sb-style') || {}).value || '', forceGenre: SB_FORCE.genre || null, avoid: (radical ? s.recentG.slice(-5) : []).concat(Taste.avoidList(tasteMem())) }); s.recentG.push(pl.genre); s.lastPlan = { genre: pl.genre, mode: pl.mode, heavy: !!pl.heavy, bpm: pl.bpm }; if (s.recentG.length > 12) s.recentG.shift(); s.moodTarget = pl.moodTarget; applyMoodBg(pl.moodTarget); persist();
     p.heavy = !!pl.heavy; p.melSeed = mel || 0; p.sig = SigFx.pick({ styleText: ($('#sb-style') || {}).value || '', seed: pl.seed, scenes: pl.scenes, genre: pl.genre }); p.genre = pl.genre; p.bpm = pl.bpm; p.mode = pl.mode; p.tonic = pl.tonic; p.seed = pl.seed; p.bassStyle = pl.bassStyle; p.sounds = 'campioni'; p.tune = null;
@@ -700,7 +712,7 @@
       learnTxt = '<br><span class="tag m">Misurato</span> Ho usato i numeri di ' + lp.from + ' basi che ti piacciono: cassa sui passi ' + lp.groove.kickPats[0][0].map(function (x) { return x + 1; }).join(', ') + (lp.prog ? ', giro ' + BeatLearn.progName(lp.prog, lp.mode) : '') + ', ' + p.bpm + ' BPM.'; }
     else { p.groove = rx.groove; p.prog = null; p.tune = rx.tune; p.fromLearn = 0; if (s.brainV > 0 || radical) p.melSeed = mel != null ? mel : rx.melSeed; learnTxt = '<br><span class="tag m">Misurato</span> Versione ' + (s.brainV + 1) + ': ' + esc(rx.label) + '.' + (p.sig && p.sig.length ? ' Effetti: ' + esc(([].concat(p.sig)).join(', ')) + '.' : '') + (learnList().some(function (r) { return r.vote > 0; }) ? '' : '<br><span class="small muted">Non ho ancora basi imparate: caricane una in Libreria e premi ♥ per farmi imparare ritmo e accordi.</span>'); }
     p.inst = res.inst; persist(); fillBase();
-    m.innerHTML = '<b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + pl.mode + '<br>' + pl.why.map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Strumenti: ' + ['melodia', 'accordi', 'pad'].map(function (r) { return r + ' ' + esc(instName(p.inst[r])); }).join(', ') + '. Se non ti piace premi "Altra versione dal testo".' + learnTxt + '<div class="row" style="margin-top:8px"><button class="chip" data-taste="1">♥ Mi piace</button><button class="chip" data-taste="-1">✕ Scarta e dammene un\'altra</button></div><div class="small muted" id="sb-taste">' + esc(Taste.summary(tasteMem())) + '</div>';
+    m.innerHTML = '<b>' + esc(pl.label) + '</b> · ' + pl.bpm + ' BPM · ' + pl.mode + '<br>' + pl.why.map(esc).join('<br>') + '<br><span class="tag i">Ipotesi</span> Strumenti: ' + ['melodia', 'accordi', 'pad'].map(function (r) { return r + ' ' + esc(instName(p.inst[r])); }).join(', ') + '. Se non ti piace premi "Altra versione dal testo".' + (secTxt ? '<br>' + secTxt : '') + learnTxt + '<div class="row" style="margin-top:8px"><button class="chip" data-taste="1">♥ Mi piace</button><button class="chip" data-taste="-1">✕ Scarta e dammene un\'altra</button></div><div class="small muted" id="sb-taste">' + esc(Taste.summary(tasteMem())) + '</div>';
     await makeAndPlay(false);
     earRun(true);
   }
@@ -716,6 +728,7 @@
   var SB_N = 0;
   function sbMore(reset) {
     var s = cur(), box = $('#sb-list'); if (!s.lyrics.trim()) { box.innerHTML = '<p class="small">Scrivi prima il testo.</p>'; return; }
+    autoSecs();
     if (reset) { SB_N = 0; box.innerHTML = '<ul class="clean small" id="sb-ul"></ul><div class="row"><button class="btn sm" id="sb-more">Ancora proposte (non finiscono mai)</button></div>'; }
     var a = analysisOf(s), st = ($('#sb-style') || {}).value || '', h = '', i;
     for (i = SB_N; i < SB_N + 6; i++) {
