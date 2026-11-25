@@ -2120,6 +2120,41 @@
   function sepDb() { if (SDB) return SDB; SDB = new Promise(function (res) { try { var rq = indexedDB.open('msa-sep', 1); rq.onupgradeneeded = function () { rq.result.createObjectStore('chunks'); }; rq.onsuccess = function () { res(rq.result); }; rq.onerror = function () { res(null); }; } catch (e) { res(null); } }); return SDB; }
   async function sepIdb(op, key, val) { var db = await sepDb(); if (!db) return null; return new Promise(function (res) { try { var tx = db.transaction('chunks', op === 'get' ? 'readonly' : 'readwrite'), st = tx.objectStore('chunks'), r = op === 'get' ? st.get(key) : op === 'put' ? st.put(val, key) : op === 'clear' ? st.clear() : st.delete(key); tx.oncomplete = function () { res(op === 'get' ? r.result || null : true); }; tx.onerror = function () { res(null); }; } catch (e) { res(null); } }); }
   async function wakeOn() { try { if (navigator.wakeLock) return await navigator.wakeLock.request('screen'); } catch (e) {} return null; }
+  /* Separazione sul TUO spazio gratuito Hugging Face (iPhone: niente limiti di memoria, canzone intera, modello più pulito).
+     Il file va al tuo spazio, torna diviso in voce, batteria, basso e resto; lo spazio non conserva nulla. Client: @gradio/client (ISC). */
+  async function sepServer(f, el) {
+    var sp = (LIB.settings.sepServer || '').trim(), modo = LIB.settings.sepServerMode === 'pulita' ? 'pulita' : 'veloce'; if (!sp) throw new Error('nessuno spazio impostato');
+    if (f.size > 250 * 1048576) throw new Error('file troppo grande (oltre 250 MB): in Foto accorcia il video o salva solo l\'audio');
+    el.textContent = 'Mi collego al tuo spazio di separazione (se dormiva, la prima volta ci mette 1-3 minuti a svegliarsi)…'; learnBar(0.02);
+    var GC = await import('https://cdn.jsdelivr.net/npm/@gradio/client@2.8.0/+esm'), cl = await GC.Client.connect(/^https?:/.test(sp) ? sp : sp.replace(/^.*huggingface\.co\/spaces\//, ''));
+    var wl = await wakeOn(), out = null, t0 = Date.now();
+    try {
+      var job = cl.submit('/separa', { file: GC.handle_file(f), modo: modo, parole: !$('#dw-tr-auto') || $('#dw-tr-auto').checked, lingua: 'it' });
+      for await (var msg of job) {
+        if (msg.type === 'status') {
+          if (msg.stage === 'error') throw new Error(msg.message || 'errore dello spazio');
+          var pd = msg.progress_data && msg.progress_data[0], sec = Math.round((Date.now() - t0) / 1000);
+          el.textContent = (msg.queue && msg.position != null && msg.position > 0 ? 'In coda (posizione ' + msg.position + ')' : (pd && pd.desc ? pd.desc : 'Il tuo spazio sta separando (' + modo + ')')) + ' · ' + sec + ' s. Puoi tenere aperta questa pagina.';
+          if (pd && pd.progress != null) learnBar(0.05 + 0.75 * pd.progress);
+        } else if (msg.type === 'data') { out = msg.data; }
+      }
+    } finally { try { if (wl) wl.release(); } catch (e) {} }
+    if (!out || out.length < 4) throw new Error('lo spazio non ha restituito le tracce');
+    el.textContent = 'Scarico le tracce separate…'; learnBar(0.82);
+    var names = ['voice', 'drums', 'bass', 'other'], mono = {}, n = 0;
+    for (var i = 0; i < 4; i++) {
+      var u = out[i] && (out[i].url || out[i].path); if (!u) throw new Error('traccia mancante');
+      var ab = await (await fetch(u)).arrayBuffer(), oc = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 1, 44100);
+      var a = await new Promise(function (res, rej) { var pr = oc.decodeAudioData(ab, res, rej); if (pr && pr.then) pr.then(res, rej); });
+      var L = a.getChannelData(0), R = a.numberOfChannels > 1 ? a.getChannelData(1) : L, m = new Float32Array(L.length); for (var j = 0; j < m.length; j++) m[j] = (L[j] + R[j]) / 2;
+      mono[names[i]] = m; n = n ? Math.min(n, m.length) : m.length;
+    }
+    var st = { drums: mono.drums.subarray(0, n), bass: mono.bass.subarray(0, n), other: mono.other.subarray(0, n) }, voice = mono.voice.subarray(0, n);
+    var base = new Float32Array(n), rhythm = new Float32Array(n), orig = new Float32Array(n);
+    for (i = 0; i < n; i++) { base[i] = st.drums[i] + st.bass[i] + st.other[i]; rhythm[i] = st.drums[i] + st.bass[i]; orig[i] = base[i] + voice[i]; }
+    var trS = out[4] && out[4].lines && out[4].lines.length ? { lines: out[4].lines, text: out[4].text || '' } : null;
+    return { tr: trS, sr: 44100, voice: voice, base: base, stems: st, rhythm: rhythm, orig: orig, ai: true, note: (trS ? 'Parole trascritte sul tuo spazio. ' : '') + 'Separato sul tuo spazio Hugging Face (' + (modo === 'pulita' ? 'Mel-Band RoFormer + htdemucs' : 'htdemucs') + '), canzone intera, in ' + Math.round((Date.now() - t0) / 1000) + ' s.' };
+  }
   async function sepFast(f, el) {
     var d = await decodeStereo(f, 32000), sr = d.sr, i, mx = Math.round(sr * learnSecs());
     if (d.L.length > mx) { var b0 = Math.max(0, Math.min(d.L.length - mx, Math.round(d.L.length * 0.3))); d.L = d.L.slice(b0, b0 + mx); if (d.R) d.R = d.R.slice(b0, b0 + mx); }
@@ -2132,6 +2167,13 @@
   function normOnly(x, sr) { return BeatLearn.clean(x, sr, { denoise: 0 }).x; }
   (function learnCrashNote() { try { var r = JSON.parse(localStorage.getItem('learnRunning') || 'null'); if (!r) return; localStorage.removeItem('learnRunning'); if (Date.now() - r.at > 3 * 3600e3) return; if ((r.secs || 0) >= 300) { $('#dw-learn-msg').textContent = 'La separazione di "' + r.name + '" si è interrotta (il telefono ha chiuso la pagina). Ricarica lo STESSO file: riparto dai pezzi già finiti, non da capo.'; return; } LIB.settings.learnSecs = Math.max(20, Math.round((r.secs || 40) * 0.6)); persist(); $('#dw-learn-msg').textContent = 'L\'ultima analisi di "' + r.name + '" si è interrotta: il telefono ha chiuso la pagina (memoria o schermo bloccato). Riprova: ora analizzo solo ' + LIB.settings.learnSecs + ' secondi. Tieni lo schermo acceso.'; } catch (e) {} })();
   $('#dw-learn-secs').value = String(learnSecs()); $('#dw-learn-secs').addEventListener('change', function () { LIB.settings.learnSecs = +this.value; persist(); });
+  (function sepWhereUi() {
+    var w = $('#dw-sep-where'), n = $('#dw-sep-space'), m = $('#dw-sep-smode'); if (!w) return;
+    w.value = LIB.settings.sepWhere || ''; n.value = LIB.settings.sepServer || ''; m.value = LIB.settings.sepServerMode || 'veloce'; $('#dw-sep-srv').hidden = w.value !== 'server';
+    w.addEventListener('change', function () { LIB.settings.sepWhere = this.value; persist(); $('#dw-sep-srv').hidden = this.value !== 'server'; });
+    n.addEventListener('change', function () { LIB.settings.sepServer = this.value.trim(); persist(); });
+    m.addEventListener('change', function () { LIB.settings.sepServerMode = this.value; persist(); });
+  })();
   $('#dw-tr-auto').checked = LIB.settings.trAuto !== false; $('#dw-tr-auto').addEventListener('change', function () { LIB.settings.trAuto = this.checked; persist(); });
   $('#dw-bt-on').checked = LIB.settings.beatThis !== false; $('#dw-bt-on').addEventListener('change', function () { LIB.settings.beatThis = this.checked; persist(); });
   /* Beat This! (MIT): battiti e inizio battuta con una rete neurale da 10 MB, scaricata una volta sola */
@@ -2152,7 +2194,7 @@
     try { localStorage.setItem('learnRunning', JSON.stringify({ name: f.name, at: Date.now(), secs: learnSecs() })); } catch (e) {}
     try {
       var s, why = '';
-      try { s = await sepAi(f, el); }
+      try { if ((LIB.settings.sepWhere || '') === 'server' && LIB.settings.sepServer) { try { s = await sepServer(f, el); } catch (e1) { var why1 = ((e1 && e1.message) || e1).toString().slice(0, 120); el.textContent = 'Il tuo spazio non ha risposto (' + why1 + '). Provo sul telefono…'; await tick(); s = await sepAi(f, el); s.note = 'ATTENZIONE: il tuo spazio non ha risposto (' + why1 + '), ho separato sul telefono. ' + s.note; } } else s = await sepAi(f, el); }
       catch (e) { why = (e && e.message || 'memoria').slice(0, 80); el.textContent = 'L\'AI non è riuscita (' + why + '). Uso il metodo semplice solo per il ritmo…'; await tick(); s = await sepFast(f, el); }
       el.textContent = 'Porto le tracce al volume giusto…'; learnBar(0.88); await tick();
       var voice = normOnly(s.voice, s.sr), base = normOnly(s.base, s.sr);
@@ -2166,7 +2208,7 @@
       LEARN.cur = { name: f.name.replace(/\.[^.]+$/, '').slice(0, 40), prof: prof, voice: voice, base: base, orig: s.orig, stems: s.stems, sr: s.sr, note: s.note, vote: 1, ai: s.ai };
       var rec = { id: uid(), name: LEARN.cur.name, artist: art, prof: prof, vote: 1, at: Date.now() }, LL = learnList(); LL.push(rec); if (LL.length > 120) LL.shift(); LEARN.cur.recId = rec.id; persist();
       learnBar(null);
-      if ($('#dw-tr-auto') && $('#dw-tr-auto').checked && s.ai) { try { localStorage.removeItem('learnRunning'); } catch (x) {} await learnLyrics(LEARN.cur, 'italian'); }
+      if (s.tr) lyricsDone(LEARN.cur, s.tr, el); else if ((LIB.settings.sepWhere || '') === 'server' && /spazio Hugging/.test(s.note || '')) { /* sul telefono Whisper pesa circa 1 GB: se lo spazio non ha trascritto, non lo rifaccio qui */ } else if ($('#dw-tr-auto') && $('#dw-tr-auto').checked && s.ai) { try { localStorage.removeItem('learnRunning'); } catch (x) {} await learnLyrics(LEARN.cur, 'italian'); }
       if (last) setTimeout(function () { var fp = folderProf(art); varMake('', learnSpecs2(fp || prof, varCount()), '#dw-learn-msg'); }, 50); el.textContent = s.ai ? 'Fatto. Ascolta le parti separate' + (LEARN.cur.tr ? ' e leggi il testo studiato' : '') + ': la canzone è nella cartella «' + art + '».' : 'Fatto, ma senza AI (' + why + '): voce e base non sono pulite.';
       try { localStorage.removeItem('learnRunning'); } catch (e) {}
       learnRender(); coachRec('complete', coachCtx()); sepInfo();
@@ -2191,11 +2233,18 @@
   $('#dw-learn-cur').addEventListener('click', async function (e) {
     if (!e.target.closest('#dw-tr-go')) return; await learnLyrics(LEARN.cur, $('#dw-tr-lang').value);
   });
-  async function learnLyrics(c, lang) {
-    var el = $('#dw-learn-msg'); if (!c) return; lang = lang || 'italian'; el.textContent = 'Preparo Whisper (la prima volta scarico circa 80 MB)…'; learnBar(0.02);
+  async function learnLyrics(c, lang, given) {
+    var el = $('#dw-learn-msg'); if (!c) return; lang = lang || 'italian';
+    if (given) return lyricsDone(c, given, el);
+    el.textContent = 'Preparo Whisper (la prima volta scarico circa 80 MB)…'; learnBar(0.02);
     try {
       var tr = await Transcribe.run(c.voice, c.sr, { language: lang, onProgress: function (a, b) { if (b) { el.textContent = 'Scarico Whisper: ' + Math.round(a / 1048576) + ' di ' + Math.round(b / 1048576) + ' MB (solo la prima volta)…'; learnBar(0.02 + 0.4 * a / b); } } });
-      c.tr = tr; c.prof.lyr = lyricStats(tr); learnBar(null);
+      learnBar(null); lyricsDone(c, tr, el);
+    } catch (err) { learnBar(null); el.textContent = 'Trascrizione non riuscita (' + (err && err.message || 'memoria') + ').'; }
+  }
+  function lyricsDone(c, tr, el) {
+    try {
+      c.tr = tr; c.prof.lyr = lyricStats(tr);
       var rec = learnList().filter(function (r) { return r.id === c.recId; })[0], art = rec ? rec.artist : '';
       if (rec) rec.prof.lyr = c.prof.lyr;
       if (tr.text && art && art !== 'Senza cartella') { var st = arStore(), ar = st[art] || (st[art] = { acc: ArtistLab.newAcc(), on: false }), me = ArtistLab.measure(tr.text); if (me.lines) { ar.acc = ArtistLab.merge(ar.acc, me); WordBank.learn(wbStore(), tr.text); } }
