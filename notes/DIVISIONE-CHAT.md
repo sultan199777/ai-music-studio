@@ -22,3 +22,8 @@ Solo MIT / Apache / BSD / CC0. Niente GPL/AGPL né dati share-alike (CC BY-SA): 
 - PER A: il Cervello (SultanBrain.plan) con un testo di strada (sirene, madre che prega, Lambo) ha scelto «Club dembow, maggiore»: andrebbe spinto verso drill/street/trap scura. B ora corregge solo le Varianti (pfImageWeights in app.js), non runBrain.
 - Ad-lib (voce dell'utente registrata) e voci di produzione sono di B (sono mix/effetti); l'intonazione e le doppie cantate restano di A.
 - Strumenti comuni per risparmiare token (usabili da entrambe): `tools/pubblica.sh` (pubblica e verifica), `tools/prova-iphone.js` (prova su iPhone simulato). Mappa di B: `notes/SKILL-sultan-sound-studio-basi.md`.
+
+## Aggiornamento 25/11 (A) — Gusto e guida
+- Nuovo `src/taste.js` (Taste, di A): ♥/✕ sulle basi generate dal Cervello, salva solo numeri in LIB.settings.taste e si somma al profilo (arModel). Le proposte «Ancora proposte» non finiscono mai e evitano gli stili che scarti.
+- In app.body.html: 5 pannelli `.dw-guide` (uno per passo, data-ws) con la guida da produttore. B può ridisegnarli ma tenere il testo e i data-ws.
+- Id nuovi da non cambiare: `sb-taste`, `data-taste`, `data-sb-like`, `data-sb-nope`.
