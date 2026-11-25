@@ -10,10 +10,11 @@
  * mixa con Backing.mix.
  */
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) { var sd = null, ins = null; try { sd = require('./samples-data.js'); } catch (e) {} try { ins = require('./instruments.js'); } catch (e) {} module.exports = factory(sd, ins); }
+  if (typeof module === 'object' && module.exports) { var sd = null, ins = null; try { sd = require('./samples-data.js'); } catch (e) {} try { ins = require('./instruments.js'); } catch (e) {} try { global.__SigFx = require('./sig-fx.js'); } catch (e) {} module.exports = factory(sd, ins); }
   else root.Arranger = factory(root.SampleData || null, root.Instruments || null);
 })(typeof self !== 'undefined' ? self : this, function (SampleData, Inst) {
   'use strict';
+  var SigFx = (typeof global !== 'undefined' && global.__SigFx) || (typeof self !== 'undefined' && self.SigFx) || (typeof window !== 'undefined' && window.SigFx) || null;
 
   var NAMES = ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'];
   var STEPS = { maggiore: [0, 2, 4, 5, 7, 9, 11], minore: [0, 2, 3, 5, 7, 8, 10] };
@@ -468,6 +469,7 @@
     /* Melodia nuova: un motivo corto (3-5 note) che si ripete con piccole variazioni e chiude sulla tonica.
        Note scelte nella pentatonica (con la seconda minore come nota "scura" nei generi duri), contorno spesso discendente,
        ritmi radi con pause: suona trap/drill/hip hop, non una passeggiata a caso sulla scala. Seme proprio: p.melSeed. */
+    var SIGS = SigFx && p.sig ? p.sig.filter(function (k) { return SigFx.SIG.indexOf(k) >= 0; }) : [];
     var rm = rng(((p.melSeed || 0) * 7919 + (p.seed || 1) * 31 + 17) >>> 0), HARD = { trap: 1, drill: 1, trapdark: 1, street: 1, boombap: 1, clubtrap: 1, epico: 1 }[genreKey] === 1;
     var PENT = mode === 'minore' ? [0, 3, 5, 7, 10] : [0, 2, 4, 7, 9];
     var CONT = [[0, -1, -2, -1], [2, 1, 0, 0], [0, 0, -1, -3], [1, 0, -1, 0, -2], [3, 2, 2, 0], [0, 1, 0, -2], [2, 0, 1, -1, -2], [0, -2, -1, -3]];
@@ -674,6 +676,14 @@
         // effetti
         if (cfg.riserEnd && lastBar) add('fx', bar * barLen, riserBuf(barLen / sr), 0.7);
         if (cfg.impact && firstBar) add('fx', bar * barLen, impactBuf(), 0.8);
+        /* firme: coro lirico in intro, sirena nel finale di intro/pre, spari sul drop, raffica prima del drop */
+        if (SIGS.length) {
+          var sg = SigFx, sd = (p.seed || 1) * 7 + bar;
+          if (SIGS.indexOf('coro') >= 0 && sec.name === 'intro' && firstBar) add('fx', bar * barLen, sg.choir(sr, [ch[0] + 24, (ch[1] != null ? ch[1] : ch[0] + 7) + 24, ch[0] + 31], sec.bars * barLen / sr, sd), 0.7);
+          if (SIGS.indexOf('sirena') >= 0 && cfg.riserEnd && lastBar && sec.name !== 'bridge') add('fx', bar * barLen, sg.siren(sr, barLen / sr, sd), 0.32);
+          if (SIGS.indexOf('spari') >= 0 && cfg.impact && firstBar) [0, 6, 10].forEach(function (st2, q) { add('fx', at(bar, st2), sg.gunshot(sr, sd + q), 0.7 - q * 0.12); });
+          if (SIGS.indexOf('mitra') >= 0 && sec.name === 'pre' && lastBar) add('fx', at(bar, 8), sg.machinegun(sr, barLen / sr / 2, sd), 0.5);
+        }
         if (cfg.gap && lastBar) { // respiro: ultimi 2 passi muti (tranne fx)
           var g0 = at(bar, 14), g1 = at(bar + 1, 0);
           ['kick', 'snare', 'hat', 'bass', 'chords', 'pad', 'lead'].forEach(function (tr) {
@@ -682,6 +692,9 @@
         }
       }
     });
+
+    /* focus: l'intro suona ovattata e si apre sul drop */
+    if (SIGS.indexOf('focus') >= 0) { var isec = sections[0] && sections[0].name === 'intro' ? sections[0] : null; if (isec) { var bl0 = stepLen * 16, f0 = isec.startBar * bl0, f1 = Math.min(N, (isec.startBar + isec.bars) * bl0); ['kick', 'snare', 'hat', 'bass', 'chords', 'pad', 'lead', 'arp'].forEach(function (tr) { if (T[tr]) SigFx.focus(T[tr], sr, f0, f1, 380, 9000); }); } }
 
     // note scritte a mano nel piano roll (sostituiscono quelle generate; il resto della base resta identico)
     if (NL) NL.forEach(function (n) {
