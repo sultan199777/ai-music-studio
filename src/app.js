@@ -91,7 +91,7 @@
   /* ================= Audio ================= */
   var player = { ctx: null, src: null, raf: 0 };
   function getCtx() {
-    if (!player.ctx) { var C = window.AudioContext || window.webkitAudioContext; if (!C) return null; player.ctx = new C(); }
+    if (!player.ctx) { var C = window.AudioContext || window.webkitAudioContext; if (!C) return null; try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {} player.ctx = new C(); }
     if (player.ctx.state === 'suspended' && player.ctx.resume) player.ctx.resume();
     return player.ctx;
   }
@@ -1021,7 +1021,9 @@
     { id: 'arp', nome: 'Arpeggio', tracks: ['arp'], level: 'arpeggio', role: 'arpeggio', c: '#6fd8cb' },
     { id: 'lead', nome: 'Melodia', tracks: ['lead'], level: 'melodia', role: 'melodia', c: '#e6a1c4' },
     { id: 'pad', nome: 'Atmosfera', tracks: ['pad', 'fx'], level: 'pad', role: 'pad', c: '#8fb4ff' },
-    { id: 'voice', nome: 'Voce', voice: true, level: 'voce', c: '#ff5d6c' }
+    { id: 'sfx', nome: 'Effetti', tracks: [], level: 'effetti', fx: true, c: '#ffb454' },
+    { id: 'voice', nome: 'Voce', voice: true, level: 'voce', c: '#ff5d6c' },
+    { id: 'vox', nome: 'Voci prod.', voxfx: true, level: 'vocifx', c: '#ff9ec0' }
   ];
   var SECCOL = { intro: '#8a8c96', strofa: '#9c86ff', pre: '#6fd8cb', ritornello: '#e3c48f', bridge: '#e6a1c4', outro: '#8a8c96' };
   function lvl(k) { var v = cur().prod.levels[k]; return v == null ? 1 : v; }
@@ -1054,11 +1056,11 @@
   }
   function voiceTake() { var t = activeTake(); return t && !t.example ? t : null; }
   function dwBuffers(b) {
-    var t = voiceTake(), key = SESSION.baseKey + '|' + vclipKey();
+    var t = voiceTake(), pf0 = pfPlan(), key = SESSION.baseKey + '|' + vclipKey() + '|' + pfKey(pf0);
     if (DW.bufKey === key && DW.bufs) return DW.bufs;
     var bufs = {}, N = b.length, sum = new Float32Array(N), i;
     LANES.forEach(function (L) {
-      if (L.voice) return;
+      if (L.voice || L.fx || L.voxfx) return;
       var x = new Float32Array(N);
       L.tracks.forEach(function (tr) { var a = b.tracks[tr]; if (a) for (i = 0; i < N; i++) x[i] += a[i]; });
       // bilanciamento automatico (come un fonico): ogni traccia al suo livello di riferimento (RMS dei punti attivi)
@@ -1071,12 +1073,17 @@
     var pk = 0; for (i = 0; i < N; i++) { var v = sum[i] < 0 ? -sum[i] : sum[i]; if (v > pk) pk = v; }
     DW.k = pk > 0 ? 0.8 / pk : 1;
     var vb = vclipBuffer(b.duration); if (vb) bufs.voice = vb;
+    if (pf0 && pf0.on && pf0.events && pf0.events.length) {
+      try { bufs.sfx = { x: ProdFx.renderSfx(pf0.events, b.sampleRate, b.bpm, N, { seed: pf0.seed, tonic: b.tonic }), sr: b.sampleRate, start: 0 }; } catch (e) {}
+      if (vb) try { var vx = ProdFx.renderVox(pf0.events, vb, songMap(), b.bpm, { bank: ADLIB.list, melodic: !PF_HARD[b.genre] }); if (vx) bufs.vox = { x: vx, sr: vb.sr, start: 0 }; } catch (e) {}
+    }
     DW.bufs = bufs; DW.bufKey = key; return bufs;
   }
   function gainFor(L) {
     var any = Object.keys(DW.solo).some(function (k) { return DW.solo[k]; });
     if (DW.mute[L.id] || (any && !DW.solo[L.id])) return 0;
     if (L.voice) return DW.recording ? 0 : lvl('voce');
+    if (L.voxfx) return DW.recording ? 0 : lvl('voce') * lvl(L.level);
     return lvl(L.level) * DW.k;
   }
   function dwGains() { LANES.forEach(function (L) { var g = DW.gains[L.id]; if (g) g.gain.setTargetAtTime(gainFor(L), g.context.currentTime, 0.02); }); }
@@ -1127,7 +1134,7 @@
     $('#dw-lyl').innerHTML = map && b.bars === map.totalBars ? map.lines.map(function (l) { return '<span style="left:' + (l.startBar * DW.px + 1) + 'px;width:' + (l.bars * DW.px - 2) + 'px" title="' + esc(l.text) + '">' + esc(l.text) + '</span>'; }).join('') : '';
     var inst = cur().prod.inst || {};
     $('#dw-heads').innerHTML = '<div class="dw-hl">Battute</div><div class="dw-hl s">Parti</div><div class="dw-hl l">Testo</div>' + LANES.map(function (L) {
-      var label = L.role ? (inst[L.role] ? instName(inst[L.role]) : 'Sintetizzato') : (L.id === 'drums' ? (cur().prod.kit && SynthDesign.KITS[cur().prod.kit] ? 'Kit ' + SynthDesign.KITS[cur().prod.kit].nome : (cur().prod.sounds === 'sint' ? 'Sintetici' : 'Campioni veri')) : (L.id === 'bass' ? (cur().prod.bassStyle === '808' ? '808 sempre' : 'Dallo stile') : (voiceTake() ? voiceTake().name : 'Registra con ●')));
+      var label = L.fx ? pfCount('sfx') + ' suoni dal testo' : L.voxfx ? pfCount('vox') + ' interventi voce' : L.role ? (inst[L.role] ? instName(inst[L.role]) : 'Sintetizzato') : (L.id === 'drums' ? (cur().prod.kit && SynthDesign.KITS[cur().prod.kit] ? 'Kit ' + SynthDesign.KITS[cur().prod.kit].nome : (cur().prod.sounds === 'sint' ? 'Sintetici' : 'Campioni veri')) : (L.id === 'bass' ? (cur().prod.bassStyle === '808' ? '808 sempre' : 'Dallo stile') : (voiceTake() ? voiceTake().name : 'Registra con ●')));
       return '<div class="dw-lh" style="--lc:' + L.c + '"><b>' + L.nome + '</b><button class="inst" data-inst="' + L.id + '">' + esc(label) + '</button><div class="ms"><button data-m="' + L.id + '" class="' + (DW.mute[L.id] ? 'on' : '') + '">M</button><button data-s="' + L.id + '" class="' + (DW.solo[L.id] ? 'on' : '') + '">S</button><input type="range" min="0" max="160" value="' + Math.round(lvl(L.level) * 100) + '" data-lv="' + L.id + '" aria-label="Volume ' + L.nome + '"></div></div>';
     }).join('');
     var dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -1151,7 +1158,7 @@
     $('#dw-arrinfo').textContent = (Arranger.STYLES[b.genre] ? Arranger.STYLES[b.genre].label : b.genre) + ' · ' + NOTES[b.tonic] + ' ' + b.mode + ' · ' + b.bpm + ' BPM · ' + b.bars + ' battute (' + fmt(b.duration, 0) + ' s)' + (map ? ' · forma dal testo' : '');
     dwPos(DW.from || 0);
   }
-  async function dwRefresh() { try { var b = await dwBase(); dwBuffers(b); dwDraw(b); dwSteps(); if (window.__prReady) prDraw(); } catch (e) { $('#dw-msg').textContent = 'Non riesco a creare la base.'; } }
+  async function dwRefresh() { try { var b = await dwBase(); dwBuffers(b); dwDraw(b); try { pfRender(); } catch (e) {} dwSteps(); if (window.__prReady) prDraw(); } catch (e) { $('#dw-msg').textContent = 'Non riesco a creare la base.'; } }
   var dwT = null;
   function dwChanged(rebuildAgents) { try { projLine(); } catch (e) {} SESSION.baseKey = ''; DW.bufKey = ''; persist(); clearTimeout(dwT); dwT = setTimeout(function () { dwRefresh(); if (rebuildAgents) agentsRun(); }, 250); }
 
@@ -1359,6 +1366,7 @@
     var m = b.getAttribute('data-m'), so = b.getAttribute('data-s'), ins = b.getAttribute('data-inst');
     if (m) { DW.mute[m] = !DW.mute[m]; b.classList.toggle('on', DW.mute[m]); dwGains(); }
     if (so) { DW.solo[so] = !DW.solo[so]; b.classList.toggle('on', DW.solo[so]); dwGains(); }
+    if (ins === 'sfx' || ins === 'vox') { pfGo(); return; }
     if (ins) { inspOpen(ins, 'suono'); return; }
     if (false) {
       var L = LANES.filter(function (x) { return x.id === ins; })[0], p = cur().prod;
@@ -1742,7 +1750,7 @@
     var cl = vclips().map(function (x) { return Object.assign({}, x); }); cl[CLUI.sel][k] = +e.target.value; setClips(cl, '');
   });
   // ---------- Mixer a canali (stessa catena per ascolto e file salvato) ----------
-  var MIX_LANES = ['drums', 'bass', 'chords', 'arp', 'lead', 'pad', 'voice'];
+  var MIX_LANES = ['drums', 'bass', 'chords', 'arp', 'lead', 'pad', 'sfx', 'voice', 'vox'];
   function mixSet() {
     var p = cur().prod;
     if (!p.mix || typeof p.mix !== 'object' || p.mixV !== 2) { p.mix = Mixer.preset(p.genre, MIX_LANES); p.mixV = 2; } // v2: mix pulito (tagli dei bassi, meno distorsione)
@@ -2099,13 +2107,16 @@
     else for (var i = 0; i < 8; i++) specs.push(varSpec(p.genre, true));
     VAR.list = []; varRender();
     for (var k = 0; k < specs.length; k++) {
-      var sp = specs[k]; el.textContent = 'Compongo la variante ' + (k + 1) + ' di 8…'; await tick();
+      var sp = specs[k]; el.textContent = 'Compongo la base ' + (k + 1) + ' di ' + specs.length + '…'; await tick();
       for (var r in sp.inst) if (sp.inst[r]) await loadInst(sp.inst[r]);
       try {
         var bb = Arranger.generate({ sampleRate: 22050, bpm: sp.bpm, tonic: p.tonic, mode: sp.mode, bars: p.bars, genre: sp.genre, seed: sp.seed, inst: sp.inst, plan: map ? map.plan : undefined, arpPattern: sp.arpPattern, groove: sp.groove, prog: sp.prog, tune: sp.tune, bassStyle: sp.bassStyle || undefined, sounds: 'campioni', drumRender: function (part, o, s2) { return SynthDesign.kitRender(sp.kit, part, o, s2); } });
-        sp.mix = Backing.mix(bb, p.levels, p.sec); sp.sr = bb.sampleRate; VAR.list.push(sp); varRender();
-      } catch (e) {}
+        sp.mix = Backing.mix(bb, p.levels, p.sec); sp.sr = bb.sampleRate;
+        var pfv = pfPlan(); if (pfv.on && map) { var pv = ProdFx.plan(map, { genre: sp.genre, seed: sp.seed, density: Math.min(1, pfv.density) }); sp.fxNames = pv.events.filter(function (e2) { return e2.tipo === 'sfx' && ProdFx.SOUNDS[e2.snd].gruppo !== 'Cinema'; }).map(function (e2) { return ProdFx.SOUNDS[e2.snd].nome.split(' (')[0].toLowerCase(); }).filter(function (v, i, a) { return a.indexOf(v) === i; }).slice(0, 4); var sx = ProdFx.renderSfx(pv.events, sp.sr, sp.bpm, sp.mix.length, { seed: sp.seed, tonic: p.tonic }); var pkv = 0, q; for (q = 0; q < sx.length; q++) { sp.mix[q] += sx[q] * 0.5; var av = sp.mix[q] < 0 ? -sp.mix[q] : sp.mix[q]; if (av > pkv) pkv = av; } if (pkv > 0.98) for (q = 0; q < sp.mix.length; q++) sp.mix[q] *= 0.98 / pkv; }
+        VAR.list.push(sp); varRender();
+      } catch (e) { VAR.err = (e && e.message) || String(e); }
     }
+    if (!VAR.list.length && specs.length) { el.textContent = 'Nessuna base creata (errore: ' + (VAR.err || 'sconosciuto') + '). Mandami questo messaggio.'; VAR.busy = false; return; }
     el.textContent = given ? VAR.list.length + ' basi nuove pronte, sul tuo testo: ascoltale e scegli con Usa. Premi ancora per altre diverse.' : VAR.list.length + ' varianti pronte: ascoltale, scegli con Usa. Premi ancora per altre 8 nuove.'; VAR.busy = false;
   }
   function varName(sp) { return (sp.nome || (Arranger.STYLES[sp.genre] ? Arranger.STYLES[sp.genre].label : sp.genre)) + ' · ' + sp.bpm + ' BPM' + (sp.prog ? ' · giro ' + StylePresets.progName(sp.prog, sp.mode) : ''); }
@@ -2115,7 +2126,7 @@
   }
   function varHtml() {
     return VAR.list.map(function (sp, i) {
-      return '<div class="dw-prop"><div><b>' + (i + 1) + '. ' + esc(varName(sp)) + '</b><small>' + ['melodia', 'accordi', 'pad'].map(function (r) { return sp.inst[r] ? instName(sp.inst[r]) : ''; }).filter(Boolean).join(' · ') + ' · kit ' + esc(SynthDesign.KITS[sp.kit].nome) + '</small></div><button class="btn sm" data-vp="' + i + '">▶</button><button class="btn sm pri" data-vu="' + i + '">Usa</button></div>';
+      return '<div class="dw-prop"><div><b>' + (i + 1) + '. ' + esc(varName(sp)) + '</b><small>' + ['melodia', 'accordi', 'pad'].map(function (r) { return sp.inst[r] ? instName(sp.inst[r]) : ''; }).filter(Boolean).join(' · ') + ' · kit ' + esc(SynthDesign.KITS[sp.kit].nome) + (sp.fxNames && sp.fxNames.length ? '<br>🎬 ' + esc(sp.fxNames.join(', ')) : '') + '</small></div><button class="btn sm" data-vp="' + i + '">▶</button><button class="btn sm pri" data-vu="' + i + '">Usa</button></div>';
     }).join('');
   }
   function varClick(e) {
@@ -2138,9 +2149,17 @@
   // proposte automatiche dopo aver imparato una canzone: stile, ritmo, giro armonico e tempo misurati, strumenti nostri
   // quanto ogni stile base si adatta al testo (cervello Sultan dell'altra chat: punteggi per genere)
   function textWeights() {
-    var s0 = cur(); if (!(s0.lyrics || '').trim() || !window.SultanBrain) return null;
+    var s0 = cur(); if (!(s0.lyrics || '').trim()) return null; if (!window.SultanBrain) return pfImageWeights(s0.lyrics, null);
     try { var pl = SultanBrain.plan(s0.lyrics, analysisOf(s0), {}), sc = pl.scores || {}, mx = Math.max.apply(null, Object.keys(sc).map(function (k) { return sc[k]; }).concat([1])), w = {};
-      Object.keys(sc).forEach(function (k) { w[k] = 0.4 + 2.6 * Math.max(0, sc[k]) / mx; }); w.cloud = w.cloud || w.trapdark; w.brooklyn = w.brooklyn || w.drill; w.rnb = w.rnb || w.melodico; w.emorap = w.emorap || w.trap; w.plugg = w.plugg || w.trap; w.reggaeton = w.reggaeton || w.estate; w.afrotrap = w.afrotrap || w.estate; w.rage = w.rage || w.clubtrap; w.jersey = w.jersey || w.clubtrap; return w; } catch (e) { return null; }
+      Object.keys(sc).forEach(function (k) { w[k] = 0.4 + 2.6 * Math.max(0, sc[k]) / mx; }); w.cloud = w.cloud || w.trapdark; w.brooklyn = w.brooklyn || w.drill; w.rnb = w.rnb || w.melodico; w.emorap = w.emorap || w.trap; w.plugg = w.plugg || w.trap; w.reggaeton = w.reggaeton || w.estate; w.afrotrap = w.afrotrap || w.estate; w.rage = w.rage || w.clubtrap; w.jersey = w.jersey || w.clubtrap; return pfImageWeights(s0.lyrics, w); } catch (e) { return null; }
+  }
+  /* le immagini del testo (strada, polizia, soldi, motori, fede, lacrime…) spingono gli stili adatti */
+  function pfImageWeights(txt, w) {
+    var B = { strada: ['drill', 'street', 'trapdark', 'brooklyn'], polizia: ['drill', 'street', 'brooklyn', 'trapdark'], spari: ['drill', 'brooklyn', 'street'], raffica: ['drill', 'brooklyn'], motori: ['trap', 'clubtrap', 'plugg', 'rage'], 'auto in corsa': ['trap', 'clubtrap', 'phonk'], soldi: ['trap', 'clubtrap', 'plugg'], volo: ['trap', 'cloud', 'plugg'], fede: ['melodico', 'emorap', 'epico'], 'pioggia/lacrime': ['emorap', 'melodico', 'cloud', 'rnb'], ricordi: ['lofi', 'boombap', 'melodico'], cuore: ['rnb', 'melodico', 'emorap'], palco: ['clubtrap', 'rage', 'jersey'], mare: ['estate', 'afrotrap', 'reggaeton'], 'colpo forte': ['trapdark', 'epico', 'drill'], temporale: ['trapdark', 'epico', 'cloud'] };
+    var cnt = {}, n = 0; String(txt || '').split(/\n/).forEach(function (l) { if (!l.trim() || /^\[/.test(l.trim())) return; n++; ProdFx.readLine(l).hits.forEach(function (h) { cnt[h.why] = (cnt[h.why] || 0) + 1; }); });
+    if (!n) return w; w = w || {}; Object.keys(Arranger.STYLES).forEach(function (g) { if (w[g] == null) w[g] = 1; });
+    Object.keys(cnt).forEach(function (k) { (B[k] || []).forEach(function (g) { if (w[g] != null) w[g] *= 1 + Math.min(1.5, cnt[k] * 0.45); }); });
+    return w;
   }
   function learnSpecs2(prof) {
     var near = { trap: ['trap', 'trapdark', 'plugg', 'emorap'], drill: ['drill', 'brooklyn', 'trapdark', 'street'], melodico: ['melodico', 'rnb', 'emorap', 'cloud'], estate: ['estate', 'afrotrap', 'reggaeton'], epico: ['epico', 'cloud', 'trapdark'] }[prof.style] || ['trap'], w = {};
@@ -2179,7 +2198,7 @@
     if (t === 'canale') { MIXUI.lane = INSP.lane; mixRender(); }
   }
   function inspOpen(id, tab) {
-    var L = LANES.filter(function (x) { return x.id === id; })[0]; if (!L) return; INSP.lane = id;
+    var L = LANES.filter(function (x) { return x.id === id; })[0]; if (!L) return; if (L.fx || L.voxfx) { pfGo(); return; } INSP.lane = id;
     $('#dw-in-t').textContent = L.nome; $('#dw-in-dot').style.background = L.c;
     $('#dw-in-tabs [data-int="note"]').hidden = !LANE_NOTES[id];
     inspSuono(L); $('#dw-insp').hidden = false; inspTab(tab === 'note' && !LANE_NOTES[id] ? 'suono' : tab);
@@ -2202,7 +2221,84 @@
   document.body.appendChild($('#dw-set'));
   // spiegazioni nascoste: un "?" in ogni pannello le mostra
   $$('#v-daw .dw-panel .dw-ph').forEach(function (ph) { var b = document.createElement('button'); b.className = 'dw-help'; b.type = 'button'; b.textContent = '?'; b.setAttribute('aria-label', 'Spiegazione'); b.addEventListener('click', function () { ph.parentElement.classList.toggle('show-help'); }); ph.appendChild(b); });
-  SHOW.daw = function () { dwWs(dwWsName()); projLine(); aiRender(); atmRender(); verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+
+  // ---------- Produzione: effetti da film e interventi vocali scelti dal testo (ProdFx), modificabili a mano ----------
+  var ADLIB = { list: [] }, PF_HARD = { drill: 1, brooklyn: 1, trapdark: 1, rage: 1, phonk: 1, street: 1, trap: 1, jersey: 1, plugg: 1, detroit: 1, clubtrap: 1 };
+  function pfHash(str) { var h = 5381; for (var i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) >>> 0; return h; }
+  function pfPlan(force) {
+    var s = cur(), p = s.prod; if (!p.prodFx) p.prodFx = { on: true, density: 1, events: [] }; var pf = p.prodFx;
+    var k = pfHash((s.lyrics || '') + '|' + p.genre + '|' + p.seed + '|' + pf.density + '|' + ADLIB.list.length);
+    if (force || (!pf.manual && pf.key !== k)) {
+      var map = null; try { map = songMap(); } catch (e) {}
+      var r = ProdFx.plan(map, { genre: p.genre, seed: p.seed, density: pf.density, adlibs: ADLIB.list.length });
+      pf.events = r.events; pf.themes = r.themes; pf.key = k; pf.seed = p.seed; pf.manual = false;
+    } else pf.stale = pf.manual && pf.key !== k;
+    return pf;
+  }
+  function pfKey(pf) { return pf ? (pf.on ? 1 : 0) + ':' + pfHash(JSON.stringify(pf.events || []) + ADLIB.list.map(function (a) { return a.id; }).join()) : ''; }
+  function pfCount(t) { var pf = cur().prod.prodFx; return pf && pf.on ? (pf.events || []).filter(function (e) { return e.tipo === t && !e.off; }).length : 0; }
+  function pfGo() { dwWs('base'); setTimeout(function () { var el = $('#dw-p-prod'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }, 60); }
+  function pfName(e) { return e.tipo === 'sfx' ? (ProdFx.SOUNDS[e.snd] || {}).nome || e.snd : (ProdFx.VOX[e.snd] || {}).nome || e.snd; }
+  function pfWhere(e) {
+    var map = null; try { map = songMap(); } catch (x) {} var sec = '', b0 = 0;
+    if (map) map.plan.some(function (q) { if (e.bar < b0 + q[1]) { sec = q[0]; return true; } b0 += q[1]; return false; });
+    return (sec ? sec + ', ' : '') + 'battuta ' + (Math.floor(e.bar) + 1) + (e.bar % 1 ? '½' : '');
+  }
+  function pfChanged(manual) { var pf = cur().prod.prodFx; if (manual) pf.manual = true; DW.bufKey = ''; persist(); pfRender(); var was = DW.playing; dwStop(true); dwRefresh().then(function () { if (was) dwPlay(DW.from || 0); }); }
+  function pfRender() {
+    var el = $('#pf-list'); if (!el) return; var pf = pfPlan(), p = cur().prod;
+    $('#pf-on').checked = !!pf.on; $('#pf-dens').value = String(pf.density);
+    $('#pf-themes').innerHTML = (pf.themes && pf.themes.length ? 'Immagini trovate nel testo: <b>' + esc(pf.themes.slice(0, 8).join(', ')) + '</b>' : (cur().lyrics.trim() ? 'Nessuna immagine forte nel testo: metto solo transizioni e voci.' : 'Scrivi il testo: gli effetti nascono dalle tue parole.')) + (pf.stale ? ' · <b>Il testo è cambiato</b>: premi «L\'IA rilegge il testo» per riallineare.' : '') + (voiceTake() ? '' : '<br><span class="muted">Le voci di produzione (eco, cori, risposte) si sentono quando hai registrato la voce.</span>');
+    el.innerHTML = (pf.events || []).map(function (e, i) {
+      var ic = e.tipo === 'sfx' ? '🎬' : '🎤';
+      return '<div class="dw-prop' + (e.off ? ' off' : '') + '" style="' + (e.off ? 'opacity:.45' : '') + '"><div><b>' + ic + ' ' + esc(pfName(e)) + '</b><small>' + esc(pfWhere(e)) + (e.why ? ' · ' + esc(e.why) : '') + '</small><input type="range" min="0" max="200" value="' + Math.round((e.gain == null ? 1 : e.gain) * 100) + '" data-pfr="' + i + '" aria-label="Volume" style="width:100%"></div>' +
+        '<button class="btn sm" data-pfp="' + i + '" title="Ascolta nel brano">▶</button>' + (e.tipo === 'sfx' ? '<button class="btn sm" data-pfv="' + i + '" title="Un\'altra versione del suono">↻</button>' : '') + '<button class="btn sm" data-pfx="' + i + '" title="' + (e.off ? 'Riattiva' : 'Togli') + '">' + (e.off ? '+' : '✕') + '</button></div>';
+    }).join('') || '<p class="small muted">Nessun intervento.</p>';
+    var map = null; try { map = songMap(); } catch (x) {}
+    $('#pf-add-snd').innerHTML = '<optgroup label="Effetti">' + Object.keys(ProdFx.SOUNDS).map(function (k) { return '<option value="s:' + k + '">' + esc(ProdFx.SOUNDS[k].nome) + '</option>'; }).join('') + '</optgroup><optgroup label="Voce">' + Object.keys(ProdFx.VOX).map(function (k) { return '<option value="v:' + k + '">' + esc(ProdFx.VOX[k].nome) + '</option>'; }).join('') + '</optgroup>';
+    $('#pf-add-at').innerHTML = map ? map.lines.map(function (l, i) { return '<option value="' + i + '">Riga ' + (i + 1) + ': ' + esc(l.text.slice(0, 34)) + '</option>'; }).join('') : '<option value="">Scrivi prima il testo</option>';
+    if (!$('#pf-lib').innerHTML) { var g = {}; Object.keys(ProdFx.SOUNDS).forEach(function (k) { var S = ProdFx.SOUNDS[k]; (g[S.gruppo] = g[S.gruppo] || []).push('<button class="chip" data-pfl="' + k + '">' + esc(S.nome) + '</button>'); }); $('#pf-lib').innerHTML = Object.keys(g).map(function (k) { return '<p class="small muted" style="margin:8px 0 4px">' + k + '</p><div class="chips">' + g[k].join('') + '</div>'; }).join(''); }
+    pfAdRender();
+  }
+  function pfAdRender() { var el = $('#pf-ad-list'); if (!el) return; el.innerHTML = ADLIB.list.length ? ADLIB.list.map(function (a, i) { return '<div class="dw-prop"><div><b>' + esc(a.name) + '</b><small>' + (a.x.length / a.sr).toFixed(1) + ' s</small></div><button class="btn sm" data-pap="' + i + '">▶</button><button class="btn sm" data-pax="' + i + '">✕</button></div>'; }).join('') : '<p class="small muted">Nessun ad-lib. Registrane 3-6 (la tua voce): l\'IA li userà nei vuoti dopo le righe, con eco.</p>'; }
+  $('#dw-p-prod').addEventListener('click', async function (e) {
+    var b = e.target.closest('button'); if (!b) return; var pf = pfPlan(), m = $('#pf-msg'), a;
+    if (b.id === 'pf-auto') { pf.manual = false; pfPlan(true); m.textContent = pf.events.length + ' interventi scelti dal testo. Premi ▶ su uno per sentirlo nel brano.'; pfChanged(false); return; }
+    if (b.id === 'pf-add') {
+      var v = $('#pf-add-snd').value, li = $('#pf-add-at').value, map = songMap(); if (!map || li === '') { m.textContent = 'Scrivi prima il testo.'; return; }
+      var l = map.lines[+li], t = v.slice(0, 1) === 's' ? 'sfx' : 'vox', id = v.slice(2), S = ProdFx.SOUNDS[id], ev = { id: 'm' + Date.now(), tipo: t, snd: id, line: +li, gain: 1, why: 'messo da te' };
+      if (t === 'sfx') { if (S.tipo === 'letto') { ev.bar = l.startBar; ev.dur = l.bars * 2; } else if (S.tipo === 'fine') { ev.bar = l.startBar; ev.dur = 1; } else ev.bar = l.startBar + l.bars - 0.25; }
+      else { ev.bar = id === 'coro' || id === 'scura' || id === 'reverse' ? l.startBar : l.startBar + l.bars; ev.dur = l.bars; if (id === 'adlib') ev.pick = Math.floor(Math.random() * Math.max(1, ADLIB.list.length)); }
+      pf.events.push(ev); pf.events.sort(function (x, y) { return x.bar - y.bar; }); m.textContent = 'Aggiunto: ' + pfName(ev) + ' (' + pfWhere(ev) + ').'; pfChanged(true); return;
+    }
+    if ((a = b.getAttribute('data-pfl'))) { var sn = ProdFx.sound(a, 32000, 1 + Math.floor(Math.random() * 999), { bpm: cur().prod.bpm, dur: 5, midi: 48 + cur().prod.tonic }); dwStop(true); playBuf(sn, 32000); m.textContent = 'Ascolti: ' + ProdFx.SOUNDS[a].nome; return; }
+    if ((a = b.getAttribute('data-pfp')) != null) { var e1 = pf.events[+a], bs = 240 / cur().prod.bpm; dwStop(true); dwPlay(Math.max(0, e1.bar * bs - (e1.tipo === 'vox' ? 3 : 1.5))); m.textContent = 'Ascolti dal punto: ' + pfName(e1) + '.'; return; }
+    if ((a = b.getAttribute('data-pfv')) != null) { var e2 = pf.events[+a]; e2.var = (e2.var || 0) + 1; m.textContent = 'Nuova versione di ' + pfName(e2) + '.'; pfChanged(true); return; }
+    if ((a = b.getAttribute('data-pfx')) != null) { var e3 = pf.events[+a]; e3.off = !e3.off; pfChanged(true); return; }
+    if ((a = b.getAttribute('data-pap')) != null) { var ad = ADLIB.list[+a]; dwStop(true); playBuf(ad.x, ad.sr); return; }
+    if ((a = b.getAttribute('data-pax')) != null) { var ad2 = ADLIB.list.splice(+a, 1)[0]; await dbTake('del', ad2.id); pfAdRender(); pfChanged(false); return; }
+    if (b.id === 'pf-ad-rec') {
+      if (!micOk() || !window.MediaRecorder) { m.textContent = 'Microfono non disponibile qui: apri l\'app da Safari (sito) e consenti il microfono.'; return; }
+      try {
+        var st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }), mr = new MediaRecorder(st), ch = [];
+        mr.ondataavailable = function (ev2) { if (ev2.data && ev2.data.size) ch.push(ev2.data); };
+        var done = new Promise(function (res) { mr.onstop = res; }); mr.start(); m.textContent = '● Registro… dì il tuo ad-lib adesso'; b.disabled = true;
+        setTimeout(function () { try { mr.stop(); } catch (x) {} }, 2000); await done; st.getTracks().forEach(function (tr) { tr.stop(); }); b.disabled = false;
+        var ab = await new Blob(ch, { type: mr.mimeType || 'audio/mp4' }).arrayBuffer(), dec = await new Promise(function (res, rej) { getCtx().decodeAudioData(ab, res, rej); }), x = dec.getChannelData(0), sr = dec.sampleRate;
+        var pk = 0, i0 = 0, i1 = x.length - 1, i; for (i = 0; i < x.length; i++) { var av = x[i] < 0 ? -x[i] : x[i]; if (av > pk) pk = av; }
+        if (pk < 0.01) { m.textContent = 'Non ho sentito niente: riprova più vicino al microfono.'; return; }
+        while (i0 < x.length && Math.abs(x[i0]) < pk * 0.08) i0++; while (i1 > i0 && Math.abs(x[i1]) < pk * 0.08) i1--;
+        var y = new Float32Array(Math.max(1, i1 - i0 + Math.round(sr * 0.08))); for (i = 0; i < y.length; i++) y[i] = (x[i0 + i] || 0) * 0.8 / pk;
+        var nm = ($('#pf-ad-name').value || 'ad-lib ' + (ADLIB.list.length + 1)).slice(0, 20), rec = { id: 'adlib-' + Date.now(), name: nm, mono: y, sr: sr, at: Date.now(), adlib: true };
+        await dbTake('put', rec); ADLIB.list.push({ id: rec.id, name: nm, x: y, sr: sr }); $('#pf-ad-name').value = ''; m.textContent = 'Ad-lib «' + nm + '» salvato. L\'IA ora lo usa nei vuoti (premi «L\'IA rilegge» per rimetterli).'; pfAdRender(); pfChanged(false);
+      } catch (err) { b.disabled = false; m.textContent = 'Non riesco a registrare: ' + ((err && err.message) || err); }
+    }
+  });
+  $('#dw-p-prod').addEventListener('input', function (e) { var a = e.target.getAttribute('data-pfr'); if (a == null) return; var pf = pfPlan(); pf.events[+a].gain = +e.target.value / 100; clearTimeout(pfChanged.t); pfChanged.t = setTimeout(function () { pfChanged(true); }, 350); });
+  $('#dw-p-prod').addEventListener('change', function (e) { var pf = pfPlan(); if (e.target.id === 'pf-dens') { pf.density = +e.target.value; pf.manual = false; pfPlan(true); pfChanged(false); } if (e.target.id === 'pf-on') { pf.on = e.target.checked; pfChanged(false); } });
+  // iPhone: sblocca l'audio al primo tocco (Safari tiene l'audio spento finché non tocchi; con questo suona anche col silenzioso)
+  ['touchend', 'pointerdown', 'keydown'].forEach(function (ev) { document.addEventListener(ev, function unlock() { var c = getCtx(); if (c) { try { var bf = c.createBuffer(1, 1, 22050), sn = c.createBufferSource(); sn.buffer = bf; sn.connect(c.destination); sn.start(0); } catch (x) {} } document.removeEventListener(ev, unlock, true); }, true); });
+  SHOW.daw = function () { dwWs(dwWsName()); projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {
@@ -2377,6 +2473,7 @@
   }
   async function restoreTakes() {
     var all = await dbTake('all'); if (!all || !all.length) return;
+    ADLIB.list = all.filter(function (r) { return r.adlib; }).map(function (r) { return { id: r.id, name: r.name, x: r.mono, sr: r.sr }; }); all = all.filter(function (r) { return !r.adlib; }); try { pfAdRender(); } catch (e) {}
     all.sort(function (x, y) { return (x.at || 0) - (y.at || 0); });
     for (var i = Math.max(0, all.length - 8); i < all.length; i++) {
       var r = all[i]; if (SESSION.takes.some(function (t) { return t.id === r.id; })) continue;

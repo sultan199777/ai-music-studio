@@ -27,6 +27,8 @@
     base: {
       drums: { hp: 25, comp: 0.25, sat: 0.05, high: 1 }, bass: { hp: 28, sat: 0.12, duck: 0.4, low: 1 }, chords: { hp: 170, mid: -1.5, midHz: 350, rev: 0.22, pan: -0.2 },
       arp: { hp: 220, rev: 0.18, dly: 0.22, pan: 0.3 }, lead: { hp: 180, mid: -1, midHz: 400, high: 1.5, rev: 0.2, dly: 0.18 }, pad: { hp: 200, rev: 0.45, high: -2 },
+      sfx: { hp: 35, comp: 0.2, rev: 0.12, high: 1 },
+      vox: { hp: 150, low: -3, high: 2, comp: 0.45, rev: 0.32, dly: 0.12 },
       voice: { hp: 90, low: -2, mid: -1.5, midHz: 400, high: 3, comp: 0.55, rev: 0.16, dly: 0.1 }
     },
     trap: { bass: { sat: 0.2, duck: 0.45 }, drums: { comp: 0.3, sat: 0.08 }, lead: { dly: 0.28 } },

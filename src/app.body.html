@@ -89,6 +89,21 @@
     <div id="dwp-out"></div>
     <details style="margin-top:10px"><summary class="small">Altre opzioni (ascolto dell'Orecchio, salva)</summary><div class="row" id="dwp-more" style="margin-top:8px"></div></details>
   </section>
+  <section class="dw-panel" id="dw-p-prod" data-ws="base voce">
+    <div class="dw-ph"><h3>Produzione: effetti e voci</h3><span class="tag m">Dal tuo testo</span></div>
+    <p class="small muted">L'IA legge ogni riga (immagini, emozioni, punchline) e mette suoni da film e interventi sulla tua voce a tempo con la base: eco, risposte pitchate, cori, voce scura, reverse, ad-lib. Tutto modificabile qui sotto.</p>
+    <div class="row"><button class="btn pri" id="pf-auto">L'IA rilegge il testo</button><select id="pf-dens" aria-label="Quantità"><option value="0">Poco</option><option value="1" selected>Normale</option><option value="2">Tanto</option></select><label class="small"><input type="checkbox" id="pf-on" checked> Attivi</label></div>
+    <div id="pf-themes" class="small"></div>
+    <div id="pf-list"></div>
+    <details><summary class="small"><b>Aggiungi a mano</b> (scegli suono e riga)</summary>
+      <div class="row" style="margin-top:6px"><select id="pf-add-snd"></select><select id="pf-add-at"></select><button class="btn" id="pf-add">Aggiungi</button></div>
+    </details>
+    <details><summary class="small"><b>Libreria suoni</b> (tocca per ascoltare)</summary><div id="pf-lib"></div></details>
+    <details><summary class="small"><b>I tuoi ad-lib</b> (registra yeah, ehi, skrt… l'IA li mette nei vuoti)</summary>
+      <div class="row" style="margin-top:6px"><input id="pf-ad-name" placeholder="nome (es. yeah)" style="max-width:140px"><button class="btn" id="pf-ad-rec">● Registra 2 secondi</button></div><div id="pf-ad-list"></div>
+    </details>
+    <div class="status" id="pf-msg"></div>
+  </section>
   <section class="dw-panel" id="dw-p-extra" data-ws="testo">
     <details><summary><b>Assistente testi (AI locale, opzionale)</b></summary><div id="dwx-ai" style="margin-top:8px"></div></details>
     <details style="margin-top:8px"><summary><b>Rime</b></summary><div id="dwx-rh" style="margin-top:8px"></div></details>
@@ -99,7 +114,7 @@
 <section class="dw-panel" id="dw-p-var" data-ws="base">
     <div class="dw-ph"><h3>Varianti</h3><span class="tag m">Sempre nuove</span></div>
     <div class="row"><button class="btn pri" id="dw-var-other">Basi adatte al mio testo</button><select id="dw-var-n"><option value="8">8</option><option value="16" selected>16</option><option value="24">24</option></select><button class="btn" id="dw-var-same">Varianti di questo stile</button></div>
-    <details class="dw-atm"><summary class="small"><b>Atmosfere</b> (tocca per avere varianti in quello stile)</summary><div id="dw-var-atm"></div></details>
+    <details class="dw-atm" open><summary class="small"><b>Atmosfere</b> (tocca per avere varianti in quello stile)</summary><div id="dw-var-atm"></div></details>
     <div id="dw-var-list"></div>
     <div class="status" id="dw-var-msg"></div>
   </section>
