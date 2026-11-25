@@ -20,6 +20,14 @@
     punchline: 'Scrivi 3 punchline (frase a effetto, doppio senso o immagine forte) che possano chiudere questa riga o seguirla. Massimo {syll} sillabe ciascuna.',
     continua: 'Scrivi 3 possibili righe successive (circa {syll} sillabe) che portino avanti la storia e finiscano con una di queste rime: {rime}.'
   };
+  /* Quale modello Ollama consigliare in base alla RAM del computer (stime da guide 2026: RAM totale meno 3-4 GB per il sistema; Ipotesi) */
+  function recommend(ramGb) {
+    ramGb = +ramGb || 8;
+    if (ramGb <= 8) return { model: 'qwen2.5:3b', note: 'Con 8 GB stai stretto: modelli piccoli (3B). Il 7B parte ma rallenta.' };
+    if (ramGb <= 16) return { model: 'qwen2.5:7b', note: 'Con 16 GB il 7B va bene (italiano buono).' };
+    if (ramGb <= 24) return { model: 'qwen2.5:14b', note: 'Con 24 GB va il 14B (italiano molto migliore).' };
+    return { model: 'qwen2.5:32b', note: 'Con 32 GB o più va anche il 32B (il migliore).' };
+  }
   function supported() { return typeof navigator !== 'undefined' && !!navigator.gpu; }
 
   function buildPrompt(task, c) {
@@ -68,5 +76,5 @@
     var r = await engine.chat.completions.create({ messages: buildPrompt(task, ctx), temperature: 0.9, top_p: 0.92, max_tokens: 160 });
     return clean(r.choices[0].message.content, ctx && ctx.line);
   }
-  return { pingOllama: pingOllama, useOllama: useOllama, MODELS: MODELS, TASKS: TASKS, supported: supported, buildPrompt: buildPrompt, clean: clean, load: load, ask: ask, LIB_URL: LIB_URL };
+  return { recommend: recommend, pingOllama: pingOllama, useOllama: useOllama, MODELS: MODELS, TASKS: TASKS, supported: supported, buildPrompt: buildPrompt, clean: clean, load: load, ask: ask, LIB_URL: LIB_URL };
 });

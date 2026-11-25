@@ -19,3 +19,6 @@ test('Ollama: modello scelto e risposta pulita (finto server)', async () => {
   assert.equal(r.length, 2); assert.ok(calls.some((u) => /api\/chat/.test(u)));
   delete global.fetch;
 });
+test('consiglio per RAM: più RAM, modello più grande', () => {
+  assert.equal(L.recommend(8).model, 'qwen2.5:3b'); assert.equal(L.recommend(16).model, 'qwen2.5:7b'); assert.equal(L.recommend(32).model, 'qwen2.5:32b');
+});

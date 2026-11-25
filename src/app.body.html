@@ -277,6 +277,7 @@
   <div class="card" id="ai-card"><div class="card-head"><h3>Assistente testi (AI locale)</h3><span class="tag i">Opzionale</span></div>
     <p class="small muted">Un piccolo modello gratuito che gira sul tuo telefono e propone righe e punchline nel genere scelto. Si scarica una volta sola (Wi-Fi consigliato) e nessun testo esce dal telefono. Il cervello Sultan resta il maestro: l'AI scrive solo bozze, tu decidi. Serve un iPhone recente (WebGPU).</p>
     <label class="f"><span>Modello</span><select id="ai-model"></select></label>
+    <label class="f"><span>Se usi Ollama: quanta RAM ha il tuo computer?</span><select id="ai-ram"><option value="8">8 GB</option><option value="16">16 GB</option><option value="24">24 GB</option><option value="32">32 GB o più</option></select></label><p class="small muted" id="ai-ramnote">Scegli la RAM e ti dico quale modello conviene.</p>
     <div class="row"><button class="btn pri" id="ai-on">Attiva (scarica il modello)</button></div>
     <div class="status" id="ai-msg"></div>
     <div class="row"><button class="btn" id="ai-v" disabled>3 versioni della riga</button><button class="btn" id="ai-p" disabled>Punchline</button><button class="btn" id="ai-c" disabled>Riga dopo</button></div>

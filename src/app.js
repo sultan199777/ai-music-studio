@@ -520,6 +520,7 @@
   (function () {
     var sel = $('#ai-model'); if (!sel) return;
     sel.innerHTML = '<option value="ollama">Ollama sul computer (migliore, se lo hai)</option>' + LocalAI.MODELS.map(function (m) { return '<option value="' + m.id + '">' + m.label + ' · ' + m.note + '</option>'; }).join('');
+    var ramBox = $('#ai-ram'); if (ramBox) ramBox.addEventListener('change', function () { var r = LocalAI.recommend(ramBox.value); $('#ai-ramnote').innerHTML = r.note + ' Comando da scrivere nel Terminale: <span class="mono">ollama pull ' + r.model + '</span>'; });
     function ready(on) { ['#ai-v', '#ai-p', '#ai-c'].forEach(function (i) { $(i).disabled = !on; }); }
     var LINE = '';
     function lyTa() { var d = $('#dw-lyrics'); return d && d.offsetParent ? d : $('#st-lyrics'); }
