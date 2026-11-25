@@ -738,7 +738,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 15:15</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 15:32</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -5160,7 +5160,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     d += 0.15 * (a.melSeed === b.melSeed ? 0 : 1);
     return round(d);
   }
-  return { make: make, distance: distance, progName: progName, KICKS: KICKS, PROG_MIN: PROG_MIN };
+  return { make: make, distance: distance, progName: progName, KICKS: KICKS, PROG_MIN: PROG_MIN, PROG_MAJ: PROG_MAJ };
 });
 
 /*
@@ -5317,9 +5317,12 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     var d = sanitize(dna), s = seed || 1, r = rng(s * 2654435761 + 31), o = opt || {};
     var half = r() < d.snareHalf, snare = (half ? SNARE_HALF : SNARE_FULL)[Math.floor(r() * (half ? SNARE_HALF : SNARE_FULL).length)];
     var progs = d.progs && d.progs.length ? d.progs : MIN, prog = progs[Math.floor(r() * progs.length)].slice();
+    /* ogni versione è davvero un'altra: metà delle volte giro armonico da un archivio di 30+, tonalità e velocità cambiano */
+    var pool = d.mode === 'maggiore' ? Remix.PROG_MAJ : Remix.PROG_MIN; if (r() < 0.55) prog = pool[Math.floor(r() * pool.length)].slice();
+    var TON = [9, 0, 2, 4, 5, 7, 11, 1, 6, 3, 10, 8], tonic = TON[Math.floor(r() * TON.length)], bpm = Math.round(clamp(d.bpm * (1 + (r() - 0.5) * 0.16), 60, 175));
     var groove = { kickPats: [kickPair(r, d.kick), kickPair(r, d.kick)], snare: snare, rolls: d.rolls, swing: d.swing, slide: d.slide, drive: d.drive, duck: d.duck, hat: d.hatKind };
     return {
-      genre: d.fam, bpm: Math.round(d.bpm), mode: d.mode, groove: groove, prog: prog, heavy: d.dark >= 0.6, leadRest: d.rest,
+      genre: d.fam, bpm: bpm, tonic: tonic, mode: d.mode, groove: groove, prog: prog, heavy: d.dark >= 0.6, leadRest: d.rest,
       tune: { hat: d.hat, bass: d.bass, lift: d.lift, kickVar: rd(0.7 + d.kick * 0.8) }, melSeed: 1 + Math.floor(r() * 9999), name: d.name, preset: (d.parts && d.parts.length === 1 && BY[d.parts[0].id] && BY[d.parts[0].id].preset) || (BY[d.id] && BY[d.id].preset) || null
     };
   }
@@ -12779,7 +12782,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     persist(); return '<span class="tag i">Ipotesi</span> ' + esc(AutoSections.summary(r)) + ' Puoi cambiare i titoli tra parentesi.';
   }
   /* ===== Voce guida: voce maschile sintetica sulla base (impara solo l'altezza della tua voce) ===== */
-  function gvS() { return LIB.settings.gv || (LIB.settings.gv = { on: true, gain: 70, tune: 18, f0: 130, lo: 0, hi: 0, n: 0 }); }
+  function gvS() { var g = LIB.settings.gv; if (g && !g.v2) { g.v2 = 1; g.on = false; } return g || (LIB.settings.gv = { v2: 1, on: false, gain: 70, tune: 18, f0: 130, lo: 0, hi: 0, n: 0 }); }
   function gvAdd(mx) {
     var g = gvS(); if (!g.on || SESSION.useImported || typeof GuideVoice === 'undefined') return mx;
     var s = cur(); if (!s.lyrics || !s.lyrics.trim()) return mx;
@@ -12887,7 +12890,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     var s = cur(), p = s.prod, m = $('#dna-msg'); if (again) DNAUI.n++;
     stopPlay(); var b = dnaBuild(), pr = DNA.toProd(b.dna, ((s.dnaSeed = s.dnaSeed || (SultanBrain.hash(s.lyrics || 'x') >>> 0) % 100000) + DNAUI.n * 7919));
     var sp = pr.preset && StylePresets.byId(pr.preset) ? StylePresets.variant(StylePresets.byId(pr.preset), pr.melSeed) : null, R = Instruments.RECIPES[pr.genre] || {}, ok = function (id) { return !BANNED_INST[id]; };
-    p.genre = pr.genre; p.bpm = pr.bpm; p.mode = pr.mode; p.groove = pr.groove; p.prog = pr.prog; p.tune = pr.tune; p.heavy = pr.heavy; p.leadRest = pr.leadRest; p.melSeed = pr.melSeed; p.seed = (s.dnaSeed || 1) + DNAUI.n * 31; p.bassStyle = pr.heavy ? '808' : undefined; p.fromLearn = 0;
+    p.genre = pr.genre; p.bpm = pr.bpm; p.tonic = pr.tonic; p.mode = pr.mode; p.groove = pr.groove; p.prog = pr.prog; p.tune = pr.tune; p.heavy = pr.heavy; p.leadRest = pr.leadRest; p.melSeed = pr.melSeed; p.seed = (s.dnaSeed || 1) + DNAUI.n * 31; p.bassStyle = pr.heavy ? '808' : undefined; p.fromLearn = 0;
     var inst = sp ? Object.assign({}, sp.inst) : {}; ['melodia', 'accordi', 'pad'].forEach(function (r) { var l = (R[r] || []).filter(ok); if (!inst[r] || BANNED_INST[inst[r]]) inst[r] = l.length ? l[(pr.melSeed + r.length) % l.length] : undefined; }); p.inst = inst; if (sp && sp.kit) p.kit = sp.kit; s.genreManual = true;
     if (['trap', 'trapdark', 'drill', 'brooklyn', 'street', 'boombap', 'clubtrap', 'rage', 'phonk'].indexOf(p.genre) >= 0 && s.lyrics && s.lyrics.trim()) { /* rap: strofe parlate a ritmo, ritornelli cantati: la voce guida segue lo stile */
       s.modes = s.modes || {}; SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: {} }).lines.forEach(function (ln) { if (!s.modes[ln.text]) s.modes[ln.text] = (ln.section === 'ritornello' || ln.section === 'bridge') ? 'canta' : 'parla'; }); }
@@ -12987,7 +12990,9 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     if (brainFirst(true)) return;
     var s = cur(), p = s.prod; s.varN = (s.varN || 0) + 1;
     var rx = rxFor({ genre: p.genre, seed: p.seed, heavy: p.heavy, mode: p.mode }, s.varN, true);
-    p.groove = rx.groove; p.tune = rx.tune; p.melSeed = rx.melSeed; p.prog = null; p.fromLearn = 0; persist();
+    p.groove = rx.groove; p.tune = rx.tune; p.melSeed = rx.melSeed; p.prog = rx.prog; p.fromLearn = 0;
+    var T3 = [0, 2, 3, 5, 7, 10, 4, 9]; p.tonic = (((p.tonic || 0) + T3[s.varN % T3.length]) % 12 + 12) % 12; p.bpm = Math.round(Math.max(60, Math.min(175, p.bpm * (1 + ((s.varN % 5) - 2) * 0.03))));
+    var R2 = Instruments.RECIPES[p.genre] || {}; p.inst = Object.assign({}, p.inst || {}); ['melodia', 'accordi'].forEach(function (role) { var l = (R2[role] || []).filter(function (id) { return !BANNED_INST[id]; }); if (l.length) p.inst[role] = l[(rx.melSeed + role.length) % l.length]; }); persist();
     $('#b-status').textContent = 'Nuova variante ' + (s.varN + 1) + ': ' + rx.label + '.';
     makeAndPlay(true);
   });

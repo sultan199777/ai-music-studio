@@ -152,9 +152,12 @@
     var d = sanitize(dna), s = seed || 1, r = rng(s * 2654435761 + 31), o = opt || {};
     var half = r() < d.snareHalf, snare = (half ? SNARE_HALF : SNARE_FULL)[Math.floor(r() * (half ? SNARE_HALF : SNARE_FULL).length)];
     var progs = d.progs && d.progs.length ? d.progs : MIN, prog = progs[Math.floor(r() * progs.length)].slice();
+    /* ogni versione è davvero un'altra: metà delle volte giro armonico da un archivio di 30+, tonalità e velocità cambiano */
+    var pool = d.mode === 'maggiore' ? Remix.PROG_MAJ : Remix.PROG_MIN; if (r() < 0.55) prog = pool[Math.floor(r() * pool.length)].slice();
+    var TON = [9, 0, 2, 4, 5, 7, 11, 1, 6, 3, 10, 8], tonic = TON[Math.floor(r() * TON.length)], bpm = Math.round(clamp(d.bpm * (1 + (r() - 0.5) * 0.16), 60, 175));
     var groove = { kickPats: [kickPair(r, d.kick), kickPair(r, d.kick)], snare: snare, rolls: d.rolls, swing: d.swing, slide: d.slide, drive: d.drive, duck: d.duck, hat: d.hatKind };
     return {
-      genre: d.fam, bpm: Math.round(d.bpm), mode: d.mode, groove: groove, prog: prog, heavy: d.dark >= 0.6, leadRest: d.rest,
+      genre: d.fam, bpm: bpm, tonic: tonic, mode: d.mode, groove: groove, prog: prog, heavy: d.dark >= 0.6, leadRest: d.rest,
       tune: { hat: d.hat, bass: d.bass, lift: d.lift, kickVar: rd(0.7 + d.kick * 0.8) }, melSeed: 1 + Math.floor(r() * 9999), name: d.name, preset: (d.parts && d.parts.length === 1 && BY[d.parts[0].id] && BY[d.parts[0].id].preset) || (BY[d.id] && BY[d.id].preset) || null
     };
   }

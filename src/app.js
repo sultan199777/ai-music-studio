@@ -707,7 +707,7 @@
     persist(); return '<span class="tag i">Ipotesi</span> ' + esc(AutoSections.summary(r)) + ' Puoi cambiare i titoli tra parentesi.';
   }
   /* ===== Voce guida: voce maschile sintetica sulla base (impara solo l'altezza della tua voce) ===== */
-  function gvS() { return LIB.settings.gv || (LIB.settings.gv = { on: true, gain: 70, tune: 18, f0: 130, lo: 0, hi: 0, n: 0 }); }
+  function gvS() { var g = LIB.settings.gv; if (g && !g.v2) { g.v2 = 1; g.on = false; } return g || (LIB.settings.gv = { v2: 1, on: false, gain: 70, tune: 18, f0: 130, lo: 0, hi: 0, n: 0 }); }
   function gvAdd(mx) {
     var g = gvS(); if (!g.on || SESSION.useImported || typeof GuideVoice === 'undefined') return mx;
     var s = cur(); if (!s.lyrics || !s.lyrics.trim()) return mx;
@@ -815,7 +815,7 @@
     var s = cur(), p = s.prod, m = $('#dna-msg'); if (again) DNAUI.n++;
     stopPlay(); var b = dnaBuild(), pr = DNA.toProd(b.dna, ((s.dnaSeed = s.dnaSeed || (SultanBrain.hash(s.lyrics || 'x') >>> 0) % 100000) + DNAUI.n * 7919));
     var sp = pr.preset && StylePresets.byId(pr.preset) ? StylePresets.variant(StylePresets.byId(pr.preset), pr.melSeed) : null, R = Instruments.RECIPES[pr.genre] || {}, ok = function (id) { return !BANNED_INST[id]; };
-    p.genre = pr.genre; p.bpm = pr.bpm; p.mode = pr.mode; p.groove = pr.groove; p.prog = pr.prog; p.tune = pr.tune; p.heavy = pr.heavy; p.leadRest = pr.leadRest; p.melSeed = pr.melSeed; p.seed = (s.dnaSeed || 1) + DNAUI.n * 31; p.bassStyle = pr.heavy ? '808' : undefined; p.fromLearn = 0;
+    p.genre = pr.genre; p.bpm = pr.bpm; p.tonic = pr.tonic; p.mode = pr.mode; p.groove = pr.groove; p.prog = pr.prog; p.tune = pr.tune; p.heavy = pr.heavy; p.leadRest = pr.leadRest; p.melSeed = pr.melSeed; p.seed = (s.dnaSeed || 1) + DNAUI.n * 31; p.bassStyle = pr.heavy ? '808' : undefined; p.fromLearn = 0;
     var inst = sp ? Object.assign({}, sp.inst) : {}; ['melodia', 'accordi', 'pad'].forEach(function (r) { var l = (R[r] || []).filter(ok); if (!inst[r] || BANNED_INST[inst[r]]) inst[r] = l.length ? l[(pr.melSeed + r.length) % l.length] : undefined; }); p.inst = inst; if (sp && sp.kit) p.kit = sp.kit; s.genreManual = true;
     if (['trap', 'trapdark', 'drill', 'brooklyn', 'street', 'boombap', 'clubtrap', 'rage', 'phonk'].indexOf(p.genre) >= 0 && s.lyrics && s.lyrics.trim()) { /* rap: strofe parlate a ritmo, ritornelli cantati: la voce guida segue lo stile */
       s.modes = s.modes || {}; SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: {} }).lines.forEach(function (ln) { if (!s.modes[ln.text]) s.modes[ln.text] = (ln.section === 'ritornello' || ln.section === 'bridge') ? 'canta' : 'parla'; }); }
@@ -915,7 +915,9 @@
     if (brainFirst(true)) return;
     var s = cur(), p = s.prod; s.varN = (s.varN || 0) + 1;
     var rx = rxFor({ genre: p.genre, seed: p.seed, heavy: p.heavy, mode: p.mode }, s.varN, true);
-    p.groove = rx.groove; p.tune = rx.tune; p.melSeed = rx.melSeed; p.prog = null; p.fromLearn = 0; persist();
+    p.groove = rx.groove; p.tune = rx.tune; p.melSeed = rx.melSeed; p.prog = rx.prog; p.fromLearn = 0;
+    var T3 = [0, 2, 3, 5, 7, 10, 4, 9]; p.tonic = (((p.tonic || 0) + T3[s.varN % T3.length]) % 12 + 12) % 12; p.bpm = Math.round(Math.max(60, Math.min(175, p.bpm * (1 + ((s.varN % 5) - 2) * 0.03))));
+    var R2 = Instruments.RECIPES[p.genre] || {}; p.inst = Object.assign({}, p.inst || {}); ['melodia', 'accordi'].forEach(function (role) { var l = (R2[role] || []).filter(function (id) { return !BANNED_INST[id]; }); if (l.length) p.inst[role] = l[(rx.melSeed + role.length) % l.length]; }); persist();
     $('#b-status').textContent = 'Nuova variante ' + (s.varN + 1) + ': ' + rx.label + '.';
     makeAndPlay(true);
   });
