@@ -117,7 +117,7 @@
     var t0 = ctx.currentTime + 0.05;
     player.t0 = t0; player.src = src; player.onStop = onStop || null;
     src.onended = function () { if (player.src === src) { player.src = null; cancelAnimationFrame(player.raf); var f = player.onStop; player.onStop = null; if (f) f(); } };
-    src.start(t0);
+    src.start(t0); audioCheck();
     if (onTick) {
       var loop = function () { if (player.src !== src) return; onTick(Math.max(0, ctx.currentTime - t0)); player.raf = requestAnimationFrame(loop); };
       loop();
@@ -1346,7 +1346,7 @@
     var gr = dwGraph(ctx, master, bufs, b, from, t0, DW.gains); DW.mixer = gr.mixer; DW.srcs = gr.srcs;
     gr.srcs.forEach(function (src) { if (src._lane === 'drums') src.onended = function () { if (DW.playing) { var lp = SESSION.lastPlay; if (DW.from === 0 && lp) coachRec('complete', lp.ctx); dwStop(); dwPos(0); } }; });
     applyMoodBg(moodNow()); document.body.style.setProperty('--beat', (60 / b.bpm).toFixed(3) + 's'); document.body.classList.add('dw-playing');
-    DW.playing = true; SESSION.lastPlay = { t: performance.now(), ctx: coachCtx(), dur: b.duration };
+    audioCheck(); DW.playing = true; SESSION.lastPlay = { t: performance.now(), ctx: coachCtx(), dur: b.duration };
     var pb = $('#dw-play'); pb.classList.add('on'); pb.innerHTML = '<svg><use href="#i-stop"/></svg>';
     var map = songMap(), lk = '', loop = function () {
       if (!DW.playing) return;
@@ -2720,7 +2720,16 @@
   $('#dw-p-prod').addEventListener('input', function (e) { var a = e.target.getAttribute('data-pfr'); if (a == null) return; var pf = pfPlan(); pf.events[+a].gain = +e.target.value / 100; clearTimeout(pfChanged.t); pfChanged.t = setTimeout(function () { pfChanged(true); }, 350); });
   $('#dw-p-prod').addEventListener('change', function (e) { var pf = pfPlan(); if (e.target.id === 'pf-dens') { pf.density = +e.target.value; pf.manual = false; pfPlan(true); pfChanged(false); } if (e.target.id === 'pf-on') { pf.on = e.target.checked; pfChanged(false); } });
   // iPhone: sblocca l'audio al primo tocco (Safari tiene l'audio spento finché non tocchi; con questo suona anche col silenzioso)
-  ['touchend', 'pointerdown', 'keydown'].forEach(function (ev) { document.addEventListener(ev, function unlock() { var c = getCtx(); if (c) { try { var bf = c.createBuffer(1, 1, 22050), sn = c.createBufferSource(); sn.buffer = bf; sn.connect(c.destination); sn.start(0); } catch (x) {} } document.removeEventListener(ev, unlock, true); }, true); });
+  /* iPhone: Safari sospende l'audio (blocco schermo, altra app, chiamata) e lo riattiva SOLO dentro un tocco.
+     Per questo a OGNI tocco/click riattivo il contesto, prima di qualsiasi attesa (prima valeva solo il primo tocco). */
+  var UNLOCKED = false;
+  ['touchend', 'click', 'keydown'].forEach(function (ev) { document.addEventListener(ev, function () {
+    var c = player.ctx; if (!c) c = getCtx(); if (!c) return;
+    if (c.state !== 'running' && c.resume) { try { c.resume(); } catch (x) {} }
+    if (!UNLOCKED) { UNLOCKED = true; try { var bf = c.createBuffer(1, 1, 22050), sn = c.createBufferSource(); sn.buffer = bf; sn.connect(c.destination); sn.start(0); } catch (x) {} }
+  }, true); });
+  /* se dopo aver premuto play l'audio è ancora fermo, lo dico (invece del silenzio senza spiegazione) */
+  function audioCheck() { setTimeout(function () { var c = player.ctx; if (c && c.state !== 'running') { var m = 'Audio fermo (Safari: ' + c.state + '). Tocca lo schermo una volta e ripremi ▶. Se ancora niente: chiudi Safari e riaprilo.'; ['#dw-msg', '#b-status'].forEach(function (q) { var e = $(q); if (e) e.textContent = m; }); } }, 600); }
   SHOW.daw = function () { applyMoodBg(moodNow()); dwWs(dwWsName()); projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
