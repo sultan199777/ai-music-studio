@@ -727,7 +727,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 14:15</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 14:28</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -743,6 +743,9 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     </ol>
     <p class="note"><b>Quando Claude non è più disponibile</b> (token finiti): l'app continua a funzionare, perché Cervello, Gusto, Orecchio, rime e guida al canto sono dentro l'app e girano sul telefono, gratis. Non puoi chiedere nuove modifiche all'app finché non torni a parlare con me; le canzoni e le basi che hai già fatto restano. I modelli di intelligenza artificiale opzionali (scrittura locale, Beat This!) si scaricano una volta con internet.</p>
   </details>
+  <div class="card" id="stest-card"><div class="card-head"><h3>Prova l'app sul tuo telefono</h3><span class="tag m">Misurato</span></div>
+    <p class="small muted">Premi il tasto: l'app controlla da sola audio, microfono, memoria, intelligenza artificiale e velocità su QUESTO telefono. Poi mandami uno screenshot del risultato.</p>
+    <div class="row"><button class="btn pri" id="stest-go">Controlla il mio telefono</button></div><div id="stest-out"></div></div>
   <div class="card"><div class="card-head"><h3>Cosa funziona davvero oggi</h3></div><div id="h-status"></div></div>
 </main>
 
@@ -773,6 +776,8 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   <div class="card" id="ai-card"><div class="card-head"><h3>Assistente testi (AI locale)</h3><span class="tag i">Opzionale</span></div>
     <p class="small muted">Un piccolo modello gratuito che gira sul tuo telefono e propone righe e punchline nel genere scelto. Si scarica una volta sola (Wi-Fi consigliato) e nessun testo esce dal telefono. Il cervello Sultan resta il maestro: l'AI scrive solo bozze, tu decidi. Serve un iPhone recente (WebGPU).</p>
     <label class="f"><span>Modello</span><select id="ai-model"></select></label>
+    <label class="f"><span>Nello stile di (artista)</span><select id="ai-artist"><option value="">Nessuno: solo il mio stile</option></select><small class="muted">Usa solo numeri misurati (temi, rime, sillabe) o la descrizione dell'atmosfera. Non copia versi.</small></label>
+    <label class="f"><span>Linguaggio</span><select id="ai-raw"><option value="pulito">Pulito (niente parolacce)</option><option value="crudo" selected>Crudo (parolacce ammesse)</option><option value="moltocrudo">Molto crudo (anche esplicito, solo adulti)</option></select></label>
     <label class="f"><span>Se usi Ollama: quanta RAM ha il tuo computer?</span><select id="ai-ram"><option value="8">8 GB</option><option value="16">16 GB</option><option value="24">24 GB</option><option value="32">32 GB o più</option></select></label><p class="small muted" id="ai-ramnote">Scegli la RAM e ti dico quale modello conviene.</p>
     <div class="row"><button class="btn pri" id="ai-on">Attiva (scarica il modello)</button></div>
     <div class="status" id="ai-msg"></div>
@@ -846,7 +851,14 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
 
   <div class="card"><div class="card-head"><h3>Cantare seguendo il testo</h3></div>
     <label class="f"><span>Velocità del testo</span><select id="kar-speed"><option value="auto" selected>Automatica (segue le sillabe)</option><option value="1">Veloce (1 battuta per riga)</option><option value="2">Media (2 battute)</option><option value="4">Lenta (4 battute)</option><option value="8">Molto lenta (8 battute)</option></select></label>
-    <div class="card" id="sg-card"><h3>Guida al canto</h3><p class="small">Dal testo e dalla base: quando entrare, quanto tenere, dove respirare. Poi controlla la tua ripresa.</p><div class="row"><button class="btn pri" id="sg-go">Mostra la guida</button><button class="btn" id="sg-check">Controlla la mia ripresa</button></div><div id="sg-out"></div></div>
+    <div class="card" id="gv-card"><h3>Voce guida (uomo, sintetica)</h3>
+    <p class="small muted">Una voce maschile sintetica canta il tuo testo sulla base, intonata sulla scala della base con autotune duro: serve per sentire come potrebbe suonare e dove entrare. <b>È robotica</b>: non è un cantante vero e non clona la tua voce. Dalla tua voce impara solo l'altezza (quanto sei grave o acuto).</p>
+    <div class="sw"><label for="gv-on">Canta sulla base ogni volta che la creo</label><input type="checkbox" id="gv-on" checked></div>
+    <label class="f"><span>Volume della voce guida <b id="gv-gv">70</b></span><input type="range" id="gv-gain" min="0" max="100" value="70"></label>
+    <label class="f"><span>Autotune</span><select id="gv-tune"><option value="40">Dolce</option><option value="18" selected>Trap (duro)</option><option value="6">Robot totale</option></select></label>
+    <div class="row"><button class="btn pri" id="gv-play">Ascolta la voce guida sulla base</button><button class="btn" id="gv-learn">Impara l'altezza della mia voce</button></div>
+    <div class="status" id="gv-msg"></div></div>
+  <div class="card" id="sg-card"><h3>Guida al canto</h3><p class="small">Dal testo e dalla base: quando entrare, quanto tenere, dove respirare. Poi controlla la tua ripresa.</p><div class="row"><button class="btn pri" id="sg-go">Mostra la guida</button><button class="btn" id="sg-check">Controlla la mia ripresa</button></div><div id="sg-out"></div></div>
     <div class="karaoke" id="kar"><div><b>Premi "Crea e ascolta" e canta</b><small>Qui vedi la riga giusta a ogni battuta</small></div></div>
     <p class="small muted">Metti le cuffie, registra con Memo Vocali mentre la base suona (da un altro dispositivo o da questa pagina), poi importa la registrazione in Voce.</p>
   </div>
@@ -1090,7 +1102,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">346 test automatici superati su 346 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">354 test automatici superati su 354 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -5235,6 +5247,132 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
 });
 
 /*
+ * Voce guida: una voce maschile SINTETICA che canta/rappa il tuo testo sulla base, a tempo con le parole e intonata
+ * sulla scala della base (effetto autotune duro). Serve per sentire come potrebbe suonare il testo e capire dove entrare.
+ * È una sintesi a formanti (vocali italiane + piccoli rumori per le consonanti): intellegibile ma ROBOTICA, non è un cantante vero
+ * e non clona nessuna voce. Dalla tua voce impara solo l'ALTEZZA (misurata con measureF0), non il timbro.
+ *  syllabify(parola) → [{onset, vowel, nucleus}]       render(lines, opt) → {audio, syllables}      measureF0(x, sr, detect) → {f0, lo, hi, n}
+ *  lines: [{text, mode:'canta'|'parla', words:[{w,start,end}]}] (tempi in secondi dall'inizio della base, come SongMap)
+ *  opt: { sr, length (campioni), tonic (0-11), mode:'minore'|'maggiore', f0 (Hz, centro voce, default 130), seed, tuneMs (glide, default 18), formant (scala, 1) }
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.GuideVoice = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  var VOW = 'aeiouàèéìíòóùú', STRONG = 'aeoàèéòó', BASEV = { 'à': 'a', 'è': 'e', 'é': 'e', 'ì': 'i', 'í': 'i', 'ò': 'o', 'ó': 'o', 'ù': 'u', 'ú': 'u' };
+  var FORM = { a: [730, 1090, 2440], e: [530, 1840, 2480], i: [270, 2290, 3010], o: [570, 840, 2410], u: [300, 870, 2240] }, BW = [70, 110, 160], FW = [1, 0.7, 0.35];
+  var PENT = { minore: [0, 3, 5, 7, 10], maggiore: [0, 2, 4, 7, 9] };
+  function isV(c) { return VOW.indexOf(c) >= 0; }
+  function hash(s) { var h = 2166136261 >>> 0; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; }
+  function rng(seed) { var a = (seed >>> 0) || 1; return function () { a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+  /* ---- sillabe italiane (approssimate: gruppi vocalici, consonanti doppie, nessi s+C e C+l/r) ---- */
+  function tokens(w) {
+    w = String(w || '').toLowerCase().replace(/[^a-zàèéìíòóùú]/g, '').replace(/qu(?=[aeiouàèéìòóù])/g, 'q').replace(/gu(?=[eiìéè])/g, 'g');
+    var out = [], i = 0;
+    while (i < w.length) {
+      var d = w.substr(i, 2);
+      if (/^(ch|gh|gn|gl)$/.test(d) || (d === 'sc' && /[eiéèì]/.test(w.charAt(i + 2)))) { out.push({ t: d, v: false }); i += 2; }
+      else { out.push({ t: w.charAt(i), v: isV(w.charAt(i)) }); i++; }
+    }
+    return out;
+  }
+  function syllabify(word) {
+    var tk = tokens(word), nuc = [], i, j;
+    for (i = 0; i < tk.length;) {
+      if (!tk[i].v) { i++; continue; }
+      var cur = { from: i, to: i }, k = i + 1;
+      while (k < tk.length && tk[k].v) {
+        var prev = tk[k - 1].t, now = tk[k].t, hiatus = (STRONG.indexOf(prev) >= 0 && STRONG.indexOf(now) >= 0) || (BASEV[now] && now !== BASEV[now] && (prev === 'i' || prev === 'u' || STRONG.indexOf(prev) >= 0));
+        if (hiatus) break; cur.to = k; k++;
+      }
+      nuc.push(cur); i = k;
+    }
+    if (!nuc.length) return [];
+    var sy = nuc.map(function (n) { var vs = tk.slice(n.from, n.to + 1).map(function (x) { return x.t; }), main = vs[vs.length - 1]; for (j = 0; j < vs.length; j++) if (STRONG.indexOf(vs[j]) >= 0) { main = vs[j]; break; } return { onset: '', coda: '', vowel: BASEV[main] || main, nucleus: vs.join('') }; });
+    sy[0].onset = tk.slice(0, nuc[0].from).map(function (x) { return x.t; }).join('');
+    sy[sy.length - 1].coda = tk.slice(nuc[nuc.length - 1].to + 1).map(function (x) { return x.t; }).join('');
+    for (i = 0; i + 1 < nuc.length; i++) {
+      var cl = tk.slice(nuc[i].to + 1, nuc[i + 1].from).map(function (x) { return x.t; }), n = cl.length, toPrev = 0;
+      if (n >= 2 && cl[0] !== 's' && !(/^[lr]$/.test(cl[1]) && /^[pbtdcgfv]$/.test(cl[0]))) toPrev = 1;
+      sy[i].coda = cl.slice(0, toPrev).join(''); sy[i + 1].onset = cl.slice(toPrev).join('');
+    }
+    return sy;
+  }
+
+  /* ---- sintesi ---- */
+  var TAB = (function () { var t = new Float32Array(2048), h, i, mx = 0; for (i = 0; i < 2048; i++) { var v = 0; for (h = 1; h <= 28; h++) v += Math.sin(2 * Math.PI * h * i / 2048) / Math.pow(h, 1.15); t[i] = v; if (Math.abs(v) > mx) mx = Math.abs(v); } for (i = 0; i < 2048; i++) t[i] /= mx; return t; })();
+  function Res() { return { b0: 0, b2: 0, a1: 0, a2: 0, x1: 0, x2: 0, y1: 0, y2: 0 }; }
+  function setRes(r, f, bw, sr) { var w0 = 2 * Math.PI * Math.min(f, sr * 0.45) / sr, q = f / bw, al = Math.sin(w0) / (2 * q), a0 = 1 + al; r.b0 = al / a0; r.b2 = -al / a0; r.a1 = -2 * Math.cos(w0) / a0; r.a2 = (1 - al) / a0; }
+  function runRes(r, x) { var y = r.b0 * x + r.b2 * r.x2 - r.a1 * r.y1 - r.a2 * r.y2; r.x2 = r.x1; r.x1 = x; r.y2 = r.y1; r.y1 = y; return y; }
+  function midiToHz(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+  function hzToMidi(f) { return 69 + 12 * Math.log(f / 440) / Math.LN2; }
+
+  function notesFor(tonic, mode, centerMidi, lo, hi) {
+    var pcs = (PENT[mode] || PENT.minore).map(function (d) { return (tonic + d) % 12; }), out = [];
+    for (var m = Math.round(centerMidi) + lo; m <= Math.round(centerMidi) + hi; m++) if (pcs.indexOf(((m % 12) + 12) % 12) >= 0) out.push(m);
+    return out;
+  }
+  /* una riga → sillabe con tempo e nota */
+  function planLine(line, opt) {
+    var out = [], canta = line.mode !== 'parla', center = hzToMidi(opt.f0 || 130), notes = notesFor(opt.tonic || 0, opt.mode, center, canta ? -5 : -3, canta ? 9 : 4);
+    if (!notes.length) return out;
+    var r = rng(hash(String(line.text || '')) + (opt.seed || 0) * 7919), root = notes.reduce(function (b, m) { return ((m % 12) === (opt.tonic || 0) % 12 && Math.abs(m - center) < Math.abs(b - center)) ? m : b; }, notes[Math.floor(notes.length / 2)]);
+    var idx = Math.max(0, notes.indexOf(root)), all = [];
+    (line.words || []).forEach(function (w) { var sy = syllabify(w.w); sy.forEach(function (s, i) { all.push({ s: s, w: w, i: i, n: sy.length }); }); });
+    all.forEach(function (a, k) {
+      var wt = a.w.end - a.w.start, ws = 0, before = 0, j;
+      for (j = 0; j < a.n; j++) { var ww = (canta && a.w === (line.words || [])[(line.words || []).length - 1] && j === a.n - 1) ? 1.7 : 1; ws += ww; if (j < a.i) before += ww; }
+      var wLast = (canta && a.w === (line.words || [])[(line.words || []).length - 1] && a.i === a.n - 1) ? 1.7 : 1;
+      var t0 = a.w.start + wt * before / ws, t1 = t0 + wt * wLast / ws;
+      var last = k === all.length - 1, step = canta ? (Math.floor(r() * 5) - 2) : (Math.floor(r() * 3) - 1);
+      if (canta) { var arch = k < all.length * 0.5 ? 0.4 : -0.5; if (r() < Math.abs(arch)) step = arch > 0 ? Math.abs(step) : -Math.abs(step); }
+      idx = Math.max(0, Math.min(notes.length - 1, idx + step));
+      if (!canta) idx = Math.max(Math.max(0, notes.indexOf(root) - 1), Math.min(Math.min(notes.length - 1, notes.indexOf(root) + 1), idx));
+      var midi = last ? root + (canta ? 0 : -0) : notes[idx];
+      out.push({ t0: t0, t1: t1, midi: midi, s: a.s, canta: canta, last: last, w: a.w });
+    });
+    return out;
+  }
+  var FRIC = /^(s|f|z|sc|v|ch)/, STOP = /^(t|p|k|c|q|d|b|g)/;
+  function render(lines, opt) {
+    opt = opt || {}; var sr = opt.sr || 32000, N = opt.length || Math.round(sr * 10), out = new Float32Array(N), ev = [], count = 0;
+    (lines || []).forEach(function (l) { planLine(l, opt).forEach(function (e) { ev.push(e); }); });
+    ev.sort(function (a, b) { return a.t0 - b.t0; }); count = ev.length;
+    if (!ev.length) return { audio: out, syllables: 0 };
+    var res = [Res(), Res(), Res()], fs = FORM.a.slice(), fscale = opt.formant || 1, tau = Math.max(2, opt.tuneMs || 18) / 1000, pk = 1 - Math.exp(-1 / (sr * tau));
+    var f = midiToHz(ev[0].midi), ph = 0, env = 0, up = 1 - Math.exp(-1 / (sr * 0.008)), dn = 1 - Math.exp(-1 / (sr * 0.03)), nz = rng((opt.seed || 1) * 31 + 7), k = 0, tgtF = FORM.a, noiseLeft = 0, noiseLvl = 0, hp = 0, i;
+    for (i = 0; i < N; i++) {
+      var t = i / sr;
+      while (k + 1 < ev.length && t >= ev[k + 1].t0) k++;
+      var e = ev[k], within = t >= e.t0 && t < e.t0 + (e.t1 - e.t0) * (e.canta ? 0.94 : 0.78);
+      if (t >= e.t0 && t < e.t0 + 0.0006 && !e._on) { e._on = 1; var on = e.s.onset, nd = Math.min(0.06, (e.t1 - e.t0) * 0.35); if (on) { if (FRIC.test(on)) { noiseLeft = Math.round(nd * sr); noiseLvl = 0.5; } else if (STOP.test(on)) { noiseLeft = Math.round(0.012 * sr); noiseLvl = 0.8; } else { noiseLeft = Math.round(0.02 * sr); noiseLvl = 0.15; } } tgtF = FORM[e.s.vowel] || FORM.a; }
+      var voicedOn = within && !(noiseLeft > 0 && FRIC.test(e.s.onset || '') && t < e.t0 + 0.05);
+      var target = voicedOn ? 1 : 0; env += (target - env) * (target > env ? up : dn);
+      var tf = midiToHz(e.midi) * (1 + (e.canta && t - e.t0 > 0.15 && e.t1 - e.t0 > 0.3 ? Math.sin(2 * Math.PI * 5.5 * t) * 0.009 : 0)); f += (tf - f) * pk;
+      if ((i & 63) === 0) { for (var q = 0; q < 3; q++) { fs[q] += (tgtF[q] * fscale - fs[q]) * 0.18; setRes(res[q], fs[q], BW[q], sr); } }
+      ph += f / sr; if (ph >= 1) ph -= 1;
+      var src = TAB[(ph * 2048) | 0] * env + (nz() * 2 - 1) * 0.02 * env, y = 0;
+      for (var m = 0; m < 3; m++) y += runRes(res[m], src) * FW[m];
+      if (noiseLeft > 0) { var n0 = nz() * 2 - 1; y += (n0 - hp) * noiseLvl * 0.6; hp = n0; noiseLeft--; }
+      out[i] = y;
+    }
+    var mx = 0; for (i = 0; i < N; i++) { var a = Math.abs(out[i]); if (a > mx) mx = a; }
+    if (mx > 0) for (i = 0; i < N; i++) out[i] = out[i] / mx * 0.9;
+    return { audio: out, syllables: count };
+  }
+  /* altezza della voce da una registrazione: mediana, 10° e 90° percentile delle frequenze chiare (solo numeri, nessun audio salvato) */
+  function measureF0(x, sr, detect) {
+    var size = 2048, hop = Math.round(sr * 0.05), vals = [];
+    for (var s = 0; s + size < x.length; s += hop) { var e = 0, j; for (j = 0; j < size; j += 4) e += x[s + j] * x[s + j]; if (e / (size / 4) < 1e-5) continue; var p = detect(x, s, size, sr, 70, 420); if (p && p.f0 >= 70 && p.f0 <= 420 && p.clarity >= 0.85) vals.push(p.f0); }
+    if (vals.length < 8) return null; vals.sort(function (a, b) { return a - b; });
+    return { f0: Math.round(vals[Math.floor(vals.length / 2)] * 10) / 10, lo: Math.round(vals[Math.floor(vals.length * 0.1)]), hi: Math.round(vals[Math.floor(vals.length * 0.9)]), n: vals.length };
+  }
+  return { syllabify: syllabify, render: render, measureF0: measureF0, hzToMidi: hzToMidi, midiToHz: midiToHz };
+});
+
+/*
  * Produzione: effetti cinematografici/ambientali + interventi vocali (eco, risposte, cori, voce scura, reverse, ad-lib)
  * scelti DAL TESTO e messi a tempo sulla base. Tutto sintetizzato da zero (nessun campione, nessun diritto di terzi).
  * - SOUNDS: libreria (temporale, pioggia, supercar V12/V8, passaggio, elicottero, sirena, spari, raffica, impatti,
@@ -5868,6 +6006,10 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     var sys = 'Sei Sultan, un autore di testi rap e trap italiani. Scrivi in italiano, in gergo di strada credibile, senza copiare canzoni esistenti. ' +
       'Genere: ' + (c.genre || 'trap') + '. Umore: ' + (c.mood || 'dark') + '. ' + (c.artistNote ? 'Stile misurato: ' + c.artistNote + '. ' : '') +
       'Rispondi SOLO con 3 righe, una per riga, senza numeri, senza spiegazioni, senza virgolette.';
+    var RAW = { pulito: ' Niente parolacce.', crudo: ' Linguaggio crudo e diretto: parolacce ammesse.', moltocrudo: ' Linguaggio molto crudo ed esplicito: parolacce e riferimenti sessuali espliciti ammessi, solo tra adulti consenzienti.' };
+    sys += RAW[c.raw] || RAW.crudo;
+    sys += ' Mai contenuti sessuali con minorenni, mai odio contro gruppi di persone, mai istigazioni a fare del male a persone reali.';
+    if (c.artist && c.artist.name) sys += ' Adatta lo stile a «' + c.artist.name + '» usando solo queste caratteristiche misurate: ' + (c.artist.note || 'stile generale') + '. Non copiare versi esistenti e non citare canzoni.';
     if (task === 'ritornello') sys = sys.replace('Rispondi SOLO con 3 righe, una per riga', 'Rispondi SOLO con 4 righe, una per riga');
     if (c.taste) sys += ' Gusti dell\'utente (misurati dai suoi voti): ' + c.taste + '.';
     if (c.scenes) sys += ' Temi del testo: ' + c.scenes + '.';
@@ -12251,6 +12393,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     await ensureInst();
     try {
       var mx = buildMix({ voice: false });
+      if (gvS().on && !SESSION.useImported && cur().lyrics && cur().lyrics.trim()) { st.textContent = 'Aggiungo la voce guida…'; await tick(); mx = gvAdd(mx); }
       var lp = SESSION.lastPlay = { t: performance.now(), ctx: coachCtx(), dur: mx.samples.length / mx.sr };
       var ok = playBuf(mx.samples, mx.sr, karaokeTick(mx.bpm), function () { $('#kar').innerHTML = '<div><b>Fine</b><small>Premi di nuovo per ricantare</small></div>'; if ((performance.now() - lp.t) / 1000 > lp.dur * 0.9) coachRec('complete', lp.ctx); });
       if (!ok) { st.textContent = 'Questo browser non riesce a riprodurre audio.'; return null; }
@@ -12258,6 +12401,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
       var s = cur(); if (['idea', 'testo'].indexOf(s.status) !== -1) { s.status = 'base'; persist(); }
       var b = SESSION.useImported ? null : getBase();
       $('#b-out').innerHTML = b ? '<div class="note"><b>' + esc(ALLG[b.genre].label) + '</b> in ' + NOTES[b.tonic] + ' ' + b.mode + ', ' + b.bpm + ' BPM, ' + b.bars + ' battute (' + fmt(b.duration) + ' s). Accordi: <span class="mono">' + b.progression.join(' · ') + '</span>. ' + (b.inst && (b.inst.melodia || b.inst.accordi || b.inst.pad) ? 'Strumenti: ' + ['melodia', 'accordi', 'pad'].filter(function (r) { return b.inst[r]; }).map(function (r) { return instName(b.inst[r]) + ' (' + r + ')'; }).join(', ') + '.' : 'Suoni sintetici.') + ' "Nuova variante" cambia la melodia.' + (b.sections ? '<br>Struttura: <span class="mono">' + b.sections.map(function (x) { return x.name + ' ' + x.bars; }).join(' · ') + '</span>' : '') + '</div>' : '';
+      if (mx.guide) $('#b-out').insertAdjacentHTML('beforeend', '<p class="small muted">Canta la voce guida: uomo, sintetica, autotune duro (' + mx.guide + ' sillabe). Si regola in «3 Voce».</p>');
       return mx;
     } catch (e) { st.textContent = 'Non sono riuscito a creare la base. Prova con meno battute.'; return null; }
   }
@@ -12270,6 +12414,20 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   (function () {
     var sel = $('#ai-model'); if (!sel) return;
     sel.innerHTML = '<option value="ollama">Ollama sul computer (migliore, se lo hai)</option>' + LocalAI.MODELS.map(function (m) { return '<option value="' + m.id + '">' + m.label + ' · ' + m.note + '</option>'; }).join('');
+    /* artista: cartelle imparate (numeri misurati) + atmosfere; il linguaggio crudo è una scelta tua e si ricorda */
+    (function () {
+      var as = $('#ai-artist'), rw = $('#ai-raw'); if (!as || !rw) return; var h = '<option value="">Nessuno: solo il mio stile</option>', st = arStore();
+      var names = Object.keys(st).filter(function (n) { return st[n].on; });
+      if (names.length) h += '<optgroup label="Le tue cartelle artista">' + names.map(function (n) { return '<option value="a:' + esc(n) + '">' + esc(n) + '</option>'; }).join('') + '</optgroup>';
+      if (window.StylePresets) h += '<optgroup label="Atmosfere">' + StylePresets.LIST.map(function (pr) { return '<option value="p:' + pr.id + '">' + esc(pr.nome) + '</option>'; }).join('') + '</optgroup>';
+      as.innerHTML = h; try { if (LIB.settings.aiRaw) rw.value = LIB.settings.aiRaw; if (LIB.settings.aiArtist) as.value = LIB.settings.aiArtist; } catch (e) {}
+      as.addEventListener('change', function () { LIB.settings.aiArtist = as.value; persist(); }); rw.addEventListener('change', function () { LIB.settings.aiRaw = rw.value; persist(); });
+    })();
+    function aiArtist() {
+      var v = ($('#ai-artist') || {}).value || ''; if (!v) return null;
+      if (v.indexOf('a:') === 0) { var n = v.slice(2), st = arStore(); try { var P = ArtistLab.blend([ArtistLab.finalize(st[n].acc)], [n]); return { name: n, note: P && P.mood ? P.mood : '' }; } catch (e) { return { name: n, note: '' }; } }
+      var pr = StylePresets.byId(v.slice(2)); return pr ? { name: pr.nome, note: (pr.spiega || '') + ' Circa ' + pr.bpm + ' BPM.' } : null;
+    }
     var ramBox = $('#ai-ram'); if (ramBox) ramBox.addEventListener('change', function () { var r = LocalAI.recommend(ramBox.value); $('#ai-ramnote').innerHTML = r.note + ' Comando da scrivere nel Terminale: <span class="mono">ollama pull ' + r.model + '</span>'; });
     function ready(on) { ['#ai-v', '#ai-p', '#ai-c', '#ai-m', '#ai-r'].forEach(function (i) { var el = $(i); if (el) el.disabled = !on; }); }
     var LINE = '';
@@ -12294,7 +12452,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
       out.innerHTML = '<p class="small">Penso…</p>';
       try {
         var sc = {}; try { sc = SultanBrain.plan(s.lyrics, analysisOf(s), {}).scenes || {}; } catch (e) {} var topSc = Object.keys(sc).filter(function (k) { return sc[k] > 0; }).sort(function (a, b) { return sc[b] - sc[a]; }).slice(0, 3).join(', ');
-        var res = await LocalAI.ask(task, { taste: Taste.summary(tasteMem()), scenes: topSc, line: line || '', context: lyricLines(s.lyrics).slice(task === 'ritornello' ? -14 : -6).join('\n'), genre: (ALLG[s.prod.genre] || {}).label || s.prod.genre, mood: s.moodTarget || 'dark', syll: line ? ((LyricsEngine.lineSyllables(line) || {}).metric || 10) : 8, rhymes: rh, artistNote: M ? M.mood : '' });
+        var res = await LocalAI.ask(task, { artist: aiArtist(), raw: ($('#ai-raw') || {}).value || 'crudo', taste: Taste.summary(tasteMem()), scenes: topSc, line: line || '', context: lyricLines(s.lyrics).slice(task === 'ritornello' ? -14 : -6).join('\n'), genre: (ALLG[s.prod.genre] || {}).label || s.prod.genre, mood: s.moodTarget || 'dark', syll: line ? ((LyricsEngine.lineSyllables(line) || {}).metric || 10) : 8, rhymes: rh, artistNote: M ? M.mood : '' });
         out.innerHTML = res.length ? '<ul class="clean small">' + res.map(function (x, i) { return '<li>' + esc(x) + ' <button class="chip" data-ai-use="' + i + '" style="min-height:28px;padding:2px 10px">Usa</button></li>'; }).join('') + '</ul><p class="small muted"><span class="tag i">Ipotesi</span> Sono bozze di un modello piccolo: controlla senso e rime.</p>' : '<p class="small">Nessuna proposta utile, riprova.</p>';
         out._res = res; out._line = line; out._task = task;
       } catch (e) { out.innerHTML = '<p class="small">Errore: ' + esc(e && e.message ? e.message : e) + '</p>'; }
@@ -12440,6 +12598,62 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     if (r.title && (!s.title || /^(nuova canzone|senza titolo)/i.test(s.title))) { s.title = r.title; ['#dw-name', '#st-title'].forEach(function (q) { var el = $(q); if (el) el.value = r.title; }); var ts = $('#top-song'); if (ts) ts.textContent = r.title; }
     persist(); return '<span class="tag i">Ipotesi</span> ' + esc(AutoSections.summary(r)) + ' Puoi cambiare i titoli tra parentesi.';
   }
+  /* ===== Voce guida: voce maschile sintetica sulla base (impara solo l'altezza della tua voce) ===== */
+  function gvS() { return LIB.settings.gv || (LIB.settings.gv = { on: true, gain: 70, tune: 18, f0: 130, lo: 0, hi: 0, n: 0 }); }
+  function gvAdd(mx) {
+    var g = gvS(); if (!g.on || SESSION.useImported || typeof GuideVoice === 'undefined') return mx;
+    var s = cur(); if (!s.lyrics || !s.lyrics.trim()) return mx;
+    try {
+      var map = songMap(); if (!map || !map.lines || !map.lines.length) return mx; var p = s.prod;
+      var r = GuideVoice.render(map.lines, { sr: mx.sr, length: mx.samples.length, tonic: p.tonic || 0, mode: p.mode, f0: g.f0 || 130, seed: (p.melSeed || 0) * 13 + (p.seed || 1), tuneMs: g.tune || 18 });
+      var out = new Float32Array(mx.samples.length), k = (g.gain / 100) * 0.55, i, pk = 0;
+      for (i = 0; i < out.length; i++) { out[i] = mx.samples[i] + r.audio[i] * k; var a = Math.abs(out[i]); if (a > pk) pk = a; }
+      if (pk > 0.98) { var sc = 0.98 / pk; for (i = 0; i < out.length; i++) out[i] *= sc; }
+      return Object.assign({}, mx, { samples: out, guide: r.syllables });
+    } catch (e) { return mx; }
+  }
+  (function () {
+    var g = gvS(), on = $('#gv-on'), ga = $('#gv-gain'), tu = $('#gv-tune'); if (!on) return;
+    on.checked = !!g.on; ga.value = g.gain; $('#gv-gv').textContent = g.gain; tu.value = String(g.tune);
+    on.addEventListener('change', function () { gvS().on = on.checked; persist(); });
+    ga.addEventListener('input', function () { gvS().gain = +ga.value; $('#gv-gv').textContent = ga.value; });
+    ga.addEventListener('change', persist);
+    tu.addEventListener('change', function () { gvS().tune = +tu.value; persist(); });
+    $('#gv-play').addEventListener('click', function () { var s = cur(); if (!s.lyrics || !s.lyrics.trim()) { $('#gv-msg').textContent = 'Scrivi prima il testo.'; return; } if (!gvS().on) { gvS().on = true; on.checked = true; persist(); } $('#gv-msg').textContent = 'Preparo base e voce guida…'; makeAndPlay(false); });
+    $('#gv-learn').addEventListener('click', function () {
+      var t = activeTake(), m = $('#gv-msg'); if (!t) { m.textContent = 'Registra prima una ripresa: la voce che registri è quella che misuro.'; return; }
+      var r = GuideVoice.measureF0(t.mono, t.sr, AudioAnalysis.detectPitch); if (!r) { m.textContent = 'Non sento abbastanza voce chiara in questa ripresa (serve almeno qualche secondo cantato o parlato vicino al microfono).'; return; }
+      var gg = gvS(), w0 = Math.min(gg.n || 0, 400); gg.f0 = Math.round(((gg.f0 || 130) * w0 + r.f0 * r.n) / (w0 + r.n) * 10) / 10; gg.lo = gg.lo ? Math.round((gg.lo + r.lo) / 2) : r.lo; gg.hi = gg.hi ? Math.round((gg.hi + r.hi) / 2) : r.hi; gg.n = Math.min(2000, (gg.n || 0) + r.n); persist();
+      var midi = Math.round(GuideVoice.hzToMidi(gg.f0)); m.innerHTML = '<span class="tag m">Misurato</span> La tua voce sta intorno a ' + gg.f0 + ' Hz (nota ' + NOTES[((midi % 12) + 12) % 12] + '), da ' + gg.lo + ' a ' + gg.hi + ' Hz. La voce guida ora usa questa altezza. Il timbro non lo imita ancora.';
+    });
+  })();
+  /* ===== Controllo del telefono: gira SUL tuo iPhone e dice cosa funziona (Misurato) ===== */
+  (function () {
+    var b = $('#stest-go'); if (!b) return;
+    b.addEventListener('click', async function () {
+      var out = $('#stest-out'), rows = [], add = function (n, ok, note, ms) { rows.push({ n: n, ok: ok, note: note || '', ms: ms }); }, T = function (f) { var t0 = performance.now(), r; try { r = f(); } catch (e) { r = { error: e && e.message ? e.message : String(e) }; } return { r: r, ms: Math.round(performance.now() - t0) }; };
+      out.innerHTML = '<p class="small">Controllo il telefono…</p>'; await tick();
+      try { var AC = window.AudioContext || window.webkitAudioContext; if (!AC) add('Audio', false, 'Web Audio non c\'è'); else { var ac = new AC(); add('Audio', true, 'frequenza ' + ac.sampleRate + ' Hz, stato ' + ac.state + (ac.state === 'suspended' ? ' (parte al primo tocco: normale su iPhone)' : '')); try { ac.close(); } catch (e) {} } } catch (e) { add('Audio', false, e.message); }
+      add('Microfono (strumento presente)', !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia), 'il permesso lo chiede Safari al primo uso; qui non lo richiedo');
+      add('Installata come app (Home)', !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)), 'se no: Condividi → Aggiungi a Home');
+      add('Senza internet (service worker)', 'serviceWorker' in navigator, '');
+      add('WebGPU (serve all\'AI locale)', !!navigator.gpu, navigator.gpu ? 'presente: l\'assistente testi può partire' : 'assente: l\'AI locale non parte, tutto il resto sì');
+      try { localStorage.setItem('__t', new Array(1025).join('x')); localStorage.removeItem('__t'); add('Salvataggio sul telefono', true, ''); } catch (e) { add('Salvataggio sul telefono', false, 'bloccato (modalità privata?)'); }
+      try { var est = navigator.storage && navigator.storage.estimate ? await navigator.storage.estimate() : null; add('Spazio disponibile', !!est, est ? Math.round(est.usage / 1e6) + ' MB usati su circa ' + Math.round(est.quota / 1e6) + ' MB' : 'non misurabile'); } catch (e) { add('Spazio disponibile', false, 'non misurabile'); }
+      await tick();
+      var a = T(function () { return Arranger.generate({ genre: 'trapdark', bpm: 140, mode: 'minore', tonic: 0, seed: 3, bars: 8, heavy: true }); });
+      add('Velocità: arrangiamento di 8 battute', !a.r.error && a.ms < 4000, a.r.error || (a.ms + ' ms' + (a.ms >= 4000 ? ' (lento)' : '')), a.ms); await tick();
+      var ln = [{ text: 'prova di voce guida sulla base', mode: 'canta', words: 'prova di voce guida sulla base'.split(' ').map(function (w, i) { return { w: w, start: i * 0.5, end: i * 0.5 + 0.45 }; }) }], sr0 = 32000;
+      var v = T(function () { return GuideVoice.render(ln, { sr: sr0, length: sr0 * 20, tonic: 0, mode: 'minore', f0: 130, seed: 1 }); });
+      add('Velocità: voce guida su 20 secondi', !v.r.error && v.ms < 6000, v.r.error || (v.ms + ' ms' + (v.ms >= 6000 ? ' (lento)' : '')), v.ms);
+      var x = T(function () { return Remix.make(7, { heavy: true }); }), au = T(function () { return AutoSections.label('25 maggio\n\nuno due tre quattro\ncinque sei sette otto\n\nuno due tre quattro\ncinque sei sette otto'); });
+      add('Ritmi nuovi e sezioni automatiche', !x.r.error && !au.r.error && au.r.changed, (x.ms + au.ms) + ' ms');
+      var mods = { SultanBrain: window.SultanBrain, Taste: window.Taste, LocalAI: window.LocalAI, BeatLearn: window.BeatLearn, Arranger: window.Arranger, GuideVoice: window.GuideVoice }, miss = Object.keys(mods).filter(function (k) { return !mods[k]; });
+      add('Moduli dell\'app caricati', !miss.length, miss.length ? 'mancano: ' + miss.join(', ') : 'tutti');
+      var bad = rows.filter(function (r) { return !r.ok; }).length, plain = rows.map(function (r) { return (r.ok ? 'OK  ' : 'NO  ') + r.n + (r.note ? ' — ' + r.note : ''); }).join('\n');
+      out.innerHTML = '<table class="small" style="width:100%;border-collapse:collapse">' + rows.map(function (r) { return '<tr><td style="padding:4px 6px;white-space:nowrap">' + (r.ok ? '✅' : '⚠️') + '</td><td style="padding:4px 6px"><b>' + esc(r.n) + '</b><br><span class="muted">' + esc(r.note) + '</span></td></tr>'; }).join('') + '</table><p class="small"><span class="tag m">Misurato</span> ' + (bad ? bad + ' cose da guardare.' : 'Tutto ok su questo telefono.') + ' Non provo il microfono vero, l\'ascolto e la AI scaricata: quelli si provano a mano.</p><textarea readonly rows="6" style="width:100%">' + esc(navigator.userAgent + '\n' + plain) + '</textarea>';
+    });
+  })();
   var SB_FORCE = { genre: null, preset: null };
   function rxFor(pl, v, radical) { var st = Arranger.STYLES[pl.genre] || {}; return Remix.make(((pl.seed >>> 0) + (v || 0) * 7919 + (radical ? 104729 : 0)) >>> 0, { half: !st.snare || st.snare.length === 1, heavy: !!pl.heavy, mode: pl.mode }); }
   async function runBrain(again, fixedV, mel, radical) {
@@ -13972,7 +14186,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     ['b-play', 'b-mel', 'b-new', 'b-stop'].forEach(function (id) { mv(id, '#dwp-actions'); });
     ['b-status', 'b-out', 'ear-out'].forEach(function (id) { mv(id, '#dwp-out'); });
     ['ear-go', 'b-save'].forEach(function (id) { mv(id, '#dwp-more'); });
-    mv('ai-card', '#dwx-ai'); mv('rh-card', '#dwx-rh'); mv('sg-card', '#dwx-sg');
+    mv('ai-card', '#dwx-ai'); mv('gv-card', '#dwx-sg'); mv('rh-card', '#dwx-rh'); mv('sg-card', '#dwx-sg');
   })();
   $('#tabs').addEventListener('click', function (e) { var a = e.target.closest('[data-ws]'); if (!a) return; if (location.hash === '#daw') { e.preventDefault(); dwWs(a.getAttribute('data-ws')); window.scrollTo(0, 0); } else LIB.settings.ws = a.getAttribute('data-ws'); });
   // ---------- Varianti: 8 basi diverse alla volta, da ascoltare e scegliere (senza limite: premi ancora) ----------

@@ -276,6 +276,9 @@
     </ol>
     <p class="note"><b>Quando Claude non è più disponibile</b> (token finiti): l'app continua a funzionare, perché Cervello, Gusto, Orecchio, rime e guida al canto sono dentro l'app e girano sul telefono, gratis. Non puoi chiedere nuove modifiche all'app finché non torni a parlare con me; le canzoni e le basi che hai già fatto restano. I modelli di intelligenza artificiale opzionali (scrittura locale, Beat This!) si scaricano una volta con internet.</p>
   </details>
+  <div class="card" id="stest-card"><div class="card-head"><h3>Prova l'app sul tuo telefono</h3><span class="tag m">Misurato</span></div>
+    <p class="small muted">Premi il tasto: l'app controlla da sola audio, microfono, memoria, intelligenza artificiale e velocità su QUESTO telefono. Poi mandami uno screenshot del risultato.</p>
+    <div class="row"><button class="btn pri" id="stest-go">Controlla il mio telefono</button></div><div id="stest-out"></div></div>
   <div class="card"><div class="card-head"><h3>Cosa funziona davvero oggi</h3></div><div id="h-status"></div></div>
 </main>
 
@@ -306,6 +309,8 @@
   <div class="card" id="ai-card"><div class="card-head"><h3>Assistente testi (AI locale)</h3><span class="tag i">Opzionale</span></div>
     <p class="small muted">Un piccolo modello gratuito che gira sul tuo telefono e propone righe e punchline nel genere scelto. Si scarica una volta sola (Wi-Fi consigliato) e nessun testo esce dal telefono. Il cervello Sultan resta il maestro: l'AI scrive solo bozze, tu decidi. Serve un iPhone recente (WebGPU).</p>
     <label class="f"><span>Modello</span><select id="ai-model"></select></label>
+    <label class="f"><span>Nello stile di (artista)</span><select id="ai-artist"><option value="">Nessuno: solo il mio stile</option></select><small class="muted">Usa solo numeri misurati (temi, rime, sillabe) o la descrizione dell'atmosfera. Non copia versi.</small></label>
+    <label class="f"><span>Linguaggio</span><select id="ai-raw"><option value="pulito">Pulito (niente parolacce)</option><option value="crudo" selected>Crudo (parolacce ammesse)</option><option value="moltocrudo">Molto crudo (anche esplicito, solo adulti)</option></select></label>
     <label class="f"><span>Se usi Ollama: quanta RAM ha il tuo computer?</span><select id="ai-ram"><option value="8">8 GB</option><option value="16">16 GB</option><option value="24">24 GB</option><option value="32">32 GB o più</option></select></label><p class="small muted" id="ai-ramnote">Scegli la RAM e ti dico quale modello conviene.</p>
     <div class="row"><button class="btn pri" id="ai-on">Attiva (scarica il modello)</button></div>
     <div class="status" id="ai-msg"></div>
@@ -379,7 +384,14 @@
 
   <div class="card"><div class="card-head"><h3>Cantare seguendo il testo</h3></div>
     <label class="f"><span>Velocità del testo</span><select id="kar-speed"><option value="auto" selected>Automatica (segue le sillabe)</option><option value="1">Veloce (1 battuta per riga)</option><option value="2">Media (2 battute)</option><option value="4">Lenta (4 battute)</option><option value="8">Molto lenta (8 battute)</option></select></label>
-    <div class="card" id="sg-card"><h3>Guida al canto</h3><p class="small">Dal testo e dalla base: quando entrare, quanto tenere, dove respirare. Poi controlla la tua ripresa.</p><div class="row"><button class="btn pri" id="sg-go">Mostra la guida</button><button class="btn" id="sg-check">Controlla la mia ripresa</button></div><div id="sg-out"></div></div>
+    <div class="card" id="gv-card"><h3>Voce guida (uomo, sintetica)</h3>
+    <p class="small muted">Una voce maschile sintetica canta il tuo testo sulla base, intonata sulla scala della base con autotune duro: serve per sentire come potrebbe suonare e dove entrare. <b>È robotica</b>: non è un cantante vero e non clona la tua voce. Dalla tua voce impara solo l'altezza (quanto sei grave o acuto).</p>
+    <div class="sw"><label for="gv-on">Canta sulla base ogni volta che la creo</label><input type="checkbox" id="gv-on" checked></div>
+    <label class="f"><span>Volume della voce guida <b id="gv-gv">70</b></span><input type="range" id="gv-gain" min="0" max="100" value="70"></label>
+    <label class="f"><span>Autotune</span><select id="gv-tune"><option value="40">Dolce</option><option value="18" selected>Trap (duro)</option><option value="6">Robot totale</option></select></label>
+    <div class="row"><button class="btn pri" id="gv-play">Ascolta la voce guida sulla base</button><button class="btn" id="gv-learn">Impara l'altezza della mia voce</button></div>
+    <div class="status" id="gv-msg"></div></div>
+  <div class="card" id="sg-card"><h3>Guida al canto</h3><p class="small">Dal testo e dalla base: quando entrare, quanto tenere, dove respirare. Poi controlla la tua ripresa.</p><div class="row"><button class="btn pri" id="sg-go">Mostra la guida</button><button class="btn" id="sg-check">Controlla la mia ripresa</button></div><div id="sg-out"></div></div>
     <div class="karaoke" id="kar"><div><b>Premi "Crea e ascolta" e canta</b><small>Qui vedi la riga giusta a ogni battuta</small></div></div>
     <p class="small muted">Metti le cuffie, registra con Memo Vocali mentre la base suona (da un altro dispositivo o da questa pagina), poi importa la registrazione in Voce.</p>
   </div>

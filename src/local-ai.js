@@ -41,6 +41,10 @@
     var sys = 'Sei Sultan, un autore di testi rap e trap italiani. Scrivi in italiano, in gergo di strada credibile, senza copiare canzoni esistenti. ' +
       'Genere: ' + (c.genre || 'trap') + '. Umore: ' + (c.mood || 'dark') + '. ' + (c.artistNote ? 'Stile misurato: ' + c.artistNote + '. ' : '') +
       'Rispondi SOLO con 3 righe, una per riga, senza numeri, senza spiegazioni, senza virgolette.';
+    var RAW = { pulito: ' Niente parolacce.', crudo: ' Linguaggio crudo e diretto: parolacce ammesse.', moltocrudo: ' Linguaggio molto crudo ed esplicito: parolacce e riferimenti sessuali espliciti ammessi, solo tra adulti consenzienti.' };
+    sys += RAW[c.raw] || RAW.crudo;
+    sys += ' Mai contenuti sessuali con minorenni, mai odio contro gruppi di persone, mai istigazioni a fare del male a persone reali.';
+    if (c.artist && c.artist.name) sys += ' Adatta lo stile a «' + c.artist.name + '» usando solo queste caratteristiche misurate: ' + (c.artist.note || 'stile generale') + '. Non copiare versi esistenti e non citare canzoni.';
     if (task === 'ritornello') sys = sys.replace('Rispondi SOLO con 3 righe, una per riga', 'Rispondi SOLO con 4 righe, una per riga');
     if (c.taste) sys += ' Gusti dell\'utente (misurati dai suoi voti): ' + c.taste + '.';
     if (c.scenes) sys += ' Temi del testo: ' + c.scenes + '.';

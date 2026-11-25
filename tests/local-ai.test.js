@@ -40,3 +40,10 @@ test('la lista modelli contiene Qwen3 con licenza dichiarata e avviso di non pro
   const q3 = L.MODELS.filter((x) => /^Qwen3/.test(x.id)); assert.ok(q3.length >= 1); q3.forEach((x) => assert.match(x.note, /non ancora provato/i));
   assert.match(L.MODELS[0].id, /Qwen2\.5-0\.5B/); /* il primo (iPhone) resta il più leggero */
 });
+test('artista e linguaggio: stile misurato nel prompt, crudo scelto dall\'utente, limiti di sicurezza sempre presenti', () => {
+  const c = { genre: 'drill', artist: { name: 'Tipo X', note: 'rime fitte, 9 sillabe, temi strada' } };
+  const crudo = L.buildPrompt('versioni', Object.assign({ raw: 'crudo' }, c))[0].content, molto = L.buildPrompt('versioni', Object.assign({ raw: 'moltocrudo' }, c))[0].content, pulito = L.buildPrompt('versioni', Object.assign({ raw: 'pulito' }, c))[0].content;
+  assert.match(crudo, /parolacce ammesse/); assert.match(molto, /espliciti ammessi, solo tra adulti consenzienti/); assert.match(pulito, /Niente parolacce/);
+  [crudo, molto, pulito].forEach((p) => { assert.match(p, /Tipo X/); assert.match(p, /rime fitte, 9 sillabe/); assert.match(p, /Non copiare versi esistenti/); assert.match(p, /minorenni/); assert.match(p, /odio contro gruppi/); });
+  assert.doesNotMatch(L.buildPrompt('versioni', { genre: 'trap' })[0].content, /Adatta lo stile a/);
+});
