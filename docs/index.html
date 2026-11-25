@@ -714,7 +714,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 12:16</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 12:17</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -1075,7 +1075,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">319 test automatici superati su 319 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">320 test automatici superati su 320 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -5224,6 +5224,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     elicottero: { nome: 'Elicottero', gruppo: 'Motori', tipo: 'colpo', g: 0.4, make: helicopter },
     sirena: { nome: 'Sirena', gruppo: 'Strada', tipo: 'colpo', g: 0.3, make: sg(function (sr, s, o) { return SigFx.siren(sr, (o && o.dur) || 3, s); }) },
     sparo: { nome: 'Spari', gruppo: 'Strada', tipo: 'colpo', g: 0.5, make: sg(function (sr, s) { var a = SigFx.gunshot(sr, s), out = buf(sr, 1.6); [0, 0.32, 0.5].forEach(function (t0, q) { var o0 = Math.round(t0 * sr); for (var i = 0; i < a.length && o0 + i < out.length; i++) out[o0 + i] += a[i] * (1 - q * 0.2); }); return out; }) },
+    corolirico: { nome: 'Coro lirico (nella tonalità)', gruppo: 'Cinema', tipo: 'letto', g: 0.35, make: sg(function (sr, s, o) { var t = (o && o.midi != null ? o.midi : 57) + 12; return SigFx.choir(sr, [t, t + (o && o.minor === false ? 4 : 3), t + 7], Math.min(12, (o && o.dur) || 6), s); }) },
     raffica: { nome: 'Raffica', gruppo: 'Strada', tipo: 'colpo', g: 0.4, make: sg(function (sr, s) { return SigFx.machinegun(sr, 1.1, s); }) },
     citta: { nome: 'Città di notte', gruppo: 'Strada', tipo: 'letto', g: 0.2, make: city },
     clacson: { nome: 'Clacson', gruppo: 'Strada', tipo: 'colpo', g: 0.25, make: horn },
@@ -5328,6 +5329,14 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     // 4) emozioni: rabbia → impatti duri; dolore → pioggia/campana; gloria → folla
     var emoC = {}; read.forEach(function (rd) { rd.emo.forEach(function (e) { emoC[e] = (emoC[e] || 0) + 1; }); });
     if ((emoC.dolore || 0) >= 2 && !ev.some(function (e) { return e.snd === 'pioggia'; }) && dens >= 1) { var sd = secs.filter(function (s) { return s.name === 'bridge' || s.name === 'outro'; })[0]; if (sd) push({ tipo: 'sfx', snd: 'pioggia', bar: sd.start, dur: sd.bars, gain: 0.8, why: 'malinconia del testo' }); }
+    // firme del Cervello (SigFx): le mette la Produzione, una volta sola, così si possono spostare o togliere
+    var SG = opt.sig || [], has = function (snd) { return ev.some(function (e) { return e.snd === snd; }); };
+    secs.forEach(function (s, k) {
+      if (SG.indexOf('coro') >= 0 && s.name === 'intro' && !has('corolirico')) push({ tipo: 'sfx', snd: 'corolirico', bar: s.start, dur: s.bars, gain: 1, why: 'firma: coro lirico in apertura' });
+      if (SG.indexOf('sirena') >= 0 && s.name === 'ritornello' && k > 0 && !ev.some(function (e) { return e.snd === 'sirena' && Math.abs(e.bar - (s.start - 1)) < 1; })) push({ tipo: 'sfx', snd: 'sirena', bar: s.start - 1, gain: 0.9, why: 'firma: sirena prima del ritornello' });
+      if (SG.indexOf('spari') >= 0 && s.name === 'ritornello' && !ev.some(function (e) { return e.snd === 'sparo' && Math.abs(e.bar - s.start) < 0.5; })) push({ tipo: 'sfx', snd: 'sparo', bar: s.start, gain: 0.9, why: 'firma: spari sul ritornello' });
+      if (SG.indexOf('mitra') >= 0 && s.name === 'pre') push({ tipo: 'sfx', snd: 'raffica', bar: s.start + s.bars - 0.5, gain: 0.8, why: 'firma: raffica prima del drop' });
+    });
     // 5) voce: eco sulle chiusure, risposte sulle punchline, cori nel ritornello, scura nei generi duri, reverse sulla prima riga del ritornello
     var firstChorus = true, k2 = 0;
     lines.forEach(function (l, i) {
@@ -5359,7 +5368,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     opt = opt || {}; var out = new Float32Array(N), barS = 240 / bpm;
     (events || []).forEach(function (e, k) {
       if (e.tipo !== 'sfx' || !SOUNDS[e.snd] || e.off) return; var S = SOUNDS[e.snd], seed = (opt.seed || 1) * 31 + k * 7 + (e.var || 0) * 977;
-      var o = { bpm: bpm, midi: opt.tonic != null ? 48 + opt.tonic : 57 };
+      var o = { bpm: bpm, midi: opt.tonic != null ? 48 + opt.tonic : 57, minor: opt.mode !== 'maggiore' };
       if (S.tipo === 'letto') o.dur = Math.max(2, (e.dur || 4) * barS + 0.6);
       if (S.tipo === 'fine') o.dur = Math.max(0.4, (e.dur || 1) * barS);
       if (e.snd === 'orologio' || e.snd === 'cuore') o.bpm = e.snd === 'orologio' ? bpm : bpm * (bpm > 100 ? 0.5 : 1) * 0.75;
@@ -11938,8 +11947,8 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     return SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {} });
   }
   function getBase() {
-    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, (p.sig || []).join(), p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.kit, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, sig: p.sig || [], bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, drumRender: p.kit && SynthDesign.KITS[p.kit] ? function (part, o, s2) { return SynthDesign.kitRender(p.kit, part, o, s2); } : undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
+    var p = cur().prod, map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, pfSig(p).join(), p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.kit, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: 32000, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, sig: pfSig(p), bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, drumRender: p.kit && SynthDesign.KITS[p.kit] ? function (part, o, s2) { return SynthDesign.kitRender(p.kit, part, o, s2); } : undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -12560,7 +12569,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     DW.k = pk > 0 ? 0.8 / pk : 1;
     var vb = vclipBuffer(b.duration); if (vb) bufs.voice = vb;
     if (pf0 && pf0.on && pf0.events && pf0.events.length) {
-      try { bufs.sfx = { x: ProdFx.renderSfx(pf0.events, b.sampleRate, b.bpm, N, { seed: pf0.seed, tonic: b.tonic }), sr: b.sampleRate, start: 0 }; } catch (e) {}
+      try { bufs.sfx = { x: ProdFx.renderSfx(pf0.events, b.sampleRate, b.bpm, N, { seed: pf0.seed, tonic: b.tonic, mode: b.mode }), sr: b.sampleRate, start: 0 }; } catch (e) {}
       if (vb) try { var vx = ProdFx.renderVox(pf0.events, vb, songMap(), b.bpm, { bank: ADLIB.list, melodic: !PF_HARD[b.genre] }); if (vx) bufs.vox = { x: vx, sr: vb.sr, start: 0 }; } catch (e) {}
     }
     DW.bufs = bufs; DW.bufKey = key; return bufs;
@@ -13725,13 +13734,15 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
 
   // ---------- Produzione: effetti da film e interventi vocali scelti dal testo (ProdFx), modificabili a mano ----------
   var ADLIB = { list: [] }, PF_HARD = { drill: 1, brooklyn: 1, trapdark: 1, rage: 1, phonk: 1, street: 1, trap: 1, jersey: 1, plugg: 1, detroit: 1, clubtrap: 1 };
+  var PF_SIG = { sirena: 'sirena', spari: 'sparo', mitra: 'raffica', coro: 'corolirico' };
+  function pfSig(p) { var pf = p.prodFx; if (!pf || !pf.on) return p.sig || []; var on = {}; (pf.events || []).forEach(function (e) { if (!e.off) on[e.snd] = 1; }); return (p.sig || []).filter(function (k) { return !on[PF_SIG[k]]; }); }
   function pfHash(str) { var h = 5381; for (var i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) >>> 0; return h; }
   function pfPlan(force) {
     var s = cur(), p = s.prod; if (!p.prodFx) p.prodFx = { on: true, density: 1, events: [] }; var pf = p.prodFx;
-    var k = pfHash((s.lyrics || '') + '|' + p.genre + '|' + p.seed + '|' + pf.density + '|' + ADLIB.list.length);
+    var k = pfHash((s.lyrics || '') + '|' + p.genre + '|' + p.seed + '|' + pf.density + '|' + ADLIB.list.length + '|' + (p.sig || []).join());
     if (force || (!pf.manual && pf.key !== k)) {
       var map = null; try { map = songMap(); } catch (e) {}
-      var r = ProdFx.plan(map, { genre: p.genre, seed: p.seed, density: pf.density, adlibs: ADLIB.list.length });
+      var r = ProdFx.plan(map, { genre: p.genre, seed: p.seed, density: pf.density, adlibs: ADLIB.list.length, sig: p.sig || [] });
       pf.events = r.events; pf.themes = r.themes; pf.key = k; pf.seed = p.seed; pf.manual = false;
     } else pf.stale = pf.manual && pf.key !== k;
     return pf;
