@@ -24,3 +24,9 @@ beat-learn.js stima BPM e griglia con regole. Beat This! (rete neurale, ISMIR 20
 - @audio/mir (accordi/tonalità in JS): licenza dell'insieme non letta; i pacchetti chordino e nnls-chroma sono GPL → NON usarli.
 - regroove (varianti di groove in ONNX): nessuna licenza trovata → NON usare finché non chiarita.
 - Da scartare per licenza: pesi MusicGen (CC BY-NC); Stable Audio Open (condizioni sul fatturato); DiffRhythm (pesi poco chiari).
+
+## FATTO da B (25/11)
+- `src/beat-this.js` + checkbox in Impara da una base (#dw-bt-on, attivo di default). Modello **small0-v2.onnx** (small0 trova troppo pochi battiti: misurato 5 contro 35). L'ingresso si chiama `spectrogram` (non `input_spectrogram` come dice il README).
+- Mel verificato con torchaudio: differenza massima 0,0002. Normalizzazione = /√1024 (torch.stft normalized=True).
+- Misurato su 16 basi sintetiche: BPM giusti 14/16 (regole 7/16), downbeat entro ~10 ms. Drill: ancora sbagliato (107 invece di 142, terzine). Nel browser: 22 s di canzone in ~5 s (computer); iPhone non provato.
+- Il profilo ha `grid: 'beatthis'|'regole'` e `gridConf`: il Cervello può usarli.

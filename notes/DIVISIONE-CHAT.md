@@ -21,3 +21,4 @@ Solo MIT / Apache / BSD / CC0. Niente GPL/AGPL né dati share-alike (CC BY-SA): 
 - `sig-fx.js` (A) resta di A; ProdFx lo usa solo per sirena/spari/raffica (non lo modifica).
 - PER A: il Cervello (SultanBrain.plan) con un testo di strada (sirene, madre che prega, Lambo) ha scelto «Club dembow, maggiore»: andrebbe spinto verso drill/street/trap scura. B ora corregge solo le Varianti (pfImageWeights in app.js), non runBrain.
 - Ad-lib (voce dell'utente registrata) e voci di produzione sono di B (sono mix/effetti); l'intonazione e le doppie cantate restano di A.
+- Strumenti comuni per risparmiare token (usabili da entrambe): `tools/pubblica.sh` (pubblica e verifica), `tools/prova-iphone.js` (prova su iPhone simulato). Mappa di B: `notes/SKILL-sultan-sound-studio-basi.md`.

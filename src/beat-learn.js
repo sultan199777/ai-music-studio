@@ -205,6 +205,8 @@
     opt = opt || {};
     var maxS = opt.maxSeconds || 90; if (x.length > maxS * sr) x = x.subarray(0, Math.floor(maxS * sr));
     var an = BaseAnalysis.analyze(x, sr, { maxSeconds: maxS }), bpm = an.bpm || 120;
+    // griglia dalla rete Beat This! (se c'è ed è affidabile): velocità e inizio battuta misurati dai battiti veri
+    var GR = opt.grid && opt.grid.bpm > 0 && (opt.grid.conf == null || opt.grid.conf >= 0.5) ? opt.grid : null; if (GR) bpm = GR.bpm;
     // le basi rap/trap stanno quasi sempre tra 60 e 160: riporta i doppi/metà nella zona giusta
     var bpmUse = bpm; while (bpmUse > 165) bpmUse /= 2; while (bpmUse < 70) bpmUse *= 2; // sotto 70 è quasi sempre metà tempo
     var hop = Math.round(sr / 200), fps = sr / hop;
@@ -223,6 +225,7 @@
         cand.push([ph, kv, Math.max(s8, s4)]); if (kv > kmax) kmax = kv;
       }
       cand.forEach(function (c) { if (c[1] >= kmax * 0.7) { var sv = c[2] + 0.2 * c[1]; if (sv > bestV) { bestV = sv; bestP = c[0]; } } });
+      if (GR && GR.downbeats && GR.downbeats.length) { var dsum = 0, dn = 0, ref = (GR.downbeats[0] * fps) % barF; GR.downbeats.forEach(function (d) { var q = (d * fps - ref) % barF; if (q > barF / 2) q -= barF; if (q < -barF / 2) q += barF; dsum += q; dn++; }); bestP = ((ref + dsum / dn) % barF + barF) % barF; }
       var hg = grid(hO, fps, bp, 16, bestP);
       return { bp: bp, barF: barF, P: bestP, kg: grid(kO, fps, bp, 16, bestP), sg: grid(sO, fps, bp, 16, bestP), hg: hg, h3: grid(hO, fps, bp, 24, bestP), hd: hatDensityOf(hg) };
     }
@@ -256,7 +259,7 @@
     if (chordInfo.key && (!an.key || chordInfo.key.tonic !== an.key.tonic || chordInfo.key.mode !== an.key.mode)) an.key = { tonic: chordInfo.key.tonic, mode: chordInfo.key.mode, name: NN[chordInfo.key.tonic] + ' ' + chordInfo.key.mode, level: 'dagli accordi' };
     var prof = { chords: chordInfo.names, prog: chordInfo.prog, bpm: Math.round(bpmUse), bpmRaw: an.bpm, bpmStrength: an.bpmStrength, key: an.key ? { tonic: an.key.tonic, mode: an.key.mode, name: an.key.name, level: an.key.level || an.key.confidence } : null,
       kick: kick, snare: snare, hatDensity: Math.round(hatDensity * 100) / 100, triplets: Math.round(triplets * 100) / 100, swing: Math.round(swing * 100) / 100,
-      sub: Math.round(sub * 100) / 100, bright: Math.round(bright * 100) / 100, curve: curve, seconds: Math.round(x.length / sr) };
+      sub: Math.round(sub * 100) / 100, bright: Math.round(bright * 100) / 100, curve: curve, seconds: Math.round(x.length / sr), grid: GR ? 'beatthis' : 'regole', gridConf: GR ? GR.conf : null };
     prof.style = closestStyle(prof);
     prof.why = describe(prof);
     return prof;

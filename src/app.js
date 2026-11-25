@@ -1972,6 +1972,14 @@
     return { sr: sr, voice: sep.voice, base: bm, stems: null, rhythm: mono, orig: mono, ai: false, note: 'ATTENZIONE: l\'AI non è partita su questo dispositivo, ho usato il metodo semplice. Voce e base NON sono pulite: va bene solo per misurare il ritmo.' };
   }
   function normOnly(x, sr) { return BeatLearn.clean(x, sr, { denoise: 0 }).x; }
+  $('#dw-bt-on').checked = LIB.settings.beatThis !== false; $('#dw-bt-on').addEventListener('change', function () { LIB.settings.beatThis = this.checked; persist(); });
+  /* Beat This! (MIT): battiti e inizio battuta con una rete neurale da 10 MB, scaricata una volta sola */
+  async function btGrid(x, sr, el) {
+    if (!window.BeatThis) return null; var max = sr * 120; if (x.length > max) x = x.subarray(0, max);
+    var t0 = Date.now(); await BeatThis.load(function (got, tot, fromCache) { if (!fromCache) { el.textContent = 'Scarico Beat This! (solo la prima volta): ' + Math.round(got / 1048576 * 10) / 10 + ' di ' + Math.round(tot / 1048576) + ' MB…'; } });
+    el.textContent = 'Trovo battiti e battute con Beat This!…'; await tick();
+    var r = await BeatThis.track(x, sr, function (f) { el.textContent = 'Trovo battiti e battute con Beat This! ' + Math.round(f * 100) + '%'; }); r.ms = Date.now() - t0; return r;
+  }
   $('#dw-learn-file').addEventListener('change', async function () {
     var f = this.files && this.files[0], el = $('#dw-learn-msg'); this.value = ''; if (!f) return;
     el.textContent = 'Apro "' + f.name + '"…'; learnBar(0.02); await tick(); dwStop(); stopPlay();
@@ -1984,7 +1992,9 @@
       if (s.stems) for (var k in s.stems) s.stems[k] = normOnly(s.stems[k], s.sr);
       el.textContent = 'Misuro il ritmo…'; learnBar(0.95); await tick();
       var tuneM = null; if (s.ai) { try { var vm = s.voice.length > s.sr * 60 ? s.voice.subarray(0, s.sr * 60) : s.voice, mz = Autotune.measure(vm, s.sr, {}); if (mz.voicedFrames > 50 && isFinite(mz.rawCents)) tuneM = { cents: Math.round(Math.abs(mz.rawCents)), label: Math.abs(mz.rawCents) < 8 ? 'autotune forte (note quasi perfette)' : (Math.abs(mz.rawCents) < 16 ? 'autotune medio o voce molto intonata' : 'voce naturale, poco o niente autotune') }; } catch (e) {} }
-      var prof = BeatLearn.learn(s.rhythm, s.sr, { harm: s.stems ? (function () { var h = new Float32Array(s.stems.other.length); for (var q = 0; q < h.length; q++) h[q] = s.stems.other[q] + s.stems.bass[q]; return h; })() : null });
+      var grid = null; if (LIB.settings.beatThis !== false) { try { grid = await btGrid(s.orig && s.orig.length ? s.orig : s.rhythm, s.sr, el); } catch (e) { grid = null; el.textContent = 'Beat This! non è partito (' + ((e && e.message) || e).toString().slice(0, 60) + '): uso il metodo a regole.'; await tick(); } }
+      var prof = BeatLearn.learn(s.rhythm, s.sr, { grid: grid, harm: s.stems ? (function () { var h = new Float32Array(s.stems.other.length); for (var q = 0; q < h.length; q++) h[q] = s.stems.other[q] + s.stems.bass[q]; return h; })() : null });
+      if (grid) prof.why.unshift((prof.grid === 'beatthis' ? 'Misurato con Beat This! (rete neurale): ' + grid.beats.length + ' battiti, ' + grid.downbeats.length + ' inizi di battuta, affidabilità ' + Math.round((grid.conf || 0) * 100) + '%.' : 'Beat This! poco sicuro su questa base (affidabilità ' + Math.round((grid.conf || 0) * 100) + '%): velocità dal metodo a regole.'));
       if (tuneM) { prof.tune = tuneM; prof.why.push('Voce: ' + tuneM.label + ' (scarto medio ' + tuneM.cents + ' cent dalla nota).'); }
       LEARN.cur = { name: f.name.replace(/\.[^.]+$/, '').slice(0, 40), prof: prof, voice: voice, base: base, orig: s.orig, stems: s.stems, sr: s.sr, note: s.note, vote: 0, ai: s.ai };
       learnBar(null); setTimeout(function () { varMake('', learnSpecs2(prof), '#dw-learn-msg'); }, 50); el.textContent = s.ai ? 'Fatto. Ascolta le parti separate, poi dimmi se il ritmo ti piace.' : 'Fatto, ma senza AI (' + why + '): voce e base non sono pulite.';
