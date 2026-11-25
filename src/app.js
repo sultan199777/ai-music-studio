@@ -2827,6 +2827,58 @@
   }, true); });
   /* se dopo aver premuto play l'audio è ancora fermo, lo dico (invece del silenzio senza spiegazione) */
   function audioCheck() { setTimeout(function () { var c = player.ctx; if (c && c.state !== 'running') { var m = 'Audio fermo (Safari: ' + c.state + '). Tocca lo schermo una volta e ripremi ▶. Se ancora niente: chiudi Safari e riaprilo.'; ['#dw-msg', '#b-status'].forEach(function (q) { var e = $(q); if (e) e.textContent = m; }); } }, 600); }
+
+  // ---------- Sultan IA: in ogni pagina, parli o scrivi, le insegni (memoria sul telefono) ----------
+  var SAI = { log: null, rec: null, speak: false };
+  function saiLog() { if (!SAI.log) { try { SAI.log = JSON.parse(localStorage.getItem('sai-log') || '[]'); } catch (e) { SAI.log = []; } } return SAI.log; }
+  function saiSave() { try { localStorage.setItem('sai-log', JSON.stringify(saiLog().slice(-60))); } catch (e) {} }
+  function saiMem() { return LIB.settings.aiMem || (LIB.settings.aiMem = []); }
+  function saiRender() {
+    var L = saiLog(), el = $('#sai-log'); if (!el) return;
+    if (!L.length) L.push({ who: 'ai', t: 'Ciao, sono Sultan IA. Sono qui in ogni pagina. Posso analizzare il tuo testo, darti rime, creare basi e varianti, cambiare il suono, dirti dove trovare le cose. Insegnami: «ricorda che mi piacciono le basi drill scure». Puoi anche parlarmi con 🎤.' });
+    el.innerHTML = L.slice(-40).map(function (m) { return '<div class="sai-m ' + (m.who === 'me' ? 'me' : 'ai') + '">' + esc(m.t) + '</div>'; }).join(''); el.scrollTop = el.scrollHeight;
+    var ws = dwWsName(), SG = { testo: ['analizza il testo', 'riga 1', 'rime per notte'], base: ['crea 16 basi tipo Shiva', 'crea 8 basi', '808 più lungo'], voce: ['come registro', 'voce con più riverbero', 'dove respiro'], mix: ['master per spotify', 'abbassa gli accordi'], libreria: ['come imparo da un video', 'cosa sai di me'] };
+    $('#sai-sugg').innerHTML = (SG[ws] || []).concat(['cosa sai di me']).filter(function (v, i, a) { return a.indexOf(v) === i; }).map(function (q) { return '<button class="chip" data-saiq="' + esc(q) + '">' + esc(q) + '</button>'; }).join('');
+    $('#sai-where').textContent = { testo: '· pagina Testo', base: '· pagina Base', voce: '· pagina Voce', mix: '· pagina Mix', libreria: '· Libreria' }[ws] || '';
+  }
+  function saiSay(t) { saiLog().push({ who: 'ai', t: t }); saiSave(); saiRender(); if (SAI.speak && window.speechSynthesis) { try { speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(t.replace(/[«»•]/g, '')); u.lang = 'it-IT'; u.rate = 1.05; speechSynthesis.speak(u); } catch (e) {} } }
+  function saiIsCmd(text) { try { var st = talkState(), run = runCommands([text], st); return run.said.length > 0; } catch (e) { return false; } }
+  async function saiAsk(text) {
+    text = String(text || '').trim(); if (!text) return; saiLog().push({ who: 'me', t: text }); saiSave(); saiRender();
+    var s = cur(), p = s.prod, r = SultanAI.respond(text, { page: dwWsName(), lyrics: s.lyrics || '', summary: (p.atmNome || (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre)) + ', ' + p.bpm + ' BPM, ' + NOTES[p.tonic] + ' ' + p.mode, memory: saiMem(), presets: StylePresets.LIST, LyricsEngine: LyricsEngine, WordBank: WordBank, bank: wbStore(), isStudioCommand: saiIsCmd, seed: saiLog().length });
+    var after = '';
+    for (var i = 0; i < r.actions.length; i++) {
+      var a = r.actions[i];
+      if (a.type === 'remember') { saiMem().push(a.text); persist(); }
+      else if (a.type === 'forget') { var f = (a.text || '').toLowerCase(); LIB.settings.aiMem = saiMem().filter(function (m) { return !f || m.toLowerCase().indexOf(f) < 0; }); persist(); }
+      else if (a.type === 'go') { dwWs(a.ws); }
+      else if (a.type === 'variants') {
+        var pf = SultanAI.prefs(saiMem(), StylePresets.LIST), atm = a.atm || (pf.like[0] || null); $('#dw-var-n').value = String(a.n >= 20 ? 24 : a.n >= 12 ? 16 : 8);
+        var specs = atm ? StylePresets.pickMany(a.n, null, Date.now() % 1e9, atm) : StylePresets.pickMany(a.n, textWeights(), Date.now() % 1e9);
+        if (!atm && pf.avoid.length) specs = specs.filter(function (v) { return pf.avoid.indexOf(v.preset) < 0; });
+        dwWs('base'); var fv = $('#dw-p-var'); if (fv) fv.classList.remove('fold'); setTimeout(function () { varMake('', specs); }, 50);
+      }
+      else if (a.type === 'studio') { await talkGo(a.text); var last = (typeof TALK !== 'undefined' && TALK.length) ? TALK[TALK.length - 1].reply : ''; if (last) after = last; }
+    }
+    saiSay(r.reply + (after ? '\n' + after : ''));
+  }
+  $('#sai-btn').addEventListener('click', function () { $('#sai').hidden = false; saiRender(); setTimeout(function () { $('#sai-txt').focus(); }, 50); });
+  $('#sai').addEventListener('click', function (e) {
+    if (e.target === this || e.target.id === 'sai-x') { this.hidden = true; try { speechSynthesis.cancel(); } catch (x) {} return; }
+    var q = e.target.getAttribute && e.target.getAttribute('data-saiq'); if (q) { saiAsk(q); return; }
+    if (e.target.id === 'sai-send') { var v = $('#sai-txt').value; $('#sai-txt').value = ''; saiAsk(v); }
+    if (e.target.id === 'sai-voice') { SAI.speak = !SAI.speak; e.target.textContent = SAI.speak ? '🔊' : '🔈'; saiSay(SAI.speak ? 'Ok, da ora ti rispondo anche a voce.' : 'Risposte solo scritte.'); }
+    if (e.target.id === 'sai-mic') {
+      var SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) { saiSay('Questo browser non mi fa ascoltare la voce: scrivimi, oppure usa il microfono della tastiera dell\'iPhone (il tasto 🎤 vicino alla barra spaziatrice).'); return; }
+      if (SAI.rec) { SAI.rec.stop(); return; }
+      var rec = new SR(); rec.lang = 'it-IT'; rec.interimResults = true; SAI.rec = rec; e.target.classList.add('on'); var btn = e.target, fin = '';
+      rec.onresult = function (ev) { var t = ''; for (var k = 0; k < ev.results.length; k++) t += ev.results[k][0].transcript; $('#sai-txt').value = t; fin = t; };
+      rec.onend = function () { SAI.rec = null; btn.classList.remove('on'); if (fin.trim()) { $('#sai-txt').value = ''; saiAsk(fin); } };
+      rec.onerror = function () { SAI.rec = null; btn.classList.remove('on'); };
+      try { rec.start(); } catch (x) { SAI.rec = null; btn.classList.remove('on'); }
+    }
+  });
+  $('#sai-txt').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); var v = this.value; this.value = ''; saiAsk(v); } });
   SHOW.daw = function () { applyMoodBg(moodNow()); dwWs(dwWsName()); projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */

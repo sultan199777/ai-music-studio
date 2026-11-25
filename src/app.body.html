@@ -681,3 +681,14 @@
   <a href="#daw" data-r="daw" data-ws="mix"><svg><use href="#i-sliders"/></svg><span><i>4</i>Mix</span></a>
   <a href="#daw" data-r="daw" data-ws="libreria"><svg><use href="#i-folder"/></svg><span>Libreria</span></a>
 </nav></div>
+
+<!-- Sultan IA: assistente in ogni pagina (parli, scrivi, le insegni) -->
+<button id="sai-btn" class="sai-btn" aria-label="Parla con Sultan IA">IA</button>
+<div id="sai" class="sai" hidden>
+  <div class="sai-box">
+    <div class="sai-head"><b>Sultan IA</b><span class="small muted" id="sai-where"></span><button class="btn sm" id="sai-voice" title="Risposte a voce">🔈</button><button class="btn sm" id="sai-x" aria-label="Chiudi">✕</button></div>
+    <div id="sai-log" class="sai-log" aria-live="polite"></div>
+    <div class="chips" id="sai-sugg"></div>
+    <div class="sai-in"><button class="btn sm" id="sai-mic" title="Parla">🎤</button><input id="sai-txt" placeholder="Scrivi o parla: «analizza il testo», «crea 16 basi tipo Shiva», «ricorda che…»" autocomplete="off"><button class="btn sm pri" id="sai-send">Invia</button></div>
+  </div>
+</div>
