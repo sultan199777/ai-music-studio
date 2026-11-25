@@ -12,3 +12,10 @@ test('pulizia: toglie numeri, preamboli, duplicati e righe in altre lingue', () 
 test('senza WebGPU: errore chiaro, nessun crash', async () => {
   await assert.rejects(() => L.load(L.MODELS[0].id), /WebGPU/);
 });
+test('Ollama: modello scelto e risposta pulita (finto server)', async () => {
+  const calls = []; global.fetch = async (u, o) => { calls.push(u); if (/tags/.test(u)) return { ok: true, json: async () => ({ models: [{ name: 'llama3:8b' }, { name: 'qwen2.5:7b' }] }) }; return { ok: true, json: async () => ({ message: { content: '1. Il buio mi chiama per nome\n2. Corro dietro ai soldi e al tempo' } }) }; };
+  assert.equal(await L.useOllama(), 'qwen2.5:7b');
+  const r = await L.ask('versioni', { line: 'Sono nato in strada' });
+  assert.equal(r.length, 2); assert.ok(calls.some((u) => /api\/chat/.test(u)));
+  delete global.fetch;
+});
