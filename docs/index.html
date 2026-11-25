@@ -609,7 +609,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
       <button class="dw-mode" data-sep="studio"><b>Studio</b><small>La voce più pulita (Mel-Band RoFormer, 474 MB). Consigliata sul computer.</small></button>
     </div>
     <p class="small muted" id="dw-sep-info"></p>
-    <label class="small">Quanto analizzo: <select id="dw-learn-secs"><option value="30">30 secondi (veloce)</option><option value="40">40 secondi (consigliato)</option><option value="90">90 secondi</option><option value="180">3 minuti (computer)</option></select></label><br>
+    <label class="small">Quanto analizzo: <select id="dw-learn-secs"><option value="30">30 secondi (veloce)</option><option value="40">40 secondi (consigliato)</option><option value="90">90 secondi</option><option value="180">3 minuti</option><option value="300">Canzone intera, pulita (lenta sul telefono, riparte se si interrompe)</option></select></label><br>
     <label class="small"><input type="checkbox" id="dw-bt-on" checked> Battiti e battute precisi con <b>Beat This!</b> (rete neurale gratuita, 10 MB, si scarica la prima volta)</label>
     <label class="f"><span><b>1.</b> Nome dell'artista (crea la cartella)</span><input id="dw-learn-art0" list="dw-learn-arts0" maxlength="30" placeholder="es. Sangiovanni, Shiva, Pop Smoke"><datalist id="dw-learn-arts0"></datalist></label>
     <div class="row"><label class="btn pri" for="dw-learn-file"><b>2.</b>&nbsp;Carica 1 o più canzoni/video</label><input type="file" id="dw-learn-file" accept="audio/*,video/*,.mov,.mp4,.m4a" multiple hidden></div>
@@ -724,7 +724,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 13:21</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 13:24</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -7830,22 +7830,33 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
    * Separa a pezzi di ~40 s (con 2 s di sovrapposizione sfumata): sul telefono la memoria resta bassa
    * (il motore tiene in memoria tutto il pezzo moltiplicato per il numero di tracce).
    */
-  async function separate(L, R, mode, onProgress, onDl) {
-    R = R || L; var sr = 44100, CH = sr * 40, OV = sr * 2, n = L.length;
-    if (n <= CH + OV) return separateOne(L, R, mode, onProgress, onDl);
+  /*
+   * opt (facoltativo, pensato per l'iPhone e le canzoni intere):
+   *  mono: true → le tracce escono mono (metà memoria); left e right sono lo stesso array.
+   *  load(c) / save(c, pezzo) → ogni pezzo finito si salva (es. IndexedDB): se il telefono chiude la pagina, si riparte dal pezzo dopo.
+   */
+  async function separate(L, R, mode, onProgress, onDl, opt) {
+    R = R || L; opt = opt || {}; var sr = 44100, CH = sr * 40, OV = sr * 2, n = L.length;
+    if (n <= CH + OV && !opt.mono && !opt.save) return separateOne(L, R, mode, onProgress, onDl);
     var keys = ['vocals', 'drums', 'bass', 'other'], out = {}, wsum = new Float32Array(n), info = null;
-    keys.forEach(function (k) { out[k] = { left: new Float32Array(n), right: new Float32Array(n) }; });
+    keys.forEach(function (k) { if (opt.mono) { var m = new Float32Array(n); out[k] = { left: m, right: m }; } else out[k] = { left: new Float32Array(n), right: new Float32Array(n) }; });
     var starts = []; for (var s0 = 0; s0 < n; s0 += CH) starts.push(s0);
     for (var c = 0; c < starts.length; c++) {
       var a = Math.max(0, starts[c] - OV), b = Math.min(n, starts[c] + CH + OV);
-      var r = await separateOne(L.subarray(a, b), R.subarray(a, b), mode, function (f, t) { if (onProgress) onProgress((c + f) / starts.length, t + ' (pezzo ' + (c + 1) + ' di ' + starts.length + ')'); }, onDl);
-      info = r.info;
+      var r = opt.load ? await opt.load(c) : null, fresh = !r;
+      if (fresh) {
+        r = await separateOne(L.subarray(a, b), R.subarray(a, b), mode, function (f, t) { if (onProgress) onProgress((c + f) / starts.length, t + ' (pezzo ' + (c + 1) + ' di ' + starts.length + ')'); }, onDl);
+        info = r.info;
+        if (opt.mono || opt.save) { var mr = { info: r.info }; keys.forEach(function (k) { var x = new Float32Array(b - a); for (var j = 0; j < x.length; j++) x[j] = (r[k].left[j] + r[k].right[j]) / 2; mr[k] = x; }); r = mr; if (opt.save) await opt.save(c, r); }
+      } else { info = r.info || info; if (onProgress) onProgress((c + 1) / starts.length, 'Pezzo ' + (c + 1) + ' già fatto prima (ripreso)'); }
       for (var i = a; i < b; i++) {
         var w = 1; if (c > 0 && i < starts[c] + OV) w = (i - a) / (2 * OV); if (c < starts.length - 1 && i > starts[c] + CH - OV) w = Math.min(w, (b - i) / (2 * OV));
-        wsum[i] += w; keys.forEach(function (k) { out[k].left[i] += r[k].left[i - a] * w; out[k].right[i] += r[k].right[i - a] * w; });
+        wsum[i] += w;
+        if (opt.mono || opt.save) keys.forEach(function (k) { out[k].left[i] += r[k][i - a] * w; if (!opt.mono) out[k].right[i] += r[k][i - a] * w; });
+        else keys.forEach(function (k) { out[k].left[i] += r[k].left[i - a] * w; out[k].right[i] += r[k].right[i - a] * w; });
       }
     }
-    for (i = 0; i < n; i++) if (wsum[i] > 0) keys.forEach(function (k) { out[k].left[i] /= wsum[i]; out[k].right[i] /= wsum[i]; });
+    for (i = 0; i < n; i++) if (wsum[i] > 0) keys.forEach(function (k) { out[k].left[i] /= wsum[i]; if (out[k].right !== out[k].left) out[k].right[i] /= wsum[i]; });
     out.info = info; return out;
   }
   async function separateOne(L, R, mode, onProgress, onDl) {
@@ -13765,10 +13776,13 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     // si analizza un pezzo centrale (dove di solito ci sono strofa e ritornello): una canzone intera sul telefono richiede troppo tempo e memoria
     if (d.L.length > max) { var a0 = Math.max(0, Math.min(d.L.length - max, Math.round(d.L.length * 0.3))); d.L = d.L.slice(a0, a0 + max); if (d.R) d.R = d.R.slice(a0, a0 + max); }
     var secs = Math.round(d.L.length / 44100);
-    var last = Date.now(), alive = function () { last = Date.now(); };
+    var last = Date.now(), alive = function () { last = Date.now(); }, full = learnSecs() >= 300, fk = 'k' + f.name + '|' + f.size + '|' + mode + '|';
+    var sopt = full ? { mono: true, load: function (c) { return sepIdb('get', fk + c); }, save: function (c, r) { return sepIdb('put', fk + c, r); } } : null;
+    var wl = await wakeOn(); // schermo sempre acceso finché lavora (Safari 16.4+)
     var r = await stallGuard(AiSeparator.separate(d.L, d.R || d.L, mode,
       function (p, txt) { alive(); el.textContent = txt + ' (' + secs + ' s di audio, ' + Math.round(p * 100) + '%). Resta su questa pagina…'; learnBar(0.1 + p * 0.75); },
-      function (phase, got, tot, mem) { alive(); if (phase === 'download' && !mem) { el.textContent = 'Scarico il modello: ' + Math.round(got / 1048576) + ' di ' + Math.round(tot / 1048576) + ' MB (solo la prima volta)…'; learnBar(0.01 + 0.09 * got / tot); } }), function () { return Date.now() - last; }, 150000);
+      function (phase, got, tot, mem) { alive(); if (phase === 'download' && !mem) { el.textContent = 'Scarico il modello: ' + Math.round(got / 1048576) + ' di ' + Math.round(tot / 1048576) + ' MB (solo la prima volta)…'; learnBar(0.01 + 0.09 * got / tot); } }, sopt), function () { return Date.now() - last; }, 150000).finally(function () { try { if (wl) wl.release(); } catch (e) {} });
+    if (full) { try { await sepIdb('clear'); } catch (e) {} }
     var st = { drums: stMono(r.drums), bass: stMono(r.bass), other: stMono(r.other) }, voice = stMono(r.vocals), n = voice.length;
     var base = new Float32Array(n), rhythm = new Float32Array(n), orig = new Float32Array(n);
     for (var i = 0; i < n; i++) { base[i] = st.drums[i] + st.bass[i] + st.other[i]; rhythm[i] = st.drums[i] + st.bass[i]; orig[i] = d.R ? (d.L[i] + d.R[i]) / 2 : d.L[i]; }
@@ -13776,6 +13790,11 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
       note: (mode === 'studio' ? 'Modalità Studio: voce con Mel-Band RoFormer, base divisa con SCNet.' : 'Modalità Rapida: SCNet.') + ' Modelli open source, tutto sul dispositivo. Ritmo misurato su batteria e basso separati.' };
   }
   function learnSecs() { var v = +LIB.settings.learnSecs; return v >= 20 && v <= 300 ? v : 40; }
+  /* pezzi già separati, salvati nel telefono (database a parte: non si caricano all'avvio) */
+  var SDB = null;
+  function sepDb() { if (SDB) return SDB; SDB = new Promise(function (res) { try { var rq = indexedDB.open('msa-sep', 1); rq.onupgradeneeded = function () { rq.result.createObjectStore('chunks'); }; rq.onsuccess = function () { res(rq.result); }; rq.onerror = function () { res(null); }; } catch (e) { res(null); } }); return SDB; }
+  async function sepIdb(op, key, val) { var db = await sepDb(); if (!db) return null; return new Promise(function (res) { try { var tx = db.transaction('chunks', op === 'get' ? 'readonly' : 'readwrite'), st = tx.objectStore('chunks'), r = op === 'get' ? st.get(key) : op === 'put' ? st.put(val, key) : op === 'clear' ? st.clear() : st.delete(key); tx.oncomplete = function () { res(op === 'get' ? r.result || null : true); }; tx.onerror = function () { res(null); }; } catch (e) { res(null); } }); }
+  async function wakeOn() { try { if (navigator.wakeLock) return await navigator.wakeLock.request('screen'); } catch (e) {} return null; }
   async function sepFast(f, el) {
     var d = await decodeStereo(f, 32000), sr = d.sr, i, mx = Math.round(sr * learnSecs());
     if (d.L.length > mx) { var b0 = Math.max(0, Math.min(d.L.length - mx, Math.round(d.L.length * 0.3))); d.L = d.L.slice(b0, b0 + mx); if (d.R) d.R = d.R.slice(b0, b0 + mx); }
@@ -13786,7 +13805,7 @@ body.dw-playing.mood-hi[data-mood]::before { opacity: 1; animation-duration: cal
     return { sr: sr, voice: sep.voice, base: bm, stems: null, rhythm: mono, orig: mono, ai: false, note: 'ATTENZIONE: l\'AI non è partita su questo dispositivo, ho usato il metodo semplice. Voce e base NON sono pulite: va bene solo per misurare il ritmo.' };
   }
   function normOnly(x, sr) { return BeatLearn.clean(x, sr, { denoise: 0 }).x; }
-  (function learnCrashNote() { try { var r = JSON.parse(localStorage.getItem('learnRunning') || 'null'); if (!r) return; localStorage.removeItem('learnRunning'); if (Date.now() - r.at > 3 * 3600e3) return; LIB.settings.learnSecs = Math.max(20, Math.round((r.secs || 40) * 0.6)); persist(); $('#dw-learn-msg').textContent = 'L\'ultima analisi di "' + r.name + '" si è interrotta: il telefono ha chiuso la pagina (memoria o schermo bloccato). Riprova: ora analizzo solo ' + LIB.settings.learnSecs + ' secondi. Tieni lo schermo acceso.'; } catch (e) {} })();
+  (function learnCrashNote() { try { var r = JSON.parse(localStorage.getItem('learnRunning') || 'null'); if (!r) return; localStorage.removeItem('learnRunning'); if (Date.now() - r.at > 3 * 3600e3) return; if ((r.secs || 0) >= 300) { $('#dw-learn-msg').textContent = 'La separazione di "' + r.name + '" si è interrotta (il telefono ha chiuso la pagina). Ricarica lo STESSO file: riparto dai pezzi già finiti, non da capo.'; return; } LIB.settings.learnSecs = Math.max(20, Math.round((r.secs || 40) * 0.6)); persist(); $('#dw-learn-msg').textContent = 'L\'ultima analisi di "' + r.name + '" si è interrotta: il telefono ha chiuso la pagina (memoria o schermo bloccato). Riprova: ora analizzo solo ' + LIB.settings.learnSecs + ' secondi. Tieni lo schermo acceso.'; } catch (e) {} })();
   $('#dw-learn-secs').value = String(learnSecs()); $('#dw-learn-secs').addEventListener('change', function () { LIB.settings.learnSecs = +this.value; persist(); });
   $('#dw-bt-on').checked = LIB.settings.beatThis !== false; $('#dw-bt-on').addEventListener('change', function () { LIB.settings.beatThis = this.checked; persist(); });
   /* Beat This! (MIT): battiti e inizio battuta con una rete neurale da 10 MB, scaricata una volta sola */
