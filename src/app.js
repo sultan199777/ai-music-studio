@@ -904,7 +904,7 @@
     var sp = v.slice(0, 2) === 'a:' ? StylePresets.pickMany(1, null, Date.now() % 1e9, v.slice(2))[0] : (v.slice(0, 2) === 'f:' && folderProf(v.slice(2)) ? learnSpecs2(folderProf(v.slice(2)), 2)[Math.floor(Math.random() * 2)] : StylePresets.pickMany(1, textWeights() || w, Date.now() % 1e9)[0]);
     if (!sp) return; stopPlay(); dwStop();
     p.genre = sp.genre; p.bpm = sp.bpm; p.seed = sp.seed || (1 + Math.floor(Math.random() * 99999)); p.inst = Object.assign({}, sp.inst); p.kit = sp.kit; p.arpPattern = sp.arpPattern; p.mix = null;
-    p.groove = sp.groove || null; p.prog = sp.prog || null; p.mode = sp.mode || p.mode; if (sp.tonic != null) p.tonic = sp.tonic; else p.tonic = Math.floor(Math.random() * 12); p.tune = sp.tune || null; p.bassStyle = sp.bassStyle !== undefined ? sp.bassStyle : p.bassStyle; p.melSeed = (p.melSeed || 0) + 1; p.atmNome = sp.nome || null;
+    p.drumPat = null; p.notes = null; p.chordBars = null; p.groove = sp.groove || null; p.prog = sp.prog || null; p.mode = sp.mode || p.mode; if (sp.tonic != null) p.tonic = sp.tonic; else p.tonic = Math.floor(Math.random() * 12); p.tune = sp.tune || null; p.bassStyle = sp.bassStyle !== undefined ? sp.bassStyle : p.bassStyle; p.melSeed = (p.melSeed || 0) + 1; p.atmNome = sp.nome || null;
     persist(); try { fillInst(); fillBase(); dwFill(); } catch (e) {} dwChanged(true); projLine();
     var msg = 'Base nuova: ' + (sp.nome || sp.genre) + ' · ' + p.bpm + ' BPM' + (cur().lyrics && cur().lyrics.trim() ? '' : '. Scrivi il testo in «1 Testo» e la base si adatterà alle tue parole (forma ed effetti).');
     if (el) el.textContent = msg; var sm = $('#sb-msg'); if (sm) sm.textContent = msg; makeAndPlay(false);
@@ -2509,7 +2509,7 @@
     var R = Instruments.RECIPES[g] || Instruments.RECIPES.melodico, st = Arranger.STYLES[g], kits = Object.keys(SynthDesign.KITS);
     return { genre: g, bpm: same ? cur().prod.bpm : st.bpm + Math.round((Math.random() - 0.5) * 6), seed: 1 + Math.floor(Math.random() * 99999),
       inst: { melodia: rnd(R.melodia), accordi: rnd(R.accordi), pad: rnd(R.pad), arpeggio: R.arpeggio ? rnd(R.arpeggio) : undefined },
-      kit: Math.random() < 0.75 && R.kit ? R.kit : rnd(kits), arpPattern: rnd(Object.keys(Arranger.ARP)), mode: cur().prod.mode, prog: rnd(StylePresets.PROGS[cur().prod.mode] || StylePresets.PROGS.minore), tune: { hat: 0.8 + Math.random() * 0.45, lift: 0.85 + Math.random() * 0.45, kickVar: 0.8 + Math.random() * 0.5 } };
+      kit: Math.random() < 0.75 && R.kit ? R.kit : rnd(kits), arpPattern: rnd(Object.keys(Arranger.ARP)), mode: cur().prod.mode, tonic: Math.floor(Math.random() * 12), prog: rnd(StylePresets.PROGS[cur().prod.mode] || StylePresets.PROGS.minore), tune: { hat: 0.8 + Math.random() * 0.45, lift: 0.85 + Math.random() * 0.45, kickVar: 0.8 + Math.random() * 0.5 } };
   }
   /* Anteprime CORTE (varianti e agenti): dall'inizio fino alla fine del primo ritornello, massimo 20 battute.
      Prima ogni anteprima era la canzone intera (es. 3,5 minuti × 16 varianti = 1,3 GB misurati): sull'iPhone Safari chiudeva la pagina. */
@@ -2561,6 +2561,7 @@
     if (vp != null) { var s1 = VAR.list[+vp]; dwStop(true); playBuf(s1.mix, s1.sr); $('#dw-var-msg').textContent = 'Ascolti: ' + varName(s1); }
     if (vu != null) {
       var s2 = VAR.list[+vu], p = cur().prod, changed = p.genre !== s2.genre; stopPlay();
+      p.groove = null; p.drumPat = null; p.notes = null; p.chordBars = null; // base nuova = ritmo, note e accordi nuovi (prima restavano quelli di prima)
       p.genre = s2.genre; p.bpm = s2.bpm; p.seed = s2.seed; p.inst = Object.assign({}, s2.inst); p.kit = s2.kit; p.arpPattern = s2.arpPattern; if (changed) { p.mix = null; p.groove = null; p.prog = null; p.tune = null; } p.atmNome = s2.nome || null; if (s2.groove) p.groove = s2.groove; if (s2.prog) p.prog = s2.prog; if (s2.mode) p.mode = s2.mode; if (s2.tonic != null) p.tonic = s2.tonic; if (s2.tune) p.tune = s2.tune; if (s2.bassStyle !== undefined) p.bassStyle = s2.bassStyle;
       coachRec('like', { genre: s2.genre, mode: p.mode, bpm: s2.bpm, inst: s2.inst }); fillInst(); fillBase(); dwFill(); dwChanged(true); projLine();
       $('#dw-var-msg').textContent = 'Usata: ' + varName(s2) + '. Ora la puoi modificare traccia per traccia.';

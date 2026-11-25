@@ -67,7 +67,9 @@
   function variant(pr, seed, opt) {
     opt = opt || {}; var r = rngOf(seed), pick = function (a) { return a[Math.floor(r() * a.length)]; }, mode = opt.mode || pr.mode;
     var t = pr.tune || {}, j = function (v) { return Math.round((v == null ? 1 : v) * (0.85 + r() * 0.3) * 100) / 100; };
-    return { preset: pr.id, nome: pr.nome, genre: pr.base, bpm: Math.max(60, Math.min(180, pr.bpm + Math.round((r() - 0.5) * 6))), mode: mode,
+    // tonalità propria di ogni variante (prima restava quella del progetto: tutte le basi «suonavano uguali»)
+    var tonic = opt.tonic != null ? opt.tonic : Math.floor(r() * 12);
+    return { tonic: tonic, preset: pr.id, nome: pr.nome, genre: pr.base, bpm: Math.max(60, Math.min(180, pr.bpm + Math.round((r() - 0.5) * 6))), mode: mode,
       inst: { melodia: pick(pr.inst.melodia), accordi: pick(pr.inst.accordi), pad: pick(pr.inst.pad), arpeggio: pick(pr.inst.arpeggio) },
       kit: r() < 0.8 ? pr.kit : pick(['trap', 'drill', 'boombap', 'club', 'lofi']), prog: pick(PROGS[mode] || PROGS.minore), arpPattern: pick(opt.arps || ['lento', 'terzine', 'ottavi', 'spezzato', 'sedicesimi', 'levare']),
       tune: { hat: j(t.hat), lift: j(t.lift), kickVar: j(t.kickVar), bass: j(t.bass) }, bassStyle: pr.bassStyle === null ? null : '808', seed: 1 + Math.floor(r() * 99999) };
