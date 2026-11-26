@@ -205,6 +205,9 @@
     for (var i = 0; i < b.length; i++) { var u = i / b.length, n = r() * 2 - 1; hp += lpK(5000, sr) * (n - hp); b[i] = (n - hp) * Math.pow(u, 3); }
     return fades(norm(b), sr, 0, 0.004);
   }
+  /* suoni veri registrati (RealPerc, CC0) quando disponibili, altrimenti la versione sintetica */
+  function RPx() { return (typeof self !== 'undefined' && self.RealPerc) || (typeof global !== 'undefined' && global.RealPerc) || null; }
+  function realOr(fnReal, fnSynth) { return function (sr, seed, o) { var R = RPx(); if (R && R.ready()) { var y = fnReal(R, sr, seed, o || {}); if (y) return norm(y); } return fnSynth(sr, seed, o); }; }
   function sg(fn) { return function (sr, seed, o) { if (!SigFx) return buf(sr, 0.2); return norm(fn(sr, seed, o || {})); }; }
 
   /* tipo: 'letto' = sfondo lungo (dura una sezione), 'colpo' = suono singolo, 'fine' = transizione che finisce sul punto */
@@ -212,7 +215,7 @@
     temporale: { nome: 'Temporale (tuono)', gruppo: 'Natura', tipo: 'colpo', g: 0.55, make: thunder },
     pioggia: { nome: 'Pioggia', gruppo: 'Natura', tipo: 'letto', g: 0.2, make: rain },
     vento: { nome: 'Vento', gruppo: 'Natura', tipo: 'letto', g: 0.2, make: wind },
-    mare: { nome: 'Mare e onde', gruppo: 'Natura', tipo: 'letto', g: 0.22, make: sea },
+    mare: { nome: 'Mare e onde', gruppo: 'Natura', tipo: 'letto', g: 0.22, make: realOr(function (R, sr, s, o) { return R.bed('ocean', sr, (o && o.dur) || 8, s); }, sea) },
     fuoco: { nome: 'Fuoco che crepita', gruppo: 'Natura', tipo: 'letto', g: 0.18, make: fire },
     supercar: { nome: 'Supercar V12 (sgasata)', gruppo: 'Motori', tipo: 'colpo', g: 0.45, make: function (sr, s, o) { return engine(sr, s, { cyl: 12 }); } },
     v8: { nome: 'Supercar V8 (borbottio)', gruppo: 'Motori', tipo: 'colpo', g: 0.45, make: function (sr, s, o) { return engine(sr, s, { cyl: 8 }); } },
@@ -234,11 +237,11 @@
     cuore: { nome: 'Battito del cuore', gruppo: 'Oggetti', tipo: 'letto', g: 0.35, make: heart },
     campana: { nome: 'Campana (nella tonalità)', gruppo: 'Oggetti', tipo: 'colpo', g: 0.3, make: bell },
     vinile: { nome: 'Vinile (fruscio)', gruppo: 'Oggetti', tipo: 'letto', g: 0.25, make: vinyl },
-    impatto: { nome: 'Impatto cinema', gruppo: 'Cinema', tipo: 'colpo', g: 0.55, make: impact },
+    impatto: { nome: 'Impatto cinema', gruppo: 'Cinema', tipo: 'colpo', g: 0.55, make: realOr(function (R, sr, s) { var a = R.hit('bdrum', sr, s), c = R.hit('crash', sr, s, 0.6), sy = impact(sr, s), n = Math.max(a.length, c.length, sy.length), y = new Float32Array(n); for (var i = 0; i < n; i++) y[i] = (a[i] || 0) * 0.9 + (c[i] || 0) * 0.5 + (sy[i] || 0) * 0.45; return y; }, impact) },
     esplosione: { nome: 'Esplosione', gruppo: 'Cinema', tipo: 'colpo', g: 0.5, make: function (sr, s) { return impact(sr, s, { big: true }); } },
     whoosh: { nome: 'Whoosh', gruppo: 'Cinema', tipo: 'fine', g: 0.35, make: whoosh },
-    salita: { nome: 'Salita (riser)', gruppo: 'Cinema', tipo: 'fine', g: 0.3, make: riser },
-    reverse: { nome: 'Piatto al contrario', gruppo: 'Cinema', tipo: 'fine', g: 0.3, make: revCym }
+    salita: { nome: 'Salita (riser)', gruppo: 'Cinema', tipo: 'fine', g: 0.3, make: realOr(function (R, sr, s, o) { var w = R.hit('swell', sr, s), d = Math.round(((o && o.dur) || 3) * sr), y = new Float32Array(d), off = Math.max(0, w.length - d); for (var i = 0; i < d; i++) y[i] = w[off + i] || 0; var syn = riser(sr, s, o); for (i = 0; i < d; i++) y[i] = y[i] * 0.8 + (syn[i] || 0) * 0.35; return y; }, riser) },
+    reverse: { nome: 'Piatto al contrario', gruppo: 'Cinema', tipo: 'fine', g: 0.3, make: realOr(function (R, sr, s, o) { var c = R.hit('crash', sr, s), d = Math.min(c.length, Math.round(((o && o.dur) || 2) * sr)), y = new Float32Array(d); for (var i = 0; i < d; i++) y[i] = c[d - 1 - i] * Math.pow(i / d, 1.5); return y; }, revCym) }
   };
   /* interventi sulla TUA voce registrata (servono le prove registrate; gli ad-lib usano la tua banca di ad-lib) */
   var VOX = {

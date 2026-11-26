@@ -34,7 +34,7 @@ test('arrangiatore: 808 dal designer ed effetti a mano finiscono nella base', ()
   assert.ok(d > 10, 'impact alla battuta 3');
 });
 test('percussioni del mondo, 808 pronti e strumento dalla voce', () => {
-  assert.strictEqual(Object.keys(SD.PERC).length, 5); assert.ok(Object.keys(SD.B808_PRESETS).length >= 5);
+  assert.ok(Object.keys(SD.PERC).length >= 5); assert.ok(Object.keys(SD.B808_PRESETS).length >= 5);
   const ev = SD.percEvents('conga', [{ name: 'strofa', startBar: 2, bars: 2 }, { name: 'intro', startBar: 0, bars: 2 }], sr, ['strofa']);
   assert.strictEqual(ev.length, 10); assert.ok(ev.every(e => e.bar >= 2 && e.track === 'hat' && e.buf.length > 100));
   // voce a 220 Hz (La3 = 57) → suonata come Mi4 (64) deve stare a ~329.6 Hz

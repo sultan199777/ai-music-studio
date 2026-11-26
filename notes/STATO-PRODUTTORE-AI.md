@@ -36,3 +36,7 @@ Regola: un tasto che esiste NON vuol dire ✅. Ogni ✅ ha il suo test.
 | Idea 2 · il tuo stile nelle istruzioni dell'IA (cartella imparata o atmosfera → strumenti, groove, tonalità, BPM; tasti «più piano» ecc.) | ✅ nel simulatore | con «Shiva» la richiesta conteneva piano, bell melody, pizzicato strings |
 | Idea 1 · base IA divisa in tracce (batteria, basso, resto) nello Studio | ✅ nel simulatore con i due spazi in locale | «Dividila in tracce»: 186 s, poi Studio «Base IA divisa · 36 battute» |
 | Idea 3 · rifai solo un pezzo (inizio, centro, finale) | ✅ misurato | 0-10 s rifatti: differenza 114% nel pezzo, 22% nel resto (ricodifica); dall'app: 235 s su 4 CPU per una base di 90 s |
+
+## Aggiunte (26/11)
+- **Suoni veri registrati (CC0, VCSL/VSCO-2-CE):** rullanti, battiti di mani, hi-hat, shaker, tamburello, conga, bongo, cajón, campanaccio, claves, tom, grancassa, piatti, mare. Kit «Batteria vera»; gli effetti mare/impatto/salita/piatto al contrario usano registrazioni vere. Misurato nel browser: caricato e scelto da «Cambia base».
+- **Agente Melodia (Basic Pitch di Spotify, Apache 2.0):** canticchi 10 secondi → note → la base suona la tua melodia (traccia Melodia, modificabile nel piano roll). Misurato nel browser con una melodia di prova: 7 note su 7 giuste. Non ancora provato su iPhone vero.

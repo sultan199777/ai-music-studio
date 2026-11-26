@@ -703,6 +703,12 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     <div class="chips" id="qc-fb"></div>
     <div class="status" id="qc-msg"></div>
   </section>
+  <section class="dw-panel" id="dw-p-melo" data-ws="voce base">
+    <div class="dw-ph"><h3>La tua melodia</h3><span class="tag m">Basic Pitch</span></div>
+    <p class="small muted">Non sai suonare? Canticchia la melodia (anche «na na na»): l'IA di Spotify Basic Pitch (gratis, licenza Apache) la trasforma in note e la base la suona con lo strumento della melodia (piano, campana…). Poi la modifichi nel piano roll.</p>
+    <div class="row"><button class="btn pri" id="melo-rec">🎤 Canticchia 10 secondi</button><button class="btn" id="melo-take">Usa la mia ultima prova</button><button class="btn" id="melo-off">Torna alla melodia dell'IA</button></div>
+    <div class="status" id="melo-msg"></div>
+  </section>
   <section class="dw-panel" id="dw-p-omino" data-ws="base voce">
     <div class="dw-ph"><h3>Come canterai</h3><span class="tag m">Segui l'omino</span></div>
     <canvas id="dw-omino" style="width:100%;height:190px;display:block"></canvas>
@@ -930,7 +936,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>26/11, 09:53</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>26/11, 10:36</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -1305,7 +1311,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">381 test automatici superati su 381 · versione del 26 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">382 test automatici superati su 382 · versione del 26 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -6079,6 +6085,9 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     for (var i = 0; i < b.length; i++) { var u = i / b.length, n = r() * 2 - 1; hp += lpK(5000, sr) * (n - hp); b[i] = (n - hp) * Math.pow(u, 3); }
     return fades(norm(b), sr, 0, 0.004);
   }
+  /* suoni veri registrati (RealPerc, CC0) quando disponibili, altrimenti la versione sintetica */
+  function RPx() { return (typeof self !== 'undefined' && self.RealPerc) || (typeof global !== 'undefined' && global.RealPerc) || null; }
+  function realOr(fnReal, fnSynth) { return function (sr, seed, o) { var R = RPx(); if (R && R.ready()) { var y = fnReal(R, sr, seed, o || {}); if (y) return norm(y); } return fnSynth(sr, seed, o); }; }
   function sg(fn) { return function (sr, seed, o) { if (!SigFx) return buf(sr, 0.2); return norm(fn(sr, seed, o || {})); }; }
 
   /* tipo: 'letto' = sfondo lungo (dura una sezione), 'colpo' = suono singolo, 'fine' = transizione che finisce sul punto */
@@ -6086,7 +6095,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     temporale: { nome: 'Temporale (tuono)', gruppo: 'Natura', tipo: 'colpo', g: 0.55, make: thunder },
     pioggia: { nome: 'Pioggia', gruppo: 'Natura', tipo: 'letto', g: 0.2, make: rain },
     vento: { nome: 'Vento', gruppo: 'Natura', tipo: 'letto', g: 0.2, make: wind },
-    mare: { nome: 'Mare e onde', gruppo: 'Natura', tipo: 'letto', g: 0.22, make: sea },
+    mare: { nome: 'Mare e onde', gruppo: 'Natura', tipo: 'letto', g: 0.22, make: realOr(function (R, sr, s, o) { return R.bed('ocean', sr, (o && o.dur) || 8, s); }, sea) },
     fuoco: { nome: 'Fuoco che crepita', gruppo: 'Natura', tipo: 'letto', g: 0.18, make: fire },
     supercar: { nome: 'Supercar V12 (sgasata)', gruppo: 'Motori', tipo: 'colpo', g: 0.45, make: function (sr, s, o) { return engine(sr, s, { cyl: 12 }); } },
     v8: { nome: 'Supercar V8 (borbottio)', gruppo: 'Motori', tipo: 'colpo', g: 0.45, make: function (sr, s, o) { return engine(sr, s, { cyl: 8 }); } },
@@ -6108,11 +6117,11 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     cuore: { nome: 'Battito del cuore', gruppo: 'Oggetti', tipo: 'letto', g: 0.35, make: heart },
     campana: { nome: 'Campana (nella tonalità)', gruppo: 'Oggetti', tipo: 'colpo', g: 0.3, make: bell },
     vinile: { nome: 'Vinile (fruscio)', gruppo: 'Oggetti', tipo: 'letto', g: 0.25, make: vinyl },
-    impatto: { nome: 'Impatto cinema', gruppo: 'Cinema', tipo: 'colpo', g: 0.55, make: impact },
+    impatto: { nome: 'Impatto cinema', gruppo: 'Cinema', tipo: 'colpo', g: 0.55, make: realOr(function (R, sr, s) { var a = R.hit('bdrum', sr, s), c = R.hit('crash', sr, s, 0.6), sy = impact(sr, s), n = Math.max(a.length, c.length, sy.length), y = new Float32Array(n); for (var i = 0; i < n; i++) y[i] = (a[i] || 0) * 0.9 + (c[i] || 0) * 0.5 + (sy[i] || 0) * 0.45; return y; }, impact) },
     esplosione: { nome: 'Esplosione', gruppo: 'Cinema', tipo: 'colpo', g: 0.5, make: function (sr, s) { return impact(sr, s, { big: true }); } },
     whoosh: { nome: 'Whoosh', gruppo: 'Cinema', tipo: 'fine', g: 0.35, make: whoosh },
-    salita: { nome: 'Salita (riser)', gruppo: 'Cinema', tipo: 'fine', g: 0.3, make: riser },
-    reverse: { nome: 'Piatto al contrario', gruppo: 'Cinema', tipo: 'fine', g: 0.3, make: revCym }
+    salita: { nome: 'Salita (riser)', gruppo: 'Cinema', tipo: 'fine', g: 0.3, make: realOr(function (R, sr, s, o) { var w = R.hit('swell', sr, s), d = Math.round(((o && o.dur) || 3) * sr), y = new Float32Array(d), off = Math.max(0, w.length - d); for (var i = 0; i < d; i++) y[i] = w[off + i] || 0; var syn = riser(sr, s, o); for (i = 0; i < d; i++) y[i] = y[i] * 0.8 + (syn[i] || 0) * 0.35; return y; }, riser) },
+    reverse: { nome: 'Piatto al contrario', gruppo: 'Cinema', tipo: 'fine', g: 0.3, make: realOr(function (R, sr, s, o) { var c = R.hit('crash', sr, s), d = Math.min(c.length, Math.round(((o && o.dur) || 2) * sr)), y = new Float32Array(d); for (var i = 0; i < d; i++) y[i] = c[d - 1 - i] * Math.pow(i / d, 1.5); return y; }, revCym) }
   };
   /* interventi sulla TUA voce registrata (servono le prove registrate; gli ad-lib usano la tua banca di ad-lib) */
   var VOX = {
@@ -6391,6 +6400,55 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     if (line && n < max) g.fillText(line, x, y + n * lh);
   }
   return { state: state, draw: draw };
+});
+
+/*
+ * Suoni VERI registrati (non sintetizzati): battiti di mani, hi-hat, rullanti, rimshot, shaker, tamburello, conga, bongo,
+ * cajón, campanaccio, claves, tom, grancassa, piatto, piatto che sale, mare (ocean drum).
+ * Fonte: VCSL e VSCO-2-CE di Versilian Studios, licenza CC0 (liberi anche per vendere). File: inst/realperc.json (~0,7 MB),
+ * scaricato una volta. Finché non è carico, l'app usa i suoni sintetici di prima (nessun errore).
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.RealPerc = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  var STEP = [7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 50, 55, 60, 66, 73, 80, 88, 97, 107, 118, 130, 143, 157, 173, 190, 209, 230, 253, 279, 307, 337, 371, 408, 449, 494, 544, 598, 658, 724, 796, 876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066, 2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358, 5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899, 15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767];
+  var IDX = [-1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8];
+  function b64(s) { if (typeof atob === 'function') { var bin = atob(s), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; } return new Uint8Array(Buffer.from(s, 'base64')); }
+  /* ADPCM IMA a 4 bit → float (stesso formato di tools/build-instruments.py) */
+  function ima(bytes, n) {
+    var out = new Float32Array(n), pred = 0, idx = 0;
+    for (var i = 0; i < n; i++) {
+      var code = (bytes[i >> 1] >> ((i & 1) * 4)) & 15, step = STEP[idx], diff = step >> 3;
+      if (code & 4) diff += step; if (code & 2) diff += step >> 1; if (code & 1) diff += step >> 2;
+      pred += (code & 8) ? -diff : diff; if (pred > 32767) pred = 32767; else if (pred < -32768) pred = -32768;
+      idx += IDX[code]; if (idx < 0) idx = 0; else if (idx > 88) idx = 88; out[i] = pred / 32768;
+    }
+    return out;
+  }
+  var S = { data: null, sr: 22050, loading: null, cache: {} };
+  function fromJSON(j) { var d = {}; Object.keys(j.hits || {}).forEach(function (k) { d[k] = j.hits[k].map(function (h) { return ima(b64(h.d), h.n); }); }); S.data = d; S.sr = j.sr || 22050; return d; }
+  function load(url) { if (S.data) return Promise.resolve(S.data); if (S.loading) return S.loading; S.loading = fetch(url || 'inst/realperc.json').then(function (r) { if (!r.ok) throw new Error('realperc ' + r.status); return r.json(); }).then(fromJSON).catch(function () { S.loading = null; return null; }); return S.loading; }
+  function ready() { return !!S.data; }
+  function has(id) { return !!(S.data && S.data[id] && S.data[id].length); }
+  /** Un colpo vero (variante i) alla frequenza di campionamento sr, con guadagno g e intonazione (semitoni) facoltativa. */
+  function hit(id, sr, i, g, semi) {
+    if (!has(id)) return null; var L = S.data[id], x = L[((i || 0) % L.length + L.length) % L.length], key = id + '|' + i + '|' + sr + '|' + (semi || 0);
+    if (!S.cache[key]) {
+      var ratio = S.sr / sr * Math.pow(2, (semi || 0) / 12), n = Math.floor(x.length / ratio), y = new Float32Array(n);
+      for (var k = 0; k < n; k++) { var p = k * ratio, j = Math.floor(p), f = p - j; y[k] = (x[j] || 0) * (1 - f) + (x[j + 1] || 0) * f; }
+      var keys = Object.keys(S.cache); if (keys.length > 120) delete S.cache[keys[0]]; S.cache[key] = y;
+    }
+    var c = S.cache[key]; if (g == null || g === 1) return c; var o = new Float32Array(c.length); for (var q = 0; q < c.length; q++) o[q] = c[q] * g; return o;
+  }
+  /** Suono lungo (mare, piatto che sale): ripetuto con dissolvenza fino a «sec» secondi. */
+  function bed(id, sr, sec, i) {
+    var x = hit(id, sr, i || 0); if (!x) return null; var n = Math.round(sec * sr), y = new Float32Array(n), fade = Math.min(Math.round(0.5 * sr), x.length >> 2), pos = 0;
+    while (pos < n) { for (var k = 0; k < x.length && pos + k < n; k++) { var w = 1; if (pos > 0 && k < fade) w = k / fade; if (k > x.length - fade) w = Math.min(w, (x.length - k) / fade); y[pos + k] += x[k] * w; } pos += x.length - fade; }
+    return y;
+  }
+  return { load: load, fromJSON: fromJSON, ready: ready, has: has, hit: hit, bed: bed, ima: ima };
 });
 
 /*
@@ -9198,15 +9256,19 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
   function membrane(sr, f0, bend, dec, noiseAmt, seed) { var n = Math.round(sr * dec * 4), y = new Float32Array(n), r = noise(seed), ph = 0, lp = 0; for (var i = 0; i < n; i++) { var t = i / sr; ph += 2 * Math.PI * f0 * (1 + bend * Math.exp(-t * 60)) / sr; lp += 0.3 * (r() - lp); y[i] = (Math.sin(ph) + noiseAmt * lp * Math.exp(-t * 80)) * Math.exp(-t / dec) * 0.8; } return y; }
   function shaker(sr) { var n = Math.round(sr * 0.09), y = new Float32Array(n), r = noise(13), hp = 0, pv = 0; for (var i = 0; i < n; i++) { var x = r(); hp = 0.85 * (hp + x - pv); pv = x; var t = i / n; y[i] = hp * Math.sin(Math.PI * t) * 0.5; } return y; }
   var PERC = {
-    conga: { nome: 'Conga', hit: function (sr, acc) { return membrane(sr, acc ? 330 : 220, 0.3, 0.12, 0.2, 21); }, steps: [3, 6, 10, 11, 14], acc: [6, 14] },
-    bongo: { nome: 'Bongo', hit: function (sr, acc) { return membrane(sr, acc ? 520 : 400, 0.25, 0.07, 0.3, 22); }, steps: [2, 5, 7, 10, 13, 15], acc: [7, 15] },
-    cajon: { nome: 'Cajón', hit: function (sr, acc) { return acc ? membrane(sr, 180, 0.2, 0.06, 1.2, 23) : membrane(sr, 75, 0.5, 0.1, 0.4, 24); }, steps: [0, 4, 7, 10, 12], acc: [4, 12] },
-    shaker: { nome: 'Shaker', hit: function (sr) { return shaker(sr); }, steps: [0, 2, 4, 6, 8, 10, 12, 14], acc: [2, 6, 10, 14] },
+    tamb: { nome: 'Tamburello (vero)', real: 'tamb', hit: function (sr) { return shaker(sr); }, steps: [4, 12], acc: [4, 12] },
+    cowbell: { nome: 'Campanaccio (vero)', real: 'cowbell', hit: function (sr, acc) { return membrane(sr, 800, 0.05, 0.1, 0.05, 26); }, steps: [0, 6, 10], acc: [0] },
+    claves: { nome: 'Claves (vere)', real: 'claves', hit: function (sr) { return membrane(sr, 2400, 0.02, 0.04, 0.02, 27); }, steps: [0, 3, 6, 10, 12], acc: [0, 10] },
+    conga: { real: 'conga', nome: 'Conga', hit: function (sr, acc) { return membrane(sr, acc ? 330 : 220, 0.3, 0.12, 0.2, 21); }, steps: [3, 6, 10, 11, 14], acc: [6, 14] },
+    bongo: { real: 'bongo', nome: 'Bongo', hit: function (sr, acc) { return membrane(sr, acc ? 520 : 400, 0.25, 0.07, 0.3, 22); }, steps: [2, 5, 7, 10, 13, 15], acc: [7, 15] },
+    cajon: { real: 'cajon', nome: 'Cajón', hit: function (sr, acc) { return acc ? membrane(sr, 180, 0.2, 0.06, 1.2, 23) : membrane(sr, 75, 0.5, 0.1, 0.4, 24); }, steps: [0, 4, 7, 10, 12], acc: [4, 12] },
+    shaker: { real: 'shaker', nome: 'Shaker', hit: function (sr) { return shaker(sr); }, steps: [0, 2, 4, 6, 8, 10, 12, 14], acc: [2, 6, 10, 14] },
     tabla: { nome: 'Tabla', hit: function (sr, acc) { return membrane(sr, acc ? 480 : 150, acc ? 0.05 : 0.8, acc ? 0.18 : 0.15, 0.1, 25); }, steps: [0, 3, 6, 8, 11, 14], acc: [3, 11] }
   };
   /** Colpi di percussione per la base: [{bar, step, buf, track:'hat'}] nelle sezioni indicate. */
   function percEvents(type, sections, sr, sectionsOn) {
-    var P = PERC[type]; if (!P) return []; var hitA = P.hit(sr, true), hitN = P.hit(sr, false), out = [];
+    var P = PERC[type]; if (!P) return []; var R = RP(), real = R && R.ready() && P.real && R.has(P.real);
+    var hitA = real ? R.hit(P.real, sr, 0, 0.9) : P.hit(sr, true), hitN = real ? R.hit(P.real, sr, 1, 0.65) : P.hit(sr, false), out = [];
     sections.forEach(function (s) { if (sectionsOn.indexOf(s.name) < 0) return; for (var b = 0; b < s.bars; b++) P.steps.forEach(function (st) { var a = P.acc.indexOf(st) >= 0; out.push({ bar: s.startBar + b, step: st, buf: a ? hitA : hitN, track: 'hat', gain: a ? 0.5 : 0.35 }); }); });
     return out;
   }
@@ -9287,7 +9349,9 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     { id: 'pro:glitch', nome: 'Pluck digitale', ruoli: ["arpeggio"], tipo: 'percussivo', range: [60, 96], fn: function (m, d, sr) { return fm({ ratio: 11, index: 3, idxDecay: 0.03, indexSus: 0, decay: 0.25, release: 0.1 }, m, d, sr); }, come: 'Colpi digitali strani: digicore e hyperpop.' }
   ];
   // ---------- KIT di batteria (sintetizzati, caratteri diversi) ----------
+  function RP() { return (typeof self !== 'undefined' && self.RealPerc) || (typeof global !== 'undefined' && global.RealPerc) || null; }
   var KITS = {
+    veri: { nome: 'Batteria vera (registrata)', real: true, kick: { f0: 150, f1: 44, sweep: 40, decay: 0.34, click: 0.3, drive: 1.5 }, snare: { tone: 190, toneAmt: 0.35, noise: 0.7, decay: 0.16, bp: 2200 }, clap: { spread: 0.012, decay: 0.2, bp: 1400 }, hat: { decay: 0.045, hp: 7000 } },
     trap: { nome: 'Trap pesante', kick: { f0: 160, f1: 46, sweep: 38, decay: 0.32, click: 0.35, drive: 1.6 }, snare: { tone: 200, toneAmt: 0.35, noise: 0.7, decay: 0.16, bp: 2200 }, clap: { spread: 0.012, decay: 0.2, bp: 1400 }, hat: { decay: 0.045, hp: 7000 } },
     drill: { nome: 'Drill', kick: { f0: 140, f1: 50, sweep: 55, decay: 0.22, click: 0.5, drive: 2 }, snare: { tone: 330, toneAmt: 0.5, noise: 0.55, decay: 0.11, bp: 3000 }, clap: { spread: 0.009, decay: 0.14, bp: 1800 }, hat: { decay: 0.035, hp: 8000 } },
     boombap: { nome: 'Boom bap polveroso', kick: { f0: 120, f1: 52, sweep: 30, decay: 0.28, click: 0.2, drive: 1.3, lp: 2500 }, snare: { tone: 180, toneAmt: 0.45, noise: 0.6, decay: 0.2, bp: 1600, lp: 5000 }, clap: { spread: 0.014, decay: 0.18, bp: 1200, lp: 4000 }, hat: { decay: 0.06, hp: 5000, lp: 9000 } },
@@ -9305,7 +9369,14 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     if (C.clap) { C.clap.bp = j(C.clap.bp, 0.25); C.clap.decay = j(C.clap.decay, 0.3); } C.hat.decay = j(C.hat.decay, 0.35); C.hat.hp = j(C.hat.hp, 0.15); return C;
   }
   function kitRender(kitId, part, o, sr, v) {
-    var K = kitVary(KITS[kitId] || KITS.trap, v), r = noise(31 + part.length + (v ? v % 97 : 0)), i, n, y;
+    var R = RP(), KK = KITS[kitId] || KITS.trap;
+    if (KK.real && R && R.ready() && part !== 'kick') { // colpi registrati veri (CC0); la cassa resta 808 sintetica
+      var sv = ((v >>> 0) || 0), semi = ((sv % 5) - 2) * 0.5;
+      if (part === 'snare') return R.hit(sv % 2 ? 'snare' : 'snare2', sr, sv, 0.9, semi);
+      if (part === 'clap') return R.hit('clap', sr, sv, 0.95, semi);
+      if (part === 'hat') return R.hit(o && o.open ? 'hato' : 'hatc', sr, sv, o && o.open ? 0.6 : 0.75, semi * 0.5);
+    }
+    var K = kitVary(KK, v), r = noise(31 + part.length + (v ? v % 97 : 0)), i, n, y;
     if (part === 'kick') { var k = K.kick, ph = 0; n = Math.round(((o && o.big) ? k.decay * 1.6 : k.decay) * sr * 1.6); y = new Float32Array(n);
       for (i = 0; i < n; i++) { var t = i / sr; ph += 2 * Math.PI * (k.f1 + (k.f0 - k.f1) * Math.exp(-t * k.sweep)) / sr; y[i] = Math.tanh(k.drive * (Math.sin(ph) * Math.exp(-t / k.decay) + k.click * r() * Math.exp(-t * 400))) / Math.tanh(k.drive) * Math.min(1, i / 20); }
       return lp1(y, sr, k.lp); }
@@ -13186,7 +13257,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     if (p.seed === LIB.settings.lastSeed) return; LIB.settings.lastSeed = p.seed; var H = LIB.settings.baseHist || (LIB.settings.baseHist = []);
     var kits = Object.keys(SynthDesign.KITS), R = Instruments.RECIPES[p.genre] || {}, sd = (p.seed >>> 0) || 1;
     var usedK = H.slice(-2).map(function (h) { return h.kit; });
-    if (!p.kitManual) { var opts = kits.filter(function (k) { return usedK.indexOf(k) < 0; }); if (R.kit && usedK.indexOf(R.kit) < 0 && sd % 3) p.kit = R.kit; else p.kit = (opts.length ? opts : kits)[sd % (opts.length || kits.length)]; }
+    if (!p.kitManual && (sd % 2) && usedK.indexOf('veri') < 0 && window.RealPerc && RealPerc.ready()) p.kit = 'veri'; else if (!p.kitManual) { var opts = kits.filter(function (k) { return usedK.indexOf(k) < 0; }); if (R.kit && usedK.indexOf(R.kit) < 0 && sd % 3) p.kit = R.kit; else p.kit = (opts.length ? opts : kits)[sd % (opts.length || kits.length)]; }
     var inst = p.inst = Object.assign({}, p.inst || {});
     ['melodia', 'accordi', 'pad', 'arpeggio'].forEach(function (role, k) {
       var used = H.slice(-5).map(function (h) { return h.inst && h.inst[role]; }), l = (R[role] || []).filter(function (id) { return !BANNED_INST[id]; });
@@ -13867,6 +13938,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     return false;
   }
   async function ensureInst() {
+    try { if (window.RealPerc && !RealPerc.ready()) await RealPerc.load('inst/realperc.json'); } catch (e) {} // colpi veri registrati (CC0)
     var inst = cur().prod.inst || {}, miss = [];
     for (var r in inst) if (inst[r] && !(await loadInst(inst[r]))) miss.push(instName(inst[r]));
     if (miss.length) $('#b-in-info').innerHTML = '<span class="err">Non riesco a scaricare: ' + esc(miss.join(', ')) + '. Uso i suoni sintetici (serve internet la prima volta).</span>';
@@ -15850,6 +15922,51 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
   $('#tb-go').addEventListener('click', function () { tbCreate(false); });
   $('#tb-new').addEventListener('click', function () { tbCreate(true); });
   $('#dw-lyrics').addEventListener('input', function () { clearTimeout(tbRender.t); tbRender.t = setTimeout(tbRender, 400); });
+
+  /* ---------- Agente Melodia: la tua voce canticchiata → note (Basic Pitch di Spotify, Apache 2.0, modello < 1 MB) ---------- */
+  var MELO = { bp: null, mod: null };
+  async function meloNotes(x, sr, msg) {
+    msg.textContent = 'Carico Basic Pitch (la prima volta circa 3 MB)…';
+    if (!MELO.mod) MELO.mod = await import('https://cdn.jsdelivr.net/npm/@spotify/basic-pitch@1.0.1/+esm');
+    if (!MELO.bp) MELO.bp = new MELO.mod.BasicPitch('https://cdn.jsdelivr.net/npm/@spotify/basic-pitch@1.0.1/model/model.json');
+    var y = x; if (sr !== 22050) { var r = sr / 22050, n = Math.floor(x.length / r); y = new Float32Array(n); for (var i = 0; i < n; i++) { var q = i * r, j = Math.floor(q), f = q - j; y[i] = (x[j] || 0) * (1 - f) + (x[j + 1] || 0) * f; } }
+    if (y.length > 22050 * 30) y = y.subarray(0, 22050 * 30);
+    var fr = [], on = [], co = []; msg.textContent = 'Ascolto le note…';
+    await MELO.bp.evaluateModel(y, function (a, b, c) { fr.push.apply(fr, a); on.push.apply(on, b); co.push.apply(co, c); }, function (pr) { msg.textContent = 'Ascolto le note… ' + Math.round(pr * 100) + '%'; });
+    var ev = MELO.mod.noteFramesToTime(MELO.mod.addPitchBendsToNoteEvents(co, MELO.mod.outputToNotesPoly(fr, on, 0.3, 0.3, 6))).sort(function (a, b) { return a.startTimeSeconds - b.startTimeSeconds; });
+    // la voce canta una nota alla volta: tengo la più forte nei sovrapposti e unisco i pezzi della stessa nota
+    var out = []; ev.forEach(function (n) { var l = out[out.length - 1]; if (l && Math.abs(n.pitchMidi - l.pitchMidi) === 0 && n.startTimeSeconds - (l.startTimeSeconds + l.durationSeconds) < 0.12) { l.durationSeconds = n.startTimeSeconds + n.durationSeconds - l.startTimeSeconds; return; } if (l && n.startTimeSeconds < l.startTimeSeconds + l.durationSeconds - 0.05) { if ((n.amplitude || 0) > (l.amplitude || 0)) out[out.length - 1] = n; return; } out.push(Object.assign({}, n)); });
+    return out;
+  }
+  function meloToRoll(ev, p) {
+    var beat = 60 / p.bpm, stepS = beat / 4, t0 = ev.length ? ev[0].startTimeSeconds : 0, first = 0, map = null; try { map = songMap(); } catch (e) {}
+    if (map && map.lines && map.lines.length) first = map.lines[0].startBar; else first = 1;
+    var ms = ev.map(function (n) { return n.pitchMidi; }).sort(function (a, b) { return a - b; }), med = ms.length ? ms[ms.length >> 1] : 64, shift = 0; while (med + shift < 62) shift += 12; while (med + shift > 76) shift -= 12;
+    var notes = ev.map(function (n) { var st = Math.round((n.startTimeSeconds - t0) / stepS), len = Math.max(1, Math.round(n.durationSeconds / stepS)); return { bar: first + Math.floor(st / 16), step: st % 16, len: Math.min(16, len), midi: n.pitchMidi + shift, vel: 0.9 }; }).filter(function (n) { return n.bar < (p.bars || 999); });
+    // la melodia si ripete su tutta la canzone, così il gancio torna
+    var span = notes.length ? notes[notes.length - 1].bar - first + 1 : 0, all = notes.slice(); if (span > 0 && p.bars) for (var b = first + span; b + span <= p.bars; b += span) notes.forEach(function (n) { all.push(Object.assign({}, n, { bar: n.bar + (b - first) })); });
+    return all;
+  }
+  async function meloApply(x, sr, btn) {
+    var m = $('#melo-msg'), p = cur().prod; btn.disabled = true;
+    try { var ev = await meloNotes(x, sr, m); if (!ev.length) { m.textContent = 'Non ho sentito note chiare: canta più vicino al microfono, una nota alla volta.'; return; }
+      var notes = meloToRoll(ev, p); p.notes = Object.assign({}, p.notes || {}, { lead: notes }); persist(); dwStop(); dwChanged(true);
+      m.textContent = 'Ho trovato ' + ev.length + ' note: ' + ev.slice(0, 12).map(function (n) { return NOTES[n.pitchMidi % 12]; }).join(' ') + (ev.length > 12 ? '…' : '') + '. Ora la base suona la TUA melodia. Premi ▶ in alto; per correggere una nota apri la traccia Melodia.';
+      setTimeout(function () { dwPlay(0); }, 400);
+    } catch (e) { m.textContent = 'Non ci sono riuscito: ' + ((e && e.message) || e); } finally { btn.disabled = false; }
+  }
+  $('#melo-take').addEventListener('click', function () { var t = voiceTake(); if (!t) { $('#melo-msg').textContent = 'Non hai ancora registrato: usa «Canticchia 10 secondi».'; return; } meloApply(t.mono, t.sr, this); });
+  $('#melo-off').addEventListener('click', function () { var p = cur().prod; if (p.notes) { delete p.notes.lead; if (!Object.keys(p.notes).length) p.notes = null; } persist(); dwStop(); dwChanged(true); $('#melo-msg').textContent = 'Torno alla melodia creata dall\'IA.'; });
+  $('#melo-rec').addEventListener('click', async function () {
+    var m = $('#melo-msg'), btn = this; if (!micOk() || !window.MediaRecorder) { m.textContent = 'Microfono non disponibile: apri il sito in Safari e consenti il microfono.'; return; }
+    try { var st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true } }), mr = new MediaRecorder(st), ch = [];
+      mr.ondataavailable = function (e) { if (e.data && e.data.size) ch.push(e.data); }; var done = new Promise(function (r) { mr.onstop = r; }); mr.start(); btn.disabled = true;
+      for (var k = 10; k > 0; k--) { m.textContent = '● Canticchia la melodia… ' + k; await new Promise(function (r) { setTimeout(r, 1000); }); }
+      mr.stop(); await done; st.getTracks().forEach(function (t) { t.stop(); }); btn.disabled = false;
+      var ab = await new Blob(ch, { type: mr.mimeType || 'audio/mp4' }).arrayBuffer(), dec = await new Promise(function (res, rej) { getCtx().decodeAudioData(ab, res, rej); });
+      await meloApply(dec.getChannelData(0), dec.sampleRate, btn);
+    } catch (e) { btn.disabled = false; m.textContent = 'Non riesco a registrare: ' + ((e && e.message) || e); }
+  });
   SHOW.daw = function () { applyMoodBg(moodNow()); dwWs(dwWsName()); try { tbRender(); } catch (e) {} projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
