@@ -2676,7 +2676,7 @@
   /* pannelli che si aprono e chiudono: aperti quelli principali del passo, il resto chiuso (la scelta del tuo tocco resta salvata) */
   // design pulito: in ogni passo aperta solo l'azione principale, il resto è una lista che si apre con un tocco
   var FOLD_OPEN = {"testo": ["dw-p-testo"], "base": ["dw-p-one", "dw-p-arr"], "voce": ["dw-kar", "dw-p-mic"], "mix": ["dw-p-mix"], "libreria": ["dw-p-teach", "dw-p-arch"]};
-  var FOLD_SUM = { 'dw-p-learn': 'Opzioni avanzate: modo di separazione, spazio online, cartelle e varianti', 'dw-p-arch': 'Salva la memoria su un tuo archivio privato', 'dw-p-teach': 'Carica canzoni o video: l\'app misura e impara', 'dw-p-arr': 'Le tracce della base: tocca un nome per suono, note e mixer', 'dw-p-prod': 'Effetti da film e voci di produzione scelti dal testo', 'dw-p-play': 'Cambia melodia, ascolta l\'Orecchio, salva', 'dw-p-brain': 'Stile, umore e atmosfere a mano', 'dw-p-dna': 'Stili a numeri e fusione di generi', 'dw-p-talk': 'Scrivi cosa cambiare e gli agenti lo fanno', 'dw-p-agents': 'Proposte automatiche degli agenti', 'dw-p-sing': 'Quando entrare, quanto tenere, dove respirare', 'dw-p-clips': 'Prove registrate e montaggio', 'dw-p-extra': 'Assistente testi e rime', 'dw-p-design': 'Crea suoni tuoi', 'dw-p-mixer': 'Canali del mixer', 'dw-p-qc': 'Controlli misurati sulla base e i tuoi giudizi', 'dw-p-omino': 'L\'omino canta il testo · base IA con ACE-Step', 'dw-p-melo': 'Canticchia e la base suona la tua melodia', 'dw-p-var': 'Tante basi diverse da ascoltare e scegliere', 'dw-p-mic': 'Effetti sulla tua voce' };
+  var FOLD_SUM = { 'dw-p-learn': 'Opzioni avanzate: modo di separazione, spazio online, cartelle e varianti', 'dw-p-arch': 'Salva la memoria su un tuo archivio privato', 'dw-p-teach': 'Carica canzoni o video: l\'app misura e impara', 'dw-p-arr': 'Le tracce della base: tocca un nome per suono, note e mixer', 'dw-p-prod': 'Effetti da film e voci di produzione scelti dal testo', 'dw-p-play': 'Cambia melodia, ascolta l\'Orecchio, salva', 'dw-p-brain': 'Stile, umore e atmosfere a mano', 'dw-p-dna': 'Stili a numeri e fusione di generi', 'dw-p-talk': 'Scrivi cosa cambiare e gli agenti lo fanno', 'dw-p-agents': 'Proposte automatiche degli agenti', 'dw-p-sing': 'Quando entrare, quanto tenere, dove respirare', 'dw-p-clips': 'Prove registrate e montaggio', 'dw-p-extra': 'Assistente testi e rime', 'dw-p-design': 'Crea suoni tuoi', 'dw-p-mixer': 'Canali del mixer', 'dw-p-qc': 'Controlli misurati sulla base e i tuoi giudizi', 'dw-p-omino': 'L\'omino canta il testo · base IA con ACE-Step', 'dw-p-melo': 'Canticchia e la base suona la tua melodia', 'dw-p-var': 'Tante basi diverse da ascoltare e scegliere', 'dw-p-mic': 'Effetti sulla tua voce', 'dw-p-suoni': 'Tocca un nome e senti: strumenti, batteria vera, effetti' };
   function foldApply(ws) {
     if (LIB.settings.foldV !== 2) { LIB.settings.fold = {}; LIB.settings.foldV = 2; persist(); } // nuovo design: riparto dall'ordine pulito
     var st = LIB.settings.fold || (LIB.settings.fold = {}), open = FOLD_OPEN[ws] || [];
@@ -3235,6 +3235,58 @@
       await meloApply(dec.getChannelData(0), dec.sampleRate, btn);
     } catch (e) { btn.disabled = false; m.textContent = 'Non riesco a registrare: ' + ((e && e.message) || e); }
   });
+  /* ---------- Ascolta i suoni: ogni suono dell'app, da toccare e sentire ---------- */
+  var SND = { g: 'inst' };
+  var SND_REAL = { clap: 'Battito di mani', snare: 'Rullante', snare2: 'Rullante 2', rim: 'Bordo del rullante', hatc: 'Hi-hat chiuso', hato: 'Hi-hat aperto', shaker: 'Shaker', tamb: 'Tamburello', conga: 'Conga', bongo: 'Bongo', cajon: 'Cajón', cowbell: 'Campanaccio', claves: 'Claves', tom: 'Tom', bdrum: 'Grancassa da orchestra', crash: 'Piatto', swell: 'Piatto che sale', ocean: 'Mare (ocean drum)' };
+  function sndRender() {
+    var L = $('#snd-list'); if (!L) return; var h = '';
+    if (SND.g === 'inst') {
+      var fam = {}; Instruments.CATALOG.forEach(function (c) { (fam[c.fam] = fam[c.fam] || []).push(c); });
+      Object.keys(fam).forEach(function (f) { h += '<h4>' + esc(Instruments.FAMILIES[f] || f) + '</h4><div class="snd-chips">' + fam[f].map(function (c) { return '<button class="chip" data-snd-i="' + c.id + '">' + esc(c.nome) + (c.fonte === 'campione' ? ' <i>vero</i>' : '') + '</button>'; }).join('') + '</div>'; });
+    } else if (SND.g === 'drum') {
+      h += '<h4>Colpi registrati veri</h4><div class="snd-chips">' + Object.keys(SND_REAL).map(function (k) { return '<button class="chip" data-snd-r="' + k + '">' + SND_REAL[k] + ' <i>vero</i></button>'; }).join('') + '</div>';
+      h += '<h4>Kit di batteria (un giro di 2 battute)</h4><div class="snd-chips">' + Object.keys(SynthDesign.KITS).map(function (k) { return '<button class="chip" data-snd-k="' + k + '">' + esc(SynthDesign.KITS[k].nome || k) + (SynthDesign.KITS[k].real ? ' <i>vero</i>' : '') + '</button>'; }).join('') + '</div>';
+    } else {
+      var g = {}; Object.keys(ProdFx.SOUNDS).forEach(function (k) { var S = ProdFx.SOUNDS[k]; (g[S.gruppo] = g[S.gruppo] || []).push('<button class="chip" data-snd-f="' + k + '">' + esc(S.nome) + '</button>'); });
+      Object.keys(g).forEach(function (k) { h += '<h4>' + esc(k) + '</h4><div class="snd-chips">' + g[k].join('') + '</div>'; });
+    }
+    L.innerHTML = h; $$('#snd-tabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-g') === SND.g); });
+  }
+  function sndMix(parts, n) { var y = new Float32Array(n); parts.forEach(function (p) { if (!p.x) return; for (var i = 0; i < p.x.length && p.at + i < n; i++) y[p.at + i] += p.x[i] * (p.g || 1); }); var pk = 0; for (var i = 0; i < n; i++) pk = Math.max(pk, Math.abs(y[i])); if (pk > 0.95) for (i = 0; i < n; i++) y[i] *= 0.95 / pk; return y; }
+  async function sndPlay(b) {
+    var m = $('#snd-msg'), sr = 32000, x = null, name = b.textContent.replace(/\s*vero$/, ''); unlockAudio(); dwStop(true); stopPlay();
+    m.textContent = 'Preparo: ' + name + '…';
+    try {
+      try { if (window.RealPerc && !RealPerc.ready()) await RealPerc.load('inst/realperc.json'); } catch (e) {}
+      var a;
+      if ((a = b.getAttribute('data-snd-i'))) { // frase breve: arpeggio di Do maggiore e accordo finale, nel registro dello strumento
+        if (!(await loadInst(a))) throw new Error('strumento non scaricato (serve internet la prima volta)');
+        var c = Instruments.info ? Instruments.info(a) : null, lo = (c && c.range) ? c.range[0] : 48, hi = (c && c.range) ? c.range[1] : 84, root = 60; while (root < lo + 5) root += 12; while (root + 12 > hi && root - 12 >= lo) root -= 12;
+        var beat = 0.42, seq = [0, 4, 7, 12, 7, 4], parts = seq.map(function (d, i) { return { at: Math.round(i * beat * sr), x: Instruments.render(a, root + d, beat * 1.4, sr, { vel: 0.8 }) }; });
+        [0, 4, 7].forEach(function (d) { parts.push({ at: Math.round(seq.length * beat * sr), x: Instruments.render(a, root + d, 2, sr, { vel: 0.7, hold: true }), g: 0.6 }); });
+        x = sndMix(parts, Math.round((seq.length * beat + 2.4) * sr));
+      } else if ((a = b.getAttribute('data-snd-r'))) {
+        if (!RealPerc.ready()) throw new Error('suoni veri non scaricati (serve internet la prima volta)');
+        x = (a === 'ocean' || a === 'swell') ? RealPerc.bed(a, sr, a === 'ocean' ? 6 : 4, 0) : sndMix([0, 1, 2].map(function (i) { return { at: Math.round(i * 0.55 * sr), x: RealPerc.hit(a, sr, i, 0.9) }; }), Math.round(2.6 * sr));
+      } else if ((a = b.getAttribute('data-snd-k'))) { // giro: cassa, hi-hat, rullante/battito come in una base
+        var st = 60 / 96 / 4, P = [];
+        for (var s = 0; s < 32; s++) {
+          var at = Math.round(s * st * sr);
+          if (s % 2 === 0) P.push({ at: at, x: SynthDesign.kitRender(a, 'hat', { open: s % 16 === 14 }, sr, s), g: 0.45 });
+          if ([0, 6, 10, 16, 22, 27].indexOf(s) >= 0) P.push({ at: at, x: SynthDesign.kitRender(a, 'kick', {}, sr, s), g: 0.95 });
+          if (s % 8 === 4) P.push({ at: at, x: SynthDesign.kitRender(a, s % 16 === 12 ? 'clap' : 'snare', {}, sr, s), g: 0.8 });
+        }
+        x = sndMix(P, Math.round((32 * st + 0.8) * sr));
+      } else if ((a = b.getAttribute('data-snd-f'))) {
+        x = ProdFx.sound(a, sr, 1 + Math.floor(Math.random() * 999), { bpm: 96, dur: 5, midi: 48 });
+      }
+      if (!x || !x.length) throw new Error('suono vuoto');
+      playBuf(x, sr); m.textContent = '▶ Ascolti: ' + name;
+    } catch (e) { m.textContent = 'Non riesco a suonare «' + name + '»: ' + ((e && e.message) || e); }
+  }
+  $('#snd-tabs').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; SND.g = b.getAttribute('data-g'); sndRender(); });
+  $('#snd-list').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) sndPlay(b); });
+  sndRender();
   SHOW.daw = function () { applyMoodBg(moodNow()); dwWs(dwWsName()); try { tbRender(); } catch (e) {} projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */

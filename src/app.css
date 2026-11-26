@@ -498,3 +498,13 @@ body[data-ws="base"] #dw-p-arr { order: 2; } body[data-ws="base"] #dw-p-var { or
 #v-daw > #dw-next { order: 84; }
 
 .one-status .one-id{display:block;font-size:17px;margin-top:10px;color:var(--ink)}
+
+/* Ascolta i suoni */
+.snd-tabs{display:flex;gap:6px;margin:8px 0 4px}
+.snd-tabs button{flex:1;font:600 14px/1 inherit;font-family:inherit;padding:11px 6px;border-radius:12px;border:1px solid var(--line);background:var(--card-solid);color:var(--ink);cursor:pointer}
+.snd-tabs button.on{background:var(--grad);color:var(--on-accent);border-color:transparent}
+.snd-list h4{margin:14px 0 6px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.snd-chips{display:flex;flex-wrap:wrap;gap:6px}
+.snd-chips .chip i{font-style:normal;font-size:10px;padding:1px 5px;border-radius:6px;background:var(--ok-bg);color:var(--ok);margin-left:3px}
+body[data-ws="base"] #dw-p-suoni { order: 4; }
+body[data-ws="libreria"] #dw-p-suoni { order: 3; }
