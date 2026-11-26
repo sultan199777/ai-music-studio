@@ -17,3 +17,13 @@ test('controllo audio: distorsione e silenzio vengono visti', () => {
   assert.ok(Q.check(a, { mix: new Float32Array(8000) }).weak.some(c => c.id === 'audio'));
   const loud = new Float32Array(8000).fill(1); assert.ok(Q.check(a, { mix: loud }).weak.some(c => c.id === 'audio'));
 });
+test('arrangiamento: l\'intro cambia col piano scelto (piano solo = niente hi-hat né cassa) e la melodia lunga sta sull\'accordo', () => {
+  const plan = [['intro', 4], ['strofa', 8], ['ritornello', 8]];
+  const a = A.generate({ sampleRate: 8000, bars: 20, sounds: 'sint', plan, bpm: 140, tonic: 9, mode: 'minore', genre: 'trap', seed: 3 });
+  const b = A.generate({ sampleRate: 8000, bars: 20, sounds: 'sint', plan, bpm: 140, tonic: 9, mode: 'minore', genre: 'trap', seed: 3, secMix: { intro: { kick: 0, snare: 0, hat: 0, bass: 0, chords: 1, pad: 0, lead: 0, arp: 0 } } });
+  const introHats = x => x.events.hat.filter(h => h.bar < 4).length;
+  assert.ok(introHats(a) > 0); assert.strictEqual(introHats(b), 0);
+  const chordAt = bar => (a.events.chords.find(c => c.bar === bar) || {}).midis || [];
+  const off = a.events.lead.filter(e => (e.len || 2) >= 4 && chordAt(e.bar).length && chordAt(e.bar).map(m => m % 12).indexOf(((e.midi % 12) + 12) % 12) < 0);
+  assert.strictEqual(off.length, 0);
+});

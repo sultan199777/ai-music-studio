@@ -485,6 +485,22 @@
   /* iPhone: base a 24 kHz (25% di memoria in meno, misurata); computer: 32 kHz */
   var BASE_SR = (function () { try { return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ? 24000 : 32000; } catch (e) { return 32000; } })();
   /* ogni base nuova (seme nuovo) evita kit e strumenti delle ULTIME 3 basi: niente più «sempre la stessa base» */
+  var ARR_PLANS = [
+    { id: 'piano', nome: 'intro pianoforte solo, strofa che respira, ritornello pieno', inst: { accordi: 'piano' }, mix: { intro: { kick: 0, snare: 0, hat: 0, bass: 0, chords: 1, pad: 0, lead: 0, arp: 0 }, strofa: { arp: 0, pad: 0.3, hat: 0.5 }, bridge: { kick: 0, snare: 0, hat: 0, chords: 1, pad: 0.4, lead: 0, arp: 0 } } },
+    { id: 'arpa', nome: 'intro con arpeggio da solo, poi entrano batteria e 808', inst: { arpeggio: 'harp' }, mix: { intro: { kick: 0, snare: 0, hat: 0, bass: 0, chords: 0, pad: 0.3, lead: 0, arp: 1 }, strofa: { chords: 0.3, arp: 0.8 } } },
+    { id: 'archi', nome: 'apertura da film con archi, strofa scura, ritornello epico', inst: { pad: 'violins' }, mix: { intro: { kick: 0, snare: 0, hat: 0, bass: 0.4, chords: 0.3, pad: 1, lead: 0, arp: 0 }, strofa: { pad: 0.6, arp: 0.3 }, ritornello: { pad: 1.2 } } },
+    { id: 'beat', nome: 'parte subito il beat (batteria e 808), melodia solo nel ritornello', mix: { intro: { kick: 1, snare: 1, hat: 0.8, bass: 1, chords: 0, pad: 0, lead: 0, arp: 0 }, strofa: { chords: 0.3, arp: 0.3, pad: 0.2 } } },
+    { id: 'melodia', nome: 'intro con la melodia da sola, strofa minimale per la voce', mix: { intro: { kick: 0, snare: 0, hat: 0, bass: 0, chords: 0.3, pad: 0, lead: 1, arp: 0 }, strofa: { chords: 0.3, pad: 0.2, arp: 0, hat: 0.5 } } },
+    { id: 'pad', nome: 'atmosfera che sale (pad), strofa con arpeggio, ritornello con tutto', mix: { intro: { kick: 0, snare: 0, hat: 0, bass: 0, chords: 0, pad: 1, lead: 0.3, arp: 0 }, strofa: { arp: 0.9, chords: 0.3 } } },
+    { id: 'minimal', nome: 'strofa minimale (cassa, 808, hi-hat) per dare spazio alla voce', mix: { intro: { kick: 0, snare: 0, hat: 0.5, bass: 0, chords: 0.8, pad: 0.4, lead: 0, arp: 0 }, strofa: { chords: 0, pad: 0, arp: 0, lead: 0, hat: 0.8 } } }
+  ];
+  function arrPlanPick(p) {
+    var H = LIB.settings.planHist || (LIB.settings.planHist = []), opts = ARR_PLANS.filter(function (x) { return H.slice(-3).indexOf(x.id) < 0; }), pl = opts[((p.seed >>> 0) || 1) % opts.length];
+    H.push(pl.id); if (H.length > 6) H.shift(); p.arrPlan = pl.id; p.secMix = pl.mix; var R = Instruments.RECIPES[p.genre] || {};
+    if (pl.inst) Object.keys(pl.inst).forEach(function (role) { var id = pl.inst[role]; if (role === 'accordi' && id === 'piano') id = ['piano', 'kawai', 'upright'][(p.seed >>> 2) % 3]; p.inst = Object.assign({}, p.inst || {}); p.inst[role] = id; });
+    return pl;
+  }
+  function arrPlanName(p) { var pl = ARR_PLANS.filter(function (x) { return x.id === p.arrPlan; })[0]; return pl ? pl.nome : ''; }
   function varietyGuard(p) {
     if (p.seed === LIB.settings.lastSeed) return; LIB.settings.lastSeed = p.seed; var H = LIB.settings.baseHist || (LIB.settings.baseHist = []);
     var kits = Object.keys(SynthDesign.KITS), R = Instruments.RECIPES[p.genre] || {}, sd = (p.seed >>> 0) || 1;
@@ -496,7 +512,7 @@
       if (used.indexOf(inst[role]) < 0 || l.length < 2) return; var fresh = l.filter(function (id) { return used.indexOf(id) < 0; });
       inst[role] = (fresh.length ? fresh : l)[(sd >> (k * 3)) % (fresh.length || l.length)];
     });
-    H.push({ kit: p.kit, inst: Object.assign({}, inst) }); if (H.length > 6) H.shift(); try { prodApply(p); } catch (e) {}
+    H.push({ kit: p.kit, inst: Object.assign({}, inst) }); if (H.length > 6) H.shift(); try { if (!p.planManual) arrPlanPick(p); prodApply(p); } catch (e) {}
   }
   /* ---------- Controllo qualità e apprendimento dalle tue scelte (QualityCheck + profilo di produzione) ---------- */
   var QC = { report: null, retry: 0 };
@@ -541,8 +557,8 @@
     if ((n.simple || 0) > (n.nope || 0)) p.tune = Object.assign({}, p.tune || {}, { hat: Math.min(1.5, 1 + 0.1 * n.simple), lift: Math.min(1.6, 1 + 0.1 * n.simple) });
   }
   function getBase() {
-    var p = cur().prod; try { varietyGuard(p); } catch (e) {} var map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, p.leadRest, pfSig(p).join(), p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.kit, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: BASE_SR, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, leadRest: typeof p.leadRest === 'number' ? p.leadRest : undefined, sig: pfSig(p), bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, drumRender: p.kit && SynthDesign.KITS[p.kit] ? function (part, o, s2) { return SynthDesign.kitRender(p.kit, part, o, s2, p.seed); } : undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; try { qcAfter(p); } catch (e) {} }
+    var p = cur().prod; try { varietyGuard(p); } catch (e) {} var map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, p.leadRest, pfSig(p).join(), p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.kit, p.notes, p.b808, p.fxList, p.secMix, map && map.plan, Instruments.loaded().length]);
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: BASE_SR, secMix: p.secMix || undefined, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, leadRest: typeof p.leadRest === 'number' ? p.leadRest : undefined, sig: pfSig(p), bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, drumRender: p.kit && SynthDesign.KITS[p.kit] ? function (part, o, s2) { return SynthDesign.kitRender(p.kit, part, o, s2, p.seed); } : undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; try { qcAfter(p); } catch (e) {} }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -3072,14 +3088,14 @@
   /* ---------- Pagina Testo: «Crea la base da questo testo» e «Cambia base» (ogni pressione = base nuova dal testo) ---------- */
   function tbRender() {
     var s = cur(), made = !!(s.prod && (s.prod.atmNome || s.brainFor)) && !!(s.lyrics || '').trim(), p = s.prod;
-    $('#tb-go').textContent = made ? '▶ Ascolta la base' : '🎵 Crea la base da questo testo'; $('#tb-new').hidden = !made;
-    $('#tb-now').textContent = made ? 'Base attuale: ' + (p.atmNome || (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre)) + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode + '. Ogni «Cambia base» ne crea una nuova, diversa, sempre dal tuo testo.' : '';
+    $('#tb-go').textContent = '🎵 Crea la base dal testo'; $('#tb-new').hidden = false; $('#tb-new').disabled = !made;
+    $('#tb-now').innerHTML = made ? '<b>Stai ascoltando: ' + esc(Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + '</b>' + (p.atmNome ? ' (' + esc(p.atmNome) + ')' : '') + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode + (arrPlanName(p) ? '<br>Arrangiamento: ' + esc(arrPlanName(p)) : '') + '<br><span class="muted">«Cambia base» ne crea un\'altra diversa dall\'inizio alla fine: genere, tonalità, strumenti, intro, ritmo.</span>' : '<span class="muted">Prima «Crea la base dal testo», poi «Cambia base» quante volte vuoi.</span>';
   }
   async function tbCreate(fresh) {
     var s = cur(), m = $('#tb-now'); if (!(s.lyrics || '').trim()) { m.textContent = 'Scrivi o incolla prima il testo qui sopra.'; return; }
     $('#tb-go').disabled = $('#tb-new').disabled = true; m.textContent = 'Sto componendo una base nuova dal tuo testo…';
     try {
-      if (!fresh && s.brainFor) { await dwPlay(0); }
+      if (false) { }
       else { var again = !!s.brainFor && s.brainFor === SultanBrain.hash(s.lyrics.trim()); await Promise.resolve(runBrain(again)); try { refApply(); } catch (e) {} }
     } catch (e) { m.textContent = 'Non sono riuscito: ' + ((e && e.message) || e); }
     $('#tb-go').disabled = $('#tb-new').disabled = false; setTimeout(tbRender, 300);

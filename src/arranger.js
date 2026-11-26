@@ -553,7 +553,7 @@
 
     // ---------- costruzione battuta per battuta ----------
     sections.forEach(function (sec) {
-      var cfg = Object.assign({}, SEC[sec.name]), prog = pick[sec.name];
+      var cfg = Object.assign({}, SEC[sec.name], (p.secMix && p.secMix[sec.name]) || {}), prog = pick[sec.name];
       if (sec.name === 'strofa') { cfg.chords /= tLift; cfg.pad /= tLift; cfg.bass = Math.min(1.3, cfg.bass * tBass); }
       else if (sec.name === 'ritornello') { cfg.chords = Math.min(1.4, cfg.chords * tLift); cfg.pad = Math.min(1.4, cfg.pad * tLift); cfg.lead = Math.min(1.3, cfg.lead * tLift); cfg.bass = Math.min(1.3, cfg.bass * tBass); }
       cfg.hat = Math.min(1, cfg.hat * tHat);
@@ -670,8 +670,10 @@
         // melodia
         if (cfg.lead && !NL) {
           var src = sec.name === 'bridge' ? bridgeLine : hook;
+          var ctn = ch.map(function (q) { return ((q % 12) + 12) % 12; });
           src[k % 4].forEach(function (n) {
             var d3 = n.len * stepSec * 0.95, m3 = n.midi;
+            if (p.consonant !== false && ctn.length && (n.len >= 4 || n.step % 8 === 0) && ctn.indexOf(((m3 % 12) + 12) % 12) < 0) { var okP = function (m) { var pc = (((m - tonic) % 12) + 12) % 12; return ctn.indexOf(((m % 12) + 12) % 12) >= 0 && (PENT.indexOf(pc) >= 0 || pc === 1); }; for (var dd = 1; dd <= 3; dd++) { if (okP(m3 - dd)) { m3 -= dd; break; } if (okP(m3 + dd)) { m3 += dd; break; } } }
             if (LI) add('lead', at(bar, n.step), Inst.render(LI, fit(m3, LI), d3, sr, { vel: n.step % 4 === 0 ? 1 : 0.85 }), 0.3 * cfg.lead);
             else add('lead', at(bar, n.step), leadBuf(leadKind, m3, d3), (leadKind === 'strings' ? 0.32 : 0.36) * cfg.lead);
             events.lead.push({ start: at(bar, n.step) / sr, midi: m3, dur: d3, bar: bar, step: n.step, len: n.len });
