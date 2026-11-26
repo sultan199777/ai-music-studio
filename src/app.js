@@ -478,9 +478,13 @@
   });
   // Mappa della canzone: se c'è un testo, la struttura della base viene dal testo (righe sulle battute giuste).
   function songMap() {
-    var s = cur(), p = s.prod;
-    if (p.useLyrics === false || !lyricLines(s.lyrics).length) return null;
-    return SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {} });
+    var s = cur(), p = s.prod, m = null;
+    if (!(p.useLyrics === false || !lyricLines(s.lyrics).length)) m = SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {} });
+    if (p.form && p.form.length) { // montaggio delle parti (duplica, togli, sposta…): il testo segue la sua parte
+      if (!m) { var b0 = p.bars || 8; m = { plan: Arranger.planStructure(b0), lines: [], totalBars: b0, barSec: 240 / p.bpm, firstLine: null }; }
+      m = SongForm.apply(m, p.form);
+    }
+    return m;
   }
   /* iPhone: base a 24 kHz (25% di memoria in meno, misurata); computer: 32 kHz */
   var BASE_SR = (function () { try { return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ? 24000 : 32000; } catch (e) { return 32000; } })();
@@ -1892,6 +1896,15 @@
       if (/nuova variante/i.test(cmd)) { st.prod.seed = (st.prod.seed || 1) + 1; said.push('nuova variante'); extra.variant = true; return; }
       if (/crea la base dal testo|base dal testo/i.test(cmd)) { extra.fromText = true; said.push('base dal testo'); return; }
       if (/\b(esporta|scarica|salva) (la )?(base|canzone|traccia|mp3|wav)\b/i.test(cmd)) { extra.export = true; said.push('esporto la base (file audio)'); return; }
+      // montaggio delle parti della canzone
+      var fop = SongForm.parse(cmd, st.ctx.plan);
+      if (fop) { said.push(SongForm.describe(fop, st.ctx.plan)); if (fop.op !== 'none') { st.prod.form = (st.prod.form || []).concat([fop]); st.ctx.plan = SongForm.apply({ plan: st.ctx.plan, lines: [], barSec: 1 }, [fop]).plan; extra.form = true; } return; }
+      // intenzioni creative: ricette da produttore con il perché
+      var ci = CreativeIntents.match(cmd);
+      if (ci) { var r0 = CreativeIntents.apply(ci, st.prod, { plan: st.ctx.plan, sections: st.ctx.sections, styleBpm: (Arranger.STYLES[st.prod.genre] || {}).bpm, refused: decRefused() }); st.intentKeys = (st.intentKeys || []).concat(r0.fatti.map(function (f) { return f.k; }));
+        if (r0.fatti.length) said.push(r0.nome + ' → ' + r0.fatti.map(function (f) { return f.txt + ' (' + f.why + ')'; }).join('; ') + (r0.saltati.length ? '. Salto ' + r0.saltati.length + ' scelta/e che hai annullato più volte' : ''));
+        else said.push('(' + r0.nome.toLowerCase() + ': è già tutto così' + (r0.saltati.length ? ', e salto le scelte che hai annullato più volte' : '') + ')');
+        return; }
       st.skipPA = false; var r = StudioAgent.interpret(cmd, st), pa = st.skipPA ? { understood: false } : ProducerActions.interpret(cmd, st.prod);
       if (pa.understood) { ['bpm', 'mode', 'bassStyle', 'reverb', 'levels', 'sec', 'tonic', 'genre', 'tune'].forEach(function (k) { if (pa.state[k] !== undefined) st.prod[k] = pa.state[k]; }); said = said.concat(pa.notes); }
       said = said.concat(r.changes);
@@ -1901,15 +1914,43 @@
   }
   function talkState() {
     var s = cur(), b = SESSION.base;
-    return { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())), ctx: { progs: (StylePresets.PROGS[s.prod.mode] || StylePresets.PROGS.minore || []), inst: Instruments.CATALOG.map(function (c) { return { id: c.id, nome: c.nome }; }), sections: b && b.sections ? b.sections.map(function (x) { return { name: x.name, startBar: x.startBar }; }) : [], leadNotes: b && b.events ? b.events.lead.filter(function (n) { return n.bar != null; }).map(function (n) { return { bar: n.bar, step: n.step, len: Math.max(1, Math.round(n.len || 2)), midi: Math.round(n.midi) }; }) : [] } };
+    var pm0 = null; try { pm0 = songMap(); } catch (e) {}
+    return { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())), ctx: { plan: pm0 ? pm0.plan : Arranger.planStructure(s.prod.bars || 8), progs: (StylePresets.PROGS[s.prod.mode] || StylePresets.PROGS.minore || []), inst: Instruments.CATALOG.map(function (c) { return { id: c.id, nome: c.nome }; }), sections: b && b.sections ? b.sections.map(function (x) { return { name: x.name, startBar: x.startBar }; }) : [], leadNotes: b && b.events ? b.events.lead.filter(function (n) { return n.bar != null; }).map(function (n) { return { bar: n.bar, step: n.step, len: Math.max(1, Math.round(n.len || 2)), midi: Math.round(n.midi) }; }) : [] } };
   }
-  async function talkUndo() {
-    for (var i = TALK.length - 1; i >= 0; i--) { var h = TALK[i]; if (h.before && (h.state === 'attesa' || h.state === 'accettato')) { cur().prod = h.before.prod; LIB.settings.mic = h.before.mic; persist(); h.state = 'annullato'; talkRender(); await talkApply(h.mic); return 'Annullato: «' + h.text + '». La base è tornata com\'era prima.'; } }
-    return 'Non c\'è niente da annullare.';
+  /* ---------- Cronologia della canzone: annulla, ripristina, ascolta prima/dopo (A/B) ---------- */
+  function histOf() { var s = cur(); return s.hist || (s.hist = { u: [], r: [] }); }
+  function histSnap() { return { p: JSON.stringify(cur().prod), m: JSON.stringify(micSet()) }; }
+  function histPush(label, snap) { var h = histOf(); snap = snap || histSnap(); snap.l = label; h.u.push(snap); if (h.u.length > 15) h.u.shift(); h.r = []; persist(); histUi(); }
+  async function histGo(dir, play) {
+    var h = histOf(), from = dir < 0 ? h.u : h.r, to = dir < 0 ? h.r : h.u; if (!from.length) return null;
+    var cs = histSnap(), sn = from.pop(); cs.l = sn.l; to.push(cs);
+    cur().prod = JSON.parse(sn.p); LIB.settings.mic = JSON.parse(sn.m); persist(); decMark(sn.l, dir > 0); histUi();
+    await talkApply(sn.m !== cs.m); if (play) { try { dwPlay(0); } catch (e) {} } return sn.l;
   }
+  function histUi() {
+    var h = histOf(), w = $('#hist-what'); if (!w) return;
+    $('#hist-undo').disabled = $('#hist-a').disabled = !h.u.length; $('#hist-redo').disabled = $('#hist-b').disabled = !h.r.length;
+    w.textContent = h.u.length ? 'Ultima modifica: «' + h.u[h.u.length - 1].l + '»' + (h.r.length ? ' · da rifare: «' + h.r[h.r.length - 1].l + '»' : '') : (h.r.length ? 'Da rifare: «' + h.r[h.r.length - 1].l + '»' : 'Le modifiche si potranno annullare e confrontare qui');
+  }
+  async function histBtn(dir, play, msg) { var l = await histGo(dir, play); var w = $('#hist-what'); if (w && l) w.textContent = msg.replace('%', l); else if (w) w.textContent = 'Niente da ' + (dir < 0 ? 'annullare' : 'rifare') + '.'; }
+  $('#hist-undo').addEventListener('click', function () { histBtn(-1, false, 'Annullato: «%». Premi ↷ per rifarlo.'); });
+  $('#hist-redo').addEventListener('click', function () { histBtn(1, false, 'Rifatto: «%».'); });
+  $('#hist-a').addEventListener('click', function () { histBtn(-1, true, '▶ A: ascolti com\'era PRIMA di «%». Premi B per sentire dopo.'); });
+  $('#hist-b').addEventListener('click', function () { histBtn(1, true, '▶ B: ascolti DOPO «%». Premi A per sentire prima.'); });
+  /* memoria delle decisioni: cosa hai tenuto e cosa hai annullato (usata dalle intenzioni creative) */
+  function decs() { return LIB.settings.decisions || (LIB.settings.decisions = []); }
+  function decAdd(text, said, keys) { decs().push({ t: Date.now(), text: String(text).slice(0, 80), said: (said || []).slice(0, 3).map(function (x) { return String(x).slice(0, 120); }), keys: keys || [], kept: true }); if (decs().length > 200) decs().shift(); persist(); }
+  function decMark(label, kept) { var D = decs(); for (var i = D.length - 1; i >= 0; i--) if (D[i].text === String(label).slice(0, 80)) { D[i].kept = kept; break; } persist(); }
+  function decRefused() { var r = {}; decs().forEach(function (d) { if (!d.kept) (d.keys || []).forEach(function (k) { r[k] = (r[k] || 0) + 1; }); }); return r; }
+  function decSummary() { var D = decs(); if (!D.length) return ''; var kept = D.filter(function (d) { return d.kept; }), no = D.filter(function (d) { return !d.kept; }); return (kept.length ? '• Tenute (' + kept.length + '): ' + kept.slice(-6).map(function (d) { return '«' + d.text + '»'; }).join(', ') : '') + (no.length ? '\n• Annullate (' + no.length + '): ' + no.slice(-6).map(function (d) { return '«' + d.text + '»'; }).join(', ') : ''); }
+  async function talkUndo() { var l = await histGo(-1); return l ? 'Annullato: «' + l + '». La base è tornata com\'era prima. Scrivi «ripristina» per rifarlo.' : 'Non c\'è niente da annullare.'; }
   async function talkGo(text) {
     text = (text || '').trim(); if (!text) return;
-    if (/^(annulla|torna indietro|undo|rimetti com era|rimetti come prima)\b/i.test(text.replace(/[’']/g, ' '))) { var u = await talkUndo(); TALK.push({ text: text, reply: u, state: 'nulla' }); talkRender(); return; }
+    var tq = text.toLowerCase().replace(/[’']/g, ' ');
+    if (/^(annulla|torna indietro|undo|rimetti com era|rimetti come prima)\b/.test(tq)) { var u = await talkUndo(); TALK.push({ text: text, reply: u, state: 'nulla' }); talkRender(); return; }
+    if (/^(ripristina|rifai|redo|rimetti la modifica)\b/.test(tq)) { var rl = await histGo(1); TALK.push({ text: text, reply: rl ? 'Rifatto: «' + rl + '».' : 'Non c\'è niente da rifare.', state: 'nulla' }); talkRender(); return; }
+    if (/^(ascolta|fammi sentire|senti) (la versione )?(prima|di prima|a)\b/.test(tq)) { var al = await histGo(-1, true); TALK.push({ text: text, reply: al ? '▶ Ascolti com\'era PRIMA di «' + al + '». Scrivi «ascolta dopo» per confrontare.' : 'Non c\'è una versione precedente.', state: 'nulla' }); talkRender(); return; }
+    if (/^(ascolta|fammi sentire|senti) (la versione )?(dopo|nuova|b)\b/.test(tq)) { var bl = await histGo(1, true); TALK.push({ text: text, reply: bl ? '▶ Ascolti DOPO «' + bl + '».' : 'Stai già ascoltando l\'ultima versione.', state: 'nulla' }); talkRender(); try { if (!bl) dwPlay(0); } catch (e) {} return; }
     var s = cur(), a = aiSet(), before = { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())) }, st = talkState(), reply = '', lyr = [];
     var cmds = [text];
     if (a.engine !== 'regole') {
@@ -1925,6 +1966,7 @@
     if (a.engine !== 'regole' && !run.said.length) { st = talkState(); run = runCommands([text], st); if (run.said.length) reply = (reply ? reply + ' ' : '') + '(Ho usato le regole sulla tua frase.)'; }
     if (!run.said.length && !lyr.length) { TALK.push({ text: text, reply: (reply ? reply + ' ' : '') + (a.engine === 'regole' ? 'Non l\'ho capito, quindi non ho cambiato niente. Prova: ' + StudioAgent.EXAMPLES.slice(0, 4).join(' · ') : 'Nessuna modifica alla base.'), state: 'nulla' }); talkRender(); return; }
     if (!run.extra.export && !run.extra.fromText && !st.micChanged && JSON.stringify(before.prod) === JSON.stringify(st.prod)) { TALK.push({ text: text, reply: run.said.every(function (x) { return /^\(/.test(x); }) ? run.said.join(' ').replace(/^\(|\)$/g, '') + '. Non ho cambiato niente.' : 'Era già così (' + run.said.join('; ') + '): non ho cambiato niente.', state: 'nulla' }); talkRender(); return; }
+    histPush(text.slice(0, 60), { p: JSON.stringify(before.prod), m: JSON.stringify(before.mic) }); decAdd(text, run.said, st.intentKeys);
     s.prod = st.prod; LIB.settings.mic = st.mic; if (before.prod.genre !== s.prod.genre && Arranger.STYLES[s.prod.genre]) { s.prod.mix = null; applyRecipe(s.prod.genre); } persist();
     TALK.push({ text: text, reply: (reply ? reply + ' ' : '') + (run.said.length ? 'Fatto: ' + run.said.join('; ') + '. Se non ti piace, Annulla.' : ''), lyrics: lyr, state: run.said.length ? 'attesa' : 'nulla', before: before, mic: !!st.micChanged }); talkRender();
     coachRec('change', coachCtx(), { role: 'chat', from: null, to: text.slice(0, 40) });
@@ -1942,7 +1984,7 @@
     var lb = e.target.closest('[data-tkl]'); if (lb) { var hh = TALK[+lb.getAttribute('data-tkl')], s1 = cur(); s1.lyrics = (s1.lyrics ? s1.lyrics.replace(/\s+$/, '') + '\n' : '') + hh.lyrics.join('\n'); persist(); dwFill(); dwChanged(true); lb.textContent = 'Aggiunte ✓'; lb.disabled = true; return; }
     var b = e.target.closest('[data-tk]'); if (!b) return; var h = TALK[TALK.length - 1]; if (!h || h.state !== 'attesa') return;
     if (b.getAttribute('data-tk') === 'ok') { h.state = 'accettato'; coachRec('like', coachCtx()); talkRender(); return; }
-    cur().prod = h.before.prod; LIB.settings.mic = h.before.mic; persist(); h.state = 'annullato'; coachRec('dislike', coachCtx()); talkRender(); await talkApply(h.mic);
+    h.state = 'annullato'; coachRec('dislike', coachCtx()); talkRender(); await histGo(-1);
   });
   // ---------- Mastering professionale, riferimento A/B, tracce separate ----------
   var MP = { ref: null, out: null };
@@ -2706,7 +2748,7 @@
   function dwWs(ws) {
     LIB.settings.ws = ws; persist(); document.body.dataset.ws = ws; try { dwSteps(); tbRender(); } catch (e) {}
     var adv = !!LIB.settings.adv; $$('#v-daw [data-ws]').forEach(function (el) { var a = el.getAttribute('data-adv'); el.hidden = (' ' + el.getAttribute('data-ws') + ' ').indexOf(' ' + ws + ' ') < 0 || (!adv && a && (' ' + a + ' ').indexOf(' ' + ws + ' ') >= 0); });
-    try { foldApply(ws); } catch (e) {} // dopo aver mostrato/nascosto i pannelli del passo
+    try { foldApply(ws); histUi(); } catch (e) {} // dopo aver mostrato/nascosto i pannelli del passo
     var ab = $('#dw-adv'); if (ab) ab.textContent = adv ? 'Nascondi strumenti avanzati' : 'Mostra strumenti avanzati';
     $$('#tabs a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-ws') === ws); });
     if (ws === 'base' || ws === 'voce' || ws === 'mix') setTimeout(function () { if (SESSION.base) { dwDraw(SESSION.base); prDraw(); } }, 30);
@@ -3024,10 +3066,10 @@
     $('#sai-where').textContent = { testo: '· pagina Testo', base: '· pagina Base', voce: '· pagina Voce', mix: '· pagina Mix', libreria: '· Libreria' }[ws] || '';
   }
   function saiSay(t) { saiLog().push({ who: 'ai', t: t }); saiSave(); saiRender(); if (SAI.speak && window.speechSynthesis) { try { speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(t.replace(/[«»•]/g, '')); u.lang = 'it-IT'; u.rate = 1.05; speechSynthesis.speak(u); } catch (e) {} } }
-  function saiIsCmd(text) { if (/^(annulla|torna indietro|undo|rimetti come prima)\b/i.test(String(text).trim())) return true; try { var st = talkState(), run = runCommands([text], st); return run.said.length > 0; } catch (e) { return false; } }
+  function saiIsCmd(text) { if (/^(annulla|torna indietro|undo|rimetti come prima|ripristina|rifai|redo|ascolta (la versione )?(prima|dopo|a|b)|fammi sentire (prima|dopo))\b/i.test(String(text).trim().replace(/[’']/g, ' '))) return true; try { var st = talkState(), run = runCommands([text], st); return run.said.length > 0; } catch (e) { return false; } }
   async function saiAsk(text) {
     text = String(text || '').trim(); if (!text) return; saiLog().push({ who: 'me', t: text }); saiSave(); saiRender();
-    var s = cur(), p = s.prod, r = SultanAI.respond(text, { page: dwWsName(), lyrics: s.lyrics || '', summary: (p.atmNome || (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre)) + ', ' + p.bpm + ' BPM, ' + NOTES[p.tonic] + ' ' + p.mode, memory: saiMem(), presets: StylePresets.LIST, LyricsEngine: LyricsEngine, WordBank: WordBank, bank: wbStore(), isStudioCommand: saiIsCmd, seed: saiLog().length });
+    var s = cur(), p = s.prod, r = SultanAI.respond(text, { page: dwWsName(), lyrics: s.lyrics || '', summary: (p.atmNome || (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre)) + ', ' + p.bpm + ' BPM, ' + NOTES[p.tonic] + ' ' + p.mode, memory: saiMem(), presets: StylePresets.LIST, LyricsEngine: LyricsEngine, WordBank: WordBank, bank: wbStore(), isStudioCommand: saiIsCmd, decisions: decSummary(), seed: saiLog().length });
     var after = '';
     for (var i = 0; i < r.actions.length; i++) {
       var a = r.actions[i];
@@ -3187,6 +3229,7 @@
   }
   async function tbCreate(fresh) {
     var s = cur(), m = $('#tb-now'); if (!(s.lyrics || '').trim()) { m.textContent = 'Scrivi o incolla prima il testo qui sopra.'; return; } SESSION.useImported = false; DW.bufKey = '';
+    if (s.brainFor) histPush(fresh ? 'cambia base' : 'crea base');
     $('#tb-go').disabled = $('#tb-new').disabled = true; m.textContent = 'Sto componendo una base nuova dal tuo testo…';
     try {
       if (false) { }
