@@ -768,11 +768,18 @@
   $('#bl-brain2').addEventListener('click', function () { blBrain(true); });
   /* ===== Orecchio di Sultan: ascolto con strumenti di misura ===== */
   function earMeasure() { var p = cur().prod, mx = buildMix({ voice: false }); return Ear.listen(mx.samples, mx.sr, { genre: SESSION.useImported ? null : p.genre, bpm: p.bpm }); }
+  /* storico unico (annulla) e registro delle decisioni: lo usano Orecchio e squadra */
+  var UNDO = UndoStack.create(function () { return cur().prod; }, function (p) { cur().prod = p; persist(); fillBase(); }, 30);
+  function decList() { if (!Array.isArray(LIB.settings.decisions)) LIB.settings.decisions = []; return LIB.settings.decisions; }
+  function decAdd(kind, key, label) { var s = cur(); Decisions.add(decList(), { kind: kind, key: key, label: label, genre: s && s.prod ? s.prod.genre : '', mood: moodNow() }); persist(); }
   function earApply(r) {
-    var p = cur().prod, ch = [], add = {};
+    var p = cur().prod, ch = [], add = {}, skipped = [], keys = [];
     r.findings.forEach(function (f) { if (f.fix && f.fix.levels) Object.keys(f.fix.levels).forEach(function (k) { add[k] = (add[k] || 0) + f.fix.levels[k]; }); });
-    Object.keys(add).forEach(function (k) { if (p.levels[k] == null) return; var nv = Math.max(0.1, Math.min(1.8, Math.round((p.levels[k] + Math.max(-0.4, Math.min(0.4, add[k]))) * 100) / 100)); if (nv !== p.levels[k]) { ch.push(LEVEL_NAMES[k] + ' ' + Math.round(p.levels[k] * 100) + '% → ' + Math.round(nv * 100) + '%'); p.levels[k] = nv; } });
-    if (ch.length) { persist(); fillBase(); }
+    Object.keys(add).forEach(function (k) { var key = 'livello-' + k + (add[k] < 0 ? '-' : '+'); if (Decisions.avoid(decList(), key, p.genre)) { skipped.push(LEVEL_NAMES[k] + (add[k] < 0 ? ' giù' : ' su')); delete add[k]; } });
+    earApply.skipped = skipped;
+    UNDO.push('Orecchio', 'volumi consigliati dalle misure');
+    Object.keys(add).forEach(function (k) { if (p.levels[k] == null) return; var nv = Math.max(0.1, Math.min(1.8, Math.round((p.levels[k] + Math.max(-0.4, Math.min(0.4, add[k]))) * 100) / 100)); if (nv !== p.levels[k]) { ch.push(LEVEL_NAMES[k] + ' ' + Math.round(p.levels[k] * 100) + '% → ' + Math.round(nv * 100) + '%'); keys.push('livello-' + k + (add[k] < 0 ? '-' : '+')); p.levels[k] = nv; } });
+    if (!ch.length) UNDO.drop(); else { UNDO.last = keys; keys.forEach(function (k, i) { decAdd('applicato', k, ch[i]); }); persist(); fillBase(); }
     return ch;
   }
   function earHtml(r) {
@@ -789,17 +796,32 @@
     var ok = m.top === want || m.second === want;
     return '<p class="small"><span class="tag i">Ipotesi</span> Umore voluto: <b>' + esc(want) + '</b>. La base misurata suona soprattutto <b>' + esc(m.top) + '</b> (poi ' + esc(m.second) + '). ' + (ok ? 'Coincidono.' : 'Non coincidono: scegli l\'umore in alto e premi "Altra versione dal testo", oppure cambia scala e velocità.') + '</p>';
   }
+  function squadCtx(r) {
+    var s = cur(), g = gvS(), secs = []; (s.lyrics || '').replace(/^\s*\[([^\]]{1,30})\]/gm, function (m, n) { secs.push({ name: n }); return m; });
+    var tm = tasteMem(); return { prod: s.prod, ear: r, em: DNA.emotion(s.lyrics || ''), voice: { f0: g.f0, lo: g.lo, hi: g.hi, tune: g.tune }, learnedN: (LIB.settings.learned || []).filter(function (x) { return x.vote > 0; }).length, tasteText: tm.n ? Taste.summary(tm) : '', decisions: decList(), mood: moodNow(), sections: secs };
+  }
+  function squadHtml(r) {
+    var rep = Agents.run(squadCtx(r)), co = Agents.coordinate(rep);
+    return '<details class="mix-adv"><summary>Squadra completa (12 ruoli)</summary><p class="small"><b>Intelligenza centrale:</b> ' + esc(co.text) + '</p>' + rep.map(function (x) { return agent(x.icon, x.role, esc(x.says), x.tag); }).join('') + '<p class="small muted">Ogni ruolo legge misure e regole, non è un modello di linguaggio: quello che non può misurare lo dice.</p></details>';
+  }
+  var EAR_PREV = null;
   async function earRun(auto) {
     var out = $('#ear-out'); out.innerHTML = '<p class="small muted">Ascolto la base con gli strumenti di misura…</p>'; await tick();
     try {
-      var r = earMeasure(), fixed = [];
-      if (auto) for (var i = 0; i < 2; i++) { var ch = r.findings.some(function (f) { return f.fix && f.fix.levels; }) ? earApply(r) : []; if (!ch.length) break; fixed = fixed.concat(ch); await tick(); r = earMeasure(); }
-      out.innerHTML = earHtml(r) + earMoodNote(r) + (fixed.length ? '<p class="small"><b>Ho corretto da solo i volumi:</b> ' + esc(fixed.join(', ')) + '.</p>' : '') + (!auto && r.findings.some(function (f) { return f.fix && f.fix.levels; }) ? '<div class="row"><button class="btn sm pri" id="ear-fix">Applica i consigli</button></div>' : '');
+      var r = earMeasure(), fixed = [], r0 = EAR_PREV; EAR_PREV = null;
+      if (auto) { var first = r; for (var i = 0; i < 2; i++) { var ch = r.findings.some(function (f) { return f.fix && f.fix.levels; }) ? earApply(r) : []; if (!ch.length) break; fixed = fixed.concat(ch); await tick(); r = earMeasure(); } if (fixed.length) r0 = first; }
+      var ab = r0 ? AbCheck.compare(r0, r) : null, sk = earApply.skipped && earApply.skipped.length ? earApply.skipped : null; earApply.skipped = null;
+      out.innerHTML = earHtml(r) + earMoodNote(r) + (ab ? '<div class="note"><b>Prima / dopo</b> <span class="tag m">Misurato</span> <span class="tag i">Ipotesi</span> ' + esc(ab.text) + (ab.lines.length ? '<ul class="clean small">' + ab.lines.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>' : '') + '</div>' : '') +
+        (fixed.length ? '<p class="small"><b>Ho corretto da solo i volumi:</b> ' + esc(fixed.join(', ')) + '.</p>' : '') + (sk ? '<p class="small">Non tocco: ' + esc(sk.join(', ')) + ' (li hai annullati altre volte).</p>' : '') +
+        '<div class="row">' + (!auto && r.findings.some(function (f) { return f.fix && f.fix.levels; }) ? '<button class="btn sm pri" id="ear-fix">Applica i consigli</button>' : '') + (UNDO.size() ? '<button class="btn sm" id="ear-undo">Annulla l\'ultima modifica (' + UNDO.size() + ')</button>' : '') + '</div>' + squadHtml(r);
       return r;
     } catch (e) { out.innerHTML = '<p class="small">Non sono riuscito a misurare la base.</p>'; return null; }
   }
   $('#ear-go').addEventListener('click', function () { earRun(false); });
-  $('#ear-out').addEventListener('click', async function (e) { if (e.target.id !== 'ear-fix') return; var r = earMeasure(), ch = earApply(r); $('#ear-out').innerHTML = '<p class="small">' + (ch.length ? 'Ho cambiato: ' + esc(ch.join(', ')) + '. Riascolto…' : 'Niente da cambiare.') + '</p>'; await tick(); await earRun(false); });
+  $('#ear-out').addEventListener('click', async function (e) {
+    if (e.target.id === 'ear-undo') { var u = UNDO.undo(); if (!u) return; (UNDO.last || []).forEach(function (k) { decAdd('annullato', k, u.label); }); UNDO.last = null; EAR_PREV = null; $('#ear-out').innerHTML = '<p class="small">Annullato: «' + esc(u.label) + '». Riascolto…</p>'; await tick(); await earRun(false); return; }
+    if (e.target.id !== 'ear-fix') return; var r = earMeasure(), ch = earApply(r); EAR_PREV = r; $('#ear-out').innerHTML = '<p class="small">' + (ch.length ? 'Ho cambiato: ' + esc(ch.join(', ')) + '. Riascolto…' : 'Niente da cambiare.') + '</p>'; await tick(); await earRun(false);
+  });
   /* sfondo ed emozione: espone l'umore sul body (la grafica la decide la schermata, in CSS con body[data-mood]) */
   function applyMoodBg(m) { try { document.body.dataset.mood = ({ emo: 'malinconico', horror: 'dark', sognante: 'romantico', trionfale: 'euforico' })[m] || m || ''; } catch (e) {} }
   /* umore attuale: quello scelto dal Cervello, altrimenti misurato da tonalità e velocità della base */
@@ -991,7 +1013,7 @@
     var llm = $('#ai-v') && !$('#ai-v').disabled;
     rows.push(agent('✨', 'Modello di linguaggio locale', llm ? 'Pronto: nel passo Testo migliora righe, trova rime e scrive ritornelli.' : 'Spento. Si attiva nel passo Testo (scarica un modello una volta sola, serve un telefono con WebGPU: non verificato sul tuo).', 'Ipotesi', !llm));
     el.innerHTML = '<h4>La squadra che ha lavorato</h4>' + rows.join('') + '<div id="one-ear"></div>'; 
-    try { var r = await earRun(true); if (r && r.findings) $('#one-ear').innerHTML = agent('👂', 'Orecchio', r.findings.length ? r.findings.length + ' cose da controllare (volumi, bilanciamento): i dettagli sono sotto, nel riquadro «Ascolta».' : 'Ho misurato volumi e bilanciamento: tutto in ordine.', 'Misurato'); } catch (e) {}
+    try { var r = await earRun(true); if (r && r.findings) $('#one-ear').innerHTML = agent('👂', 'Orecchio', r.findings.length ? r.findings.length + ' cose da controllare (volumi, bilanciamento): i dettagli sono sotto, nel riquadro «Ascolta».' : 'Ho misurato volumi e bilanciamento: tutto in ordine.', 'Misurato') + agent('🧭', 'Intelligenza centrale', esc(Agents.coordinate(Agents.run(squadCtx(r))).text), 'Ipotesi'); } catch (e) {}
   }
   (function oneInit() {
     if (!$('#one-go')) return;
@@ -1062,6 +1084,23 @@
     $('#teach-w').addEventListener('input', function () { LIB.settings.learnW = +this.value; $('#teach-wv').textContent = this.value; persist(); });
     $('#dw-learn-file').addEventListener('click', function () { $('#teach-status').textContent = 'Scegli il file dal telefono…'; });
     teachRender();
+  })();
+  /* ===== Basso e melodia in MIDI (da audio) ===== */
+  (function midiInit() {
+    var go = $('#midi-go'); if (!go) return;
+    function link(bytes, name, label) { var u = URL.createObjectURL(new Blob([bytes], { type: 'audio/midi' })); return '<a class="btn sm" download="' + name + '" href="' + u + '">' + esc(label) + '</a>'; }
+    function line(r, nm) { var n = r.notes; if (!n.length) return '<p>' + nm + ': non ho trovato note chiare.</p>'; var lo = Math.min.apply(null, n.map(function (x) { return x.midi; })), hi = Math.max.apply(null, n.map(function (x) { return x.midi; })); return '<p><b>' + nm + ':</b> ' + n.length + ' note, da ' + AudioMidi.noteName(lo) + ' a ' + AudioMidi.noteName(hi) + '. Prime: ' + n.slice(0, 8).map(function (x) { return AudioMidi.noteName(x.midi); }).join(' ') + '</p>'; }
+    go.addEventListener('click', async function () {
+      var out = $('#midi-out'), c = LEARN.cur; if (!c || !(c.orig || c.base)) { out.textContent = 'Prima carica una base in «Insegna all\'app»: poi premi qui.'; return; }
+      go.disabled = true; out.textContent = 'Ascolto il basso…'; await tick();
+      try {
+        var sr = c.sr, cut = function (x) { return x && x.length > sr * 90 ? x.subarray(0, sr * 90) : x; }, bpm = Math.round((c.prof && c.prof.bpm) || 120);
+        var bx = cut((c.stems && c.stems.bass) || c.base || c.orig), mx = cut((c.ai && c.voice) ? c.voice : (c.orig || c.base));
+        var rb = AudioMidi.bass(bx, sr); out.innerHTML = '<p class="small muted">Ascolto la melodia…</p>'; await tick(); var rm = AudioMidi.melody(mx, sr);
+        out.innerHTML = line(rb, 'Basso') + line(rm, 'Melodia' + (c.ai ? ' (dalla voce separata)' : ' (dal mix: approssimata)')) + '<div class="row">' + (rb.notes.length ? link(AudioMidi.toSMF(rb.notes, bpm, 'Basso', 33), 'basso.mid', 'Scarica basso (.mid)') : '') + (rm.notes.length ? link(AudioMidi.toSMF(rm.notes, bpm, 'Melodia', 80), 'melodia.mid', 'Scarica melodia (.mid)') : '') + '</div><p class="small muted">Misurato: altezza e durata delle note. Ipotesi: dove finisce una nota e l\'altra; controlla all\'orecchio. Velocità usata: ' + bpm + ' BPM.</p>';
+      } catch (e) { out.textContent = 'Non sono riuscito: ' + ((e && e.message) || e); }
+      go.disabled = false;
+    });
   })();
   /* ===== Mix pulito: 3 passi ===== */
   (function mixInit() {
@@ -2685,7 +2724,7 @@
     if (ls && c) await saveAudio(c[ls], c.sr, c.name.replace(/\W+/g, '-') + '-' + (ls === 'voice' ? 'voce' : 'base'), $('#dw-learn-msg'));
     if (lv && c) {
       var art = (($('#dw-learn-art') || {}).value || '').trim().slice(0, 30) || 'Senza cartella'; LEARN.lastArt = art === 'Senza cartella' ? '' : art;
-      var L = learnList(), ex = L.filter(function (r) { return r.id === c.recId; })[0]; if (ex) { ex.vote = +lv; ex.artist = art; } else { L.push({ id: uid(), name: c.name, artist: art, prof: c.prof, vote: +lv, at: Date.now() }); if (L.length > 120) L.shift(); }
+      var L = learnList(), ex = L.filter(function (r) { return r.id === c.recId; })[0]; if (ex) { ex.vote = +lv; ex.artist = art; } else { L.push({ id: uid(), name: c.name, artist: art, prof: c.prof, vote: +lv, at: Date.now() }); if (L.length > 120) L.shift(); } try { decAdd(+lv > 0 ? 'approvato' : 'scartato', 'base-imparata', c.name); } catch (e0) {}
       persist(); LEARN.cur = null; stopPlay();
       $('#dw-learn-msg').textContent = +lv > 0 ? 'Imparato: terrò conto di questo ritmo. Ho cancellato l\'audio, restano solo le misure.' : 'Segnato: eviterò questo tipo di ritmo.';
       learnRender(); agentsRun();
@@ -2725,7 +2764,7 @@
   // spazi di lavoro dello Studio: Impara · Base · Testo · Voce · Mix (un solo gruppo di pannelli alla volta)
   /* pannelli che si aprono e chiudono: aperti quelli principali del passo, il resto chiuso (la scelta del tuo tocco resta salvata) */
   // design pulito: in ogni passo aperta solo l'azione principale, il resto è una lista che si apre con un tocco
-  var FOLD_OPEN = {"testo": ["dw-p-testo"], "base": ["dw-p-one", "dw-p-arr"], "voce": ["dw-kar", "dw-p-mic"], "mix": ["dw-p-mix"], "libreria": ["dw-p-teach", "dw-p-arch"]};
+  var FOLD_OPEN = {"testo": ["dw-p-testo"], "base": ["dw-p-one", "dw-p-arr"], "voce": ["dw-kar", "dw-p-mic"], "mix": ["dw-p-mix"], "libreria": ["dw-p-teach", "dw-p-midi", "dw-p-arch"]};
   var FOLD_SUM = { 'dw-p-learn': 'Opzioni avanzate: modo di separazione, spazio online, cartelle e varianti', 'dw-p-arch': 'Salva la memoria su un tuo archivio privato', 'dw-p-teach': 'Carica canzoni o video: l\'app misura e impara', 'dw-p-arr': 'Le tracce della base: tocca un nome per suono, note e mixer', 'dw-p-prod': 'Effetti da film e voci di produzione scelti dal testo', 'dw-p-play': 'Cambia melodia, ascolta l\'Orecchio, salva', 'dw-p-brain': 'Stile, umore e atmosfere a mano', 'dw-p-dna': 'Stili a numeri e fusione di generi', 'dw-p-talk': 'Scrivi cosa cambiare e gli agenti lo fanno', 'dw-p-agents': 'Proposte automatiche degli agenti', 'dw-p-sing': 'Quando entrare, quanto tenere, dove respirare', 'dw-p-clips': 'Prove registrate e montaggio', 'dw-p-extra': 'Assistente testi e rime', 'dw-p-design': 'Crea suoni tuoi', 'dw-p-mixer': 'Canali del mixer', 'dw-p-qc': 'Controlli misurati sulla base e i tuoi giudizi', 'dw-p-omino': 'L\'omino canta il testo · base IA con ACE-Step', 'dw-p-melo': 'Canticchia e la base suona la tua melodia', 'dw-p-var': 'Tante basi diverse da ascoltare e scegliere', 'dw-p-mic': 'Effetti sulla tua voce', 'dw-p-suoni': 'Tocca un nome e senti: strumenti, batteria vera, effetti' };
   function foldApply(ws) {
     if (LIB.settings.foldV !== 2) { LIB.settings.fold = {}; LIB.settings.foldV = 2; persist(); } // nuovo design: riparto dall'ordine pulito

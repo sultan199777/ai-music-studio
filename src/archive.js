@@ -26,6 +26,7 @@
       learned: (Array.isArray(st.learned) ? st.learned : []).map(cleanLearned).filter(Boolean).slice(-MAXL),
       taste: st.taste ? clone(st.taste) : null,
       dnaSaved: (Array.isArray(st.dnaSaved) ? st.dnaSaved : []).filter(function (d) { return d && d.name && d.dna; }).map(function (d) { return { name: String(d.name).slice(0, 40), dna: clone(d.dna), at: num(d.at) || 0 }; }),
+      decisions: (Array.isArray(st.decisions) ? st.decisions : []).map(function (e) { return { id: String(e.id || ''), kind: String(e.kind || ''), key: String(e.key || '').slice(0, 40), label: String(e.label || '').slice(0, 90), genre: String(e.genre || '').slice(0, 20), mood: String(e.mood || '').slice(0, 20), at: num(e.at) || 0 }; }).filter(function (e) { return e.id && e.kind && e.key; }).slice(-200),
       voice: { f0: num(gv.f0), lo: num(gv.lo), hi: num(gv.hi), tune: num(gv.tune) },
       prefs: { useLearned: st.useLearned !== false, learnW: num(+st.learnW) || 70, oneMode: st.oneMode === 'dna' ? 'dna' : 'auto' }
     };
@@ -40,6 +41,7 @@
     var out = clone(local);
     out.learned = union(local.learned, remote.learned, function (r) { return r.id || (r.name + '|' + r.at); }, MAXL);
     out.dnaSaved = union(local.dnaSaved, remote.dnaSaved, function (d) { return d.name + '|' + d.at; }, 60);
+    out.decisions = union(local.decisions, remote.decisions, function (e) { return e.id; }, 200);
     var lt = local.taste && local.taste.n || 0, rt = remote.taste && remote.taste.n || 0; out.taste = rt > lt ? clone(remote.taste) : (local.taste ? clone(local.taste) : (remote.taste ? clone(remote.taste) : null));
     out.voice = { f0: local.voice && local.voice.f0 != null ? local.voice.f0 : remote.voice && remote.voice.f0, lo: local.voice && local.voice.lo || remote.voice && remote.voice.lo, hi: local.voice && local.voice.hi || remote.voice && remote.voice.hi, tune: local.voice && local.voice.tune != null ? local.voice.tune : remote.voice && remote.voice.tune };
     out.prefs = local.learned && local.learned.length ? local.prefs : (remote.prefs || local.prefs);
@@ -47,7 +49,7 @@
   }
   function apply(st, snap) {
     if (!snap || snap.v !== 1) return st;
-    st.learned = snap.learned.slice(); if (snap.taste) st.taste = clone(snap.taste); st.dnaSaved = snap.dnaSaved.slice();
+    st.learned = snap.learned.slice(); if (snap.taste) st.taste = clone(snap.taste); st.dnaSaved = snap.dnaSaved.slice(); st.decisions = (snap.decisions || []).slice();
     st.gv = st.gv || {}; ['f0', 'lo', 'hi', 'tune'].forEach(function (k) { if (snap.voice && snap.voice[k] != null) st.gv[k] = snap.voice[k]; });
     if (snap.prefs) { st.useLearned = snap.prefs.useLearned; st.learnW = snap.prefs.learnW; st.oneMode = snap.prefs.oneMode; }
     return st;
