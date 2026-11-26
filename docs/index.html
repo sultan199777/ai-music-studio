@@ -810,7 +810,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     <p class="small muted" id="dw-sep-info"></p>
     <label class="small">Quanto analizzo: <select id="dw-learn-secs"><option value="30">30 secondi (veloce)</option><option value="40">40 secondi (consigliato)</option><option value="90">90 secondi</option><option value="180">3 minuti</option><option value="300">Canzone intera, pulita (lenta sul telefono, riparte se si interrompe)</option></select></label><br>
     <label class="f"><span><b>Dove separo</b></span><select id="dw-sep-where"><option value="">Sul telefono (40 secondi, nessun file esce)</option><option value="server">Sul mio spazio Hugging Face (canzone intera, più pulita)</option></select></label>
-    <div id="dw-sep-srv" hidden><label class="f"><span>Nome del tuo spazio (es. tuonome/sultan-separa)</span><input id="dw-sep-space" placeholder="tuonome/sultan-separa" autocapitalize="off" autocorrect="off"></label><label class="f"><span>Qualità</span><select id="dw-sep-smode"><option value="veloce">Veloce (htdemucs, 4 tracce)</option><option value="pulita">Pulitissima (voce con Mel-Band RoFormer, più lenta)</option></select></label><p class="small muted">Il video va al tuo spazio, che lo divide e non conserva nulla. Lo spazio gratuito si addormenta se non lo usi: la prima volta ci mette qualche minuto.</p></div>
+    <div id="dw-sep-srv" hidden><label class="f"><span>Nome del tuo spazio (es. tuonome/sultan-separa)</span><input id="dw-sep-space" placeholder="tuonome/sultan-separa" autocapitalize="off" autocorrect="off"></label><label class="f"><span>Qualità</span><select id="dw-sep-smode"><option value="veloce">Veloce (htdemucs, 4 tracce)</option><option value="pulita">Pulitissima (voce con Mel-Band RoFormer, più lenta)</option><option value="precisa">Precisa (htdemucs_ft, 4 modelli insieme, circa 4 volte più lenta)</option><option value="6tracce">6 tracce (anche chitarra e piano da soli, htdemucs_6s)</option></select></label><p class="small muted">Il video va al tuo spazio, che lo divide e non conserva nulla. Lo spazio gratuito si addormenta se non lo usi: la prima volta ci mette qualche minuto.</p></div>
     <label class="small"><input type="checkbox" id="dw-tr-auto" checked> Impara anche le <b>parole</b> (Whisper gratuito, circa 80 MB la prima volta): le misure vanno nella cartella testi dello stesso artista</label><br>
     <label class="small"><input type="checkbox" id="dw-bt-on" checked> Battiti e battute precisi con <b>Beat This!</b> (rete neurale gratuita, 10 MB, si scarica la prima volta)</label>
     <label class="f"><span><b>1.</b> Nome dell'artista (crea la cartella)</span><input id="dw-learn-art0" list="dw-learn-arts0" maxlength="30" placeholder="es. Sangiovanni, Shiva, Pop Smoke"><datalist id="dw-learn-arts0"></datalist></label>
@@ -936,7 +936,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>26/11, 10:39</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>26/11, 10:44</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -15244,7 +15244,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     var base = new Float32Array(n), rhythm = new Float32Array(n), orig = new Float32Array(n);
     for (i = 0; i < n; i++) { base[i] = st.drums[i] + st.bass[i] + st.other[i]; rhythm[i] = st.drums[i] + st.bass[i]; orig[i] = base[i] + voice[i]; }
     var trS = out[4] && out[4].lines && out[4].lines.length ? { lines: out[4].lines, text: out[4].text || '' } : null;
-    return { tr: trS, sr: 44100, voice: voice, base: base, stems: st, rhythm: rhythm, orig: orig, ai: true, note: (trS ? 'Parole trascritte sul tuo spazio. ' : '') + 'Separato sul tuo spazio Hugging Face (' + (modo === 'pulita' ? 'Mel-Band RoFormer + htdemucs' : 'htdemucs') + '), canzone intera, in ' + Math.round((Date.now() - t0) / 1000) + ' s.' };
+    return { tr: trS, sr: 44100, voice: voice, base: base, stems: st, rhythm: rhythm, orig: orig, ai: true, note: (trS ? 'Parole trascritte sul tuo spazio. ' : '') + 'Separato sul tuo spazio Hugging Face (' + ({ pulita: 'Mel-Band RoFormer + htdemucs', precisa: 'htdemucs_ft', '6tracce': 'htdemucs_6s, 6 tracce' }[modo] || 'htdemucs') + '), canzone intera, in ' + Math.round((Date.now() - t0) / 1000) + ' s.' };
   }
   async function sepFast(f, el, quick) {
     var d = await decodeStereo(f, 32000), sr = d.sr, i, mx = Math.round(sr * learnSecs());
