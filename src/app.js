@@ -600,7 +600,7 @@
     var st = $('#b-status'), p = cur().prod;
     if (newVariant && SESSION.lastPlay && performance.now() - SESSION.lastPlay.t < 10000) coachRec('skip', SESSION.lastPlay.ctx);
     if (newVariant) p.seed++;
-    st.textContent = 'Sto componendo la base…'; await tick();
+    st.textContent = 'Sto componendo la base…'; await tick(); if (SESSION.useImported && newVariant) { SESSION.useImported = false; DW.bufKey = ''; }
     await ensureInst();
     if ($('#dw-play')) { try { stopPlay(); SESSION.baseKey = ''; DW.bufKey = ''; await dwPlay(0); st.textContent = ''; SESSION.baseMade = true; try { dwSteps(); projLine(); } catch (e) {} var om = $('#dw-p-omino'); if (om) om.classList.remove('fold'); return { ok: true }; } catch (e) { /* se lo Studio non riesce, uso il lettore semplice */ } }
     try {
@@ -1505,12 +1505,17 @@
   }
   document.addEventListener('click', function (e) { var g = e.target.closest && e.target.closest('#dw-next-go'); if (g) { dwWs(g.getAttribute('data-go')); window.scrollTo(0, 0); } });
   async function dwBase() {
+    if (SESSION.useImported && SESSION.imported) { // base esterna (importata o Base IA): lo Studio la suona e ci registri sopra
+      var I = SESSION.imported, p0 = cur().prod, bpm0 = Math.round(I.bpm || p0.bpm), dur0 = I.mono.length / I.sr, nb = Math.max(1, Math.round(dur0 / (240 / bpm0)));
+      if (!SESSION.impBase || SESSION.impBase.src !== I) SESSION.impBase = { src: I, imported: true, sampleRate: I.sr, length: I.mono.length, duration: dur0, bpm: bpm0, bars: nb, genre: I.name || 'importata', tonic: I.key ? I.key.tonic : p0.tonic, mode: I.key ? I.key.mode : p0.mode, sections: [{ name: 'strofa', startBar: 0, bars: nb, startSec: 0, endSec: dur0 }], tracks: {}, events: {} };
+      SESSION.base = SESSION.impBase; return SESSION.impBase;
+    }
     await ensureInst();
     var b = getBase(); SESSION.baseMade = true; return b;
   }
   function voiceTake() { var t = activeTake(); return t && !t.example ? t : null; }
   function dwBuffers(b) {
-    var t = voiceTake(), pf0 = pfPlan(), key = SESSION.baseKey + '|' + vclipKey() + '|' + pfKey(pf0) + '|' + (ominoSings() ? 'g' + gvS().f0 : '');
+    var t = voiceTake(), pf0 = pfPlan(), key = (b.imported ? 'imp' + b.length : SESSION.baseKey) + '|' + vclipKey() + '|' + pfKey(pf0) + '|' + (ominoSings() ? 'g' + gvS().f0 : '');
     if (DW.bufKey === key && DW.bufs) return DW.bufs;
     var bufs = {}, N = b.length, sum = new Float32Array(N), i;
     LANES.forEach(function (L) {
@@ -1526,8 +1531,9 @@
     });
     var pk = 0; for (i = 0; i < N; i++) { var v = sum[i] < 0 ? -sum[i] : sum[i]; if (v > pk) pk = v; }
     DW.k = pk > 0 ? 0.8 / pk : 1;
+    if (b.imported) { bufs = { pad: { x: SESSION.imported.mono, sr: SESSION.imported.sr, start: 0 } }; DW.k = 1; }
     var vb = vclipBuffer(b.duration); if (vb) bufs.voice = vb;
-    if (pf0 && pf0.on && pf0.events && pf0.events.length) {
+    if (pf0 && pf0.on && pf0.events && pf0.events.length && !b.imported) {
       try { bufs.sfx = { x: ProdFx.renderSfx(pf0.events, b.sampleRate, b.bpm, N, { seed: pf0.seed, tonic: b.tonic, mode: b.mode }), sr: b.sampleRate, start: 0 }; } catch (e) {}
       if (vb) try { var vx = ProdFx.renderVox(pf0.events, vb, songMap(), b.bpm, { bank: ADLIB.list, melodic: !PF_HARD[b.genre] }); if (vx) bufs.vox = { x: vx, sr: vb.sr, start: 0 }; } catch (e) {}
     }
@@ -3047,28 +3053,39 @@
     var M = { malinconico: 'melancholic, sad, emotional', dark: 'dark, mysterious', euforico: 'euphoric, energetic', aggressivo: 'aggressive, intense', romantico: 'romantic, warm', nostalgico: 'nostalgic, dreamy' };
     return [G[p.genre] || st, M[mood] || 'emotional', $('#ace-voice').value, 'autotune', '808 bass', 'italian lyrics', p.mode === 'minore' ? 'minor key' : 'major key'].join(', ');
   }
-  $('#ace-go').addEventListener('click', async function () {
-    var m = $('#ace-msg'), out = $('#ace-out'), s = cur(), p = s.prod; if (ACE.busy) return;
-    var lyr = aceLyrics(s.lyrics); if (!lyr) { m.textContent = 'Scrivi prima il testo in 1 Testo.'; return; }
-    ACE.busy = true; this.disabled = true; var t0 = Date.now();
+  /* una chiamata ad ACE-Step: o.instr = base strumentale (niente voce), altrimenti canta il testo. Ogni chiamata ha un seme nuovo. */
+  async function aceRun(o) {
+    var m = o.msg, out = o.out, s = cur(), p = s.prod; if (ACE.busy) { m.textContent = 'Sto già lavorando a una richiesta, aspetta.'; return; }
+    var lyr = o.instr ? '[Instrumental]' : aceLyrics(s.lyrics); if (!o.instr && !lyr) { m.textContent = 'Scrivi prima il testo in 1 Testo.'; return; }
+    var cap = o.instr ? aceCaption().replace(/, (male|female) vocals/, '').replace(', autotune', '').replace(', italian lyrics', '') + ', instrumental, no vocals, professional mix, ' + (o.extra || '') : aceCaption();
+    ACE.busy = true; if (o.btn) o.btn.disabled = true; var t0 = Date.now(), res = null;
     try {
       m.textContent = 'Mi collego ad ACE-Step…';
       var GC = await import('https://cdn.jsdelivr.net/npm/@gradio/client@2.8.0/+esm'), cl = await GC.Client.connect('ACE-Step/Ace-Step-v1.5');
       var api = await cl.view_api(), ep = api && api.named_endpoints && api.named_endpoints['/generation_wrapper']; if (!ep) throw new Error('lo spazio ACE-Step è cambiato');
-      // argomenti in ordine (alcuni non hanno nome nell'API): valori di serie + i nostri per nome
       var args = ep.parameters.map(function (q) { return q.parameter_has_default ? q.parameter_default : (/Textbox/.test(q.component || '') ? '' : null); });
       var set = function (nm, v) { for (var i = 0; i < ep.parameters.length; i++) if (ep.parameters[i].parameter_name === nm) { args[i] = v; return; } };
-      set('generation_mode', 'custom'); set('simple_query_input', ''); set('simple_vocal_language', 'it'); set('param_4', aceCaption()); set('param_5', lyr); set('param_6', p.bpm); set('param_9', 'it'); set('param_15', +$('#ace-dur').value); set('param_16', 1);
-      var tick2 = setInterval(function () { m.textContent = 'ACE-Step sta cantando il tuo testo (può esserci coda) · ' + Math.round((Date.now() - t0) / 1000) + ' s'; }, 1000), res = null;
-      try { var pr = await cl.predict('/generation_wrapper', args); res = pr && pr.data; if (window.ACE_DEBUG) console.log('ACE', JSON.stringify(pr).slice(0, 600)); } finally { clearInterval(tick2); }
+      set('generation_mode', 'custom'); set('simple_query_input', ''); set('simple_vocal_language', 'it'); set('param_4', cap); set('param_5', lyr); set('param_6', p.bpm); set('param_9', o.instr ? 'unknown' : 'it'); set('param_15', o.dur || 60); set('param_16', 1); set('param_12', true);
+      var tk = setInterval(function () { m.textContent = (o.instr ? 'ACE-Step compone la base' : 'ACE-Step sta cantando il tuo testo') + ' (può esserci coda) · ' + Math.round((Date.now() - t0) / 1000) + ' s'; }, 1000);
+      try { var pr = await cl.predict('/generation_wrapper', args); res = pr && pr.data; } finally { clearInterval(tk); }
       var f = res && res[0], url = f && (f.url || (f.value && f.value.url) || f.path); if (!url) throw new Error('nessun audio restituito');
-      out.innerHTML = '<audio controls playsinline src="' + esc(url) + '"></audio><div class="row"><a class="btn sm" href="' + esc(url) + '" download="demo-cantata.mp3" target="_blank">Salva la demo</a></div>';
-      m.textContent = 'Fatto in ' + Math.round((Date.now() - t0) / 1000) + ' s. Stile: ' + aceCaption() + '. Voce IA: usala per provare melodia e flow, non per pubblicare come tua.';
+      out.innerHTML = '<audio controls playsinline src="' + esc(url) + '"></audio><div class="row"><a class="btn sm" href="' + esc(url) + '" download="' + (o.instr ? 'base-ia' : 'demo-cantata') + '.mp3" target="_blank">Salva</a>' + (o.instr ? '<button class="btn sm" data-ace-use="' + esc(url) + '">Usala per registrare la voce</button>' : '') + '</div>';
+      m.textContent = 'Fatto in ' + Math.round((Date.now() - t0) / 1000) + ' s · ' + cap + (o.instr ? '' : ' · voce IA: per provare melodia e flow, poi la canti tu.');
       try { out.querySelector('audio').play(); } catch (e) {}
     } catch (e) {
       var w = String((e && e.message) || e);
       m.textContent = /quota|limit|ZeroGPU/i.test(w) ? 'Limite gratuito di oggi finito per questo telefono (GPU gratuite di Hugging Face). Riprova più tardi o domani.' : 'ACE-Step non ha risposto: ' + w.slice(0, 140);
-    } finally { ACE.busy = false; $('#ace-go').disabled = false; }
+    } finally { ACE.busy = false; if (o.btn) o.btn.disabled = false; }
+  }
+  $('#ace-go').addEventListener('click', function () { aceRun({ msg: $('#ace-msg'), out: $('#ace-out'), btn: this, dur: +$('#ace-dur').value }); });
+  $('#tb-ai').addEventListener('click', function () { var extra = ['piano intro', 'arpeggiated harp', 'dark strings', 'heavy 808 slides', 'guitar melody', 'cinematic pads', 'bell melody', 'choir'][Math.floor(Math.random() * 8)]; aceRun({ instr: true, msg: $('#tb-ai-msg'), out: $('#tb-ai-out'), btn: this, dur: 90, extra: extra }); });
+  document.addEventListener('click', async function (e) {
+    var u = e.target.getAttribute && e.target.getAttribute('data-ace-use'); if (!u) return; var m = $('#tb-ai-msg');
+    try { m.textContent = 'Scarico la base IA…'; var ab = await (await fetch(u)).arrayBuffer(), oc = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 1, 44100), a = await new Promise(function (res, rej) { var pr = oc.decodeAudioData(ab, res, rej); if (pr && pr.then) pr.then(res, rej); });
+      var L = a.getChannelData(0), R = a.numberOfChannels > 1 ? a.getChannelData(1) : L, mono = new Float32Array(L.length); for (var i = 0; i < mono.length; i++) mono[i] = (L[i] + R[i]) / 2;
+      var an = BaseAnalysis.analyze(mono, a.sampleRate, { maxSeconds: 60 }); SESSION.imported = { mono: mono, sr: a.sampleRate, bpm: an.bpm, key: an.key, name: 'Base IA (ACE-Step)' }; SESSION.useImported = true;
+      DW.bufKey = ''; dwStop(); dwRefresh(); m.textContent = 'Base IA pronta per registrare: vai in 3 Voce e premi ● (registri sopra questa base). Per tornare alle basi dello Studio usa «Torna alla base dello Studio» in Base importata.'; var ib = $('#ib-off'); if (ib) ib.hidden = false;
+    } catch (err) { m.textContent = 'Non riesco a usarla: ' + ((err && err.message) || err); }
   });
 
   $('#dw-p-qc').addEventListener('click', function (e) {
@@ -3092,7 +3109,7 @@
     $('#tb-now').innerHTML = made ? '<b>Stai ascoltando: ' + esc(Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + '</b>' + (p.atmNome ? ' (' + esc(p.atmNome) + ')' : '') + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode + (arrPlanName(p) ? '<br>Arrangiamento: ' + esc(arrPlanName(p)) : '') + '<br><span class="muted">«Cambia base» ne crea un\'altra diversa dall\'inizio alla fine: genere, tonalità, strumenti, intro, ritmo.</span>' : '<span class="muted">Prima «Crea la base dal testo», poi «Cambia base» quante volte vuoi.</span>';
   }
   async function tbCreate(fresh) {
-    var s = cur(), m = $('#tb-now'); if (!(s.lyrics || '').trim()) { m.textContent = 'Scrivi o incolla prima il testo qui sopra.'; return; }
+    var s = cur(), m = $('#tb-now'); if (!(s.lyrics || '').trim()) { m.textContent = 'Scrivi o incolla prima il testo qui sopra.'; return; } SESSION.useImported = false; DW.bufKey = '';
     $('#tb-go').disabled = $('#tb-new').disabled = true; m.textContent = 'Sto componendo una base nuova dal tuo testo…';
     try {
       if (false) { }
@@ -3123,7 +3140,7 @@
     } catch (err) { msg.textContent = 'Non riesco a leggere questo file. Prova WAV, MP3 o M4A.'; msg.className = 'status err'; }
     e.target.value = '';
   });
-  $('#ib-off').addEventListener('click', function () { SESSION.useImported = false; this.hidden = true; $('#ib-msg').textContent = 'Uso di nuovo la base creata dal programma.'; });
+  $('#ib-off').addEventListener('click', function () { SESSION.useImported = false; DW.bufKey = ''; try { dwStop(); dwRefresh(); } catch (e) {} this.hidden = true; $('#ib-msg').textContent = 'Uso di nuovo la base creata dal programma.'; });
 
   /* stile da riferimenti */
   SESSION.refs = SESSION.refs || [];
