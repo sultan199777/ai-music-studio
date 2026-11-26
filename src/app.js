@@ -1891,7 +1891,8 @@
     list.forEach(function (cmd) {
       if (/nuova variante/i.test(cmd)) { st.prod.seed = (st.prod.seed || 1) + 1; said.push('nuova variante'); extra.variant = true; return; }
       if (/crea la base dal testo|base dal testo/i.test(cmd)) { extra.fromText = true; said.push('base dal testo'); return; }
-      var r = StudioAgent.interpret(cmd, st), pa = ProducerActions.interpret(cmd, st.prod);
+      if (/\b(esporta|scarica|salva) (la )?(base|canzone|traccia|mp3|wav)\b/i.test(cmd)) { extra.export = true; said.push('esporto la base (file audio)'); return; }
+      st.skipPA = false; var r = StudioAgent.interpret(cmd, st), pa = st.skipPA ? { understood: false } : ProducerActions.interpret(cmd, st.prod);
       if (pa.understood) { ['bpm', 'mode', 'bassStyle', 'reverb', 'levels', 'sec', 'tonic', 'genre', 'tune'].forEach(function (k) { if (pa.state[k] !== undefined) st.prod[k] = pa.state[k]; }); said = said.concat(pa.notes); }
       said = said.concat(r.changes);
     });
@@ -1900,10 +1901,15 @@
   }
   function talkState() {
     var s = cur(), b = SESSION.base;
-    return { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())), ctx: { sections: b && b.sections ? b.sections.map(function (x) { return { name: x.name, startBar: x.startBar }; }) : [], leadNotes: b && b.events ? b.events.lead.filter(function (n) { return n.bar != null; }).map(function (n) { return { bar: n.bar, step: n.step, len: Math.max(1, Math.round(n.len || 2)), midi: Math.round(n.midi) }; }) : [] } };
+    return { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())), ctx: { progs: (StylePresets.PROGS[s.prod.mode] || StylePresets.PROGS.minore || []), inst: Instruments.CATALOG.map(function (c) { return { id: c.id, nome: c.nome }; }), sections: b && b.sections ? b.sections.map(function (x) { return { name: x.name, startBar: x.startBar }; }) : [], leadNotes: b && b.events ? b.events.lead.filter(function (n) { return n.bar != null; }).map(function (n) { return { bar: n.bar, step: n.step, len: Math.max(1, Math.round(n.len || 2)), midi: Math.round(n.midi) }; }) : [] } };
+  }
+  async function talkUndo() {
+    for (var i = TALK.length - 1; i >= 0; i--) { var h = TALK[i]; if (h.before && (h.state === 'attesa' || h.state === 'accettato')) { cur().prod = h.before.prod; LIB.settings.mic = h.before.mic; persist(); h.state = 'annullato'; talkRender(); await talkApply(h.mic); return 'Annullato: «' + h.text + '». La base è tornata com\'era prima.'; } }
+    return 'Non c\'è niente da annullare.';
   }
   async function talkGo(text) {
     text = (text || '').trim(); if (!text) return;
+    if (/^(annulla|torna indietro|undo|rimetti com era|rimetti come prima)\b/i.test(text.replace(/[’']/g, ' '))) { var u = await talkUndo(); TALK.push({ text: text, reply: u, state: 'nulla' }); talkRender(); return; }
     var s = cur(), a = aiSet(), before = { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())) }, st = talkState(), reply = '', lyr = [];
     var cmds = [text];
     if (a.engine !== 'regole') {
@@ -1918,10 +1924,12 @@
     var run = runCommands(cmds, st);
     if (a.engine !== 'regole' && !run.said.length) { st = talkState(); run = runCommands([text], st); if (run.said.length) reply = (reply ? reply + ' ' : '') + '(Ho usato le regole sulla tua frase.)'; }
     if (!run.said.length && !lyr.length) { TALK.push({ text: text, reply: (reply ? reply + ' ' : '') + (a.engine === 'regole' ? 'Non l\'ho capito, quindi non ho cambiato niente. Prova: ' + StudioAgent.EXAMPLES.slice(0, 4).join(' · ') : 'Nessuna modifica alla base.'), state: 'nulla' }); talkRender(); return; }
+    if (!run.extra.export && !run.extra.fromText && !st.micChanged && JSON.stringify(before.prod) === JSON.stringify(st.prod)) { TALK.push({ text: text, reply: run.said.every(function (x) { return /^\(/.test(x); }) ? run.said.join(' ').replace(/^\(|\)$/g, '') + '. Non ho cambiato niente.' : 'Era già così (' + run.said.join('; ') + '): non ho cambiato niente.', state: 'nulla' }); talkRender(); return; }
     s.prod = st.prod; LIB.settings.mic = st.mic; if (before.prod.genre !== s.prod.genre && Arranger.STYLES[s.prod.genre]) { s.prod.mix = null; applyRecipe(s.prod.genre); } persist();
     TALK.push({ text: text, reply: (reply ? reply + ' ' : '') + (run.said.length ? 'Fatto: ' + run.said.join('; ') + '. Se non ti piace, Annulla.' : ''), lyrics: lyr, state: run.said.length ? 'attesa' : 'nulla', before: before, mic: !!st.micChanged }); talkRender();
     coachRec('change', coachCtx(), { role: 'chat', from: null, to: text.slice(0, 40) });
     if (run.extra.fromText && (s.lyrics || '').trim()) $('#dw-fromtext').click();
+    if (run.extra.export) { try { $('#b-save').click(); } catch (e) {} }
     if (run.said.length) await talkApply(!!st.micChanged);
   }
   async function talkApply(micToo) {
@@ -3016,7 +3024,7 @@
     $('#sai-where').textContent = { testo: '· pagina Testo', base: '· pagina Base', voce: '· pagina Voce', mix: '· pagina Mix', libreria: '· Libreria' }[ws] || '';
   }
   function saiSay(t) { saiLog().push({ who: 'ai', t: t }); saiSave(); saiRender(); if (SAI.speak && window.speechSynthesis) { try { speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(t.replace(/[«»•]/g, '')); u.lang = 'it-IT'; u.rate = 1.05; speechSynthesis.speak(u); } catch (e) {} } }
-  function saiIsCmd(text) { try { var st = talkState(), run = runCommands([text], st); return run.said.length > 0; } catch (e) { return false; } }
+  function saiIsCmd(text) { if (/^(annulla|torna indietro|undo|rimetti come prima)\b/i.test(String(text).trim())) return true; try { var st = talkState(), run = runCommands([text], st); return run.said.length > 0; } catch (e) { return false; } }
   async function saiAsk(text) {
     text = String(text || '').trim(); if (!text) return; saiLog().push({ who: 'me', t: text }); saiSave(); saiRender();
     var s = cur(), p = s.prod, r = SultanAI.respond(text, { page: dwWsName(), lyrics: s.lyrics || '', summary: (p.atmNome || (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre)) + ', ' + p.bpm + ' BPM, ' + NOTES[p.tonic] + ' ' + p.mode, memory: saiMem(), presets: StylePresets.LIST, LyricsEngine: LyricsEngine, WordBank: WordBank, bank: wbStore(), isStudioCommand: saiIsCmd, seed: saiLog().length });
