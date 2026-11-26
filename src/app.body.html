@@ -90,6 +90,7 @@
       <button data-m="dna" role="tab"><b>Mescolo io</b><small>stili e numeri</small></button>
     </div>
     <button class="one-cta" id="one-go"><span class="one-ico">▶</span><span><b>Crea base</b><small id="one-sub2">dal tuo testo</small></span></button>
+    <button class="one-cta alt" id="one-new" hidden><span class="one-ico">↻</span><span><b>Cambia base</b><small>un'altra, diversa da quelle di prima</small></span></button>
     <div id="one-status" class="small one-status" aria-live="polite"></div>
     <div class="one-team" id="one-team"></div>
     <div class="row" style="margin-top:10px"><button class="btn sm" id="one-beep">🔊 Prova il suono</button></div><div id="one-beep-out" class="small" aria-live="polite" style="margin-top:6px"></div>
@@ -123,6 +124,13 @@
     <p class="small" style="margin:10px 0 4px"><b>Cosa ne pensi?</b> (impara dalle tue scelte)</p>
     <div class="chips" id="qc-fb"></div>
     <div class="status" id="qc-msg"></div>
+  </section>
+  <section class="dw-panel" id="dw-p-suoni" data-ws="base libreria">
+    <div class="dw-ph"><h3>Ascolta i suoni</h3><span class="tag m">tocca e senti</span></div>
+    <p class="small muted">Tutti i suoni dell'app: tocca un nome e lo senti subito. «vero» = registrato da strumenti veri.</p>
+    <div class="snd-tabs" id="snd-tabs"><button class="on" data-g="inst">Strumenti</button><button data-g="drum">Batteria</button><button data-g="fx">Effetti</button></div>
+    <div id="snd-list" class="snd-list"></div>
+    <div class="status" id="snd-msg" aria-live="polite"></div>
   </section>
   <section class="dw-panel" id="dw-p-melo" data-ws="voce base">
     <div class="dw-ph"><h3>La tua melodia</h3><span class="tag m">Basic Pitch</span></div>

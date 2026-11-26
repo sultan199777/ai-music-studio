@@ -481,6 +481,38 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
 .tb-bar .btn { flex: 1 1 160px; min-height: 52px; font-size: 16px; font-weight: 700; }
 .tb-now { margin-top: 8px; opacity: .85; }
 
+/* ===== Design 26/11 (B): un'azione principale per passo, il resto come lista ordinata ===== */
+.one-cta.alt{margin-top:10px;background:var(--card-solid);color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.one-cta.alt .one-ico{background:var(--grad);color:var(--on-accent)}
+.one-cta.alt b{font-size:19px}
+.one-cta:disabled{opacity:.55}
+#v-daw > .dw-panel.fold{padding-top:12px;padding-bottom:12px;border-radius:16px;margin-top:-4px;background:var(--card);box-shadow:none}
+#v-daw > .dw-panel.fold .dw-ph h3{font-size:15.5px;font-weight:650}
+#v-daw > .dw-panel.fold .fold-sum{font-size:12.5px;opacity:.68;line-height:1.35}
+#v-daw > .dw-panel.fold-first{margin-top:34px;position:relative;overflow:visible}
+#v-daw > .dw-panel.fold-first::before{content:'Altri strumenti';position:absolute;left:4px;top:-26px;font:700 11.5px/1 'Sora',system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+#v-daw > .dw-panel:not(.fold) .dw-ph h3{font-size:18px;letter-spacing:-.01em}
+#v-daw > .dw-panel.fold:active{transform:scale(.99)}
+@media (min-width:900px){
+  #v-daw{max-width:860px;margin:0 auto}
+}
+/* prima l'azione, poi le tracce, poi la lista; la guida «Come si fa» in fondo */
+body[data-ws="base"] #dw-p-arr { order: 2; } body[data-ws="base"] #dw-p-var { order: 3; }
+#v-daw > .dw-guide { order: 85; }
+#v-daw > #dw-next { order: 84; }
+
+.one-status .one-id{display:block;font-size:17px;margin-top:10px;color:var(--ink)}
+
+/* Ascolta i suoni */
+.snd-tabs{display:flex;gap:6px;margin:8px 0 4px}
+.snd-tabs button{flex:1;font:600 14px/1 inherit;font-family:inherit;padding:11px 6px;border-radius:12px;border:1px solid var(--line);background:var(--card-solid);color:var(--ink);cursor:pointer}
+.snd-tabs button.on{background:var(--grad);color:var(--on-accent);border-color:transparent}
+.snd-list h4{margin:14px 0 6px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.snd-chips{display:flex;flex-wrap:wrap;gap:6px}
+.snd-chips .chip i{font-style:normal;font-size:10px;padding:1px 5px;border-radius:6px;background:var(--ok-bg);color:var(--ok);margin-left:3px}
+body[data-ws="base"] #dw-p-suoni { order: 4; }
+body[data-ws="libreria"] #dw-p-suoni { order: 3; }
+
 /* ===== VOICE LAB (stile Cosmo: usa le variabili del tema) ===== */
 .vl .vl-auto{font-size:1.25rem;min-height:60px;margin:8px 0 4px;letter-spacing:.04em}
 .vl .vl-hint{margin:2px 0 8px}
@@ -669,6 +701,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
       <button data-m="dna" role="tab"><b>Mescolo io</b><small>stili e numeri</small></button>
     </div>
     <button class="one-cta" id="one-go"><span class="one-ico">▶</span><span><b>Crea base</b><small id="one-sub2">dal tuo testo</small></span></button>
+    <button class="one-cta alt" id="one-new" hidden><span class="one-ico">↻</span><span><b>Cambia base</b><small>un'altra, diversa da quelle di prima</small></span></button>
     <div id="one-status" class="small one-status" aria-live="polite"></div>
     <div class="one-team" id="one-team"></div>
     <div class="row" style="margin-top:10px"><button class="btn sm" id="one-beep">🔊 Prova il suono</button></div><div id="one-beep-out" class="small" aria-live="polite" style="margin-top:6px"></div>
@@ -702,6 +735,13 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     <p class="small" style="margin:10px 0 4px"><b>Cosa ne pensi?</b> (impara dalle tue scelte)</p>
     <div class="chips" id="qc-fb"></div>
     <div class="status" id="qc-msg"></div>
+  </section>
+  <section class="dw-panel" id="dw-p-suoni" data-ws="base libreria">
+    <div class="dw-ph"><h3>Ascolta i suoni</h3><span class="tag m">tocca e senti</span></div>
+    <p class="small muted">Tutti i suoni dell'app: tocca un nome e lo senti subito. «vero» = registrato da strumenti veri.</p>
+    <div class="snd-tabs" id="snd-tabs"><button class="on" data-g="inst">Strumenti</button><button data-g="drum">Batteria</button><button data-g="fx">Effetti</button></div>
+    <div id="snd-list" class="snd-list"></div>
+    <div class="status" id="snd-msg" aria-live="polite"></div>
   </section>
   <section class="dw-panel" id="dw-p-melo" data-ws="voce base">
     <div class="dw-ph"><h3>La tua melodia</h3><span class="tag m">Basic Pitch</span></div>
@@ -936,7 +976,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>26/11, 10:48</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>26/11, 12:43</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -1311,7 +1351,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">385 test automatici superati su 385 · versione del 26 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">386 test automatici superati su 386 · versione del 26 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -9645,6 +9685,47 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
         if (/colpo|click/.test(s)) { p.b808.punch = Math.min(1, p.b808.punch + 0.25); p.b808.click = Math.min(1, p.b808.click + 0.2); changes.push('808 con più colpo'); }
         hit = true;
       }
+      // sidechain senza traccia: si fa sull'808 (lo spazio per la cassa)
+      if (!ls.length && /sidechain|pompa/.test(s)) ls = ['bass'];
+      /* ---- mani nuove (26/11): numeri, sezioni, giro, melodia, strumenti, swing ---- */
+      var nb = s.match(/\b(\d{2,3})\s*bpm\b|\bbpm\s*(?:a\s*)?(\d{2,3})\b|velocità\s*(?:a\s*)?(\d{2,3})\b/);
+      if (nb) { var v = +(nb[1] || nb[2] || nb[3]); if (v >= 50 && v <= 200) { p.bpm = v; changes.push('velocità ' + v + ' BPM'); hit = true; st.skipPA = true; } }
+      var secM = s.match(/\b(?:nell?|nella|nelle|negli|in|durante (?:la|il|l|le)?)\s*(intro|strofe?|ritornell[oi]|pre|ponte|outro|finale)\b/);
+      if (secM && ls.length && /(togli|leva|senza|spegni|muta|rimetti|riaccendi|torna)/.test(s)) {
+        var w0 = secM[1], sk = /^ritornell/.test(w0) ? 'ritornello' : /^strof/.test(w0) ? 'strofa' : w0 === 'ponte' ? 'pre' : w0 === 'finale' ? 'outro' : w0, on = /(rimetti|riaccendi|torna)/.test(s);
+        var KEYS = { drums: ['kick', 'snare', 'hat'], bass: ['bass'], chords: ['chords'], pad: ['pad'], lead: ['lead'], arp: ['arp'] };
+        p.secMix = Object.assign({}, p.secMix || {}); p.secMix[sk] = Object.assign({}, p.secMix[sk] || {});
+        ls.forEach(function (id) { (KEYS[id] || []).forEach(function (k) { if (on) delete p.secMix[sk][k]; else p.secMix[sk][k] = 0; }); });
+        changes.push((on ? 'rimetto ' : 'tolgo ') + ls.map(function (id) { return NAME[id]; }).join(' e ') + ' solo nella parte «' + sk + '»'); hit = true; st.skipPA = true; return;
+      }
+      if (/(^|\s)(più|alza|alzare)(\s|$)/.test(s) && /\b808\b/.test(s) && !/(lung|cort|colpo|click|distort|sporc|riverb|eco)/.test(s)) {
+        p.levels.basso = Math.min(2, Math.round(((p.levels.basso == null ? 1 : p.levels.basso) + 0.25) * 100) / 100);
+        p.b808 = Object.assign({ decay: 1.2, punch: 0.6, drive: 0.5, tone: 0.6, click: 0.3 }, p.b808 || {}); p.b808.drive = Math.min(1, p.b808.drive + 0.15); p.bassStyle = '808';
+        changes.push('808 più presente (volume ' + Math.round(p.levels.basso * 100) + '%, più spinta)'); hit = true; st.skipPA = true; return;
+      }
+      if (/(più|meno) (swing|groove|rimbalz|bounce)|più dritt|senza swing/.test(s)) {
+        var sw = (p.groove && typeof p.groove.swing === 'number') ? p.groove.swing : 0, up2 = /più (swing|groove|rimbalz|bounce)/.test(s);
+        p.groove = Object.assign({}, p.groove || {}, { swing: Math.max(0, Math.min(0.3, Math.round((sw + (up2 ? 0.08 : -0.1)) * 100) / 100)) });
+        changes.push('swing ' + Math.round(p.groove.swing * 100) + '%'); hit = true;
+      }
+      if (/(cambia|altra|nuova|diversa) (la )?melodi|melodia (nuova|diversa)/.test(s)) {
+        p.melSeed = (p.melSeed || 0) + 1; var hadOwn = !!(p.notes && p.notes.lead); if (hadOwn) { p.notes = Object.assign({}, p.notes); delete p.notes.lead; }
+        changes.push('melodia nuova' + (hadOwn ? ' (tolgo quella scritta a mano)' : '')); hit = true; st.skipPA = true;
+      }
+      if (/(cambia|altr[oi]|nuov[oi]|divers[oi]) (gli |il )?(accordi|giro)|(accordi|giro) (nuov|divers)/.test(s) && st.ctx && st.ctx.progs && st.ctx.progs.length) {
+        var cp = JSON.stringify(p.prog || []), cands = st.ctx.progs.filter(function (x) { return JSON.stringify(x) !== cp; }), np = cands[(((p.seed || 1) * 7) + (p.melSeed || 0)) % cands.length];
+        if (np) { p.prog = np.slice(); p.chordBars = null; changes.push('giro di accordi nuovo (gradi ' + np.map(function (d) { return d + 1; }).join('-') + ')'); hit = true; st.skipPA = true; }
+      }
+      var sw2 = s.match(/(?:metti|usa)\s+(?:il |lo |la |l |un |una )?(.+?)\s+(?:al posto (?:del|della|dello|dell|degli|delle|di)|invece (?:del|della|dello|dell|di))\s+(?:l )?(.+?)\s*$/), sw3 = s.match(/(?:metti|usa)\s+(?:il |lo |la |l |un |una )?(.+?)\s+(?:per|sulla|sugli|nella|negli|come)\s+(?:la |gli |le |il )?(melodia|accordi|pad|atmosfera|arpeggio)\b/);
+      if ((sw2 || sw3) && st.ctx && st.ctx.inst && st.ctx.inst.length) {
+        var find = function (q) { q = q.trim(); var best = null; st.ctx.inst.forEach(function (c) { var n = c.nome.toLowerCase(); if (n.indexOf(q) >= 0 || q.indexOf(n.split(' ')[0]) >= 0) { if (!best || n.length < best.nome.length) best = c; } }); return best; };
+        var ROLE = { melodia: 'melodia', accordi: 'accordi', pad: 'pad', atmosfera: 'pad', arpeggio: 'arpeggio' }, newI = find(sw2 ? sw2[1] : sw3[1]), roles = [];
+        p.inst = Object.assign({}, p.inst || {});
+        if (sw3) roles = [ROLE[sw3[2]]];
+        else { var old = find(sw2[2]); Object.keys(p.inst).forEach(function (r) { if (old && p.inst[r] === old.id) roles.push(r); }); }
+        if (newI && roles.length) { roles.forEach(function (r) { p.inst[r] = newI.id; }); changes.push(newI.nome.toLowerCase() + ' su ' + roles.join(' e ')); hit = true; st.skipPA = true; return; }
+        if (newI && !roles.length) { changes.push('(non trovo «' + (sw2 ? sw2[2] : '') + '» nella base: gli strumenti ora sono ' + Object.keys(p.inst).map(function (r) { var c = st.ctx.inst.filter(function (x) { return x.id === p.inst[r]; })[0]; return r + ' = ' + (c ? c.nome.toLowerCase() : p.inst[r]); }).join(', ') + ')'); hit = true; st.skipPA = true; return; }
+      }
       // mixer per traccia
       if (ls.length) MOVES.forEach(function (m) {
         if (!m[0].test(s)) return;
@@ -9688,7 +9769,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     });
     return { understood: changes.length > 0, changes: changes };
   }
-  var EXAMPLES = ['base tipo Pop Smoke', '808 più lungo e più distorto', 'voce più riverbero e più brillante', 'abbassa gli accordi, alza la melodia', 'melodia un\'ottava sopra', 'riser prima del ritornello', 'voce con autotune robot', 'arpeggio a destra, pad più scuro', 'master per spotify'];
+  var EXAMPLES = ['bpm 140', 'più 808', 'togli la batteria nell\'intro', 'cambia gli accordi', 'cambia la melodia', 'più swing', 'metti il piano al posto della chitarra', 'aggiungi sidechain', 'base tipo Pop Smoke', '808 più lungo e più distorto', 'voce più riverbero e più brillante', 'abbassa gli accordi, alza la melodia', 'melodia un\'ottava sopra', 'riser prima del ritornello', 'voce con autotune robot', 'arpeggio a destra, pad più scuro', 'master per spotify'];
   return { interpret: interpret, EXAMPLES: EXAMPLES };
 });
 
@@ -13859,7 +13940,8 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     $('#one-go').addEventListener('click', async function () {
       var s = cur(), st = $('#one-status'); if (!(s.lyrics || '').trim() && ONE.mode === 'auto') { st.textContent = 'Scrivi o incolla prima il testo (passo 1): da lì parto.'; return; }
       st.textContent = 'Sto componendo…'; this.disabled = true; var self = this;
-      try { if (ONE.mode === 'dna') await dnaCreate(true); else { $('#b-play').click(); await sleepMs(300); while (document.querySelector('#b-status') && /Sto componendo|Aggiungo/.test($('#b-status').textContent)) await sleepMs(300); await sleepMs(700); } st.textContent = 'Pronto. Premi ancora per una base nuova.'; teamReport(); }
+      try { if (ONE.mode === 'dna') { await dnaCreate(true); st.textContent = 'Pronto. Premi ancora per una base nuova.'; }
+        else { await tbCreate(true); await sleepMs(450); oneSaid(st); } teamReport(); }
       catch (e) { st.textContent = 'Non sono riuscito: ' + ((e && e.message) || e); } self.disabled = false;
     });
     $('#one-to-learn').addEventListener('click', function (e) { e.preventDefault(); dwWs('libreria'); window.scrollTo(0, 0); });
@@ -14753,7 +14835,8 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     list.forEach(function (cmd) {
       if (/nuova variante/i.test(cmd)) { st.prod.seed = (st.prod.seed || 1) + 1; said.push('nuova variante'); extra.variant = true; return; }
       if (/crea la base dal testo|base dal testo/i.test(cmd)) { extra.fromText = true; said.push('base dal testo'); return; }
-      var r = StudioAgent.interpret(cmd, st), pa = ProducerActions.interpret(cmd, st.prod);
+      if (/\b(esporta|scarica|salva) (la )?(base|canzone|traccia|mp3|wav)\b/i.test(cmd)) { extra.export = true; said.push('esporto la base (file audio)'); return; }
+      st.skipPA = false; var r = StudioAgent.interpret(cmd, st), pa = st.skipPA ? { understood: false } : ProducerActions.interpret(cmd, st.prod);
       if (pa.understood) { ['bpm', 'mode', 'bassStyle', 'reverb', 'levels', 'sec', 'tonic', 'genre', 'tune'].forEach(function (k) { if (pa.state[k] !== undefined) st.prod[k] = pa.state[k]; }); said = said.concat(pa.notes); }
       said = said.concat(r.changes);
     });
@@ -14762,10 +14845,15 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
   }
   function talkState() {
     var s = cur(), b = SESSION.base;
-    return { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())), ctx: { sections: b && b.sections ? b.sections.map(function (x) { return { name: x.name, startBar: x.startBar }; }) : [], leadNotes: b && b.events ? b.events.lead.filter(function (n) { return n.bar != null; }).map(function (n) { return { bar: n.bar, step: n.step, len: Math.max(1, Math.round(n.len || 2)), midi: Math.round(n.midi) }; }) : [] } };
+    return { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())), ctx: { progs: (StylePresets.PROGS[s.prod.mode] || StylePresets.PROGS.minore || []), inst: Instruments.CATALOG.map(function (c) { return { id: c.id, nome: c.nome }; }), sections: b && b.sections ? b.sections.map(function (x) { return { name: x.name, startBar: x.startBar }; }) : [], leadNotes: b && b.events ? b.events.lead.filter(function (n) { return n.bar != null; }).map(function (n) { return { bar: n.bar, step: n.step, len: Math.max(1, Math.round(n.len || 2)), midi: Math.round(n.midi) }; }) : [] } };
+  }
+  async function talkUndo() {
+    for (var i = TALK.length - 1; i >= 0; i--) { var h = TALK[i]; if (h.before && (h.state === 'attesa' || h.state === 'accettato')) { cur().prod = h.before.prod; LIB.settings.mic = h.before.mic; persist(); h.state = 'annullato'; talkRender(); await talkApply(h.mic); return 'Annullato: «' + h.text + '». La base è tornata com\'era prima.'; } }
+    return 'Non c\'è niente da annullare.';
   }
   async function talkGo(text) {
     text = (text || '').trim(); if (!text) return;
+    if (/^(annulla|torna indietro|undo|rimetti com era|rimetti come prima)\b/i.test(text.replace(/[’']/g, ' '))) { var u = await talkUndo(); TALK.push({ text: text, reply: u, state: 'nulla' }); talkRender(); return; }
     var s = cur(), a = aiSet(), before = { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())) }, st = talkState(), reply = '', lyr = [];
     var cmds = [text];
     if (a.engine !== 'regole') {
@@ -14780,10 +14868,12 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     var run = runCommands(cmds, st);
     if (a.engine !== 'regole' && !run.said.length) { st = talkState(); run = runCommands([text], st); if (run.said.length) reply = (reply ? reply + ' ' : '') + '(Ho usato le regole sulla tua frase.)'; }
     if (!run.said.length && !lyr.length) { TALK.push({ text: text, reply: (reply ? reply + ' ' : '') + (a.engine === 'regole' ? 'Non l\'ho capito, quindi non ho cambiato niente. Prova: ' + StudioAgent.EXAMPLES.slice(0, 4).join(' · ') : 'Nessuna modifica alla base.'), state: 'nulla' }); talkRender(); return; }
+    if (!run.extra.export && !run.extra.fromText && !st.micChanged && JSON.stringify(before.prod) === JSON.stringify(st.prod)) { TALK.push({ text: text, reply: run.said.every(function (x) { return /^\(/.test(x); }) ? run.said.join(' ').replace(/^\(|\)$/g, '') + '. Non ho cambiato niente.' : 'Era già così (' + run.said.join('; ') + '): non ho cambiato niente.', state: 'nulla' }); talkRender(); return; }
     s.prod = st.prod; LIB.settings.mic = st.mic; if (before.prod.genre !== s.prod.genre && Arranger.STYLES[s.prod.genre]) { s.prod.mix = null; applyRecipe(s.prod.genre); } persist();
     TALK.push({ text: text, reply: (reply ? reply + ' ' : '') + (run.said.length ? 'Fatto: ' + run.said.join('; ') + '. Se non ti piace, Annulla.' : ''), lyrics: lyr, state: run.said.length ? 'attesa' : 'nulla', before: before, mic: !!st.micChanged }); talkRender();
     coachRec('change', coachCtx(), { role: 'chat', from: null, to: text.slice(0, 40) });
     if (run.extra.fromText && (s.lyrics || '').trim()) $('#dw-fromtext').click();
+    if (run.extra.export) { try { $('#b-save').click(); } catch (e) {} }
     if (run.said.length) await talkApply(!!st.micChanged);
   }
   async function talkApply(micToo) {
@@ -15536,15 +15626,20 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
   // spazi di lavoro dello Studio: Impara · Base · Testo · Voce · Mix (un solo gruppo di pannelli alla volta)
   /* pannelli che si aprono e chiudono: aperti quelli principali del passo, il resto chiuso (la scelta del tuo tocco resta salvata) */
-  var FOLD_OPEN = {"testo": ["dw-p-testo"], "base": ["dw-p-one", "dw-p-var", "dw-p-arr", "dw-p-qc", "dw-p-omino"], "voce": ["dw-kar", "dw-p-mic", "dw-p-omino"], "mix": ["dw-p-mix"], "libreria": ["dw-p-teach", "dw-p-arch"]};
-  var FOLD_SUM = { 'dw-p-learn': 'Opzioni avanzate: modo di separazione, spazio online, cartelle e varianti', 'dw-p-arch': 'Salva la memoria su un tuo archivio privato', 'dw-p-teach': 'Carica canzoni o video: l\'app misura e impara', 'dw-p-arr': 'Le tracce della base: tocca un nome per suono, note e mixer', 'dw-p-prod': 'Effetti da film e voci di produzione scelti dal testo', 'dw-p-play': 'Cambia melodia, ascolta l\'Orecchio, salva', 'dw-p-brain': 'Stile, umore e atmosfere a mano', 'dw-p-dna': 'Stili a numeri e fusione di generi', 'dw-p-talk': 'Scrivi cosa cambiare e gli agenti lo fanno', 'dw-p-agents': 'Proposte automatiche degli agenti', 'dw-p-sing': 'Quando entrare, quanto tenere, dove respirare', 'dw-p-clips': 'Prove registrate e montaggio', 'dw-p-extra': 'Assistente testi e rime', 'dw-p-design': 'Crea suoni tuoi', 'dw-p-mixer': 'Canali del mixer', 'dw-p-qc': 'Controlli misurati sulla base e i tuoi giudizi' };
+  // design pulito: in ogni passo aperta solo l'azione principale, il resto è una lista che si apre con un tocco
+  var FOLD_OPEN = {"testo": ["dw-p-testo"], "base": ["dw-p-one", "dw-p-arr"], "voce": ["dw-kar", "dw-p-mic"], "mix": ["dw-p-mix"], "libreria": ["dw-p-teach", "dw-p-arch"]};
+  var FOLD_SUM = { 'dw-p-learn': 'Opzioni avanzate: modo di separazione, spazio online, cartelle e varianti', 'dw-p-arch': 'Salva la memoria su un tuo archivio privato', 'dw-p-teach': 'Carica canzoni o video: l\'app misura e impara', 'dw-p-arr': 'Le tracce della base: tocca un nome per suono, note e mixer', 'dw-p-prod': 'Effetti da film e voci di produzione scelti dal testo', 'dw-p-play': 'Cambia melodia, ascolta l\'Orecchio, salva', 'dw-p-brain': 'Stile, umore e atmosfere a mano', 'dw-p-dna': 'Stili a numeri e fusione di generi', 'dw-p-talk': 'Scrivi cosa cambiare e gli agenti lo fanno', 'dw-p-agents': 'Proposte automatiche degli agenti', 'dw-p-sing': 'Quando entrare, quanto tenere, dove respirare', 'dw-p-clips': 'Prove registrate e montaggio', 'dw-p-extra': 'Assistente testi e rime', 'dw-p-design': 'Crea suoni tuoi', 'dw-p-mixer': 'Canali del mixer', 'dw-p-qc': 'Controlli misurati sulla base e i tuoi giudizi', 'dw-p-omino': 'L\'omino canta il testo · base IA con ACE-Step', 'dw-p-melo': 'Canticchia e la base suona la tua melodia', 'dw-p-var': 'Tante basi diverse da ascoltare e scegliere', 'dw-p-mic': 'Effetti sulla tua voce', 'dw-p-suoni': 'Tocca un nome e senti: strumenti, batteria vera, effetti' };
   function foldApply(ws) {
+    if (LIB.settings.foldV !== 2) { LIB.settings.fold = {}; LIB.settings.foldV = 2; persist(); } // nuovo design: riparto dall'ordine pulito
     var st = LIB.settings.fold || (LIB.settings.fold = {}), open = FOLD_OPEN[ws] || [];
     $$('#v-daw > .dw-panel').forEach(function (pn) {
       if (!pn.id || pn.classList.contains('dw-guide') || !pn.querySelector('.dw-ph')) return;
       if (!pn.querySelector('.fold-sum') && FOLD_SUM[pn.id]) { var sm = document.createElement('p'); sm.className = 'fold-sum'; sm.textContent = FOLD_SUM[pn.id]; pn.querySelector('.dw-ph').insertAdjacentElement('afterend', sm); }
       var k = ws + ':' + pn.id, want = st[k] != null ? st[k] : open.indexOf(pn.id) < 0; pn.classList.toggle('fold', !!want);
     });
+    // titoletto «Altri strumenti» sopra il primo pannello chiuso (nell'ordine visibile)
+    var vis = $$('#v-daw > .dw-panel.fold').filter(function (pn) { pn.classList.toggle('fold-first', false); return !pn.hidden && !pn.classList.contains('dw-guide'); });
+    vis.sort(function (a, b) { return (+getComputedStyle(a).order || 0) - (+getComputedStyle(b).order || 0); }); if (vis[0]) vis[0].classList.add('fold-first');
   }
   document.addEventListener('click', function (e) {
     var h = e.target.closest && e.target.closest('#v-daw > .dw-panel > .dw-ph'); if (!h || e.target.closest('button,a,input,select,.tag')) return;
@@ -15553,8 +15648,9 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
   });
   function dwWsName() { var w = LIB.settings.ws; return ['testo', 'base', 'voce', 'mix', 'libreria'].indexOf(w) >= 0 ? w : 'testo'; }
   function dwWs(ws) {
-    LIB.settings.ws = ws; persist(); document.body.dataset.ws = ws; try { foldApply(ws); } catch (e) {} try { dwSteps(); tbRender(); } catch (e) {}
+    LIB.settings.ws = ws; persist(); document.body.dataset.ws = ws; try { dwSteps(); tbRender(); } catch (e) {}
     var adv = !!LIB.settings.adv; $$('#v-daw [data-ws]').forEach(function (el) { var a = el.getAttribute('data-adv'); el.hidden = (' ' + el.getAttribute('data-ws') + ' ').indexOf(' ' + ws + ' ') < 0 || (!adv && a && (' ' + a + ' ').indexOf(' ' + ws + ' ') >= 0); });
+    try { foldApply(ws); } catch (e) {} // dopo aver mostrato/nascosto i pannelli del passo
     var ab = $('#dw-adv'); if (ab) ab.textContent = adv ? 'Nascondi strumenti avanzati' : 'Mostra strumenti avanzati';
     $$('#tabs a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-ws') === ws); });
     if (ws === 'base' || ws === 'voce' || ws === 'mix') setTimeout(function () { if (SESSION.base) { dwDraw(SESSION.base); prDraw(); } }, 30);
@@ -15872,7 +15968,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     $('#sai-where').textContent = { testo: '· pagina Testo', base: '· pagina Base', voce: '· pagina Voce', mix: '· pagina Mix', libreria: '· Libreria' }[ws] || '';
   }
   function saiSay(t) { saiLog().push({ who: 'ai', t: t }); saiSave(); saiRender(); if (SAI.speak && window.speechSynthesis) { try { speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(t.replace(/[«»•]/g, '')); u.lang = 'it-IT'; u.rate = 1.05; speechSynthesis.speak(u); } catch (e) {} } }
-  function saiIsCmd(text) { try { var st = talkState(), run = runCommands([text], st); return run.said.length > 0; } catch (e) { return false; } }
+  function saiIsCmd(text) { if (/^(annulla|torna indietro|undo|rimetti come prima)\b/i.test(String(text).trim())) return true; try { var st = talkState(), run = runCommands([text], st); return run.said.length > 0; } catch (e) { return false; } }
   async function saiAsk(text) {
     text = String(text || '').trim(); if (!text) return; saiLog().push({ who: 'me', t: text }); saiSave(); saiRender();
     var s = cur(), p = s.prod, r = SultanAI.respond(text, { page: dwWsName(), lyrics: s.lyrics || '', summary: (p.atmNome || (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre)) + ', ' + p.bpm + ' BPM, ' + NOTES[p.tonic] + ' ' + p.mode, memory: saiMem(), presets: StylePresets.LIST, LyricsEngine: LyricsEngine, WordBank: WordBank, bank: wbStore(), isStudioCommand: saiIsCmd, seed: saiLog().length });
@@ -16024,9 +16120,13 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
   });
 
   /* ---------- Pagina Testo: «Crea la base da questo testo» e «Cambia base» (ogni pressione = base nuova dal testo) ---------- */
+  function oneSaid(st) {
+    var s = cur(), p = s.prod; s.baseN = (s.baseN || 0) + 1; persist();
+    st.innerHTML = '<b class="one-id">Base n. ' + s.baseN + ': ' + esc(Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + (p.atmNome ? ' (' + esc(p.atmNome) + ')' : '') + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode + '</b>' + (arrPlanName(p) ? '<br>' + esc(arrPlanName(p)) : '') + '<br><span class="muted">Ogni pressione = una base nuova, diversa dalle ultime.</span>';
+  }
   function tbRender() {
     var s = cur(), made = !!(s.prod && (s.prod.atmNome || s.brainFor)) && !!(s.lyrics || '').trim(), p = s.prod;
-    $('#tb-go').textContent = '🎵 Crea la base dal testo'; $('#tb-new').hidden = false; $('#tb-new').disabled = !made;
+    $('#tb-go').textContent = '🎵 Crea la base dal testo'; $('#tb-new').hidden = false; $('#tb-new').disabled = !made; if ($('#one-new')) $('#one-new').hidden = !made;
     $('#tb-now').innerHTML = made ? '<b>Stai ascoltando: ' + esc(Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + '</b>' + (p.atmNome ? ' (' + esc(p.atmNome) + ')' : '') + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode + (arrPlanName(p) ? '<br>Arrangiamento: ' + esc(arrPlanName(p)) : '') + '<br><span class="muted">«Cambia base» ne crea un\'altra diversa dall\'inizio alla fine: genere, tonalità, strumenti, intro, ritmo.</span>' : '<span class="muted">Prima «Crea la base dal testo», poi «Cambia base» quante volte vuoi.</span>';
   }
   async function tbCreate(fresh) {
@@ -16040,6 +16140,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
   }
   $('#tb-go').addEventListener('click', function () { tbCreate(false); });
   $('#tb-new').addEventListener('click', function () { tbCreate(true); });
+  $('#one-new').addEventListener('click', async function () { var o = $('#one-status'), b = this; b.disabled = true; o.textContent = 'Sto componendo un\'altra base, diversa…'; await tbCreate(true); await new Promise(function (r) { setTimeout(r, 450); }); b.disabled = false; oneSaid(o); });
   $('#dw-lyrics').addEventListener('input', function () { clearTimeout(tbRender.t); tbRender.t = setTimeout(tbRender, 400); });
 
   /* ---------- Agente Melodia: la tua voce canticchiata → note (Basic Pitch di Spotify, Apache 2.0, modello < 1 MB) ---------- */
@@ -16086,6 +16187,58 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
       await meloApply(dec.getChannelData(0), dec.sampleRate, btn);
     } catch (e) { btn.disabled = false; m.textContent = 'Non riesco a registrare: ' + ((e && e.message) || e); }
   });
+  /* ---------- Ascolta i suoni: ogni suono dell'app, da toccare e sentire ---------- */
+  var SND = { g: 'inst' };
+  var SND_REAL = { clap: 'Battito di mani', snare: 'Rullante', snare2: 'Rullante 2', rim: 'Bordo del rullante', hatc: 'Hi-hat chiuso', hato: 'Hi-hat aperto', shaker: 'Shaker', tamb: 'Tamburello', conga: 'Conga', bongo: 'Bongo', cajon: 'Cajón', cowbell: 'Campanaccio', claves: 'Claves', tom: 'Tom', bdrum: 'Grancassa da orchestra', crash: 'Piatto', swell: 'Piatto che sale', ocean: 'Mare (ocean drum)' };
+  function sndRender() {
+    var L = $('#snd-list'); if (!L) return; var h = '';
+    if (SND.g === 'inst') {
+      var fam = {}; Instruments.CATALOG.forEach(function (c) { (fam[c.fam] = fam[c.fam] || []).push(c); });
+      Object.keys(fam).forEach(function (f) { h += '<h4>' + esc(Instruments.FAMILIES[f] || f) + '</h4><div class="snd-chips">' + fam[f].map(function (c) { return '<button class="chip" data-snd-i="' + c.id + '">' + esc(c.nome) + (c.fonte === 'campione' ? ' <i>vero</i>' : '') + '</button>'; }).join('') + '</div>'; });
+    } else if (SND.g === 'drum') {
+      h += '<h4>Colpi registrati veri</h4><div class="snd-chips">' + Object.keys(SND_REAL).map(function (k) { return '<button class="chip" data-snd-r="' + k + '">' + SND_REAL[k] + ' <i>vero</i></button>'; }).join('') + '</div>';
+      h += '<h4>Kit di batteria (un giro di 2 battute)</h4><div class="snd-chips">' + Object.keys(SynthDesign.KITS).map(function (k) { return '<button class="chip" data-snd-k="' + k + '">' + esc(SynthDesign.KITS[k].nome || k) + (SynthDesign.KITS[k].real ? ' <i>vero</i>' : '') + '</button>'; }).join('') + '</div>';
+    } else {
+      var g = {}; Object.keys(ProdFx.SOUNDS).forEach(function (k) { var S = ProdFx.SOUNDS[k]; (g[S.gruppo] = g[S.gruppo] || []).push('<button class="chip" data-snd-f="' + k + '">' + esc(S.nome) + '</button>'); });
+      Object.keys(g).forEach(function (k) { h += '<h4>' + esc(k) + '</h4><div class="snd-chips">' + g[k].join('') + '</div>'; });
+    }
+    L.innerHTML = h; $$('#snd-tabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-g') === SND.g); });
+  }
+  function sndMix(parts, n) { var y = new Float32Array(n); parts.forEach(function (p) { if (!p.x) return; for (var i = 0; i < p.x.length && p.at + i < n; i++) y[p.at + i] += p.x[i] * (p.g || 1); }); var pk = 0; for (var i = 0; i < n; i++) pk = Math.max(pk, Math.abs(y[i])); if (pk > 0.95) for (i = 0; i < n; i++) y[i] *= 0.95 / pk; return y; }
+  async function sndPlay(b) {
+    var m = $('#snd-msg'), sr = 32000, x = null, name = b.textContent.replace(/\s*vero$/, ''); unlockAudio(); dwStop(true); stopPlay();
+    m.textContent = 'Preparo: ' + name + '…';
+    try {
+      try { if (window.RealPerc && !RealPerc.ready()) await RealPerc.load('inst/realperc.json'); } catch (e) {}
+      var a;
+      if ((a = b.getAttribute('data-snd-i'))) { // frase breve: arpeggio di Do maggiore e accordo finale, nel registro dello strumento
+        if (!(await loadInst(a))) throw new Error('strumento non scaricato (serve internet la prima volta)');
+        var c = Instruments.info ? Instruments.info(a) : null, lo = (c && c.range) ? c.range[0] : 48, hi = (c && c.range) ? c.range[1] : 84, root = 60; while (root < lo + 5) root += 12; while (root + 12 > hi && root - 12 >= lo) root -= 12;
+        var beat = 0.42, seq = [0, 4, 7, 12, 7, 4], parts = seq.map(function (d, i) { return { at: Math.round(i * beat * sr), x: Instruments.render(a, root + d, beat * 1.4, sr, { vel: 0.8 }) }; });
+        [0, 4, 7].forEach(function (d) { parts.push({ at: Math.round(seq.length * beat * sr), x: Instruments.render(a, root + d, 2, sr, { vel: 0.7, hold: true }), g: 0.6 }); });
+        x = sndMix(parts, Math.round((seq.length * beat + 2.4) * sr));
+      } else if ((a = b.getAttribute('data-snd-r'))) {
+        if (!RealPerc.ready()) throw new Error('suoni veri non scaricati (serve internet la prima volta)');
+        x = (a === 'ocean' || a === 'swell') ? RealPerc.bed(a, sr, a === 'ocean' ? 6 : 4, 0) : sndMix([0, 1, 2].map(function (i) { return { at: Math.round(i * 0.55 * sr), x: RealPerc.hit(a, sr, i, 0.9) }; }), Math.round(2.6 * sr));
+      } else if ((a = b.getAttribute('data-snd-k'))) { // giro: cassa, hi-hat, rullante/battito come in una base
+        var st = 60 / 96 / 4, P = [];
+        for (var s = 0; s < 32; s++) {
+          var at = Math.round(s * st * sr);
+          if (s % 2 === 0) P.push({ at: at, x: SynthDesign.kitRender(a, 'hat', { open: s % 16 === 14 }, sr, s), g: 0.45 });
+          if ([0, 6, 10, 16, 22, 27].indexOf(s) >= 0) P.push({ at: at, x: SynthDesign.kitRender(a, 'kick', {}, sr, s), g: 0.95 });
+          if (s % 8 === 4) P.push({ at: at, x: SynthDesign.kitRender(a, s % 16 === 12 ? 'clap' : 'snare', {}, sr, s), g: 0.8 });
+        }
+        x = sndMix(P, Math.round((32 * st + 0.8) * sr));
+      } else if ((a = b.getAttribute('data-snd-f'))) {
+        x = ProdFx.sound(a, sr, 1 + Math.floor(Math.random() * 999), { bpm: 96, dur: 5, midi: 48 });
+      }
+      if (!x || !x.length) throw new Error('suono vuoto');
+      playBuf(x, sr); m.textContent = '▶ Ascolti: ' + name;
+    } catch (e) { m.textContent = 'Non riesco a suonare «' + name + '»: ' + ((e && e.message) || e); }
+  }
+  $('#snd-tabs').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; SND.g = b.getAttribute('data-g'); sndRender(); });
+  $('#snd-list').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) sndPlay(b); });
+  sndRender();
   SHOW.daw = function () { applyMoodBg(moodNow()); dwWs(dwWsName()); try { tbRender(); } catch (e) {} projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */

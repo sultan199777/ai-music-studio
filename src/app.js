@@ -996,7 +996,8 @@
     $('#one-go').addEventListener('click', async function () {
       var s = cur(), st = $('#one-status'); if (!(s.lyrics || '').trim() && ONE.mode === 'auto') { st.textContent = 'Scrivi o incolla prima il testo (passo 1): da lì parto.'; return; }
       st.textContent = 'Sto componendo…'; this.disabled = true; var self = this;
-      try { if (ONE.mode === 'dna') await dnaCreate(true); else { $('#b-play').click(); await sleepMs(300); while (document.querySelector('#b-status') && /Sto componendo|Aggiungo/.test($('#b-status').textContent)) await sleepMs(300); await sleepMs(700); } st.textContent = 'Pronto. Premi ancora per una base nuova.'; teamReport(); }
+      try { if (ONE.mode === 'dna') { await dnaCreate(true); st.textContent = 'Pronto. Premi ancora per una base nuova.'; }
+        else { await tbCreate(true); await sleepMs(450); oneSaid(st); } teamReport(); }
       catch (e) { st.textContent = 'Non sono riuscito: ' + ((e && e.message) || e); } self.disabled = false;
     });
     $('#one-to-learn').addEventListener('click', function (e) { e.preventDefault(); dwWs('libreria'); window.scrollTo(0, 0); });
@@ -1890,7 +1891,8 @@
     list.forEach(function (cmd) {
       if (/nuova variante/i.test(cmd)) { st.prod.seed = (st.prod.seed || 1) + 1; said.push('nuova variante'); extra.variant = true; return; }
       if (/crea la base dal testo|base dal testo/i.test(cmd)) { extra.fromText = true; said.push('base dal testo'); return; }
-      var r = StudioAgent.interpret(cmd, st), pa = ProducerActions.interpret(cmd, st.prod);
+      if (/\b(esporta|scarica|salva) (la )?(base|canzone|traccia|mp3|wav)\b/i.test(cmd)) { extra.export = true; said.push('esporto la base (file audio)'); return; }
+      st.skipPA = false; var r = StudioAgent.interpret(cmd, st), pa = st.skipPA ? { understood: false } : ProducerActions.interpret(cmd, st.prod);
       if (pa.understood) { ['bpm', 'mode', 'bassStyle', 'reverb', 'levels', 'sec', 'tonic', 'genre', 'tune'].forEach(function (k) { if (pa.state[k] !== undefined) st.prod[k] = pa.state[k]; }); said = said.concat(pa.notes); }
       said = said.concat(r.changes);
     });
@@ -1899,10 +1901,15 @@
   }
   function talkState() {
     var s = cur(), b = SESSION.base;
-    return { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())), ctx: { sections: b && b.sections ? b.sections.map(function (x) { return { name: x.name, startBar: x.startBar }; }) : [], leadNotes: b && b.events ? b.events.lead.filter(function (n) { return n.bar != null; }).map(function (n) { return { bar: n.bar, step: n.step, len: Math.max(1, Math.round(n.len || 2)), midi: Math.round(n.midi) }; }) : [] } };
+    return { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())), ctx: { progs: (StylePresets.PROGS[s.prod.mode] || StylePresets.PROGS.minore || []), inst: Instruments.CATALOG.map(function (c) { return { id: c.id, nome: c.nome }; }), sections: b && b.sections ? b.sections.map(function (x) { return { name: x.name, startBar: x.startBar }; }) : [], leadNotes: b && b.events ? b.events.lead.filter(function (n) { return n.bar != null; }).map(function (n) { return { bar: n.bar, step: n.step, len: Math.max(1, Math.round(n.len || 2)), midi: Math.round(n.midi) }; }) : [] } };
+  }
+  async function talkUndo() {
+    for (var i = TALK.length - 1; i >= 0; i--) { var h = TALK[i]; if (h.before && (h.state === 'attesa' || h.state === 'accettato')) { cur().prod = h.before.prod; LIB.settings.mic = h.before.mic; persist(); h.state = 'annullato'; talkRender(); await talkApply(h.mic); return 'Annullato: «' + h.text + '». La base è tornata com\'era prima.'; } }
+    return 'Non c\'è niente da annullare.';
   }
   async function talkGo(text) {
     text = (text || '').trim(); if (!text) return;
+    if (/^(annulla|torna indietro|undo|rimetti com era|rimetti come prima)\b/i.test(text.replace(/[’']/g, ' '))) { var u = await talkUndo(); TALK.push({ text: text, reply: u, state: 'nulla' }); talkRender(); return; }
     var s = cur(), a = aiSet(), before = { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())) }, st = talkState(), reply = '', lyr = [];
     var cmds = [text];
     if (a.engine !== 'regole') {
@@ -1917,10 +1924,12 @@
     var run = runCommands(cmds, st);
     if (a.engine !== 'regole' && !run.said.length) { st = talkState(); run = runCommands([text], st); if (run.said.length) reply = (reply ? reply + ' ' : '') + '(Ho usato le regole sulla tua frase.)'; }
     if (!run.said.length && !lyr.length) { TALK.push({ text: text, reply: (reply ? reply + ' ' : '') + (a.engine === 'regole' ? 'Non l\'ho capito, quindi non ho cambiato niente. Prova: ' + StudioAgent.EXAMPLES.slice(0, 4).join(' · ') : 'Nessuna modifica alla base.'), state: 'nulla' }); talkRender(); return; }
+    if (!run.extra.export && !run.extra.fromText && !st.micChanged && JSON.stringify(before.prod) === JSON.stringify(st.prod)) { TALK.push({ text: text, reply: run.said.every(function (x) { return /^\(/.test(x); }) ? run.said.join(' ').replace(/^\(|\)$/g, '') + '. Non ho cambiato niente.' : 'Era già così (' + run.said.join('; ') + '): non ho cambiato niente.', state: 'nulla' }); talkRender(); return; }
     s.prod = st.prod; LIB.settings.mic = st.mic; if (before.prod.genre !== s.prod.genre && Arranger.STYLES[s.prod.genre]) { s.prod.mix = null; applyRecipe(s.prod.genre); } persist();
     TALK.push({ text: text, reply: (reply ? reply + ' ' : '') + (run.said.length ? 'Fatto: ' + run.said.join('; ') + '. Se non ti piace, Annulla.' : ''), lyrics: lyr, state: run.said.length ? 'attesa' : 'nulla', before: before, mic: !!st.micChanged }); talkRender();
     coachRec('change', coachCtx(), { role: 'chat', from: null, to: text.slice(0, 40) });
     if (run.extra.fromText && (s.lyrics || '').trim()) $('#dw-fromtext').click();
+    if (run.extra.export) { try { $('#b-save').click(); } catch (e) {} }
     if (run.said.length) await talkApply(!!st.micChanged);
   }
   async function talkApply(micToo) {
@@ -2673,15 +2682,20 @@
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
   // spazi di lavoro dello Studio: Impara · Base · Testo · Voce · Mix (un solo gruppo di pannelli alla volta)
   /* pannelli che si aprono e chiudono: aperti quelli principali del passo, il resto chiuso (la scelta del tuo tocco resta salvata) */
-  var FOLD_OPEN = {"testo": ["dw-p-testo"], "base": ["dw-p-one", "dw-p-var", "dw-p-arr", "dw-p-qc", "dw-p-omino"], "voce": ["dw-kar", "dw-p-mic", "dw-p-omino"], "mix": ["dw-p-mix"], "libreria": ["dw-p-teach", "dw-p-arch"]};
-  var FOLD_SUM = { 'dw-p-learn': 'Opzioni avanzate: modo di separazione, spazio online, cartelle e varianti', 'dw-p-arch': 'Salva la memoria su un tuo archivio privato', 'dw-p-teach': 'Carica canzoni o video: l\'app misura e impara', 'dw-p-arr': 'Le tracce della base: tocca un nome per suono, note e mixer', 'dw-p-prod': 'Effetti da film e voci di produzione scelti dal testo', 'dw-p-play': 'Cambia melodia, ascolta l\'Orecchio, salva', 'dw-p-brain': 'Stile, umore e atmosfere a mano', 'dw-p-dna': 'Stili a numeri e fusione di generi', 'dw-p-talk': 'Scrivi cosa cambiare e gli agenti lo fanno', 'dw-p-agents': 'Proposte automatiche degli agenti', 'dw-p-sing': 'Quando entrare, quanto tenere, dove respirare', 'dw-p-clips': 'Prove registrate e montaggio', 'dw-p-extra': 'Assistente testi e rime', 'dw-p-design': 'Crea suoni tuoi', 'dw-p-mixer': 'Canali del mixer', 'dw-p-qc': 'Controlli misurati sulla base e i tuoi giudizi' };
+  // design pulito: in ogni passo aperta solo l'azione principale, il resto è una lista che si apre con un tocco
+  var FOLD_OPEN = {"testo": ["dw-p-testo"], "base": ["dw-p-one", "dw-p-arr"], "voce": ["dw-kar", "dw-p-mic"], "mix": ["dw-p-mix"], "libreria": ["dw-p-teach", "dw-p-arch"]};
+  var FOLD_SUM = { 'dw-p-learn': 'Opzioni avanzate: modo di separazione, spazio online, cartelle e varianti', 'dw-p-arch': 'Salva la memoria su un tuo archivio privato', 'dw-p-teach': 'Carica canzoni o video: l\'app misura e impara', 'dw-p-arr': 'Le tracce della base: tocca un nome per suono, note e mixer', 'dw-p-prod': 'Effetti da film e voci di produzione scelti dal testo', 'dw-p-play': 'Cambia melodia, ascolta l\'Orecchio, salva', 'dw-p-brain': 'Stile, umore e atmosfere a mano', 'dw-p-dna': 'Stili a numeri e fusione di generi', 'dw-p-talk': 'Scrivi cosa cambiare e gli agenti lo fanno', 'dw-p-agents': 'Proposte automatiche degli agenti', 'dw-p-sing': 'Quando entrare, quanto tenere, dove respirare', 'dw-p-clips': 'Prove registrate e montaggio', 'dw-p-extra': 'Assistente testi e rime', 'dw-p-design': 'Crea suoni tuoi', 'dw-p-mixer': 'Canali del mixer', 'dw-p-qc': 'Controlli misurati sulla base e i tuoi giudizi', 'dw-p-omino': 'L\'omino canta il testo · base IA con ACE-Step', 'dw-p-melo': 'Canticchia e la base suona la tua melodia', 'dw-p-var': 'Tante basi diverse da ascoltare e scegliere', 'dw-p-mic': 'Effetti sulla tua voce', 'dw-p-suoni': 'Tocca un nome e senti: strumenti, batteria vera, effetti' };
   function foldApply(ws) {
+    if (LIB.settings.foldV !== 2) { LIB.settings.fold = {}; LIB.settings.foldV = 2; persist(); } // nuovo design: riparto dall'ordine pulito
     var st = LIB.settings.fold || (LIB.settings.fold = {}), open = FOLD_OPEN[ws] || [];
     $$('#v-daw > .dw-panel').forEach(function (pn) {
       if (!pn.id || pn.classList.contains('dw-guide') || !pn.querySelector('.dw-ph')) return;
       if (!pn.querySelector('.fold-sum') && FOLD_SUM[pn.id]) { var sm = document.createElement('p'); sm.className = 'fold-sum'; sm.textContent = FOLD_SUM[pn.id]; pn.querySelector('.dw-ph').insertAdjacentElement('afterend', sm); }
       var k = ws + ':' + pn.id, want = st[k] != null ? st[k] : open.indexOf(pn.id) < 0; pn.classList.toggle('fold', !!want);
     });
+    // titoletto «Altri strumenti» sopra il primo pannello chiuso (nell'ordine visibile)
+    var vis = $$('#v-daw > .dw-panel.fold').filter(function (pn) { pn.classList.toggle('fold-first', false); return !pn.hidden && !pn.classList.contains('dw-guide'); });
+    vis.sort(function (a, b) { return (+getComputedStyle(a).order || 0) - (+getComputedStyle(b).order || 0); }); if (vis[0]) vis[0].classList.add('fold-first');
   }
   document.addEventListener('click', function (e) {
     var h = e.target.closest && e.target.closest('#v-daw > .dw-panel > .dw-ph'); if (!h || e.target.closest('button,a,input,select,.tag')) return;
@@ -2690,8 +2704,9 @@
   });
   function dwWsName() { var w = LIB.settings.ws; return ['testo', 'base', 'voce', 'mix', 'libreria'].indexOf(w) >= 0 ? w : 'testo'; }
   function dwWs(ws) {
-    LIB.settings.ws = ws; persist(); document.body.dataset.ws = ws; try { foldApply(ws); } catch (e) {} try { dwSteps(); tbRender(); } catch (e) {}
+    LIB.settings.ws = ws; persist(); document.body.dataset.ws = ws; try { dwSteps(); tbRender(); } catch (e) {}
     var adv = !!LIB.settings.adv; $$('#v-daw [data-ws]').forEach(function (el) { var a = el.getAttribute('data-adv'); el.hidden = (' ' + el.getAttribute('data-ws') + ' ').indexOf(' ' + ws + ' ') < 0 || (!adv && a && (' ' + a + ' ').indexOf(' ' + ws + ' ') >= 0); });
+    try { foldApply(ws); } catch (e) {} // dopo aver mostrato/nascosto i pannelli del passo
     var ab = $('#dw-adv'); if (ab) ab.textContent = adv ? 'Nascondi strumenti avanzati' : 'Mostra strumenti avanzati';
     $$('#tabs a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-ws') === ws); });
     if (ws === 'base' || ws === 'voce' || ws === 'mix') setTimeout(function () { if (SESSION.base) { dwDraw(SESSION.base); prDraw(); } }, 30);
@@ -3009,7 +3024,7 @@
     $('#sai-where').textContent = { testo: '· pagina Testo', base: '· pagina Base', voce: '· pagina Voce', mix: '· pagina Mix', libreria: '· Libreria' }[ws] || '';
   }
   function saiSay(t) { saiLog().push({ who: 'ai', t: t }); saiSave(); saiRender(); if (SAI.speak && window.speechSynthesis) { try { speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(t.replace(/[«»•]/g, '')); u.lang = 'it-IT'; u.rate = 1.05; speechSynthesis.speak(u); } catch (e) {} } }
-  function saiIsCmd(text) { try { var st = talkState(), run = runCommands([text], st); return run.said.length > 0; } catch (e) { return false; } }
+  function saiIsCmd(text) { if (/^(annulla|torna indietro|undo|rimetti come prima)\b/i.test(String(text).trim())) return true; try { var st = talkState(), run = runCommands([text], st); return run.said.length > 0; } catch (e) { return false; } }
   async function saiAsk(text) {
     text = String(text || '').trim(); if (!text) return; saiLog().push({ who: 'me', t: text }); saiSave(); saiRender();
     var s = cur(), p = s.prod, r = SultanAI.respond(text, { page: dwWsName(), lyrics: s.lyrics || '', summary: (p.atmNome || (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre)) + ', ' + p.bpm + ' BPM, ' + NOTES[p.tonic] + ' ' + p.mode, memory: saiMem(), presets: StylePresets.LIST, LyricsEngine: LyricsEngine, WordBank: WordBank, bank: wbStore(), isStudioCommand: saiIsCmd, seed: saiLog().length });
@@ -3161,9 +3176,13 @@
   });
 
   /* ---------- Pagina Testo: «Crea la base da questo testo» e «Cambia base» (ogni pressione = base nuova dal testo) ---------- */
+  function oneSaid(st) {
+    var s = cur(), p = s.prod; s.baseN = (s.baseN || 0) + 1; persist();
+    st.innerHTML = '<b class="one-id">Base n. ' + s.baseN + ': ' + esc(Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + (p.atmNome ? ' (' + esc(p.atmNome) + ')' : '') + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode + '</b>' + (arrPlanName(p) ? '<br>' + esc(arrPlanName(p)) : '') + '<br><span class="muted">Ogni pressione = una base nuova, diversa dalle ultime.</span>';
+  }
   function tbRender() {
     var s = cur(), made = !!(s.prod && (s.prod.atmNome || s.brainFor)) && !!(s.lyrics || '').trim(), p = s.prod;
-    $('#tb-go').textContent = '🎵 Crea la base dal testo'; $('#tb-new').hidden = false; $('#tb-new').disabled = !made;
+    $('#tb-go').textContent = '🎵 Crea la base dal testo'; $('#tb-new').hidden = false; $('#tb-new').disabled = !made; if ($('#one-new')) $('#one-new').hidden = !made;
     $('#tb-now').innerHTML = made ? '<b>Stai ascoltando: ' + esc(Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + '</b>' + (p.atmNome ? ' (' + esc(p.atmNome) + ')' : '') + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode + (arrPlanName(p) ? '<br>Arrangiamento: ' + esc(arrPlanName(p)) : '') + '<br><span class="muted">«Cambia base» ne crea un\'altra diversa dall\'inizio alla fine: genere, tonalità, strumenti, intro, ritmo.</span>' : '<span class="muted">Prima «Crea la base dal testo», poi «Cambia base» quante volte vuoi.</span>';
   }
   async function tbCreate(fresh) {
@@ -3177,6 +3196,7 @@
   }
   $('#tb-go').addEventListener('click', function () { tbCreate(false); });
   $('#tb-new').addEventListener('click', function () { tbCreate(true); });
+  $('#one-new').addEventListener('click', async function () { var o = $('#one-status'), b = this; b.disabled = true; o.textContent = 'Sto componendo un\'altra base, diversa…'; await tbCreate(true); await new Promise(function (r) { setTimeout(r, 450); }); b.disabled = false; oneSaid(o); });
   $('#dw-lyrics').addEventListener('input', function () { clearTimeout(tbRender.t); tbRender.t = setTimeout(tbRender, 400); });
 
   /* ---------- Agente Melodia: la tua voce canticchiata → note (Basic Pitch di Spotify, Apache 2.0, modello < 1 MB) ---------- */
@@ -3223,6 +3243,58 @@
       await meloApply(dec.getChannelData(0), dec.sampleRate, btn);
     } catch (e) { btn.disabled = false; m.textContent = 'Non riesco a registrare: ' + ((e && e.message) || e); }
   });
+  /* ---------- Ascolta i suoni: ogni suono dell'app, da toccare e sentire ---------- */
+  var SND = { g: 'inst' };
+  var SND_REAL = { clap: 'Battito di mani', snare: 'Rullante', snare2: 'Rullante 2', rim: 'Bordo del rullante', hatc: 'Hi-hat chiuso', hato: 'Hi-hat aperto', shaker: 'Shaker', tamb: 'Tamburello', conga: 'Conga', bongo: 'Bongo', cajon: 'Cajón', cowbell: 'Campanaccio', claves: 'Claves', tom: 'Tom', bdrum: 'Grancassa da orchestra', crash: 'Piatto', swell: 'Piatto che sale', ocean: 'Mare (ocean drum)' };
+  function sndRender() {
+    var L = $('#snd-list'); if (!L) return; var h = '';
+    if (SND.g === 'inst') {
+      var fam = {}; Instruments.CATALOG.forEach(function (c) { (fam[c.fam] = fam[c.fam] || []).push(c); });
+      Object.keys(fam).forEach(function (f) { h += '<h4>' + esc(Instruments.FAMILIES[f] || f) + '</h4><div class="snd-chips">' + fam[f].map(function (c) { return '<button class="chip" data-snd-i="' + c.id + '">' + esc(c.nome) + (c.fonte === 'campione' ? ' <i>vero</i>' : '') + '</button>'; }).join('') + '</div>'; });
+    } else if (SND.g === 'drum') {
+      h += '<h4>Colpi registrati veri</h4><div class="snd-chips">' + Object.keys(SND_REAL).map(function (k) { return '<button class="chip" data-snd-r="' + k + '">' + SND_REAL[k] + ' <i>vero</i></button>'; }).join('') + '</div>';
+      h += '<h4>Kit di batteria (un giro di 2 battute)</h4><div class="snd-chips">' + Object.keys(SynthDesign.KITS).map(function (k) { return '<button class="chip" data-snd-k="' + k + '">' + esc(SynthDesign.KITS[k].nome || k) + (SynthDesign.KITS[k].real ? ' <i>vero</i>' : '') + '</button>'; }).join('') + '</div>';
+    } else {
+      var g = {}; Object.keys(ProdFx.SOUNDS).forEach(function (k) { var S = ProdFx.SOUNDS[k]; (g[S.gruppo] = g[S.gruppo] || []).push('<button class="chip" data-snd-f="' + k + '">' + esc(S.nome) + '</button>'); });
+      Object.keys(g).forEach(function (k) { h += '<h4>' + esc(k) + '</h4><div class="snd-chips">' + g[k].join('') + '</div>'; });
+    }
+    L.innerHTML = h; $$('#snd-tabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-g') === SND.g); });
+  }
+  function sndMix(parts, n) { var y = new Float32Array(n); parts.forEach(function (p) { if (!p.x) return; for (var i = 0; i < p.x.length && p.at + i < n; i++) y[p.at + i] += p.x[i] * (p.g || 1); }); var pk = 0; for (var i = 0; i < n; i++) pk = Math.max(pk, Math.abs(y[i])); if (pk > 0.95) for (i = 0; i < n; i++) y[i] *= 0.95 / pk; return y; }
+  async function sndPlay(b) {
+    var m = $('#snd-msg'), sr = 32000, x = null, name = b.textContent.replace(/\s*vero$/, ''); unlockAudio(); dwStop(true); stopPlay();
+    m.textContent = 'Preparo: ' + name + '…';
+    try {
+      try { if (window.RealPerc && !RealPerc.ready()) await RealPerc.load('inst/realperc.json'); } catch (e) {}
+      var a;
+      if ((a = b.getAttribute('data-snd-i'))) { // frase breve: arpeggio di Do maggiore e accordo finale, nel registro dello strumento
+        if (!(await loadInst(a))) throw new Error('strumento non scaricato (serve internet la prima volta)');
+        var c = Instruments.info ? Instruments.info(a) : null, lo = (c && c.range) ? c.range[0] : 48, hi = (c && c.range) ? c.range[1] : 84, root = 60; while (root < lo + 5) root += 12; while (root + 12 > hi && root - 12 >= lo) root -= 12;
+        var beat = 0.42, seq = [0, 4, 7, 12, 7, 4], parts = seq.map(function (d, i) { return { at: Math.round(i * beat * sr), x: Instruments.render(a, root + d, beat * 1.4, sr, { vel: 0.8 }) }; });
+        [0, 4, 7].forEach(function (d) { parts.push({ at: Math.round(seq.length * beat * sr), x: Instruments.render(a, root + d, 2, sr, { vel: 0.7, hold: true }), g: 0.6 }); });
+        x = sndMix(parts, Math.round((seq.length * beat + 2.4) * sr));
+      } else if ((a = b.getAttribute('data-snd-r'))) {
+        if (!RealPerc.ready()) throw new Error('suoni veri non scaricati (serve internet la prima volta)');
+        x = (a === 'ocean' || a === 'swell') ? RealPerc.bed(a, sr, a === 'ocean' ? 6 : 4, 0) : sndMix([0, 1, 2].map(function (i) { return { at: Math.round(i * 0.55 * sr), x: RealPerc.hit(a, sr, i, 0.9) }; }), Math.round(2.6 * sr));
+      } else if ((a = b.getAttribute('data-snd-k'))) { // giro: cassa, hi-hat, rullante/battito come in una base
+        var st = 60 / 96 / 4, P = [];
+        for (var s = 0; s < 32; s++) {
+          var at = Math.round(s * st * sr);
+          if (s % 2 === 0) P.push({ at: at, x: SynthDesign.kitRender(a, 'hat', { open: s % 16 === 14 }, sr, s), g: 0.45 });
+          if ([0, 6, 10, 16, 22, 27].indexOf(s) >= 0) P.push({ at: at, x: SynthDesign.kitRender(a, 'kick', {}, sr, s), g: 0.95 });
+          if (s % 8 === 4) P.push({ at: at, x: SynthDesign.kitRender(a, s % 16 === 12 ? 'clap' : 'snare', {}, sr, s), g: 0.8 });
+        }
+        x = sndMix(P, Math.round((32 * st + 0.8) * sr));
+      } else if ((a = b.getAttribute('data-snd-f'))) {
+        x = ProdFx.sound(a, sr, 1 + Math.floor(Math.random() * 999), { bpm: 96, dur: 5, midi: 48 });
+      }
+      if (!x || !x.length) throw new Error('suono vuoto');
+      playBuf(x, sr); m.textContent = '▶ Ascolti: ' + name;
+    } catch (e) { m.textContent = 'Non riesco a suonare «' + name + '»: ' + ((e && e.message) || e); }
+  }
+  $('#snd-tabs').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; SND.g = b.getAttribute('data-g'); sndRender(); });
+  $('#snd-list').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) sndPlay(b); });
+  sndRender();
   SHOW.daw = function () { applyMoodBg(moodNow()); dwWs(dwWsName()); try { tbRender(); } catch (e) {} projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */

@@ -42,6 +42,47 @@
         if (/colpo|click/.test(s)) { p.b808.punch = Math.min(1, p.b808.punch + 0.25); p.b808.click = Math.min(1, p.b808.click + 0.2); changes.push('808 con più colpo'); }
         hit = true;
       }
+      // sidechain senza traccia: si fa sull'808 (lo spazio per la cassa)
+      if (!ls.length && /sidechain|pompa/.test(s)) ls = ['bass'];
+      /* ---- mani nuove (26/11): numeri, sezioni, giro, melodia, strumenti, swing ---- */
+      var nb = s.match(/\b(\d{2,3})\s*bpm\b|\bbpm\s*(?:a\s*)?(\d{2,3})\b|velocità\s*(?:a\s*)?(\d{2,3})\b/);
+      if (nb) { var v = +(nb[1] || nb[2] || nb[3]); if (v >= 50 && v <= 200) { p.bpm = v; changes.push('velocità ' + v + ' BPM'); hit = true; st.skipPA = true; } }
+      var secM = s.match(/\b(?:nell?|nella|nelle|negli|in|durante (?:la|il|l|le)?)\s*(intro|strofe?|ritornell[oi]|pre|ponte|outro|finale)\b/);
+      if (secM && ls.length && /(togli|leva|senza|spegni|muta|rimetti|riaccendi|torna)/.test(s)) {
+        var w0 = secM[1], sk = /^ritornell/.test(w0) ? 'ritornello' : /^strof/.test(w0) ? 'strofa' : w0 === 'ponte' ? 'pre' : w0 === 'finale' ? 'outro' : w0, on = /(rimetti|riaccendi|torna)/.test(s);
+        var KEYS = { drums: ['kick', 'snare', 'hat'], bass: ['bass'], chords: ['chords'], pad: ['pad'], lead: ['lead'], arp: ['arp'] };
+        p.secMix = Object.assign({}, p.secMix || {}); p.secMix[sk] = Object.assign({}, p.secMix[sk] || {});
+        ls.forEach(function (id) { (KEYS[id] || []).forEach(function (k) { if (on) delete p.secMix[sk][k]; else p.secMix[sk][k] = 0; }); });
+        changes.push((on ? 'rimetto ' : 'tolgo ') + ls.map(function (id) { return NAME[id]; }).join(' e ') + ' solo nella parte «' + sk + '»'); hit = true; st.skipPA = true; return;
+      }
+      if (/(^|\s)(più|alza|alzare)(\s|$)/.test(s) && /\b808\b/.test(s) && !/(lung|cort|colpo|click|distort|sporc|riverb|eco)/.test(s)) {
+        p.levels.basso = Math.min(2, Math.round(((p.levels.basso == null ? 1 : p.levels.basso) + 0.25) * 100) / 100);
+        p.b808 = Object.assign({ decay: 1.2, punch: 0.6, drive: 0.5, tone: 0.6, click: 0.3 }, p.b808 || {}); p.b808.drive = Math.min(1, p.b808.drive + 0.15); p.bassStyle = '808';
+        changes.push('808 più presente (volume ' + Math.round(p.levels.basso * 100) + '%, più spinta)'); hit = true; st.skipPA = true; return;
+      }
+      if (/(più|meno) (swing|groove|rimbalz|bounce)|più dritt|senza swing/.test(s)) {
+        var sw = (p.groove && typeof p.groove.swing === 'number') ? p.groove.swing : 0, up2 = /più (swing|groove|rimbalz|bounce)/.test(s);
+        p.groove = Object.assign({}, p.groove || {}, { swing: Math.max(0, Math.min(0.3, Math.round((sw + (up2 ? 0.08 : -0.1)) * 100) / 100)) });
+        changes.push('swing ' + Math.round(p.groove.swing * 100) + '%'); hit = true;
+      }
+      if (/(cambia|altra|nuova|diversa) (la )?melodi|melodia (nuova|diversa)/.test(s)) {
+        p.melSeed = (p.melSeed || 0) + 1; var hadOwn = !!(p.notes && p.notes.lead); if (hadOwn) { p.notes = Object.assign({}, p.notes); delete p.notes.lead; }
+        changes.push('melodia nuova' + (hadOwn ? ' (tolgo quella scritta a mano)' : '')); hit = true; st.skipPA = true;
+      }
+      if (/(cambia|altr[oi]|nuov[oi]|divers[oi]) (gli |il )?(accordi|giro)|(accordi|giro) (nuov|divers)/.test(s) && st.ctx && st.ctx.progs && st.ctx.progs.length) {
+        var cp = JSON.stringify(p.prog || []), cands = st.ctx.progs.filter(function (x) { return JSON.stringify(x) !== cp; }), np = cands[(((p.seed || 1) * 7) + (p.melSeed || 0)) % cands.length];
+        if (np) { p.prog = np.slice(); p.chordBars = null; changes.push('giro di accordi nuovo (gradi ' + np.map(function (d) { return d + 1; }).join('-') + ')'); hit = true; st.skipPA = true; }
+      }
+      var sw2 = s.match(/(?:metti|usa)\s+(?:il |lo |la |l |un |una )?(.+?)\s+(?:al posto (?:del|della|dello|dell|degli|delle|di)|invece (?:del|della|dello|dell|di))\s+(?:l )?(.+?)\s*$/), sw3 = s.match(/(?:metti|usa)\s+(?:il |lo |la |l |un |una )?(.+?)\s+(?:per|sulla|sugli|nella|negli|come)\s+(?:la |gli |le |il )?(melodia|accordi|pad|atmosfera|arpeggio)\b/);
+      if ((sw2 || sw3) && st.ctx && st.ctx.inst && st.ctx.inst.length) {
+        var find = function (q) { q = q.trim(); var best = null; st.ctx.inst.forEach(function (c) { var n = c.nome.toLowerCase(); if (n.indexOf(q) >= 0 || q.indexOf(n.split(' ')[0]) >= 0) { if (!best || n.length < best.nome.length) best = c; } }); return best; };
+        var ROLE = { melodia: 'melodia', accordi: 'accordi', pad: 'pad', atmosfera: 'pad', arpeggio: 'arpeggio' }, newI = find(sw2 ? sw2[1] : sw3[1]), roles = [];
+        p.inst = Object.assign({}, p.inst || {});
+        if (sw3) roles = [ROLE[sw3[2]]];
+        else { var old = find(sw2[2]); Object.keys(p.inst).forEach(function (r) { if (old && p.inst[r] === old.id) roles.push(r); }); }
+        if (newI && roles.length) { roles.forEach(function (r) { p.inst[r] = newI.id; }); changes.push(newI.nome.toLowerCase() + ' su ' + roles.join(' e ')); hit = true; st.skipPA = true; return; }
+        if (newI && !roles.length) { changes.push('(non trovo «' + (sw2 ? sw2[2] : '') + '» nella base: gli strumenti ora sono ' + Object.keys(p.inst).map(function (r) { var c = st.ctx.inst.filter(function (x) { return x.id === p.inst[r]; })[0]; return r + ' = ' + (c ? c.nome.toLowerCase() : p.inst[r]); }).join(', ') + ')'); hit = true; st.skipPA = true; return; }
+      }
       // mixer per traccia
       if (ls.length) MOVES.forEach(function (m) {
         if (!m[0].test(s)) return;
@@ -85,6 +126,6 @@
     });
     return { understood: changes.length > 0, changes: changes };
   }
-  var EXAMPLES = ['base tipo Pop Smoke', '808 più lungo e più distorto', 'voce più riverbero e più brillante', 'abbassa gli accordi, alza la melodia', 'melodia un\'ottava sopra', 'riser prima del ritornello', 'voce con autotune robot', 'arpeggio a destra, pad più scuro', 'master per spotify'];
+  var EXAMPLES = ['bpm 140', 'più 808', 'togli la batteria nell\'intro', 'cambia gli accordi', 'cambia la melodia', 'più swing', 'metti il piano al posto della chitarra', 'aggiungi sidechain', 'base tipo Pop Smoke', '808 più lungo e più distorto', 'voce più riverbero e più brillante', 'abbassa gli accordi, alza la melodia', 'melodia un\'ottava sopra', 'riser prima del ritornello', 'voce con autotune robot', 'arpeggio a destra, pad più scuro', 'master per spotify'];
   return { interpret: interpret, EXAMPLES: EXAMPLES };
 });

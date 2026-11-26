@@ -14,3 +14,19 @@ test('frasi → modifiche vere al progetto', () => {
 });
 test('quello che non capisce non lo fa', () => { const s = st(), r = SA.interpret('fammi un caffè', s); assert.strictEqual(r.understood, false); assert.deepStrictEqual(s.prod.mix, {}); });
 test('stile Pop Smoke / Drill di Brooklyn a parole', () => { const s = st(); assert.ok(SA.interpret('fammi una base tipo Pop Smoke', s).understood); assert.strictEqual(s.prod.genre, 'brooklyn'); assert.strictEqual(s.prod.bpm, 143); });
+
+// Mani nuove (26/11): ogni comando deve cambiare davvero lo stato giusto
+test('mani: bpm a numero, 808, sezione, giro, melodia, strumento, swing, sidechain', () => {
+  const SA = require('../src/studio-agent.js');
+  const mk = () => ({ prod: { bpm: 137, mode: 'minore', levels: {}, inst: { melodia: 'guitar', accordi: 'piano' }, prog: [0, 5, 3, 4], seed: 3 }, mic: {}, ctx: { progs: [[0, 5, 3, 4], [5, 3, 0, 4]], inst: [{ id: 'piano', nome: 'Pianoforte a coda' }, { id: 'guitar', nome: 'Chitarra acustica' }, { id: 'violins', nome: 'Violini' }], sections: [] } });
+  let st = mk(); SA.interpret('bpm 140', st); assert.strictEqual(st.prod.bpm, 140);
+  st = mk(); SA.interpret('più 808', st); assert.ok(st.prod.levels.basso > 1);
+  st = mk(); SA.interpret('togli la batteria nell intro', st); assert.deepStrictEqual(st.prod.secMix.intro, { kick: 0, snare: 0, hat: 0 }); assert.strictEqual(st.prod.levels.batteria, undefined);
+  st = mk(); SA.interpret('cambia gli accordi', st); assert.notDeepStrictEqual(st.prod.prog, [0, 5, 3, 4]);
+  st = mk(); SA.interpret('cambia la melodia', st); assert.strictEqual(st.prod.melSeed, 1);
+  st = mk(); SA.interpret('metti il piano al posto della chitarra', st); assert.strictEqual(st.prod.inst.melodia, 'piano');
+  st = mk(); SA.interpret('usa i violini per la melodia', st); assert.strictEqual(st.prod.inst.melodia, 'violins');
+  st = mk(); SA.interpret('più swing', st); assert.ok(st.prod.groove.swing > 0);
+  st = mk(); SA.interpret('aggiungi sidechain', st); assert.ok(st.prod.mix.bass.duck > 0);
+  st = mk(); const r = SA.interpret('duplica il ritornello', st); assert.strictEqual(r.understood, false); // non lo sa fare: non finge
+});
