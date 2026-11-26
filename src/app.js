@@ -3338,6 +3338,32 @@
   $('#snd-tabs').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; SND.g = b.getAttribute('data-g'); sndRender(); });
   $('#snd-list').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) sndPlay(b); });
   sndRender();
+  /* ---------- Orecchio IA: LAION CLAP (Apache 2.0) ascolta la base e la descrive; confronto con ciò che doveva essere ---------- */
+  var CLAP = { clf: null };
+  var CLAP_INST = { piano: 'piano', epiano: 'electric piano', violins: 'violin', violin: 'violin', cellos: 'cello', guitar: 'acoustic guitar', nylon: 'acoustic guitar', eguitar: 'electric guitar', flute: 'flute', trumpet: 'trumpet', sax: 'saxophone', marimba: 'marimba', harp: 'harp', bells: 'bells', glock: 'glockenspiel', organ: 'organ', choir: 'choir', kalimba: 'kalimba' };
+  var CLAP_LAB = ['piano', 'electric piano', 'violin', 'cello', 'acoustic guitar', 'electric guitar', 'flute', 'trumpet', 'saxophone', 'marimba', 'harp', 'bells', 'organ', 'synthesizer', 'choir', '808 bass', 'drum kit'];
+  var CLAP_MOOD = [['sad emotional music', 'triste'], ['aggressive dark music', 'aggressiva e scura'], ['happy upbeat music', 'allegra'], ['calm relaxing music', 'calma'], ['epic powerful music', 'epica e potente'], ['romantic love song', 'romantica']];
+  async function clapRun() {
+    var o = $('#qc-clap-out'), btn = $('#qc-clap'); btn.disabled = true;
+    try {
+      if (!CLAP.clf) { o.textContent = 'Scarico l\'orecchio IA (circa 156 MB, solo la prima volta)…'; var tf = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2/dist/transformers.min.js'); tf.env.backends.onnx.wasm.wasmPaths = new URL('tf/', location.href).href; CLAP.clf = await tf.pipeline('zero-shot-audio-classification', 'Xenova/clap-htsat-unfused', { dtype: 'q8', progress_callback: function (x) { if (x && x.progress && x.file && /onnx/.test(x.file)) o.textContent = 'Scarico l\'orecchio IA: ' + Math.round(x.progress) + '%'; } }); }
+      o.textContent = 'Ascolto la base…'; var mx = buildMix({ voice: false }), x = mx.samples, sr = mx.sr, SR = 48000, b = SESSION.base, p = cur().prod;
+      function seg(t0, t1) { var n = Math.round((t1 - t0) * SR), y = new Float32Array(n), r = sr / SR; for (var i = 0; i < n; i++) { var q = t0 * sr + i * r, j = Math.floor(q), f = q - j; y[i] = (x[j] || 0) * (1 - f) + (x[j + 1] || 0) * f; } return y; }
+      var secs = (b && b.sections ? b.sections : [{ name: 'base', startSec: 0, endSec: x.length / sr }]).filter(function (s, i, a) { return a.findIndex(function (z) { return z.name === s.name; }) === i; }).slice(0, 4), lines = [], inst = {}, mood = {};
+      for (var k = 0; k < secs.length; k++) {
+        var s = secs[k], a0 = s.startSec, a1 = Math.min(s.endSec, a0 + 10); if (a1 - a0 < 2) continue; var y = seg(a0, a1);
+        var ri = (await CLAP.clf(y, CLAP_LAB)).sort(function (u, v) { return v.score - u.score; }), rm = (await CLAP.clf(y, CLAP_MOOD.map(function (m) { return m[0]; }))).sort(function (u, v) { return v.score - u.score; });
+        ri.forEach(function (r) { inst[r.label] = Math.max(inst[r.label] || 0, r.score); }); rm.forEach(function (r) { mood[r.label] = (mood[r.label] || 0) + r.score / secs.length; });
+        lines.push('<b>' + esc(s.name) + '</b>: ' + ri.slice(0, 3).map(function (r) { return esc(r.label) + ' ' + Math.round(r.score * 100) + '%'; }).join(', '));
+      }
+      var top = Object.keys(mood).sort(function (u, v) { return mood[v] - mood[u]; })[0], moodIt = (CLAP_MOOD.filter(function (m) { return m[0] === top; })[0] || [0, top])[1];
+      var want = Object.keys(p.inst || {}).map(function (r) { return [r, CLAP_INST[p.inst[r]]]; }).filter(function (z) { return z[1]; }), heard = want.map(function (z) { var sc = inst[z[1]] || 0; return z[0] + ' (' + z[1] + '): ' + (sc >= 0.15 ? 'sentito ✓' : 'poco udibile') + ' ' + Math.round(sc * 100) + '%'; });
+      o.innerHTML = lines.join('<br>') + '<br><b>Emozione che sento:</b> ' + esc(moodIt) + ' (' + Math.round(mood[top] * 100) + '%)' + (heard.length ? '<br><b>Strumenti che la base dovrebbe avere:</b> ' + heard.map(esc).join(' · ') : '') + '<br><span class="muted">Ipotesi del modello, non misure: affidabile su strumenti acustici, meno su chitarra, sax e generi elettronici.</span>';
+      try { var D = LIB.settings.ears || (LIB.settings.ears = []); D.push({ t: Date.now(), genre: p.genre, mood: moodIt, inst: Object.keys(inst).sort(function (u, v) { return inst[v] - inst[u]; }).slice(0, 3) }); if (D.length > 50) D.shift(); persist(); } catch (e) {}
+    } catch (e) { o.textContent = 'L\'orecchio IA non ce l\'ha fatta: ' + ((e && e.message) || e) + '. Su iPhone può mancare memoria: chiudi le altre app e riprova.'; }
+    btn.disabled = false;
+  }
+  $('#qc-clap').addEventListener('click', clapRun);
   SHOW.daw = function () { applyMoodBg(moodNow()); dwWs(dwWsName()); try { tbRender(); } catch (e) {} projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
