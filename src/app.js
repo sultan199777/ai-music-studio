@@ -2492,7 +2492,7 @@
     var base = new Float32Array(n), rhythm = new Float32Array(n), orig = new Float32Array(n);
     for (i = 0; i < n; i++) { base[i] = st.drums[i] + st.bass[i] + st.other[i]; rhythm[i] = st.drums[i] + st.bass[i]; orig[i] = base[i] + voice[i]; }
     var trS = out[4] && out[4].lines && out[4].lines.length ? { lines: out[4].lines, text: out[4].text || '' } : null;
-    return { tr: trS, sr: 44100, voice: voice, base: base, stems: st, rhythm: rhythm, orig: orig, ai: true, note: (trS ? 'Parole trascritte sul tuo spazio. ' : '') + 'Separato sul tuo spazio Hugging Face (' + (modo === 'pulita' ? 'Mel-Band RoFormer + htdemucs' : 'htdemucs') + '), canzone intera, in ' + Math.round((Date.now() - t0) / 1000) + ' s.' };
+    return { tr: trS, sr: 44100, voice: voice, base: base, stems: st, rhythm: rhythm, orig: orig, ai: true, note: (trS ? 'Parole trascritte sul tuo spazio. ' : '') + 'Separato sul tuo spazio Hugging Face (' + ({ pulita: 'Mel-Band RoFormer + htdemucs', precisa: 'htdemucs_ft', '6tracce': 'htdemucs_6s, 6 tracce' }[modo] || 'htdemucs') + '), canzone intera, in ' + Math.round((Date.now() - t0) / 1000) + ' s.' };
   }
   async function sepFast(f, el, quick) {
     var d = await decodeStereo(f, 32000), sr = d.sr, i, mx = Math.round(sr * learnSecs());

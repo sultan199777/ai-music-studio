@@ -40,3 +40,4 @@ Regola: un tasto che esiste NON vuol dire ✅. Ogni ✅ ha il suo test.
 ## Aggiunte (26/11)
 - **Suoni veri registrati (CC0, VCSL/VSCO-2-CE):** rullanti, battiti di mani, hi-hat, shaker, tamburello, conga, bongo, cajón, campanaccio, claves, tom, grancassa, piatti, mare. Kit «Batteria vera»; gli effetti mare/impatto/salita/piatto al contrario usano registrazioni vere. Misurato nel browser: caricato e scelto da «Cambia base».
 - **Agente Melodia (Basic Pitch di Spotify, Apache 2.0):** canticchi 10 secondi → note → la base suona la tua melodia (traccia Melodia, modificabile nel piano roll). Misurato nel browser con una melodia di prova: 7 note su 7 giuste. Non ancora provato su iPhone vero.
+- **Separazione sul tuo spazio, 2 modi nuovi (Demucs, MIT):** «Precisa» (htdemucs_ft) e «6 tracce» (voce, batteria, basso, chitarra, piano, resto). Misurato sul server di prova: 20 s di canzone → 6 tracce in 21 s, precisa in 88 s. Serve lo spazio Hugging Face creato (stasera).

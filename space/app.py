@@ -36,9 +36,19 @@ def separa(file, modo="veloce", parole=True, lingua="it", progress=gr.Progress()
             progress(0.1, desc="Estraggo la voce (Mel-Band RoFormer)")
             files = [os.path.join(out, f) for f in _sep("vocals_mel_band_roformer.ckpt", out).separate(wav)]
             voce = _pick(files, "vocals"); base_in = _pick(files, "other") or _pick(files, "instrumental")
-        progress(0.5 if modo == "pulita" else 0.1, desc="Divido batteria, basso e resto (htdemucs)")
-        files = [os.path.join(out, f) for f in _sep("htdemucs.yaml", out).separate(base_in)]
+        # modelli Demucs (MIT): htdemucs veloce, htdemucs_ft più preciso (4 modelli, ~4 volte più lento), htdemucs_6s con chitarra e piano
+        dm = {"precisa": "htdemucs_ft.yaml", "6tracce": "htdemucs_6s.yaml"}.get(modo, "htdemucs.yaml")
+        progress(0.5 if modo == "pulita" else 0.1, desc="Divido batteria, basso e resto (" + dm.split(".")[0] + ")")
+        files = [os.path.join(out, f) for f in _sep(dm, out).separate(base_in)]
         drums, bass, other, v2 = _pick(files, "drums"), _pick(files, "bass"), _pick(files, "other"), _pick(files, "vocals")
+        chit, piano = _pick(files, "guitar"), _pick(files, "piano")
+        if chit or piano:  # per l'app «resto» resta tutto il resto; chitarra e piano escono anche da soli
+            import soundfile as sf
+            x, sr = sf.read(other); n = len(x)
+            for f2 in (chit, piano):
+                if f2:
+                    y, _ = sf.read(f2); m = min(n, len(y)); x[:m] += y[:m]
+            other = os.path.join(out, "resto_tutto.wav"); sf.write(other, x, sr)
         if voce is None:
             voce = v2
         testo = {"lines": [], "text": ""}
@@ -49,7 +59,7 @@ def separa(file, modo="veloce", parole=True, lingua="it", progress=gr.Progress()
             except Exception as e:  # le parole sono un di più: se falliscono, le tracce arrivano lo stesso
                 testo = {"lines": [], "text": "", "errore": str(e)[:200]}
         progress(1, desc="Fatto")
-        return voce, drums, bass, other, testo
+        return voce, drums, bass, other, testo, chit, piano
 
 _wh = {}
 def _trascrivi(path, lingua):
@@ -72,8 +82,8 @@ def _pulisci():
 
 demo = gr.Interface(
     fn=separa,
-    inputs=[gr.File(label="Video o audio"), gr.Radio(["veloce", "pulita"], value="veloce", label="Modo"), gr.Checkbox(value=True, label="Trascrivi le parole"), gr.Textbox(value="it", label="Lingua")],
-    outputs=[gr.File(label="Voce"), gr.File(label="Batteria"), gr.File(label="Basso"), gr.File(label="Resto"), gr.JSON(label="Parole")],
+    inputs=[gr.File(label="Video o audio"), gr.Radio(["veloce", "pulita", "precisa", "6tracce"], value="veloce", label="Modo"), gr.Checkbox(value=True, label="Trascrivi le parole"), gr.Textbox(value="it", label="Lingua")],
+    outputs=[gr.File(label="Voce"), gr.File(label="Batteria"), gr.File(label="Basso"), gr.File(label="Resto"), gr.JSON(label="Parole"), gr.File(label="Chitarra"), gr.File(label="Piano")],
     title="Sultan Sound · separazione",
     description="Motore di separazione per l'app Sultan Sound. Carica un video o un audio: escono voce, batteria, basso e resto.",
     api_name="separa",
