@@ -72,6 +72,7 @@
       var pf = prefs([m], presets), extra = pf.like.length ? ' Da ora parto da «' + pf.like[0] + '» quando non scegli uno stile.' : (pf.avoid.length ? ' Eviterò «' + pf.avoid.join(', ') + '».' : '');
       return { reply: 'Imparato: «' + m + '».' + extra + ' Scrivi «cosa sai di me» per vedere tutto quello che ricordo.', actions: A };
     }
+    if (/dimentica le mie preferenze|azzera (le )?preferenze|cancella (le )?preferenze/.test(t)) return { reply: 'Fatto: ho azzerato le preferenze di produzione (pianoforte, profondità, batteria, spazio voce…). La memoria delle frasi che mi hai insegnato resta: per quella usa «dimentica …».', actions: [{ type: 'resetprefs' }] };
     if (/^(dimentica|cancella dalla memoria|scordati)/.test(t)) { var f = t.replace(/^(dimentica|cancella dalla memoria|scordati)\s*(di|che)?\s*/, ''); A.push({ type: 'forget', text: f }); return { reply: f ? 'Tolgo dalla memoria quello che parla di «' + f + '».' : 'Dimmi cosa dimenticare (es. «dimentica Shiva»).', actions: A }; }
     if (/cosa (sai|ricordi) di me|cosa hai imparato|la tua memoria/.test(t)) { var mm = ctx.memory || []; return { reply: mm.length ? 'Ricordo:\n• ' + mm.slice(-15).join('\n• ') : 'Non mi hai ancora insegnato niente. Prova: «ricorda che mi piacciono le basi drill scure» o «non voglio il flauto».', actions: [] }; }
     // rime

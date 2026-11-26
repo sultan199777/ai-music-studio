@@ -1,0 +1,27 @@
+# Stato del Produttore AI (documento permanente di verifica)
+Aggiornato: 26/11/2026 (chat B). Stati: ✅ funziona (provato con test automatico o nel browser simulato) · 🟡 c'è ma non provato fino in fondo (iPhone vero, ascolto, servizio esterno) · ❌ manca · ⚠️ problema noto.
+Regola: un tasto che esiste NON vuol dire ✅. Ogni ✅ ha il suo test.
+
+| # | Funzione richiesta | Stato | Come è verificato | Note |
+|---|---|---|---|---|
+| 1 | Ricerca tecnologie (documento permanente) | ✅ | notes/RICERCA-TECNOLOGIE-MUSICALI.md | da aggiornare a ogni scoperta |
+| 2 | Motore che ragiona (armonia, melodia, ritmo, struttura) | 🟡 | Arranger + StylePresets + DNA (A); test arranger/style-presets | spiega le scelte nel Cervello e nel controllo qualità; melodia = modulo della chat A |
+| 3 | CREA dà basi diverse dall'inizio alla fine | ✅ (misurato) | quality-check.test.js; prova browser: 3 «Crea base» di fila → somiglianza 3%, 3%, 14% | se una base somiglia ≥60% a una delle ultime 5, si rifà da sola (max 2 volte) |
+| 3b | Kit di batteria e strumenti diversi a ogni base | ✅ | prova browser 5 creazioni (kit e strumenti cambiano) | varietyGuard: evita kit delle ultime 2 e strumenti delle ultime 5 |
+| 3c | Melodia poco ripetitiva | ⚠️ | misurato: 75% di battute di melodia identiche in una trap | il controllo lo segnala e «Migliora» la rigenera; il motore melodico è della chat A |
+| 4 | Linguaggi per genere (trap, drill, melodic, dark, hip hop, R&B, pop, cinematic) | 🟡 | 21+ stili nell'Arranger, 39 atmosfere | ascolto dell'utente necessario |
+| 5 | Testo come origine (emozione, sillabe, sezioni, energia del ritornello) | 🟡 | Cervello (A), SongMap, ProdFx, controllo «parti del testo rispettate» | accenti/respiri: guida al canto (A) |
+| 6 | Autocontrollo della qualità | ✅ | quality-check.test.js (copia, audio, controlli misurati/da ascoltare) | pannello «Il produttore controlla» + «Migliora i punti deboli» |
+| 7 | Apprendimento dalle preferenze (mi piace, troppo semplice, più piano…) | ✅ | prova browser: «Più pianoforte» → accordi Kawai; «Batteria più potente» → livello 1,12 | profilo in LIB.settings.prodProf (conteggi + registro legato alla base); azzerabile; NON è addestramento di un modello |
+| 7b | Confronto tra risultati vecchi e nuovi | 🟡 | storico impronte (fpHist) e registro feedback | manca una vista «prima/dopo» da ascoltare |
+| 8 | Impara da video lunghi | 🟡 | telefono: 40 s centrali (84 s su computer); canzone intera a pezzi con ripresa (provato); spazio HF: 4 min interi (provato con server di prova) | iPhone vero non provato; pulsante IMPARA separato: ❌ (oggi impara da solo dopo il caricamento) |
+| 9 | Guida vocale (omino) | 🟡 | omino a tempo (omino.test.js), voce guida nello Studio (provato: traccia avviata), ACE-Step per la demo cantata | note mostrate: ❌; alternative di melodia: ❌ |
+| 10 | Agenti collegati (Producer, Composer, Beatmaker, Arranger, Vocal, Analyst, Learning, Mix) | 🟡 | moduli esistenti: Cervello/DNA (composer, A), Arranger, QualityCheck (analyst), prodProf (learning), Mixer/MasterPro, ProdFx | manca un «regista» che mostri il dialogo tra agenti |
+| 11 | Guida per principianti + assistente che interviene davvero | ✅ | sultan-ai.test.js; prova browser: «808 più lungo» eseguito, «crea 8 basi» con memoria Shiva | frasi libere complesse («più profondo») → collegare a prodApply |
+| 12 | Documento di verifica + test automatici | ✅ | questo file; `node --test tests/*.test.js` | |
+| 13 | Miglioramento continuo / agente di ricerca | ❌ | — | proposta: attività programmata che aggiorna il documento di ricerca e chiede approvazione prima di integrare |
+
+## Problemi noti
+- Audio su iPhone: sblocco a ogni tocco + file muto (A). Non verificato sul telefono dell'utente.
+- Memoria iPhone: base intera ~0,8 GB, separazione nel telefono ~1,7 GB (misurato su computer). Per i video lunghi: spazio HF.
+- ACE-Step: limite gratuito giornaliero per indirizzo IP.

@@ -474,6 +474,7 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
 
 .ace-box { margin: 10px 0; padding: 10px 12px; border-radius: 14px; background: rgba(183,156,255,.08); border: 1px solid rgba(183,156,255,.25); }
 .ace-box audio { width: 100%; margin-top: 8px; }
+body[data-ws="base"] #dw-p-qc { order: 3; }
 
 /* ===== VOICE LAB (stile Cosmo: usa le variabili del tema) ===== */
 .vl .vl-auto{font-size:1.25rem;min-height:60px;margin:8px 0 4px;letter-spacing:.04em}
@@ -682,6 +683,15 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
     <div id="dna-msg" class="note small" aria-live="polite"></div>
     <details><summary class="small">Regola i numeri a mano (ogni slider cambia il suono)</summary><div id="dna-sl"></div><div class="row"><button class="btn sm" id="dna-reset">Torna ai numeri dello stile</button></div></details>
     <div class="row" style="margin-top:8px"><input id="dna-name" maxlength="40" placeholder="Nome del tuo stile (es. Notte di Milano)" style="flex:1"><button class="btn sm" id="dna-save">Salva questo stile</button></div>
+  </section>
+  <section class="dw-panel" id="dw-p-qc" data-ws="base">
+    <div class="dw-ph"><h3>Il produttore controlla</h3><span class="tag m">Misurato</span></div>
+    <p class="small muted">Dopo ogni base l'IA misura cosa c'è dentro: se è diversa dalle precedenti, accordi, melodia, batteria, 808, energia del ritornello, audio. Il gusto resta da ascoltare: dimmelo con i tasti sotto e lo userò nelle prossime basi.</p>
+    <div id="qc-list"></div>
+    <div class="row"><button class="btn pri" id="qc-fix">Migliora i punti deboli</button></div>
+    <p class="small" style="margin:10px 0 4px"><b>Cosa ne pensi?</b> (impara dalle tue scelte)</p>
+    <div class="chips" id="qc-fb"></div>
+    <div class="status" id="qc-msg"></div>
   </section>
   <section class="dw-panel" id="dw-p-omino" data-ws="base voce">
     <div class="dw-ph"><h3>Come canterai</h3><span class="tag m">Segui l'omino</span></div>
@@ -910,7 +920,7 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>25/11, 18:42</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>26/11, 07:22</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -1285,7 +1295,7 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">377 test automatici superati su 377 · versione del 25 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">377 test automatici superati su 377 · versione del 26 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -6447,6 +6457,7 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
       var pf = prefs([m], presets), extra = pf.like.length ? ' Da ora parto da «' + pf.like[0] + '» quando non scegli uno stile.' : (pf.avoid.length ? ' Eviterò «' + pf.avoid.join(', ') + '».' : '');
       return { reply: 'Imparato: «' + m + '».' + extra + ' Scrivi «cosa sai di me» per vedere tutto quello che ricordo.', actions: A };
     }
+    if (/dimentica le mie preferenze|azzera (le )?preferenze|cancella (le )?preferenze/.test(t)) return { reply: 'Fatto: ho azzerato le preferenze di produzione (pianoforte, profondità, batteria, spazio voce…). La memoria delle frasi che mi hai insegnato resta: per quella usa «dimentica …».', actions: [{ type: 'resetprefs' }] };
     if (/^(dimentica|cancella dalla memoria|scordati)/.test(t)) { var f = t.replace(/^(dimentica|cancella dalla memoria|scordati)\s*(di|che)?\s*/, ''); A.push({ type: 'forget', text: f }); return { reply: f ? 'Tolgo dalla memoria quello che parla di «' + f + '».' : 'Dimmi cosa dimenticare (es. «dimentica Shiva»).', actions: A }; }
     if (/cosa (sai|ricordi) di me|cosa hai imparato|la tua memoria/.test(t)) { var mm = ctx.memory || []; return { reply: mm.length ? 'Ricordo:\n• ' + mm.slice(-15).join('\n• ') : 'Non mi hai ancora insegnato niente. Prova: «ricorda che mi piacciono le basi drill scure» o «non voglio il flauto».', actions: [] }; }
     // rime
@@ -6486,6 +6497,89 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
     return { reply: 'Non sono sicuro di aver capito. ' + tip.join(' ') + '\nPosso: «analizza il testo», «rime per notte», «riga 3», «crea 16 basi tipo Shiva», «808 più lungo», «ricorda che…», «dove sono le varianti».', actions: [] };
   }
   return { respond: respond, analyzeLyrics: analyzeLyrics, prefs: prefs, learnFrom: learnFrom };
+});
+
+/*
+ * Controllo qualità musicale (Agente Analista + Produttore): dopo ogni base misura cosa c'è davvero dentro.
+ * Solo controlli MISURABILI sugli eventi dell'Arrangiatore (note, accordi, cassa, hi-hat, 808, sezioni) e sull'audio;
+ * il gusto (groove, emozione, "suona bene") resta DA ASCOLTARE e viene detto come tale.
+ *  - fingerprint(b): impronta compatta di una base (tonalità, giro, cassa per battuta, contorno della melodia, 808, strumenti, forma).
+ *  - similarity(a, b): 0-1, quanto due basi si somigliano (serve a scartare le copie).
+ *  - check(b, opt): elenco di controlli {id, nome, ok, valore, tipo:'misurato'|'ascolto', consiglio, fix}.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.QualityCheck = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  var NAMES = ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'];
+  var SCALE = { maggiore: [0, 2, 4, 5, 7, 9, 11], minore: [0, 2, 3, 5, 7, 8, 10] };
+  function rootOf(name) { var m = String(name || '').match(/^(Do#?|Re#?|Mi|Fa#?|Sol#?|La#?|Si)/); return m ? NAMES.indexOf(m[1]) : -1; }
+  function grams(arr, n) { var g = {}; for (var i = 0; i + n <= arr.length; i++) g[arr.slice(i, i + n).join(',')] = 1; return g; }
+  function jac(a, b) { var ka = Object.keys(a), kb = Object.keys(b), inter = 0; if (!ka.length && !kb.length) return 1; ka.forEach(function (k) { if (b[k]) inter++; }); return inter / (ka.length + kb.length - inter || 1); }
+
+  function fingerprint(b) {
+    var E = b.events || {}, t = b.tonic || 0, bars = b.bars || 8;
+    var chords = (E.chords || []).map(function (c) { var r = rootOf(c.name); return r < 0 ? '?' : ((r - t + 12) % 12) + (/m$/.test(c.name) ? 'm' : ''); });
+    var kick = []; for (var i = 0; i < bars; i++) kick.push(0); (E.kick || []).forEach(function (k) { if (k.bar < bars) kick[k.bar] |= 1 << (k.step | 0); });
+    var lead = (E.lead || []).map(function (n) { return n.midi; }), contour = []; for (i = 1; i < lead.length; i++) contour.push(Math.max(-5, Math.min(5, lead[i] - lead[i - 1])));
+    var bass = (E.bass || []).map(function (n) { return (n.midi - t + 120) % 12; });
+    return { key: t + (b.mode || ''), bpm: b.bpm, genre: b.genre, chords: chords, kick: kick.filter(function (v) { return v; }), contour: contour, bass: bass, inst: b.inst ? Object.keys(b.inst).map(function (r) { return b.inst[r]; }).filter(Boolean) : [], form: (b.sections || []).map(function (s) { return s.name + s.bars; }).join('-') };
+  }
+  /** 0 = tutto diverso, 1 = identiche. Pesi: giro 0.2, cassa 0.2, melodia 0.2, 808 0.1, strumenti 0.1, tonalità 0.1, velocità 0.05, forma 0.05. */
+  function similarity(a, b) {
+    if (!a || !b) return 0; var s = 0;
+    s += 0.2 * jac(grams(a.chords, 4), grams(b.chords, 4));
+    s += 0.2 * jac(grams(a.kick.map(String), 1), grams(b.kick.map(String), 1));
+    s += 0.2 * jac(grams(a.contour, 4), grams(b.contour, 4));
+    s += 0.1 * jac(grams(a.bass, 3), grams(b.bass, 3));
+    var ia = {}, ib = {}; a.inst.forEach(function (x) { ia[x] = 1; }); b.inst.forEach(function (x) { ib[x] = 1; }); s += 0.1 * jac(ia, ib);
+    s += 0.1 * (a.key === b.key ? 1 : 0) + 0.05 * Math.max(0, 1 - Math.abs((a.bpm || 0) - (b.bpm || 0)) / 20) + 0.05 * (a.form === b.form ? 1 : 0);
+    return Math.round(s * 100) / 100;
+  }
+  function energyBySection(b) {
+    var E = b.events || {}, out = {}; (b.sections || []).forEach(function (s) { var n = 0; ['kick', 'hat', 'bass', 'lead', 'arp'].forEach(function (k) { (E[k] || []).forEach(function (e) { if (e.bar >= s.startBar && e.bar < s.startBar + s.bars) n++; }); }); var d = n / Math.max(1, s.bars); if (!out[s.name] || d > out[s.name]) out[s.name] = d; }); return out;
+  }
+  /** opt: {recent:[fingerprint], mix: Float32Array (facoltativo), hasLyrics, lyricSections:[nomi]} */
+  function check(b, opt) {
+    opt = opt || {}; var E = b.events || {}, fp = fingerprint(b), C = [], t = b.tonic || 0, sc = SCALE[b.mode] || SCALE.minore, HEAVY = /trap|drill|brooklyn|street|rage|phonk|plugg|jersey|club/.test(b.genre || '');
+    function add(id, nome, ok, valore, consiglio, fix, tipo) { C.push({ id: id, nome: nome, ok: !!ok, valore: valore, consiglio: ok ? '' : consiglio, fix: ok ? null : fix, tipo: tipo || 'misurato' }); }
+    // 1) diversa dalle precedenti
+    var simMax = 0; (opt.recent || []).forEach(function (r) { simMax = Math.max(simMax, similarity(fp, r)); });
+    add('diversa', 'Diversa dalle basi precedenti', simMax < 0.6, 'somiglianza massima ' + Math.round(simMax * 100) + '%', 'Troppo simile a una base di prima: cambio giro, melodia, ritmo e tonalità.', 'nuova');
+    // 2) accordi coerenti con la tonalità
+    var dia = (E.chords || []).filter(function (c) { var r = rootOf(c.name); return r >= 0 && sc.indexOf((r - t + 12) % 12) >= 0; }).length, nc = (E.chords || []).length;
+    add('accordi', 'Accordi nella tonalità', !nc || dia / nc >= 0.75, nc ? Math.round(dia / nc * 100) + '% degli accordi nella scala' : 'nessun accordo', 'Molti accordi fuori scala: suonano storti senza un motivo.', 'giro');
+    var distinctCh = {}; fp.chords.forEach(function (c) { distinctCh[c] = 1; });
+    add('giro', 'Giro armonico con movimento', Object.keys(distinctCh).length >= 3, Object.keys(distinctCh).length + ' accordi diversi', 'Il giro usa meno di 3 accordi: poco movimento armonico.', 'giro');
+    // 3) melodia sensata: estensione, varietà, salti
+    var L = (E.lead || []).map(function (n) { return n.midi; }), rng = L.length ? Math.max.apply(null, L) - Math.min.apply(null, L) : 0, distinct = {}; L.forEach(function (m) { distinct[m] = 1; });
+    var jumps = 0; for (var i = 1; i < L.length; i++) if (Math.abs(L[i] - L[i - 1]) > 9) jumps++;
+    add('melodia', 'Melodia cantabile', L.length >= 8 && rng >= 5 && rng <= 22 && Object.keys(distinct).length >= 4 && jumps / Math.max(1, L.length) < 0.25, L.length + ' note, estensione ' + rng + ' semitoni, ' + Object.keys(distinct).length + ' note diverse, salti grandi ' + jumps, 'Melodia troppo piatta, troppo larga o con troppi salti: la rigenero.', 'melodia');
+    // 4) ripetizione eccessiva della melodia (battute identiche)
+    var byBar = {}; (E.lead || []).forEach(function (n) { (byBar[n.bar] = byBar[n.bar] || []).push(n.midi + ':' + n.step); }); var seen = {}, rep = 0, nb = 0; Object.keys(byBar).forEach(function (k) { var s = byBar[k].join(' '); nb++; if (seen[s]) rep++; seen[s] = 1; });
+    add('ripetizione', 'Non troppo ripetitiva', !nb || rep / nb <= 0.6, nb ? Math.round(rep / nb * 100) + '% di battute di melodia identiche' : 'nessuna melodia', 'La melodia ripete sempre la stessa battuta: aggiungo variazioni.', 'melodia');
+    // 5) batteria con movimento: schemi di cassa diversi, rullate di hi-hat nei generi trap/drill
+    var kd = {}; fp.kick.forEach(function (v) { kd[v] = 1; }); var rolls = (E.hat || []).filter(function (h) { return h.roll; }).length;
+    add('batteria', 'Batteria con movimento', Object.keys(kd).length >= 2 && (!HEAVY || rolls > 0), Object.keys(kd).length + ' schemi di cassa, ' + rolls + ' colpi in rullata', 'La batteria ripete un solo schema: aggiungo variazioni, fill e rullate.', 'batteria');
+    // 6) 808 legata alla cassa (trap/drill)
+    var ks = {}; (E.kick || []).forEach(function (k) { ks[k.bar * 16 + k.step] = 1; }); var bassOn = (E.bass || []).filter(function (n) { return n.bar != null; }), hit = bassOn.filter(function (n) { var p = n.bar * 16 + (n.step | 0); return ks[p] || ks[p - 1] || ks[p + 1]; }).length;
+    add('808', '808 legata alla cassa', !HEAVY || !bassOn.length || hit / bassOn.length >= 0.45, bassOn.length ? Math.round(hit / bassOn.length * 100) + '% delle note di basso cadono con la cassa' : 'nessun basso', 'Il basso non segue la cassa: nei generi trap/drill le 808 partono insieme al kick.', 'batteria');
+    // 7) struttura che evolve: il ritornello ha più energia della strofa
+    var en = energyBySection(b), sv = en.strofa || 0, rv = en.ritornello || 0;
+    add('struttura', 'Ritornello più pieno della strofa', !(en.ritornello != null && en.strofa != null) || rv > sv * 1.05, en.ritornello != null ? 'densità ritornello ' + Math.round(rv) + ' / strofa ' + Math.round(sv) + ' eventi per battuta' : 'forma senza ritornello', 'Il ritornello non cresce: aumento energia (hi-hat, pad, arpeggio).', 'energia');
+    add('forma', 'Forma completa (almeno 3 parti)', (b.sections || []).length >= 3, (b.sections || []).map(function (s) { return s.name; }).join(' → '), 'La base ha meno di 3 parti: manca un\'evoluzione.', null);
+    // 8) testo interpretato: le parti della base seguono quelle del testo
+    if (opt.lyricSections && opt.lyricSections.length) { var bs = (b.sections || []).map(function (s) { return s.name; }), miss = opt.lyricSections.filter(function (n) { return bs.indexOf(n) < 0; });
+      add('testo', 'Parti del testo rispettate', !miss.length, miss.length ? 'mancano: ' + miss.join(', ') : 'tutte le parti del testo hanno la loro sezione', 'Alcune parti del testo non hanno una sezione nella base.', null); }
+    // 9) audio: clipping, silenzio
+    if (opt.mix) { var x = opt.mix, pk = 0, clip = 0, ss = 0; for (i = 0; i < x.length; i += 2) { var v = x[i] < 0 ? -x[i] : x[i]; if (v > pk) pk = v; if (v > 0.995) clip++; ss += v * v; } var rms = Math.sqrt(ss / Math.max(1, x.length / 2));
+      add('audio', 'Audio pulito (niente distorsione o silenzio)', clip < 20 && rms > 0.01, 'picco ' + pk.toFixed(2) + ', campioni al limite ' + clip + ', livello medio ' + (20 * Math.log10(rms + 1e-9)).toFixed(1) + ' dB', 'Problema di livello: troppo forte (distorce) o troppo bassa.', null); }
+    add('gusto', 'Groove, emozione e suono', true, 'non misurabile', '', null, 'ascolto');
+    var mis = C.filter(function (c) { return c.tipo === 'misurato'; }), ok = mis.filter(function (c) { return c.ok; }).length;
+    return { checks: C, fingerprint: fp, similarity: simMax, score: Math.round(ok / Math.max(1, mis.length) * 100), weak: mis.filter(function (c) { return !c.ok; }) };
+  }
+  return { fingerprint: fingerprint, similarity: similarity, check: check, energyBySection: energyBySection };
 });
 
 /*
@@ -13071,11 +13165,53 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
       if (used.indexOf(inst[role]) < 0 || l.length < 2) return; var fresh = l.filter(function (id) { return used.indexOf(id) < 0; });
       inst[role] = (fresh.length ? fresh : l)[(sd >> (k * 3)) % (fresh.length || l.length)];
     });
-    H.push({ kit: p.kit, inst: Object.assign({}, inst) }); if (H.length > 6) H.shift();
+    H.push({ kit: p.kit, inst: Object.assign({}, inst) }); if (H.length > 6) H.shift(); try { prodApply(p); } catch (e) {}
+  }
+  /* ---------- Controllo qualità e apprendimento dalle tue scelte (QualityCheck + profilo di produzione) ---------- */
+  var QC = { report: null, retry: 0 };
+  function qcHist() { return LIB.settings.fpHist || (LIB.settings.fpHist = []); }
+  function prodProf() { return LIB.settings.prodProf || (LIB.settings.prodProf = { n: {}, log: [] }); }
+  function qcManual(p) { return !!(p.notes || p.drumPat || p.chordBars); }
+  function qcMutate(p, why) {
+    var PR = StylePresets.PROGS[p.mode] || StylePresets.PROGS.minore, cur0 = JSON.stringify(p.prog || []), cand = PR.filter(function (x) { return JSON.stringify(x) !== cur0; });
+    p.seed = 1 + Math.floor(Math.random() * 99999);
+    if (why === 'nuova' || why === 'giro') p.prog = cand[Math.floor(Math.random() * cand.length)];
+    if (why === 'nuova') { p.tonic = (p.tonic + [2, 3, 5, 7, 9][Math.floor(Math.random() * 5)]) % 12; p.groove = null; }
+    if (why === 'nuova' || why === 'melodia') { p.melSeed = (p.melSeed || 0) + 7 + Math.floor(Math.random() * 50); var arps = Object.keys(Arranger.ARP); p.arpPattern = arps[Math.floor(Math.random() * arps.length)]; }
+    if (why === 'batteria') { var R = StylePresets.LIST.filter(function (x) { return x.base === p.genre; }); var pr = R[Math.floor(Math.random() * R.length)]; if (pr) { var v = StylePresets.variant(pr, p.seed); p.tune = Object.assign({}, v.tune || {}, { hat: 1.2, kickVar: 1.4 }); } p.groove = null; }
+    if (why === 'energia') p.tune = Object.assign({}, p.tune || {}, { lift: Math.min(1.6, ((p.tune || {}).lift || 1) * 1.3) });
+  }
+  function qcAfter(p) {
+    var b = SESSION.base; if (!b || !b.events || !window.QualityCheck) return;
+    var map = null; try { map = songMap(); } catch (e) {}
+    var mixQ = null; try { var tr = b.tracks || {}, n = b.length || 0; mixQ = new Float32Array(Math.min(n, b.sampleRate * 40)); ['kick', 'snare', 'hat', 'bass', 'chords', 'pad', 'lead', 'arp', 'fx'].forEach(function (k) { var a = tr[k]; if (a) for (var i = 0; i < mixQ.length; i++) mixQ[i] += a[i] || 0; }); var pk = 0; for (var j = 0; j < mixQ.length; j++) { var v = Math.abs(mixQ[j]); if (v > pk) pk = v; } if (pk > 0) for (j = 0; j < mixQ.length; j++) mixQ[j] *= 0.9 / pk; } catch (e) { mixQ = null; }
+    var hist = qcHist().filter(function (h) { return h.seed !== p.seed; }).map(function (h) { return h.fp; });
+    var r = QualityCheck.check(b, { recent: hist.slice(-5), mix: mixQ, lyricSections: map ? map.plan.map(function (x) { return x[0]; }).filter(function (v, i, a) { return a.indexOf(v) === i; }) : null });
+    var copy = r.weak.filter(function (c) { return c.id === 'diversa'; })[0];
+    if (copy && QC.retry < 2 && !qcManual(p)) { QC.retry++; qcMutate(p, 'nuova'); persist(); SESSION.baseKey = ''; getBase(); return; } // copia delle ultime: nuovo tentativo, una base diversa
+    QC.retry = 0; QC.report = r; QC.report.seed = p.seed;
+    var H = qcHist(); if (!H.length || H[H.length - 1].seed !== p.seed) { H.push({ seed: p.seed, fp: r.fingerprint }); if (H.length > 8) H.shift(); }
+    try { qcRender(); } catch (e) {}
+  }
+  var FB = [['like', '♥ Mi piace'], ['nope', '✕ Non mi piace'], ['simple', 'Troppo semplice'], ['repeat', 'Troppo ripetitiva'], ['piano', 'Più pianoforte'], ['deep', 'Più profondità'], ['drums', 'Batteria più potente'], ['melody', 'Melodia diversa'], ['space', 'Più spazio per la voce']];
+  function qcRender() {
+    var el = $('#qc-list'); if (!el) return; var r = QC.report;
+    el.innerHTML = r ? '<p class="small">Punteggio dei controlli misurabili: <b>' + r.score + '%</b></p>' + r.checks.map(function (c) { return '<div class="dw-prop"><div><b>' + (c.tipo === 'ascolto' ? '🎧 ' : (c.ok ? '✓ ' : '✗ ')) + esc(c.nome) + '</b><small>' + esc(c.valore) + (c.consiglio ? ' · ' + esc(c.consiglio) : '') + ' · ' + (c.tipo === 'ascolto' ? 'da ascoltare' : 'misurato') + '</small></div></div>'; }).join('') : '<p class="small muted">Crea una base: qui compare il controllo.</p>';
+    var pf = prodProf(); $('#qc-fb').innerHTML = FB.map(function (f) { return '<button class="chip" data-fb="' + f[0] + '">' + f[1] + (pf.n[f[0]] ? ' · ' + pf.n[f[0]] : '') + '</button>'; }).join('');
+    $('#qc-fix').disabled = !(r && r.weak.some(function (c) { return c.fix; }));
+  }
+  /* applica il profilo imparato a una base nuova: quello che hai chiesto più volte pesa di più (trasparente e reversibile) */
+  function prodApply(p) {
+    var n = prodProf().n, lv = p.levels = Object.assign({}, p.levels || {}), R = Instruments.RECIPES[p.genre] || {};
+    if ((n.piano || 0) > 0) { var pi = ['piano', 'kawai', 'upright', 'pro:drillpiano'].filter(function (id) { return (R.melodia || []).concat(R.accordi || []).indexOf(id) >= 0 || id === 'piano'; }); p.inst = Object.assign({}, p.inst || {}, { accordi: pi[(p.seed || 0) % pi.length] || 'piano' }); }
+    if ((n.drums || 0) > 0) lv.batteria = Math.min(1.6, 1 + 0.12 * n.drums);
+    if ((n.deep || 0) > 0) { lv.pad = Math.min(1.6, 1 + 0.12 * n.deep); lv.basso = Math.min(1.6, 1 + 0.08 * n.deep); }
+    if ((n.space || 0) > 0) { lv.melodia = Math.max(0.5, 1 - 0.1 * n.space); lv.arpeggio = Math.max(0.5, 1 - 0.1 * n.space); }
+    if ((n.simple || 0) > (n.nope || 0)) p.tune = Object.assign({}, p.tune || {}, { hat: Math.min(1.5, 1 + 0.1 * n.simple), lift: Math.min(1.6, 1 + 0.1 * n.simple) });
   }
   function getBase() {
     var p = cur().prod; try { varietyGuard(p); } catch (e) {} var map = songMap(), key = JSON.stringify([cur().id, p.genre, p.bpm, p.tonic, p.mode, p.bars, p.seed, p.melSeed, p.heavy, p.leadRest, pfSig(p).join(), p.bassStyle, p.tune, p.sounds, p.inst, p.arpPattern, p.groove, p.prog, p.perc, p.drumPat, p.chordBars, p.arp, p.kit, p.notes, p.b808, p.fxList, map && map.plan, Instruments.loaded().length]);
-    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: BASE_SR, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, leadRest: typeof p.leadRest === 'number' ? p.leadRest : undefined, sig: pfSig(p), bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, drumRender: p.kit && SynthDesign.KITS[p.kit] ? function (part, o, s2) { return SynthDesign.kitRender(p.kit, part, o, s2, p.seed); } : undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; }
+    if (SESSION.baseKey !== key || !SESSION.base) { SESSION.base = (Arranger.STYLES[p.genre] ? Arranger : Backing).generate({ sampleRate: BASE_SR, bpm: p.bpm, tonic: p.tonic, mode: p.mode, bars: p.bars, genre: p.genre, seed: p.seed, melSeed: p.melSeed || 0, heavy: !!p.heavy, leadRest: typeof p.leadRest === 'number' ? p.leadRest : undefined, sig: pfSig(p), bassStyle: p.bassStyle || undefined, tune: p.tune || undefined, inst: p.inst || undefined, plan: map ? map.plan : undefined, arpPattern: p.arpPattern || undefined, groove: p.groove || undefined, prog: p.prog || undefined, drumPat: p.drumPat || undefined, drumRender: p.kit && SynthDesign.KITS[p.kit] ? function (part, o, s2) { return SynthDesign.kitRender(p.kit, part, o, s2, p.seed); } : undefined, chordBars: p.chordBars || undefined, arp: p.arp === false ? false : undefined, percEvents: p.perc && p.perc.type ? function (secs, sr) { return SynthDesign.percEvents(p.perc.type, secs, sr, p.perc.on || ['strofa', 'ritornello']); } : undefined, notes: p.notes || undefined, bassRender: p.b808 ? function (m, d, s2, from, gl) { return SynthDesign.b808(p.b808, m, d, s2, from, gl); } : undefined, extraFx: p.fxList && p.fxList.length ? extraFxBufs(p) : undefined, sounds: p.sounds === 'sint' ? 'sint' : 'campioni' }); SESSION.baseKey = key; try { qcAfter(p); } catch (e) {} }
     return SESSION.base;
   }
   function activeTake() { return SESSION.takes.filter(function (t) { return t.id === SESSION.takeId; })[0] || null; }
@@ -15173,8 +15309,8 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
   // spazi di lavoro dello Studio: Impara · Base · Testo · Voce · Mix (un solo gruppo di pannelli alla volta)
   /* pannelli che si aprono e chiudono: aperti quelli principali del passo, il resto chiuso (la scelta del tuo tocco resta salvata) */
-  var FOLD_OPEN = {"testo": ["dw-p-testo"], "base": ["dw-p-one", "dw-p-var", "dw-p-arr", "dw-p-omino"], "voce": ["dw-kar", "dw-p-mic", "dw-p-omino"], "mix": ["dw-p-mix"], "libreria": ["dw-p-teach", "dw-p-arch"]};
-  var FOLD_SUM = { 'dw-p-learn': 'Opzioni avanzate: modo di separazione, spazio online, cartelle e varianti', 'dw-p-arch': 'Salva la memoria su un tuo archivio privato', 'dw-p-teach': 'Carica canzoni o video: l\'app misura e impara', 'dw-p-arr': 'Le tracce della base: tocca un nome per suono, note e mixer', 'dw-p-prod': 'Effetti da film e voci di produzione scelti dal testo', 'dw-p-play': 'Cambia melodia, ascolta l\'Orecchio, salva', 'dw-p-brain': 'Stile, umore e atmosfere a mano', 'dw-p-dna': 'Stili a numeri e fusione di generi', 'dw-p-talk': 'Scrivi cosa cambiare e gli agenti lo fanno', 'dw-p-agents': 'Proposte automatiche degli agenti', 'dw-p-sing': 'Quando entrare, quanto tenere, dove respirare', 'dw-p-clips': 'Prove registrate e montaggio', 'dw-p-extra': 'Assistente testi e rime', 'dw-p-design': 'Crea suoni tuoi', 'dw-p-mixer': 'Canali del mixer' };
+  var FOLD_OPEN = {"testo": ["dw-p-testo"], "base": ["dw-p-one", "dw-p-var", "dw-p-arr", "dw-p-qc", "dw-p-omino"], "voce": ["dw-kar", "dw-p-mic", "dw-p-omino"], "mix": ["dw-p-mix"], "libreria": ["dw-p-teach", "dw-p-arch"]};
+  var FOLD_SUM = { 'dw-p-learn': 'Opzioni avanzate: modo di separazione, spazio online, cartelle e varianti', 'dw-p-arch': 'Salva la memoria su un tuo archivio privato', 'dw-p-teach': 'Carica canzoni o video: l\'app misura e impara', 'dw-p-arr': 'Le tracce della base: tocca un nome per suono, note e mixer', 'dw-p-prod': 'Effetti da film e voci di produzione scelti dal testo', 'dw-p-play': 'Cambia melodia, ascolta l\'Orecchio, salva', 'dw-p-brain': 'Stile, umore e atmosfere a mano', 'dw-p-dna': 'Stili a numeri e fusione di generi', 'dw-p-talk': 'Scrivi cosa cambiare e gli agenti lo fanno', 'dw-p-agents': 'Proposte automatiche degli agenti', 'dw-p-sing': 'Quando entrare, quanto tenere, dove respirare', 'dw-p-clips': 'Prove registrate e montaggio', 'dw-p-extra': 'Assistente testi e rime', 'dw-p-design': 'Crea suoni tuoi', 'dw-p-mixer': 'Canali del mixer', 'dw-p-qc': 'Controlli misurati sulla base e i tuoi giudizi' };
   function foldApply(ws) {
     var st = LIB.settings.fold || (LIB.settings.fold = {}), open = FOLD_OPEN[ws] || [];
     $$('#v-daw > .dw-panel').forEach(function (pn) {
@@ -15519,6 +15655,7 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
       if (a.type === 'remember') { saiMem().push(a.text); persist(); }
       else if (a.type === 'forget') { var f = (a.text || '').toLowerCase(); LIB.settings.aiMem = saiMem().filter(function (m) { return !f || m.toLowerCase().indexOf(f) < 0; }); persist(); }
       else if (a.type === 'go') { dwWs(a.ws); }
+      else if (a.type === 'resetprefs') { LIB.settings.prodProf = { n: {}, log: [] }; persist(); try { qcRender(); } catch (x) {} }
       else if (a.type === 'sing') { var fo = $('#dw-p-omino'); if (fo) fo.classList.remove('fold'); setTimeout(function () { $('#ace-go').click(); }, 100); }
       else if (a.type === 'variants') {
         var pf = SultanAI.prefs(saiMem(), StylePresets.LIST), atm = a.atm || (pf.like[0] || null); $('#dw-var-n').value = String(a.n >= 20 ? 24 : a.n >= 12 ? 16 : 8);
@@ -15583,6 +15720,20 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
       var w = String((e && e.message) || e);
       m.textContent = /quota|limit|ZeroGPU/i.test(w) ? 'Limite gratuito di oggi finito per questo telefono (GPU gratuite di Hugging Face). Riprova più tardi o domani.' : 'ACE-Step non ha risposto: ' + w.slice(0, 140);
     } finally { ACE.busy = false; $('#ace-go').disabled = false; }
+  });
+
+  $('#dw-p-qc').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return; var p = cur().prod, m = $('#qc-msg');
+    if (b.id === 'qc-fix') { var r = QC.report; if (!r) return; var fixes = r.weak.map(function (c) { return c.fix; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; }); if (!fixes.length) { m.textContent = 'Nessun punto debole misurabile: ora conta il tuo ascolto.'; return; }
+      fixes.forEach(function (f) { qcMutate(p, f); }); persist(); dwStop(); dwChanged(true); projLine(); m.textContent = 'Rifatto: ' + r.weak.filter(function (c) { return c.fix; }).map(function (c) { return c.nome.toLowerCase(); }).join(', ') + '. Ascolta e confronta.'; setTimeout(function () { dwPlay(0); }, 400); return; }
+    var fb = b.getAttribute('data-fb'); if (!fb) return; var pf = prodProf(); pf.n[fb] = (pf.n[fb] || 0) + 1;
+    pf.log.push({ fb: fb, seed: p.seed, genre: p.genre, bpm: p.bpm, prog: p.prog, inst: p.inst, fp: QC.report ? QC.report.fingerprint : null, at: Date.now() }); if (pf.log.length > 120) pf.log.shift();
+    var act = { like: 'Segnato: terrò questa base come esempio di quello che ti piace.', nope: 'Segnato: la evito. Ne preparo una diversa.', simple: 'Più ricca: più hi-hat, più movimento e più energia nel ritornello.', repeat: 'Cambio melodia e giro.', piano: 'Più pianoforte: da ora il piano entra negli accordi.', deep: 'Più profondità: pad e bassi più presenti.', drums: 'Batteria più potente: la alzo da ora in poi.', melody: 'Melodia nuova.', space: 'Più spazio per la voce: melodia e arpeggio più bassi.' }[fb];
+    if (fb === 'nope') qcMutate(p, 'nuova'); if (fb === 'repeat') { qcMutate(p, 'melodia'); qcMutate(p, 'giro'); } if (fb === 'melody') qcMutate(p, 'melodia'); if (fb === 'simple') qcMutate(p, 'energia');
+    if (fb !== 'like') prodApply(p);
+    try { coachRec(fb === 'like' ? 'like' : 'change', coachCtx(), { role: 'feedback', to: fb }); } catch (x) {}
+    persist(); m.textContent = act + ' (' + pf.n[fb] + (pf.n[fb] === 1 ? ' volta' : ' volte') + ' finora: più lo dici, più pesa. Si può azzerare dall\'IA con «dimentica le mie preferenze».)'; qcRender();
+    if (fb !== 'like') { dwStop(); dwChanged(true); projLine(); setTimeout(function () { dwPlay(0); }, 400); }
   });
   SHOW.daw = function () { applyMoodBg(moodNow()); dwWs(dwWsName()); projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 

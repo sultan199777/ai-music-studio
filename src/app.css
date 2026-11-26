@@ -470,3 +470,4 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
 
 .ace-box { margin: 10px 0; padding: 10px 12px; border-radius: 14px; background: rgba(183,156,255,.08); border: 1px solid rgba(183,156,255,.25); }
 .ace-box audio { width: 100%; margin-top: 8px; }
+body[data-ws="base"] #dw-p-qc { order: 3; }

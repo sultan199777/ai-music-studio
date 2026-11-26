@@ -110,6 +110,15 @@
     <details><summary class="small">Regola i numeri a mano (ogni slider cambia il suono)</summary><div id="dna-sl"></div><div class="row"><button class="btn sm" id="dna-reset">Torna ai numeri dello stile</button></div></details>
     <div class="row" style="margin-top:8px"><input id="dna-name" maxlength="40" placeholder="Nome del tuo stile (es. Notte di Milano)" style="flex:1"><button class="btn sm" id="dna-save">Salva questo stile</button></div>
   </section>
+  <section class="dw-panel" id="dw-p-qc" data-ws="base">
+    <div class="dw-ph"><h3>Il produttore controlla</h3><span class="tag m">Misurato</span></div>
+    <p class="small muted">Dopo ogni base l'IA misura cosa c'è dentro: se è diversa dalle precedenti, accordi, melodia, batteria, 808, energia del ritornello, audio. Il gusto resta da ascoltare: dimmelo con i tasti sotto e lo userò nelle prossime basi.</p>
+    <div id="qc-list"></div>
+    <div class="row"><button class="btn pri" id="qc-fix">Migliora i punti deboli</button></div>
+    <p class="small" style="margin:10px 0 4px"><b>Cosa ne pensi?</b> (impara dalle tue scelte)</p>
+    <div class="chips" id="qc-fb"></div>
+    <div class="status" id="qc-msg"></div>
+  </section>
   <section class="dw-panel" id="dw-p-omino" data-ws="base voce">
     <div class="dw-ph"><h3>Come canterai</h3><span class="tag m">Segui l'omino</span></div>
     <canvas id="dw-omino" style="width:100%;height:190px;display:block"></canvas>
