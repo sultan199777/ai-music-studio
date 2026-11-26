@@ -996,7 +996,8 @@
     $('#one-go').addEventListener('click', async function () {
       var s = cur(), st = $('#one-status'); if (!(s.lyrics || '').trim() && ONE.mode === 'auto') { st.textContent = 'Scrivi o incolla prima il testo (passo 1): da lì parto.'; return; }
       st.textContent = 'Sto componendo…'; this.disabled = true; var self = this;
-      try { if (ONE.mode === 'dna') await dnaCreate(true); else { $('#b-play').click(); await sleepMs(300); while (document.querySelector('#b-status') && /Sto componendo|Aggiungo/.test($('#b-status').textContent)) await sleepMs(300); await sleepMs(700); } st.textContent = 'Pronto. Premi ancora per una base nuova.'; teamReport(); }
+      try { if (ONE.mode === 'dna') { await dnaCreate(true); st.textContent = 'Pronto. Premi ancora per una base nuova.'; }
+        else { await tbCreate(true); await sleepMs(450); oneSaid(st); } teamReport(); }
       catch (e) { st.textContent = 'Non sono riuscito: ' + ((e && e.message) || e); } self.disabled = false;
     });
     $('#one-to-learn').addEventListener('click', function (e) { e.preventDefault(); dwWs('libreria'); window.scrollTo(0, 0); });
@@ -3167,6 +3168,10 @@
   });
 
   /* ---------- Pagina Testo: «Crea la base da questo testo» e «Cambia base» (ogni pressione = base nuova dal testo) ---------- */
+  function oneSaid(st) {
+    var s = cur(), p = s.prod; s.baseN = (s.baseN || 0) + 1; persist();
+    st.innerHTML = '<b class="one-id">Base n. ' + s.baseN + ': ' + esc(Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + (p.atmNome ? ' (' + esc(p.atmNome) + ')' : '') + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode + '</b>' + (arrPlanName(p) ? '<br>' + esc(arrPlanName(p)) : '') + '<br><span class="muted">Ogni pressione = una base nuova, diversa dalle ultime.</span>';
+  }
   function tbRender() {
     var s = cur(), made = !!(s.prod && (s.prod.atmNome || s.brainFor)) && !!(s.lyrics || '').trim(), p = s.prod;
     $('#tb-go').textContent = '🎵 Crea la base dal testo'; $('#tb-new').hidden = false; $('#tb-new').disabled = !made; if ($('#one-new')) $('#one-new').hidden = !made;
@@ -3183,7 +3188,7 @@
   }
   $('#tb-go').addEventListener('click', function () { tbCreate(false); });
   $('#tb-new').addEventListener('click', function () { tbCreate(true); });
-  $('#one-new').addEventListener('click', async function () { var o = $('#one-status'), b = this; b.disabled = true; o.textContent = 'Sto componendo un\'altra base, diversa…'; await tbCreate(true); await new Promise(function (r) { setTimeout(r, 450); }); b.disabled = false; o.innerHTML = $('#tb-now').innerHTML; });
+  $('#one-new').addEventListener('click', async function () { var o = $('#one-status'), b = this; b.disabled = true; o.textContent = 'Sto componendo un\'altra base, diversa…'; await tbCreate(true); await new Promise(function (r) { setTimeout(r, 450); }); b.disabled = false; oneSaid(o); });
   $('#dw-lyrics').addEventListener('input', function () { clearTimeout(tbRender.t); tbRender.t = setTimeout(tbRender, 400); });
 
   /* ---------- Agente Melodia: la tua voce canticchiata → note (Basic Pitch di Spotify, Apache 2.0, modello < 1 MB) ---------- */

@@ -496,3 +496,5 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
 body[data-ws="base"] #dw-p-arr { order: 2; } body[data-ws="base"] #dw-p-var { order: 3; }
 #v-daw > .dw-guide { order: 85; }
 #v-daw > #dw-next { order: 84; }
+
+.one-status .one-id{display:block;font-size:17px;margin-top:10px;color:var(--ink)}
