@@ -2409,9 +2409,17 @@
   var LEARN = { cur: null };
   function learnList() { if (!Array.isArray(LIB.settings.learned)) LIB.settings.learned = []; return LIB.settings.learned; }
   async function decodeStereo(file, rate) {
-    var buf = await file.arrayBuffer(), OC = window.OfflineAudioContext || window.webkitOfflineAudioContext, a = null;
-    if (OC) { try { var oc = new OC(2, 1, rate); a = await new Promise(function (res, rej) { var pr = oc.decodeAudioData(buf.slice(0), res, rej); if (pr && pr.then) pr.then(res, rej); }); } catch (e) { a = null; } }
-    if (!a) { var C = window.AudioContext || window.webkitAudioContext, ctx = new C(); try { a = await ctx.decodeAudioData(buf); } finally { if (ctx.close) ctx.close(); } }
+    var OC = window.OfflineAudioContext || window.webkitOfflineAudioContext, a = null, buf = null;
+    /* video/m4a grandi: leggo solo l'audio dei primi 4 minuti (niente file intero in memoria: su iPhone finiva la memoria) */
+    if (window.Mp4Audio && /\.(mp4|mov|m4a|m4v)$/i.test(file.name || '') || window.Mp4Audio && /mp4|quicktime|m4a/i.test(file.type || '')) { var ex = await Mp4Audio.extract(file, 240); if (ex) { buf = ex.buf; LEARN.lite = Math.round(ex.frames * 1024 / ex.rate); } }
+    if (!buf) buf = await file.arrayBuffer();
+    async function dec(bf) {
+      var r0 = null;
+      if (OC) { try { var oc = new OC(2, 1, rate); r0 = await new Promise(function (res, rej) { var pr = oc.decodeAudioData(bf.slice(0), res, rej); if (pr && pr.then) pr.then(res, rej); }); } catch (e) { r0 = null; } }
+      if (!r0) { var C = window.AudioContext || window.webkitAudioContext, ctx = new C(); try { r0 = await ctx.decodeAudioData(bf); } finally { if (ctx.close) ctx.close(); } }
+      return r0;
+    }
+    try { a = await dec(buf); } catch (e) { if (!LEARN.lite) throw e; LEARN.lite = 0; a = await dec(await file.arrayBuffer()); }
     var L = a.getChannelData(0), R = a.numberOfChannels > 1 ? a.getChannelData(1) : null, max = Math.round(a.sampleRate * 240);
     if (L.length > max) { L = L.slice(0, max); if (R) R = R.slice(0, max); }
     return { L: L, R: R, sr: a.sampleRate };
@@ -2462,7 +2470,7 @@
      Il file va al tuo spazio, torna diviso in voce, batteria, basso e resto; lo spazio non conserva nulla. Client: @gradio/client (ISC). */
   async function sepServer(f, el) {
     var sp = (LIB.settings.sepServer || '').trim(), modo = LIB.settings.sepServerMode === 'pulita' ? 'pulita' : 'veloce'; if (!sp) throw new Error('nessuno spazio impostato');
-    if (f.size > 250 * 1048576) throw new Error('file troppo grande (oltre 250 MB): in Foto accorcia il video o salva solo l\'audio');
+    if (f.size > 250 * 1048576 && !(window.Mp4Audio && /\.(mp4|mov|m4a|m4v)$/i.test(f.name || ''))) throw new Error('file troppo grande (oltre 250 MB): in Foto accorcia il video o salva solo l\'audio');
     el.textContent = 'Mi collego al tuo spazio di separazione (se dormiva, la prima volta ci mette 1-3 minuti a svegliarsi)…'; learnBar(0.02);
     var GC = await import('https://cdn.jsdelivr.net/npm/@gradio/client@2.8.0/+esm'), cl = await GC.Client.connect(/^https?:/.test(sp) ? sp : sp.replace(/^.*huggingface\.co\/spaces\//, ''));
     var wl = await wakeOn(), out = null, t0 = Date.now();
