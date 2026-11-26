@@ -481,6 +481,25 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
 .tb-bar .btn { flex: 1 1 160px; min-height: 52px; font-size: 16px; font-weight: 700; }
 .tb-now { margin-top: 8px; opacity: .85; }
 
+/* ===== Design 26/11 (B): un'azione principale per passo, il resto come lista ordinata ===== */
+.one-cta.alt{margin-top:10px;background:var(--card-solid);color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.one-cta.alt .one-ico{background:var(--grad);color:var(--on-accent)}
+.one-cta.alt b{font-size:19px}
+.one-cta:disabled{opacity:.55}
+#v-daw > .dw-panel.fold{padding-top:12px;padding-bottom:12px;border-radius:16px;margin-top:-4px;background:var(--card);box-shadow:none}
+#v-daw > .dw-panel.fold .dw-ph h3{font-size:15.5px;font-weight:650}
+#v-daw > .dw-panel.fold .fold-sum{font-size:12.5px;opacity:.68;line-height:1.35}
+#v-daw > .dw-panel.fold-first{margin-top:34px;position:relative;overflow:visible}
+#v-daw > .dw-panel.fold-first::before{content:'Altri strumenti';position:absolute;left:4px;top:-26px;font:700 11.5px/1 'Sora',system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+#v-daw > .dw-panel:not(.fold) .dw-ph h3{font-size:18px;letter-spacing:-.01em}
+#v-daw > .dw-panel.fold:active{transform:scale(.99)}
+@media (min-width:900px){
+  #v-daw{max-width:860px;margin:0 auto}
+}
+/* prima l'azione, poi le tracce, poi la lista; la guida «Come si fa» in fondo */
+body[data-ws="base"] #dw-p-arr { order: 2; } body[data-ws="base"] #dw-p-var { order: 3; }
+#v-daw > .dw-guide { order: 85; }
+
 /* ===== VOICE LAB (stile Cosmo: usa le variabili del tema) ===== */
 .vl .vl-auto{font-size:1.25rem;min-height:60px;margin:8px 0 4px;letter-spacing:.04em}
 .vl .vl-hint{margin:2px 0 8px}
@@ -669,6 +688,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
       <button data-m="dna" role="tab"><b>Mescolo io</b><small>stili e numeri</small></button>
     </div>
     <button class="one-cta" id="one-go"><span class="one-ico">▶</span><span><b>Crea base</b><small id="one-sub2">dal tuo testo</small></span></button>
+    <button class="one-cta alt" id="one-new" hidden><span class="one-ico">↻</span><span><b>Cambia base</b><small>un'altra, diversa da quelle di prima</small></span></button>
     <div id="one-status" class="small one-status" aria-live="polite"></div>
     <div class="one-team" id="one-team"></div>
     <div class="row" style="margin-top:10px"><button class="btn sm" id="one-beep">🔊 Prova il suono</button></div><div id="one-beep-out" class="small" aria-live="polite" style="margin-top:6px"></div>
@@ -936,7 +956,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>26/11, 10:48</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>26/11, 11:09</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -15536,15 +15556,20 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
   document.body.appendChild($('#dw-sheet')); // sopra a tutto, anche alla barra in basso
   // spazi di lavoro dello Studio: Impara · Base · Testo · Voce · Mix (un solo gruppo di pannelli alla volta)
   /* pannelli che si aprono e chiudono: aperti quelli principali del passo, il resto chiuso (la scelta del tuo tocco resta salvata) */
-  var FOLD_OPEN = {"testo": ["dw-p-testo"], "base": ["dw-p-one", "dw-p-var", "dw-p-arr", "dw-p-qc", "dw-p-omino"], "voce": ["dw-kar", "dw-p-mic", "dw-p-omino"], "mix": ["dw-p-mix"], "libreria": ["dw-p-teach", "dw-p-arch"]};
-  var FOLD_SUM = { 'dw-p-learn': 'Opzioni avanzate: modo di separazione, spazio online, cartelle e varianti', 'dw-p-arch': 'Salva la memoria su un tuo archivio privato', 'dw-p-teach': 'Carica canzoni o video: l\'app misura e impara', 'dw-p-arr': 'Le tracce della base: tocca un nome per suono, note e mixer', 'dw-p-prod': 'Effetti da film e voci di produzione scelti dal testo', 'dw-p-play': 'Cambia melodia, ascolta l\'Orecchio, salva', 'dw-p-brain': 'Stile, umore e atmosfere a mano', 'dw-p-dna': 'Stili a numeri e fusione di generi', 'dw-p-talk': 'Scrivi cosa cambiare e gli agenti lo fanno', 'dw-p-agents': 'Proposte automatiche degli agenti', 'dw-p-sing': 'Quando entrare, quanto tenere, dove respirare', 'dw-p-clips': 'Prove registrate e montaggio', 'dw-p-extra': 'Assistente testi e rime', 'dw-p-design': 'Crea suoni tuoi', 'dw-p-mixer': 'Canali del mixer', 'dw-p-qc': 'Controlli misurati sulla base e i tuoi giudizi' };
+  // design pulito: in ogni passo aperta solo l'azione principale, il resto è una lista che si apre con un tocco
+  var FOLD_OPEN = {"testo": ["dw-p-testo"], "base": ["dw-p-one", "dw-p-arr"], "voce": ["dw-kar", "dw-p-mic"], "mix": ["dw-p-mix"], "libreria": ["dw-p-teach", "dw-p-arch"]};
+  var FOLD_SUM = { 'dw-p-learn': 'Opzioni avanzate: modo di separazione, spazio online, cartelle e varianti', 'dw-p-arch': 'Salva la memoria su un tuo archivio privato', 'dw-p-teach': 'Carica canzoni o video: l\'app misura e impara', 'dw-p-arr': 'Le tracce della base: tocca un nome per suono, note e mixer', 'dw-p-prod': 'Effetti da film e voci di produzione scelti dal testo', 'dw-p-play': 'Cambia melodia, ascolta l\'Orecchio, salva', 'dw-p-brain': 'Stile, umore e atmosfere a mano', 'dw-p-dna': 'Stili a numeri e fusione di generi', 'dw-p-talk': 'Scrivi cosa cambiare e gli agenti lo fanno', 'dw-p-agents': 'Proposte automatiche degli agenti', 'dw-p-sing': 'Quando entrare, quanto tenere, dove respirare', 'dw-p-clips': 'Prove registrate e montaggio', 'dw-p-extra': 'Assistente testi e rime', 'dw-p-design': 'Crea suoni tuoi', 'dw-p-mixer': 'Canali del mixer', 'dw-p-qc': 'Controlli misurati sulla base e i tuoi giudizi', 'dw-p-omino': 'L\'omino canta il testo · base IA con ACE-Step', 'dw-p-melo': 'Canticchia e la base suona la tua melodia', 'dw-p-var': 'Tante basi diverse da ascoltare e scegliere', 'dw-p-mic': 'Effetti sulla tua voce' };
   function foldApply(ws) {
+    if (LIB.settings.foldV !== 2) { LIB.settings.fold = {}; LIB.settings.foldV = 2; persist(); } // nuovo design: riparto dall'ordine pulito
     var st = LIB.settings.fold || (LIB.settings.fold = {}), open = FOLD_OPEN[ws] || [];
     $$('#v-daw > .dw-panel').forEach(function (pn) {
       if (!pn.id || pn.classList.contains('dw-guide') || !pn.querySelector('.dw-ph')) return;
       if (!pn.querySelector('.fold-sum') && FOLD_SUM[pn.id]) { var sm = document.createElement('p'); sm.className = 'fold-sum'; sm.textContent = FOLD_SUM[pn.id]; pn.querySelector('.dw-ph').insertAdjacentElement('afterend', sm); }
       var k = ws + ':' + pn.id, want = st[k] != null ? st[k] : open.indexOf(pn.id) < 0; pn.classList.toggle('fold', !!want);
     });
+    // titoletto «Altri strumenti» sopra il primo pannello chiuso (nell'ordine visibile)
+    var vis = $$('#v-daw > .dw-panel.fold').filter(function (pn) { pn.classList.toggle('fold-first', false); return !pn.hidden && !pn.classList.contains('dw-guide'); });
+    vis.sort(function (a, b) { return (+getComputedStyle(a).order || 0) - (+getComputedStyle(b).order || 0); }); if (vis[0]) vis[0].classList.add('fold-first');
   }
   document.addEventListener('click', function (e) {
     var h = e.target.closest && e.target.closest('#v-daw > .dw-panel > .dw-ph'); if (!h || e.target.closest('button,a,input,select,.tag')) return;
@@ -15553,8 +15578,9 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
   });
   function dwWsName() { var w = LIB.settings.ws; return ['testo', 'base', 'voce', 'mix', 'libreria'].indexOf(w) >= 0 ? w : 'testo'; }
   function dwWs(ws) {
-    LIB.settings.ws = ws; persist(); document.body.dataset.ws = ws; try { foldApply(ws); } catch (e) {} try { dwSteps(); tbRender(); } catch (e) {}
+    LIB.settings.ws = ws; persist(); document.body.dataset.ws = ws; try { dwSteps(); tbRender(); } catch (e) {}
     var adv = !!LIB.settings.adv; $$('#v-daw [data-ws]').forEach(function (el) { var a = el.getAttribute('data-adv'); el.hidden = (' ' + el.getAttribute('data-ws') + ' ').indexOf(' ' + ws + ' ') < 0 || (!adv && a && (' ' + a + ' ').indexOf(' ' + ws + ' ') >= 0); });
+    try { foldApply(ws); } catch (e) {} // dopo aver mostrato/nascosto i pannelli del passo
     var ab = $('#dw-adv'); if (ab) ab.textContent = adv ? 'Nascondi strumenti avanzati' : 'Mostra strumenti avanzati';
     $$('#tabs a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-ws') === ws); });
     if (ws === 'base' || ws === 'voce' || ws === 'mix') setTimeout(function () { if (SESSION.base) { dwDraw(SESSION.base); prDraw(); } }, 30);
@@ -16026,7 +16052,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
   /* ---------- Pagina Testo: «Crea la base da questo testo» e «Cambia base» (ogni pressione = base nuova dal testo) ---------- */
   function tbRender() {
     var s = cur(), made = !!(s.prod && (s.prod.atmNome || s.brainFor)) && !!(s.lyrics || '').trim(), p = s.prod;
-    $('#tb-go').textContent = '🎵 Crea la base dal testo'; $('#tb-new').hidden = false; $('#tb-new').disabled = !made;
+    $('#tb-go').textContent = '🎵 Crea la base dal testo'; $('#tb-new').hidden = false; $('#tb-new').disabled = !made; if ($('#one-new')) $('#one-new').hidden = !made;
     $('#tb-now').innerHTML = made ? '<b>Stai ascoltando: ' + esc(Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre) + '</b>' + (p.atmNome ? ' (' + esc(p.atmNome) + ')' : '') + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode + (arrPlanName(p) ? '<br>Arrangiamento: ' + esc(arrPlanName(p)) : '') + '<br><span class="muted">«Cambia base» ne crea un\'altra diversa dall\'inizio alla fine: genere, tonalità, strumenti, intro, ritmo.</span>' : '<span class="muted">Prima «Crea la base dal testo», poi «Cambia base» quante volte vuoi.</span>';
   }
   async function tbCreate(fresh) {
@@ -16040,6 +16066,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
   }
   $('#tb-go').addEventListener('click', function () { tbCreate(false); });
   $('#tb-new').addEventListener('click', function () { tbCreate(true); });
+  $('#one-new').addEventListener('click', async function () { var o = $('#one-status'), b = this; b.disabled = true; o.textContent = 'Sto componendo un\'altra base, diversa…'; await tbCreate(true); await new Promise(function (r) { setTimeout(r, 450); }); b.disabled = false; o.innerHTML = $('#tb-now').innerHTML; });
   $('#dw-lyrics').addEventListener('input', function () { clearTimeout(tbRender.t); tbRender.t = setTimeout(tbRender, 400); });
 
   /* ---------- Agente Melodia: la tua voce canticchiata → note (Basic Pitch di Spotify, Apache 2.0, modello < 1 MB) ---------- */
