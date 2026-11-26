@@ -33,3 +33,6 @@ Regola: un tasto che esiste NON vuol dire ✅. Ogni ✅ ha il suo test.
 | Spazio «sultan-crea» (space-crea/) | ✅ provato in locale | stesso codice dello spazio, chiamato dall'app: 90 s in 156 s |
 | App → tuo spazio → base nello Studio per registrare | ✅ nel simulatore | crea-t: «Fatto in 156 s», «Usala per registrare» carica la base nello Studio |
 | Spazio vero su Hugging Face (2 CPU gratuite) | 🟡 da creare dall'utente | tempi stimati ~2× |
+| Idea 2 · il tuo stile nelle istruzioni dell'IA (cartella imparata o atmosfera → strumenti, groove, tonalità, BPM; tasti «più piano» ecc.) | ✅ nel simulatore | con «Shiva» la richiesta conteneva piano, bell melody, pizzicato strings |
+| Idea 1 · base IA divisa in tracce (batteria, basso, resto) nello Studio | ✅ nel simulatore con i due spazi in locale | «Dividila in tracce»: 186 s, poi Studio «Base IA divisa · 36 battute» |
+| Idea 3 · rifai solo un pezzo (inizio, centro, finale) | ✅ misurato | 0-10 s rifatti: differenza 114% nel pezzo, 22% nel resto (ricodifica); dall'app: 235 s su 4 CPU per una base di 90 s |

@@ -40,7 +40,18 @@ def crea(stile, testo="", bpm=0, durata=60, tonalita="", progress=gr.Progress())
     a = (r.audios or [None])[0]; path = a.get("path") if isinstance(a, dict) else a
     return path
 
-demo = gr.Interface(fn=crea, inputs=[gr.Textbox(label="Stile (es. dark italian trap, piano intro, 808)"), gr.Textbox(label="Testo (vuoto = base strumentale)"), gr.Number(value=0, label="BPM (0 = sceglie lui)"), gr.Number(value=60, label="Durata in secondi"), gr.Textbox(value="", label="Tonalità (es. A minor)")],
+def rifai(audio, inizio=0, fine=15, stile="", progress=gr.Progress()):
+    """IDEA 3: rifà SOLO un pezzo della base (da «inizio» a «fine» secondi), il resto resta uguale (ACE-Step «repaint»)."""
+    if not audio: raise gr.Error("Nessun audio")
+    p = GenerationParams(task_type="repaint", src_audio=audio, repainting_start=float(inizio), repainting_end=float(fine), caption=(stile or "")[:500], lyrics="[Instrumental]", instrumental=True, inference_steps=8, thinking=False, vocal_language="unknown")
+    progress(0.1, desc="Rifaccio il pezzo")
+    r = generate_music(H, LLM, p, GenerationConfig(batch_size=1, audio_format="mp3"), save_dir=OUT)
+    if not getattr(r, "success", False): raise gr.Error(str(getattr(r, "error", "errore")))
+    a = (r.audios or [None])[0]; return a.get("path") if isinstance(a, dict) else a
+
+demo_crea = gr.Interface(fn=crea, inputs=[gr.Textbox(label="Stile (es. dark italian trap, piano intro, 808)"), gr.Textbox(label="Testo (vuoto = base strumentale)"), gr.Number(value=0, label="BPM (0 = sceglie lui)"), gr.Number(value=60, label="Durata in secondi"), gr.Textbox(value="", label="Tonalità (es. A minor)")],
                     outputs=gr.File(label="Base"), title="Sultan Sound · basi IA", api_name="crea", concurrency_limit=1)
+demo_rifai = gr.Interface(fn=rifai, inputs=[gr.File(label="Base"), gr.Number(value=0, label="Da (secondi)"), gr.Number(value=15, label="A (secondi)"), gr.Textbox(label="Stile del pezzo nuovo")], outputs=gr.File(label="Base rifatta"), title="Rifai un pezzo", api_name="rifai", concurrency_limit=1)
+demo = gr.TabbedInterface([demo_crea, demo_rifai], ["Crea", "Rifai un pezzo"])
 if __name__ == "__main__":
     demo.queue(max_size=8).launch()

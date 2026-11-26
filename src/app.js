@@ -1515,7 +1515,7 @@
   }
   function voiceTake() { var t = activeTake(); return t && !t.example ? t : null; }
   function dwBuffers(b) {
-    var t = voiceTake(), pf0 = pfPlan(), key = (b.imported ? 'imp' + b.length : SESSION.baseKey) + '|' + vclipKey() + '|' + pfKey(pf0) + '|' + (ominoSings() ? 'g' + gvS().f0 : '');
+    var t = voiceTake(), pf0 = pfPlan(), key = (b.imported ? 'imp' + b.length + (SESSION.imported && SESSION.imported.stems ? 's' : '') : SESSION.baseKey) + '|' + vclipKey() + '|' + pfKey(pf0) + '|' + (ominoSings() ? 'g' + gvS().f0 : '');
     if (DW.bufKey === key && DW.bufs) return DW.bufs;
     var bufs = {}, N = b.length, sum = new Float32Array(N), i;
     LANES.forEach(function (L) {
@@ -1531,7 +1531,7 @@
     });
     var pk = 0; for (i = 0; i < N; i++) { var v = sum[i] < 0 ? -sum[i] : sum[i]; if (v > pk) pk = v; }
     DW.k = pk > 0 ? 0.8 / pk : 1;
-    if (b.imported) { bufs = { pad: { x: SESSION.imported.mono, sr: SESSION.imported.sr, start: 0 } }; DW.k = 1; }
+    if (b.imported) { var IS = SESSION.imported, srI = IS.sr; bufs = IS.stems ? { drums: { x: IS.stems.drums, sr: srI, start: 0 }, bass: { x: IS.stems.bass, sr: srI, start: 0 }, pad: { x: IS.stems.other, sr: srI, start: 0 } } : { pad: { x: IS.mono, sr: srI, start: 0 } }; DW.k = 1; }
     var vb = vclipBuffer(b.duration); if (vb) bufs.voice = vb;
     if (pf0 && pf0.on && pf0.events && pf0.events.length && !b.imported) {
       try { bufs.sfx = { x: ProdFx.renderSfx(pf0.events, b.sampleRate, b.bpm, N, { seed: pf0.seed, tonic: b.tonic, mode: b.mode }), sr: b.sampleRate, start: 0 }; } catch (e) {}
@@ -3051,8 +3051,22 @@
     var p = cur().prod, st = Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre, mood = moodNow() || '';
     var G = { trap: 'italian trap', trapdark: 'dark trap', drill: 'drill', brooklyn: 'brooklyn drill', street: 'street rap', melodico: 'melodic italian pop ballad, piano', emorap: 'emo rap, guitar', rnb: 'r&b', cloud: 'cloud rap, ambient', plugg: 'plugg', rage: 'rage trap, synth', lofi: 'lofi hip hop', boombap: 'boom bap', epico: 'cinematic rap, orchestral', estate: 'summer pop, latin', reggaeton: 'reggaeton', afrotrap: 'afro trap', clubtrap: 'club trap', jersey: 'jersey club', phonk: 'phonk', detroit: 'detroit rap' };
     var M = { malinconico: 'melancholic, sad, emotional', dark: 'dark, mysterious', euforico: 'euphoric, energetic', aggressivo: 'aggressive, intense', romantico: 'romantic, warm', nostalgico: 'nostalgic, dreamy' };
-    return [G[p.genre] || st, M[mood] || 'emotional', $('#ace-voice').value, 'autotune', '808 bass', 'italian lyrics', p.mode === 'minore' ? 'minor key' : 'major key'].join(', ');
+    var vs = LIB.settings.varStyle || '', gk = p.genre; if (vs.slice(0, 2) === 'a:' && StylePresets.byId(vs.slice(2))) gk = StylePresets.byId(vs.slice(2)).base; else if (vs.slice(0, 2) === 'f:' && folderProf(vs.slice(2))) { var fs0 = folderProf(vs.slice(2)).style; gk = { trap: 'trap', drill: 'drill', melodico: 'melodico', estate: 'estate', epico: 'epico' }[fs0] || gk; }
+    var tags = [G[gk] || st, M[mood] || 'emotional', $('#ace-voice').value, 'autotune', '808 bass', 'italian lyrics', p.mode === 'minore' ? 'minor key' : 'major key'].concat(aceStyleTags());
+    return tags.filter(function (v, i, a) { return v && a.indexOf(v) === i; }).join(', ');
   }
+  /* parole per ACE-Step dal TUO stile: cartella imparata dai video (numeri misurati) o atmosfera scelta, più quello che hai chiesto con i tasti */
+  var INST_EN = { piano: 'piano', kawai: 'grand piano', upright: 'upright piano', harp: 'harp', violins: 'violins', cellos: 'cellos', guitar: 'acoustic guitar', nylon: 'nylon guitar', 'pro:bell': 'bell melody', 'pro:choir': 'choir', 'pro:darkpad': 'dark pads', 'pro:epfm': 'electric piano', 'pro:pluck': 'synth pluck', pizz: 'pizzicato strings', vlnspic: 'spiccato violins', harpsi: 'harpsichord', 'pro:lead': 'synth lead', glock: 'glockenspiel', marimba: 'marimba' };
+  function aceStyleTags() {
+    var v = LIB.settings.varStyle || '', out = [], n = (prodProf().n || {});
+    if (v.slice(0, 2) === 'f:') { var fp = folderProf(v.slice(2)); if (fp) { if (fp.hatDensity > 0.6) out.push('busy hi-hats'); if (fp.triplets > 0.3) out.push('triplet hi-hats'); if (fp.swing > 0.08) out.push('swing groove'); if (fp.sub > 0.55) out.push('heavy sub bass'); if (fp.bright < 0.4) out.push('dark warm mix'); else if (fp.bright > 0.65) out.push('bright mix'); } }
+    else if (v.slice(0, 2) === 'a:') { var pr = StylePresets.byId(v.slice(2)); if (pr) { (pr.inst.melodia || []).concat(pr.inst.pad || []).slice(0, 3).forEach(function (id) { if (INST_EN[id]) out.push(INST_EN[id]); }); } }
+    var inst = cur().prod.inst || {}; ['melodia', 'accordi'].forEach(function (r) { if (INST_EN[inst[r]]) out.push(INST_EN[inst[r]]); });
+    if (n.piano) out.push('piano'); if (n.deep) out.push('deep atmospheric pads'); if (n.drums) out.push('punchy hard drums'); if (n.space) out.push('sparse arrangement, room for vocals'); if (n.simple) out.push('rich detailed arrangement');
+    return out;
+  }
+  function aceKey() { var v = LIB.settings.varStyle || '', p = cur().prod, t = p.tonic, m = p.mode; if (v.slice(0, 2) === 'f:') { var fp = folderProf(v.slice(2)); if (fp && fp.key) { t = fp.key.tonic; m = fp.key.mode; } } return ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][t] + (m === 'minore' ? ' minor' : ' major'); }
+  function aceBpm() { var v = LIB.settings.varStyle || '', fp = v.slice(0, 2) === 'f:' ? folderProf(v.slice(2)) : null; return fp && fp.bpm ? fp.bpm : cur().prod.bpm; }
   /* una chiamata ad ACE-Step: o.instr = base strumentale (niente voce), altrimenti canta il testo. Ogni chiamata ha un seme nuovo. */
   async function aceRun(o) {
     var m = o.msg, out = o.out, s = cur(), p = s.prod; if (ACE.busy) { m.textContent = 'Sto già lavorando a una richiesta, aspetta.'; return; }
@@ -3064,7 +3078,7 @@
       if (own) { // il TUO spazio: nessun limite giornaliero (CPU gratuita: più lento)
         m.textContent = 'Mi collego al tuo spazio basi IA (se dormiva, la prima volta 3-5 minuti per svegliarsi)…';
         var co = await GC.Client.connect(/^https?:/.test(own) ? own : own.replace(/^.*huggingface\.co\/spaces\//, '')), tko = setInterval(function () { m.textContent = 'Il tuo spazio compone ' + (o.instr ? 'la base' : 'la canzone') + ' · ' + Math.round((Date.now() - t0) / 1000) + ' s (circa 1-3 minuti)'; }, 1000), ro;
-        try { ro = await co.predict('/crea', [cap, o.instr ? '' : lyr, p.bpm, o.dur || 60, '']); } finally { clearInterval(tko); }
+        try { ro = await co.predict('/crea', [cap, o.instr ? '' : lyr, aceBpm(), o.dur || 60, aceKey()]); } finally { clearInterval(tko); }
         res = ro && ro.data;
       } else {
       m.textContent = 'Mi collego ad ACE-Step…';
@@ -3072,12 +3086,12 @@
       var api = await cl.view_api(), ep = api && api.named_endpoints && api.named_endpoints['/generation_wrapper']; if (!ep) throw new Error('lo spazio ACE-Step è cambiato');
       var args = ep.parameters.map(function (q) { return q.parameter_has_default ? q.parameter_default : (/Textbox/.test(q.component || '') ? '' : null); });
       var set = function (nm, v) { for (var i = 0; i < ep.parameters.length; i++) if (ep.parameters[i].parameter_name === nm) { args[i] = v; return; } };
-      set('generation_mode', 'custom'); set('simple_query_input', ''); set('simple_vocal_language', 'it'); set('param_4', cap); set('param_5', lyr); set('param_6', p.bpm); set('param_9', o.instr ? 'unknown' : 'it'); set('param_15', o.dur || 60); set('param_16', 1); set('param_12', true);
+      set('generation_mode', 'custom'); set('simple_query_input', ''); set('simple_vocal_language', 'it'); set('param_4', cap); set('param_5', lyr); set('param_6', aceBpm()); set('param_7', aceKey()); set('param_9', o.instr ? 'unknown' : 'it'); set('param_15', o.dur || 60); set('param_16', 1); set('param_12', true);
       var tk = setInterval(function () { m.textContent = (o.instr ? 'ACE-Step compone la base' : 'ACE-Step sta cantando il tuo testo') + ' (può esserci coda) · ' + Math.round((Date.now() - t0) / 1000) + ' s'; }, 1000);
       try { var pr = await cl.predict('/generation_wrapper', args); res = pr && pr.data; } finally { clearInterval(tk); }
       }
       var f = res && res[0], url = f && (f.url || (f.value && f.value.url) || f.path); if (!url) throw new Error('nessun audio restituito');
-      out.innerHTML = '<audio controls playsinline src="' + esc(url) + '"></audio><div class="row"><a class="btn sm" href="' + esc(url) + '" download="' + (o.instr ? 'base-ia' : 'demo-cantata') + '.mp3" target="_blank">Salva</a>' + (o.instr ? '<button class="btn sm" data-ace-use="' + esc(url) + '">Usala per registrare la voce</button>' : '') + '</div>';
+      out.innerHTML = '<audio controls playsinline src="' + esc(url) + '"></audio><div class="row"><a class="btn sm" href="' + esc(url) + '" download="' + (o.instr ? 'base-ia' : 'demo-cantata') + '.mp3" target="_blank">Salva</a>' + (o.instr ? '<button class="btn sm" data-ace-use="' + esc(url) + '">Usala per registrare la voce</button><button class="btn sm" data-ace-split="' + esc(url) + '">Dividila in tracce e modificala</button>' : '') + '</div>' + (o.instr ? '<div class="row"><select class="ace-redo-what"><option value="0-15">Rifai l\'inizio (0-15 s)</option><option value="15-35">Rifai la parte centrale (15-35 s)</option><option value="-20">Rifai il finale (ultimi 20 s)</option></select><input class="ace-redo-style" placeholder="come? es. solo pianoforte, più scura" style="max-width:180px"><button class="btn sm" data-ace-redo="' + esc(url) + '">Rifai solo quel pezzo</button></div>' : '') + '</div>';
       m.textContent = 'Fatto in ' + Math.round((Date.now() - t0) / 1000) + ' s · ' + cap + (o.instr ? '' : ' · voce IA: per provare melodia e flow, poi la canti tu.');
       try { out.querySelector('audio').play(); } catch (e) {}
     } catch (e) {
@@ -3088,6 +3102,32 @@
   $('#ace-go').addEventListener('click', function () { aceRun({ msg: $('#ace-msg'), out: $('#ace-out'), btn: this, dur: +$('#ace-dur').value }); });
   (function () { var n = $('#tb-ai-space'); if (!n) return; n.value = LIB.settings.creaSpace || ''; n.addEventListener('change', function () { LIB.settings.creaSpace = this.value.trim(); persist(); }); })();
   $('#tb-ai').addEventListener('click', function () { var extra = ['piano intro', 'arpeggiated harp', 'dark strings', 'heavy 808 slides', 'guitar melody', 'cinematic pads', 'bell melody', 'choir'][Math.floor(Math.random() * 8)]; aceRun({ instr: true, msg: $('#tb-ai-msg'), out: $('#tb-ai-out'), btn: this, dur: 90, extra: extra }); });
+  /* IDEA 3: rifai solo un pezzo della base IA (il resto resta uguale) — serve il tuo spazio basi IA */
+  document.addEventListener('click', async function (e) {
+    var ur = e.target.getAttribute && e.target.getAttribute('data-ace-redo'); if (!ur) return; var m = $('#tb-ai-msg'), own = (LIB.settings.creaSpace || '').trim(), box = e.target.closest('#tb-ai-out');
+    if (!own) { m.textContent = 'Per rifare un pezzo serve il tuo spazio basi IA (istruzioni in notes/SPAZIO-BASI-IA.md).'; return; }
+    var w = box.querySelector('.ace-redo-what').value, how = box.querySelector('.ace-redo-style').value || 'same style', au = box.querySelector('audio'), dur = au && isFinite(au.duration) ? au.duration : 60, a0, a1;
+    if (w.charAt(0) === '-') { a0 = Math.max(0, dur - 20); a1 = dur; } else { var pp = w.split('-'); a0 = +pp[0]; a1 = Math.min(dur, +pp[1]); }
+    e.target.disabled = true; var t0 = Date.now(), tk = setInterval(function () { m.textContent = 'Rifaccio da ' + Math.round(a0) + ' a ' + Math.round(a1) + ' s · ' + Math.round((Date.now() - t0) / 1000) + ' s'; }, 1000);
+    try { var GC = await import('https://cdn.jsdelivr.net/npm/@gradio/client@2.8.0/+esm'), co = await GC.Client.connect(/^https?:/.test(own) ? own : own.replace(/^.*huggingface\.co\/spaces\//, ''));
+      var blobR = await (await fetch(ur)).blob(), ro = await co.predict('/rifai', [GC.handle_file(blobR), a0, a1, aceCaption().replace(/, (male|female) vocals|, autotune|, italian lyrics/g, '') + ', instrumental, ' + how]), f = ro && ro.data && ro.data[0], nu = f && (f.url || f.path); if (!nu) throw new Error('nessun audio');
+      box.innerHTML = box.innerHTML.split(ur).join(nu); var na = box.querySelector('audio'); if (na) { na.currentTime = Math.max(0, a0 - 2); try { na.play(); } catch (x) {} }
+      m.textContent = 'Fatto: rifatto solo da ' + Math.round(a0) + ' a ' + Math.round(a1) + ' s («' + how + '»), il resto è uguale. Ascolta dal punto cambiato.';
+    } catch (err) { m.textContent = 'Non sono riuscito: ' + ((err && err.message) || err); } finally { clearInterval(tk); e.target.disabled = false; }
+  });
+  document.addEventListener('click', async function (e) {
+    var us = e.target.getAttribute && e.target.getAttribute('data-ace-split'); if (!us) return; var m = $('#tb-ai-msg');
+    if (!(LIB.settings.sepServer || '').trim()) { m.textContent = 'Per dividerla serve il tuo spazio di separazione (Impara → Dove separo → nome dello spazio, istruzioni in notes/SPAZIO-HF.md).'; return; }
+    e.target.disabled = true;
+    try { m.textContent = 'Scarico la base IA…'; var blob = await (await fetch(us)).blob(), f = new File([blob], 'base-ia.mp3', { type: blob.type || 'audio/mpeg' });
+      var keepT = $('#dw-tr-auto') && $('#dw-tr-auto').checked; if ($('#dw-tr-auto')) $('#dw-tr-auto').checked = false; var sx; try { sx = await sepServer(f, m); } finally { if ($('#dw-tr-auto')) $('#dw-tr-auto').checked = keepT; }
+      var an = BaseAnalysis.analyze(sx.base, sx.sr, { maxSeconds: 60 });
+      SESSION.imported = { mono: sx.base, sr: sx.sr, bpm: an.bpm || aceBpm(), key: an.key, name: 'Base IA divisa', stems: { drums: sx.stems.drums, bass: sx.stems.bass, other: sx.stems.other } }; SESSION.useImported = true; SESSION.impBase = null;
+      DW.bufKey = ''; dwStop(); await dwRefresh(); dwWs('base');
+      m.textContent = 'Fatto: la base IA è nello Studio divisa in Batteria, Basso e Atmosfera (resto). Abbassa, togli (M) o metti solo (S) una traccia, usa il mixer e gli effetti; registra la voce in 3 Voce.';
+    } catch (err) { m.textContent = 'Non sono riuscito a dividerla: ' + ((err && err.message) || err); }
+    e.target.disabled = false;
+  });
   document.addEventListener('click', async function (e) {
     var u = e.target.getAttribute && e.target.getAttribute('data-ace-use'); if (!u) return; var m = $('#tb-ai-msg');
     try { m.textContent = 'Scarico la base IA…'; var ab = await (await fetch(u)).arrayBuffer(), oc = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 1, 44100), a = await new Promise(function (res, rej) { var pr = oc.decodeAudioData(ab, res, rej); if (pr && pr.then) pr.then(res, rej); });
