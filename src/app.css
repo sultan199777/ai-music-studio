@@ -508,3 +508,10 @@ body[data-ws="base"] #dw-p-arr { order: 2; } body[data-ws="base"] #dw-p-var { or
 .snd-chips .chip i{font-style:normal;font-size:10px;padding:1px 5px;border-radius:6px;background:var(--ok-bg);color:var(--ok);margin-left:3px}
 body[data-ws="base"] #dw-p-suoni { order: 4; }
 body[data-ws="libreria"] #dw-p-suoni { order: 3; }
+
+/* Cronologia: annulla / ripristina / ascolta prima-dopo */
+.dw-hist{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 10px;margin:0 0 4px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.dw-hist .dw-hist-ab{display:inline-flex;gap:4px;margin-left:auto}
+.dw-hist small{flex-basis:100%;font-size:12px;line-height:1.3}
+.dw-hist .btn:disabled{opacity:.4}
+#v-daw > .dw-hist{order:-9}

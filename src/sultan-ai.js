@@ -74,7 +74,7 @@
     }
     if (/dimentica le mie preferenze|azzera (le )?preferenze|cancella (le )?preferenze/.test(t)) return { reply: 'Fatto: ho azzerato le preferenze di produzione (pianoforte, profondità, batteria, spazio voce…). La memoria delle frasi che mi hai insegnato resta: per quella usa «dimentica …».', actions: [{ type: 'resetprefs' }] };
     if (/^(dimentica|cancella dalla memoria|scordati)/.test(t)) { var f = t.replace(/^(dimentica|cancella dalla memoria|scordati)\s*(di|che)?\s*/, ''); A.push({ type: 'forget', text: f }); return { reply: f ? 'Tolgo dalla memoria quello che parla di «' + f + '».' : 'Dimmi cosa dimenticare (es. «dimentica Shiva»).', actions: A }; }
-    if (/cosa (sai|ricordi) di me|cosa hai imparato|la tua memoria/.test(t)) { var mm = ctx.memory || []; return { reply: mm.length ? 'Ricordo:\n• ' + mm.slice(-15).join('\n• ') : 'Non mi hai ancora insegnato niente. Prova: «ricorda che mi piacciono le basi drill scure» o «non voglio il flauto».', actions: [] }; }
+    if (/cosa (sai|ricordi) di me|cosa hai imparato|la tua memoria/.test(t)) { var mm = ctx.memory || [], dd = ctx.decisions || ''; return { reply: (mm.length ? 'Ricordo:\n• ' + mm.slice(-15).join('\n• ') : 'Non mi hai ancora insegnato frasi («ricorda che…»).') + (dd ? '\n\nDalle tue modifiche:\n' + dd : ''), actions: [] }; }
     // rime
     var rm = t.match(/rim[ae]\s+(?:per|con|a|di)\s+([a-zà-ú']+)/) || t.match(/cosa rima con\s+([a-zà-ú']+)/);
     if (rm) return { reply: rhymesFor(rm[1], ctx) || 'Il dizionario delle rime non è pronto.', actions: [] };
