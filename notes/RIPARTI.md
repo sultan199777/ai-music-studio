@@ -53,3 +53,9 @@ Documento con ricerca, fonti, licenze, architettura e fasi: https://claude.ai/ar
 ## 24/11 sera
 - Aggiunti: correzione del tempo (timing.js), Guida al canto (sing-guide.js), melodie nuove + "Cambia melodia" + stile scritto a parole (sultan-brain parseStyle), Assistente testi AI locale opzionale (local-ai.js, WebLLM 0.2.79 + Qwen2.5, NON provato su telefono).
 - Divisione chat: vedi notes/DIVISIONE-CHAT.md.
+
+## IA vera gratis (26/11 sera)
+- `src/cloud-ai.js` (CloudAI) + `tests/cloud-ai.test.js`: Sultan IA (#sai) usa un modello grande e aperto via **Groq** (default `openai/gpt-oss-120b`, piano Free senza carta, limiti a richieste) o **OpenRouter** (`openrouter/free`, 50 richieste/giorno). Chiave creata dall'utente e incollata in ⚙ (#sai-cfg, #sai-set): resta solo in `localStorage['msa-cloudai-key-<servizio>']`, mai nel codice.
+- Il modello riceve misure vere (analyzeLyrics, base, memoria, atmosfere) e comanda l'app con `AZIONI: [...]` filtrate da `cleanActions` (go, variants, studio, sing, remember). Memoria (ricorda/dimentica/cosa sai di me) resta locale. Errore o limite → ripiego automatico sull'IA di base (SultanAI) con spiegazione.
+- Provato: test 413/413 e iPhone simulato con risposta Groq finta. NON provato: chiave vera, CORS reale di Groq da Safari, qualità delle risposte.
+- Nota: la documentazione HF ora dice che gli Spaces Gradio/Docker richiedono un piano a pagamento (solo gli Spaces statici sono gratis): verificare prima di proporre nuovi Spaces.

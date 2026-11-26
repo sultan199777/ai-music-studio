@@ -3109,24 +3109,41 @@
   // ---------- Sultan IA: in ogni pagina, parli o scrivi, le insegni (memoria sul telefono) ----------
   var SAI = { log: null, rec: null, speak: false };
   function saiLog() { if (!SAI.log) { try { SAI.log = JSON.parse(localStorage.getItem('sai-log') || '[]'); } catch (e) { SAI.log = []; } } return SAI.log; }
-  function saiSave() { try { localStorage.setItem('sai-log', JSON.stringify(saiLog().slice(-60))); } catch (e) {} }
+  function saiSave() { try { localStorage.setItem('sai-log', JSON.stringify(saiLog().filter(function (m) { return !m.wait; }).slice(-60))); } catch (e) {} }
   function saiMem() { return LIB.settings.aiMem || (LIB.settings.aiMem = []); }
   function saiRender() {
     var L = saiLog(), el = $('#sai-log'); if (!el) return;
     if (!L.length) L.push({ who: 'ai', t: 'Ciao, sono Sultan IA. Sono qui in ogni pagina. Posso analizzare il tuo testo, darti rime, creare basi e varianti, cambiare il suono, dirti dove trovare le cose. Insegnami: «ricorda che mi piacciono le basi drill scure». Puoi anche parlarmi con 🎤.' });
-    el.innerHTML = L.slice(-40).map(function (m) { return '<div class="sai-m ' + (m.who === 'me' ? 'me' : 'ai') + '">' + esc(m.t) + '</div>'; }).join(''); el.scrollTop = el.scrollHeight;
+    el.innerHTML = L.slice(-40).map(function (m) { return '<div class="sai-m ' + (m.who === 'me' ? 'me' : 'ai') + (m.wait ? ' wait' : '') + '">' + esc(m.t) + '</div>'; }).join(''); el.scrollTop = el.scrollHeight;
     var ws = dwWsName(), SG = { testo: ['analizza il testo', 'riga 1', 'rime per notte'], base: ['crea 16 basi tipo Shiva', 'crea 8 basi', '808 più lungo'], voce: ['come registro', 'voce con più riverbero', 'dove respiro'], mix: ['master per spotify', 'abbassa gli accordi'], libreria: ['come imparo da un video', 'cosa sai di me'] };
     $('#sai-sugg').innerHTML = (SG[ws] || []).concat(['cosa sai di me']).filter(function (v, i, a) { return a.indexOf(v) === i; }).map(function (q) { return '<button class="chip" data-saiq="' + esc(q) + '">' + esc(q) + '</button>'; }).join('');
     $('#sai-where').textContent = { testo: '· pagina Testo', base: '· pagina Base', voce: '· pagina Voce', mix: '· pagina Mix', libreria: '· Libreria' }[ws] || '';
   }
   function saiSay(t) { saiLog().push({ who: 'ai', t: t }); saiSave(); saiRender(); if (SAI.speak && window.speechSynthesis) { try { speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(t.replace(/[«»•]/g, '')); u.lang = 'it-IT'; u.rate = 1.05; speechSynthesis.speak(u); } catch (e) {} } }
   function saiIsCmd(text) { if (/^(annulla|torna indietro|undo|rimetti come prima|ripristina|rifai|redo|ascolta (la versione )?(prima|dopo|a|b)|fammi sentire (prima|dopo))\b/i.test(String(text).trim().replace(/[’']/g, ' '))) return true; try { var st = talkState(), run = runCommands([text], st); return run.said.length > 0; } catch (e) { return false; } }
+  /* IA vera (CloudAI, gratis con chiave dell'utente salvata solo sul telefono); se spenta o in errore → IA di base (regole) */
+  function saiCtxBase() { var s = cur(), p = s.prod; return { s: s, summary: (p.atmNome || (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre)) + ', ' + p.bpm + ' BPM, ' + NOTES[p.tonic] + ' ' + p.mode }; }
+  function saiLocalOnly(t) { return /^(ricorda|impara|tieni a mente|da ora|d'ora in poi|sappi che|dimentica|cancella dalla memoria|scordati|azzera|cosa (sai|ricordi) di me|cosa hai imparato|la tua memoria)/i.test(String(t).trim()); }
   async function saiAsk(text) {
-    text = String(text || '').trim(); if (!text) return; saiLog().push({ who: 'me', t: text }); saiSave(); saiRender();
-    var s = cur(), p = s.prod, r = SultanAI.respond(text, { page: dwWsName(), lyrics: s.lyrics || '', summary: (p.atmNome || (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre)) + ', ' + p.bpm + ' BPM, ' + NOTES[p.tonic] + ' ' + p.mode, memory: saiMem(), presets: StylePresets.LIST, LyricsEngine: LyricsEngine, WordBank: WordBank, bank: wbStore(), isStudioCommand: saiIsCmd, decisions: decSummary(), seed: saiLog().length });
+    text = String(text || '').trim(); if (!text) return; var hist = saiLog().slice(-8).filter(function (m) { return !m.wait; }); saiLog().push({ who: 'me', t: text }); saiSave(); saiRender();
+    var cfg = CloudAI.getCfg(), B = saiCtxBase(), s = B.s, r = null, note = '';
+    if (CloudAI.ready(cfg) && !saiLocalOnly(text)) {
+      var w = { who: 'ai', t: 'Sto pensando…', wait: true }; saiLog().push(w); saiRender();
+      try {
+        var an = null; try { an = SultanAI.analyzeLyrics({ LyricsEngine: LyricsEngine, lyrics: s.lyrics || '' }); } catch (x) {}
+        r = await CloudAI.ask(text, { page: dwWsName(), lyrics: s.lyrics || '', summary: B.summary, analysis: an ? an.text : '', memory: saiMem(), presets: StylePresets.LIST.map(function (p) { return { id: p.id, nome: p.nome }; }), decisions: decSummary() },
+          { provider: cfg.provider, key: cfg.key, model: cfg.model, history: hist, presetIds: StylePresets.LIST.map(function (p) { return p.id; }) });
+      } catch (e) { note = '(IA vera non disponibile: ' + e.message + ' Rispondo con l\'IA di base.)\n'; r = null; }
+      var ix = saiLog().indexOf(w); if (ix >= 0) saiLog().splice(ix, 1);
+    }
+    if (!r) r = SultanAI.respond(text, { page: dwWsName(), lyrics: s.lyrics || '', summary: B.summary, memory: saiMem(), presets: StylePresets.LIST, LyricsEngine: LyricsEngine, WordBank: WordBank, bank: wbStore(), isStudioCommand: saiIsCmd, decisions: decSummary(), seed: saiLog().length });
+    var after = await saiRun(r.actions);
+    saiSay(note + r.reply + (after ? '\n' + after : ''));
+  }
+  async function saiRun(actions) {
     var after = '';
-    for (var i = 0; i < r.actions.length; i++) {
-      var a = r.actions[i];
+    for (var i = 0; i < actions.length; i++) {
+      var a = actions[i];
       if (a.type === 'remember') { saiMem().push(a.text); persist(); }
       else if (a.type === 'forget') { var f = (a.text || '').toLowerCase(); LIB.settings.aiMem = saiMem().filter(function (m) { return !f || m.toLowerCase().indexOf(f) < 0; }); persist(); }
       else if (a.type === 'go') { dwWs(a.ws); }
@@ -3140,12 +3157,41 @@
       }
       else if (a.type === 'studio') { await talkGo(a.text); var last = (typeof TALK !== 'undefined' && TALK.length) ? TALK[TALK.length - 1].reply : ''; if (last) after = last; }
     }
-    saiSay(r.reply + (after ? '\n' + after : ''));
+    return after;
   }
-  $('#sai-btn').addEventListener('click', function () { $('#sai').hidden = false; saiRender(); setTimeout(function () { $('#sai-txt').focus(); }, 50); });
+  function saiModeRender() { var c = CloudAI.getCfg(), el = $('#sai-mode'); if (!el) return; var on = CloudAI.ready(c); el.className = 'sai-mode small' + (on ? ' on' : ''); el.textContent = on ? '● IA vera accesa · ' + CloudAI.PROVIDERS[c.provider].label.split(' ·')[0] + ' · ' + (c.model || CloudAI.PROVIDERS[c.provider].model) : '○ IA di base (sul telefono). Tocca ⚙ per accendere l\'IA vera gratis.'; }
+  function saiSetRender() {
+    var c = CloudAI.getCfg(), sel = $('#sai-prov');
+    sel.innerHTML = Object.keys(CloudAI.PROVIDERS).map(function (k) { return '<option value="' + k + '"' + (k === c.provider ? ' selected' : '') + '>' + esc(CloudAI.PROVIDERS[k].label) + '</option>'; }).join('');
+    saiStepsRender(c.provider); $('#sai-key').value = c.key ? '••••••••' : ''; $('#sai-model').value = c.model || ''; $('#sai-model').placeholder = CloudAI.PROVIDERS[c.provider].model; $('#sai-setmsg').textContent = '';
+  }
+  function saiStepsRender(prov) {
+    var P = CloudAI.PROVIDERS[prov], st = prov === 'groq'
+      ? ['Apri <a href="' + P.keyPage + '" target="_blank" rel="noopener">console.groq.com/keys</a> in Safari e accedi (con Google o email, gratis, senza carta).', 'Tocca <b>Create API Key</b>, scrivi un nome (es. sultan) e conferma.', 'Tocca <b>Copy</b> (la chiave inizia con <span class="mono">gsk_</span>; la vedi una volta sola).', 'Torna qui, incollala sotto e tocca <b>Salva e prova</b>.']
+      : ['Apri <a href="' + P.keyPage + '" target="_blank" rel="noopener">openrouter.ai/keys</a> in Safari e accedi (gratis).', 'Tocca <b>Create API Key</b>; NON aggiungere credito: usiamo solo modelli gratis.', 'Copia la chiave (inizia con <span class="mono">sk-or-</span>).', 'Torna qui, incollala sotto e tocca <b>Salva e prova</b>.'];
+    $('#sai-steps').innerHTML = st.map(function (x) { return '<li>' + x + '</li>'; }).join(''); $('#sai-key').placeholder = P.keyHint + '…'; $('#sai-model').placeholder = P.model;
+  }
+  $('#sai-prov').addEventListener('change', function () { var c = CloudAI.getCfg(); saiStepsRender(this.value); var k = ''; try { k = localStorage.getItem('msa-cloudai-key-' + this.value) || ''; } catch (e) {} $('#sai-key').value = k ? '••••••••' : ''; $('#sai-model').value = this.value === c.provider ? (c.model || '') : ''; });
+  async function saiSaveTest() {
+    var prov = $('#sai-prov').value, kin = $('#sai-key').value.trim(), old = ''; try { old = localStorage.getItem('msa-cloudai-key-' + prov) || ''; } catch (e) {}
+    var key = /^•+$/.test(kin) ? old : kin, m = $('#sai-setmsg');
+    if (!key) { m.textContent = 'Incolla prima la chiave.'; return; }
+    if (!CloudAI.looksLikeKey(prov, key)) { m.textContent = 'Questa non sembra una chiave ' + (prov === 'groq' ? 'Groq (inizia con gsk_)' : 'OpenRouter (inizia con sk-or-)') + '. Controlla di aver copiato tutto, senza spazi.'; return; }
+    var model = $('#sai-model').value.trim(); m.textContent = 'Provo il collegamento…';
+    try {
+      var r = await CloudAI.ask('Rispondi solo: «Collegata. Sono pronta a lavorare con te, Sultan.»', { page: dwWsName() }, { provider: prov, key: key, model: model, timeoutMs: 45000 });
+      CloudAI.setCfg({ provider: prov, key: key, model: model, on: true }); m.textContent = 'Funziona ✓ Risposta: ' + r.reply.slice(0, 120); saiModeRender();
+      saiSay('IA vera accesa (' + CloudAI.PROVIDERS[prov].label.split(' ·')[0] + '). Ora puoi chiedermi di tutto: scrivere strofe nel tuo stile, analizzare il testo, creare basi, cambiare il suono.');
+    } catch (e) { m.textContent = 'Non funziona ancora: ' + e.message + ' La chiave NON è stata salvata.'; }
+  }
+  $('#sai-save').addEventListener('click', saiSaveTest);
+  $('#sai-off').addEventListener('click', function () { var c = CloudAI.getCfg(); CloudAI.setCfg({ provider: c.provider, model: c.model, on: false }); saiModeRender(); $('#sai-setmsg').textContent = 'IA vera spenta. La chiave resta salvata: per riaccenderla tocca Salva e prova.'; });
+  $('#sai-del').addEventListener('click', function () { var prov = $('#sai-prov').value; CloudAI.setCfg({ provider: prov, key: '', on: false }); $('#sai-key').value = ''; saiModeRender(); $('#sai-setmsg').textContent = 'Chiave cancellata da questo telefono.'; });
+  $('#sai-btn').addEventListener('click', function () { $('#sai').hidden = false; saiRender(); saiModeRender(); setTimeout(function () { $('#sai-txt').focus(); }, 50); });
   $('#sai').addEventListener('click', function (e) {
     if (e.target === this || e.target.id === 'sai-x') { this.hidden = true; try { speechSynthesis.cancel(); } catch (x) {} return; }
     var q = e.target.getAttribute && e.target.getAttribute('data-saiq'); if (q) { saiAsk(q); return; }
+    if (e.target.id === 'sai-cfg') { var bx = $('#sai-set'); bx.hidden = !bx.hidden; if (!bx.hidden) saiSetRender(); return; }
     if (e.target.id === 'sai-send') { var v = $('#sai-txt').value; $('#sai-txt').value = ''; saiAsk(v); }
     if (e.target.id === 'sai-voice') { SAI.speak = !SAI.speak; e.target.textContent = SAI.speak ? '🔊' : '🔈'; saiSay(SAI.speak ? 'Ok, da ora ti rispondo anche a voce.' : 'Risposte solo scritte.'); }
     if (e.target.id === 'sai-mic') {

@@ -765,7 +765,19 @@
 <button id="sai-btn" class="sai-btn" aria-label="Parla con Sultan IA">IA</button>
 <div id="sai" class="sai" hidden>
   <div class="sai-box">
-    <div class="sai-head"><b>Sultan IA</b><span class="small muted" id="sai-where"></span><button class="btn sm" id="sai-voice" title="Risposte a voce">🔈</button><button class="btn sm" id="sai-x" aria-label="Chiudi">✕</button></div>
+    <div class="sai-head"><b>Sultan IA</b><span class="small muted" id="sai-where"></span><button class="btn sm" id="sai-cfg" title="IA vera gratis">⚙</button><button class="btn sm" id="sai-voice" title="Risposte a voce">🔈</button><button class="btn sm" id="sai-x" aria-label="Chiudi">✕</button></div>
+    <div class="sai-mode small" id="sai-mode"></div>
+    <div class="sai-set" id="sai-set" hidden>
+      <b>Accendi l'IA vera (gratis)</b>
+      <p class="small">Un modello grande e aperto risponde a tutto, scrive con te e comanda l'app. Serve una chiave gratuita (niente carta di credito). La chiave resta solo su questo telefono.</p>
+      <label class="small">Servizio <select id="sai-prov"></select></label>
+      <ol class="small" id="sai-steps"></ol>
+      <label class="small">Incolla qui la chiave <input id="sai-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="gsk_…"></label>
+      <label class="small">Modello (lascia vuoto per quello consigliato) <input id="sai-model" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <div class="row"><button class="btn sm pri" id="sai-save">Salva e prova</button><button class="btn sm" id="sai-off">Spegni IA vera</button><button class="btn sm" id="sai-del">Cancella chiave</button></div>
+      <p class="small muted">Privacy: quando l'IA vera è accesa, il testo della canzone e le tue domande vanno al servizio scelto per avere la risposta. Senza chiave resta l'IA di base, tutta sul telefono.</p>
+      <p class="small" id="sai-setmsg"></p>
+    </div>
     <div id="sai-log" class="sai-log" aria-live="polite"></div>
     <div class="chips" id="sai-sugg"></div>
     <div class="sai-in"><button class="btn sm" id="sai-mic" title="Parla">🎤</button><input id="sai-txt" placeholder="Scrivi o parla: «analizza il testo», «crea 16 basi tipo Shiva», «ricorda che…»" autocomplete="off"><button class="btn sm pri" id="sai-send">Invia</button></div>

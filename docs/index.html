@@ -520,6 +520,12 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
 .dw-hist .btn:disabled{opacity:.4}
 #v-daw > .dw-hist{order:-9}
 
+/* IA vera (cloud-ai) */
+.sai-mode { margin: -4px 0 6px; opacity: .8; } .sai-mode.on { color: #9be7b0; opacity: 1; }
+.sai-set { background: #1d1d26; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 10px; margin-bottom: 8px; overflow-y: auto; max-height: 55vh; display: flex; flex-direction: column; gap: 6px; }
+.sai-set[hidden] { display: none; } .sai-set label { display: flex; flex-direction: column; gap: 4px; } .sai-set ol { margin: 0; padding-left: 18px; } .sai-set .row { display: flex; gap: 6px; flex-wrap: wrap; }
+.sai-set a { color: #c9b6ff; } .sai-m.wait { opacity: .6; font-style: italic; }
+
 /* ===== VOICE LAB (stile Cosmo: usa le variabili del tema) ===== */
 .vl .vl-auto{font-size:1.25rem;min-height:60px;margin:8px 0 4px;letter-spacing:.04em}
 .vl .vl-hint{margin:2px 0 8px}
@@ -992,7 +998,7 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>26/11, 13:20</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>26/11, 21:04</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -1367,7 +1373,7 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">404 test automatici superati su 404 · versione del 26 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">413 test automatici superati su 413 · versione del 26 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -1383,7 +1389,19 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
 <button id="sai-btn" class="sai-btn" aria-label="Parla con Sultan IA">IA</button>
 <div id="sai" class="sai" hidden>
   <div class="sai-box">
-    <div class="sai-head"><b>Sultan IA</b><span class="small muted" id="sai-where"></span><button class="btn sm" id="sai-voice" title="Risposte a voce">🔈</button><button class="btn sm" id="sai-x" aria-label="Chiudi">✕</button></div>
+    <div class="sai-head"><b>Sultan IA</b><span class="small muted" id="sai-where"></span><button class="btn sm" id="sai-cfg" title="IA vera gratis">⚙</button><button class="btn sm" id="sai-voice" title="Risposte a voce">🔈</button><button class="btn sm" id="sai-x" aria-label="Chiudi">✕</button></div>
+    <div class="sai-mode small" id="sai-mode"></div>
+    <div class="sai-set" id="sai-set" hidden>
+      <b>Accendi l'IA vera (gratis)</b>
+      <p class="small">Un modello grande e aperto risponde a tutto, scrive con te e comanda l'app. Serve una chiave gratuita (niente carta di credito). La chiave resta solo su questo telefono.</p>
+      <label class="small">Servizio <select id="sai-prov"></select></label>
+      <ol class="small" id="sai-steps"></ol>
+      <label class="small">Incolla qui la chiave <input id="sai-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="gsk_…"></label>
+      <label class="small">Modello (lascia vuoto per quello consigliato) <input id="sai-model" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <div class="row"><button class="btn sm pri" id="sai-save">Salva e prova</button><button class="btn sm" id="sai-off">Spegni IA vera</button><button class="btn sm" id="sai-del">Cancella chiave</button></div>
+      <p class="small muted">Privacy: quando l'IA vera è accesa, il testo della canzone e le tue domande vanno al servizio scelto per avere la risposta. Senza chiave resta l'IA di base, tutta sul telefono.</p>
+      <p class="small" id="sai-setmsg"></p>
+    </div>
     <div id="sai-log" class="sai-log" aria-live="polite"></div>
     <div class="chips" id="sai-sugg"></div>
     <div class="sai-in"><button class="btn sm" id="sai-mic" title="Parla">🎤</button><input id="sai-txt" placeholder="Scrivi o parla: «analizza il testo», «crea 16 basi tipo Shiva», «ricorda che…»" autocomplete="off"><button class="btn sm pri" id="sai-send">Invia</button></div>
@@ -6906,6 +6924,151 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
     return { reply: 'Non sono sicuro di aver capito. ' + tip.join(' ') + '\nPosso: «analizza il testo», «rime per notte», «riga 3», «crea 16 basi tipo Shiva», «808 più lungo», «ricorda che…», «dove sono le varianti».', actions: [] };
   }
   return { respond: respond, analyzeLyrics: analyzeLyrics, prefs: prefs, learnFrom: learnFrom };
+});
+
+/*
+ * IA vera (gratis): un modello di linguaggio grande, aperto, su un servizio con piano GRATUITO senza carta.
+ * - Groq: modelli aperti (es. openai/gpt-oss-120b, licenza Apache 2.0), piano Free a limiti di richieste, non addestra sui dati.
+ * - OpenRouter: modelli «:free» (router openrouter/free), 50 richieste al giorno sul piano gratuito.
+ * La chiave la crea l'utente e la incolla nell'app: resta SOLO sul suo telefono (localStorage), mai nel codice
+ * né nel repository pubblico. Senza chiave l'app usa l'IA di base (regole, SultanAI) come prima.
+ * Il modello riceve le MISURE vere dell'app (sillabe, rime, emozioni, base) e può chiedere azioni all'app
+ * con una riga finale «AZIONI: [...]»: l'app esegue solo azioni di una lista sicura.
+ * Moduli puri (testabili senza rete): buildMessages, parseReply, cleanActions; ask usa fetch passato o globale.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.CloudAI = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  var PROVIDERS = {
+    groq: { label: 'Groq · gratis, velocissimo', url: 'https://api.groq.com/openai/v1/chat/completions', model: 'openai/gpt-oss-120b', keyPage: 'https://console.groq.com/keys', keyHint: 'gsk_' },
+    openrouter: { label: 'OpenRouter · modelli gratis (50 al giorno)', url: 'https://openrouter.ai/api/v1/chat/completions', model: 'openrouter/free', keyPage: 'https://openrouter.ai/keys', keyHint: 'sk-or-' }
+  };
+  var PAGES = ['testo', 'base', 'voce', 'mix', 'libreria'];
+  var MAX_LYR = 2600, MAX_HIST = 8;
+
+  function systemPrompt() {
+    return [
+      'Sei Sultan IA, il produttore e coach dentro l\'app musicale di Sultan (rap, trap e drill italiani, spesso malinconici o scuri).',
+      'Rispondi SEMPRE in italiano semplice, frasi corte, come un produttore esperto che parla a un artista giovane. Niente teoria inutile: dai la cosa da fare.',
+      'Regole fisse:',
+      '- Usa le MISURE che ti passa l\'app (sillabe, rime, emozioni, BPM, tonalità): sono vere. Non inventare numeri che non hai.',
+      '- Se proponi righe nuove, scrivile tu, originali, nello stile di Sultan. Non copiare mai testi di altri artisti; puoi citare solo lo stile (flow, temi, atmosfera).',
+      '- Non promettere successo, hit o soldi. Sii onesto se una cosa non si può fare nell\'app.',
+      '- Solo la voce di Sultan: niente imitazioni o cloni di voci di altri.',
+      '- Se Sultan parla di stare male davvero o di farsi del male, metti prima la persona: ascolta, invitalo a parlarne con qualcuno di cui si fida o a chiamare il 112. Niente azioni in quel caso.',
+      '',
+      'Puoi far fare cose all\'app. Se serve, aggiungi come ULTIMA riga, da sola:',
+      'AZIONI: [ ... ]',
+      'con un array JSON di azioni scelte SOLO da questa lista:',
+      '{"type":"go","ws":"testo|base|voce|mix|libreria"}  apre una pagina',
+      '{"type":"variants","n":8,"atm":"<id atmosfera o vuoto>"}  crea da 4 a 24 basi diverse (atmosfere disponibili nel contesto)',
+      '{"type":"studio","text":"<comando breve in italiano>"}  modifica la base nello Studio, es. "808 più lungo", "bpm 140", "togli la batteria nell\'intro", "più riverbero sulla voce", "abbassa gli accordi", "annulla"',
+      '{"type":"sing"}  fa cantare il testo da una voce IA di prova (ACE-Step)',
+      '{"type":"remember","text":"<preferenza di Sultan da ricordare>"}',
+      'Non mettere AZIONI se Sultan fa solo una domanda o chiede un parere. Non scrivere mai la parola AZIONI altrove.'
+    ].join('\n');
+  }
+
+  function clip(s, n) { s = String(s || ''); return s.length > n ? s.slice(0, n) + '\n[…testo tagliato…]' : s; }
+
+  /** ctx: {page, lyrics, summary, analysis, memory[], presets[{id,nome}], decisions} ; history: [{who:'me'|'ai', t}] */
+  function buildMessages(text, ctx, history) {
+    ctx = ctx || {};
+    var c = ['CONTESTO DELL\'APP (aggiornato adesso):', 'Pagina aperta: ' + (ctx.page || 'sconosciuta') + '.'];
+    if (ctx.summary) c.push('Base attuale: ' + ctx.summary + '.');
+    if (ctx.analysis) c.push('Misure del testo (calcolate dall\'app):\n' + ctx.analysis);
+    if (ctx.lyrics && String(ctx.lyrics).trim()) c.push('Testo di Sultan:\n"""\n' + clip(ctx.lyrics, MAX_LYR) + '\n"""'); else c.push('Il testo è ancora vuoto.');
+    if (ctx.memory && ctx.memory.length) c.push('Cose che Sultan ti ha chiesto di ricordare:\n- ' + ctx.memory.slice(-12).join('\n- '));
+    if (ctx.decisions) c.push('Dalle sue scelte nello Studio:\n' + clip(ctx.decisions, 500));
+    if (ctx.presets && ctx.presets.length) c.push('Atmosfere per le basi (id: nome): ' + ctx.presets.slice(0, 40).map(function (p) { return p.id + ': ' + p.nome; }).join('; ') + '.');
+    var msgs = [{ role: 'system', content: systemPrompt() }, { role: 'system', content: c.join('\n\n') }];
+    (history || []).slice(-MAX_HIST).forEach(function (m) { if (m && m.t) msgs.push({ role: m.who === 'me' ? 'user' : 'assistant', content: clip(m.t, 1200) }); });
+    msgs.push({ role: 'user', content: String(text || '') });
+    return msgs;
+  }
+
+  /** Tiene solo azioni della lista sicura, con valori controllati. */
+  function cleanActions(arr, presetIds) {
+    var out = [];
+    (Array.isArray(arr) ? arr : []).slice(0, 12).forEach(function (a) {
+      if (!a || typeof a !== 'object') return;
+      if (a.type === 'go' && PAGES.indexOf(a.ws) >= 0) out.push({ type: 'go', ws: a.ws });
+      else if (a.type === 'variants') { var n = Math.max(4, Math.min(24, parseInt(a.n, 10) || 8)); var atm = (presetIds && presetIds.indexOf(a.atm) >= 0) ? a.atm : null; out.push({ type: 'variants', n: n, atm: atm }); }
+      else if (a.type === 'studio' && typeof a.text === 'string' && a.text.trim()) out.push({ type: 'studio', text: a.text.trim().slice(0, 120) });
+      else if (a.type === 'sing') out.push({ type: 'sing' });
+      else if (a.type === 'remember' && typeof a.text === 'string' && a.text.trim()) out.push({ type: 'remember', text: a.text.trim().slice(0, 200) });
+    });
+    return out.slice(0, 4);
+  }
+
+  /** Separa la risposta dalla riga AZIONI. Toglie eventuali <think>…</think>. */
+  function parseReply(raw, presetIds) {
+    var t = String(raw || '').replace(/<think>[\s\S]*?<\/think>/gi, '').trim(), actions = [];
+    var m = t.match(/(?:^|\n)\s*\**AZIONI\**\s*:\s*(\[[\s\S]*\])\s*`*\s*$/);
+    if (m) {
+      try { actions = cleanActions(JSON.parse(m[1]), presetIds); } catch (e) { actions = []; }
+      t = t.slice(0, m.index).trim();
+    }
+    t = t.replace(/```\s*$/, '').trim();
+    return { reply: t || (actions.length ? 'Ok, lo faccio.' : '…'), actions: actions };
+  }
+
+  function errText(status, body) {
+    if (status === 401 || status === 403) return 'La chiave non è valida o è scaduta: creane una nuova e incollala nelle impostazioni ⚙.';
+    if (status === 429) return 'Limite gratuito raggiunto per ora (troppe richieste). Riprova tra un minuto, o domani se è il limite del giorno.';
+    if (status === 402) return 'Il servizio chiede credito: con i modelli gratuiti non dovrebbe succedere. Controlla di aver scelto un modello gratis.';
+    if (status >= 500) return 'Il servizio IA è in difficoltà in questo momento (errore ' + status + '). Riprova tra poco.';
+    var msg = ''; try { msg = (JSON.parse(body).error || {}).message || ''; } catch (e) {}
+    return 'Errore ' + status + (msg ? ': ' + String(msg).slice(0, 160) : '') + '.';
+  }
+
+  /** opts: {provider, key, model, fetch, timeoutMs, presetIds, history}. Ritorna {reply, actions, model}. Lancia Error con messaggio in italiano. */
+  async function ask(text, ctx, opts) {
+    opts = opts || {}; var P = PROVIDERS[opts.provider || 'groq']; if (!P) throw new Error('Servizio IA sconosciuto.');
+    if (!opts.key) throw new Error('Manca la chiave: aprila in ⚙ e incollala.');
+    var f = opts.fetch || (typeof fetch !== 'undefined' ? fetch : null); if (!f) throw new Error('Questo browser non può collegarsi.');
+    var model = opts.model || P.model, body = { model: model, messages: buildMessages(text, ctx, opts.history), temperature: 0.7, max_tokens: 1200 };
+    if ((opts.provider || 'groq') === 'groq' && /gpt-oss/.test(model)) body.reasoning_effort = 'low';
+    var headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + opts.key };
+    if (opts.provider === 'openrouter') { headers['X-Title'] = 'Sultan Sound'; if (typeof location !== 'undefined' && location.origin && /^https?:/.test(location.origin)) headers['HTTP-Referer'] = location.origin; }
+    var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, timer = ctl ? setTimeout(function () { ctl.abort(); }, opts.timeoutMs || 60000) : null;
+    var res;
+    try { res = await f(P.url, { method: 'POST', headers: headers, body: JSON.stringify(body), signal: ctl ? ctl.signal : undefined }); }
+    catch (e) { throw new Error(e && e.name === 'AbortError' ? 'Il servizio IA non ha risposto in tempo. Riprova.' : 'Non riesco a collegarmi al servizio IA (rete assente o bloccata).'); }
+    finally { if (timer) clearTimeout(timer); }
+    var raw = await res.text();
+    if (!res.ok) { if (res.status === 400 && body.reasoning_effort && /reasoning/i.test(raw)) { delete body.reasoning_effort; return ask2(f, P, headers, body, opts.presetIds, model); } throw new Error(errText(res.status, raw)); }
+    return finish(raw, opts.presetIds, model);
+  }
+  async function ask2(f, P, headers, body, presetIds, model) {
+    var res = await f(P.url, { method: 'POST', headers: headers, body: JSON.stringify(body) }), raw = await res.text();
+    if (!res.ok) throw new Error(errText(res.status, raw)); return finish(raw, presetIds, model);
+  }
+  function finish(raw, presetIds, model) {
+    var j; try { j = JSON.parse(raw); } catch (e) { throw new Error('Risposta del servizio IA non leggibile.'); }
+    var ch = j.choices && j.choices[0], content = ch && ch.message ? ch.message.content : '';
+    if (!content || !String(content).trim()) throw new Error('Il modello ha risposto vuoto. Riprova o scegli un altro modello.');
+    var r = parseReply(content, presetIds); r.model = j.model || model; return r;
+  }
+
+  /* ---------- impostazioni sul telefono (mai nel codice) ---------- */
+  function store(s) { return s || (typeof localStorage !== 'undefined' ? localStorage : null); }
+  function getCfg(s) {
+    s = store(s); var c = { provider: 'groq', model: '', on: false };
+    try { var j = JSON.parse((s && s.getItem('msa-cloudai')) || '{}'); if (PROVIDERS[j.provider]) c.provider = j.provider; c.model = j.model || ''; c.on = !!j.on; } catch (e) {}
+    c.key = (s && s.getItem('msa-cloudai-key-' + c.provider)) || ''; return c;
+  }
+  function setCfg(c, s) {
+    s = store(s); if (!s) return; var p = PROVIDERS[c.provider] ? c.provider : 'groq';
+    s.setItem('msa-cloudai', JSON.stringify({ provider: p, model: c.model || '', on: !!c.on }));
+    if (typeof c.key === 'string') { if (c.key.trim()) s.setItem('msa-cloudai-key-' + p, c.key.trim()); else s.removeItem('msa-cloudai-key-' + p); }
+  }
+  function ready(c) { return !!(c && c.on && c.key && PROVIDERS[c.provider]); }
+  function looksLikeKey(provider, key) { var P = PROVIDERS[provider]; key = String(key || '').trim(); return !!P && key.length >= 20 && !/\s/.test(key) && key.indexOf(P.keyHint) === 0; }
+
+  return { PROVIDERS: PROVIDERS, systemPrompt: systemPrompt, buildMessages: buildMessages, parseReply: parseReply, cleanActions: cleanActions, ask: ask, getCfg: getCfg, setCfg: setCfg, ready: ready, looksLikeKey: looksLikeKey, errText: errText };
 });
 
 /*
@@ -16435,24 +16598,41 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
   // ---------- Sultan IA: in ogni pagina, parli o scrivi, le insegni (memoria sul telefono) ----------
   var SAI = { log: null, rec: null, speak: false };
   function saiLog() { if (!SAI.log) { try { SAI.log = JSON.parse(localStorage.getItem('sai-log') || '[]'); } catch (e) { SAI.log = []; } } return SAI.log; }
-  function saiSave() { try { localStorage.setItem('sai-log', JSON.stringify(saiLog().slice(-60))); } catch (e) {} }
+  function saiSave() { try { localStorage.setItem('sai-log', JSON.stringify(saiLog().filter(function (m) { return !m.wait; }).slice(-60))); } catch (e) {} }
   function saiMem() { return LIB.settings.aiMem || (LIB.settings.aiMem = []); }
   function saiRender() {
     var L = saiLog(), el = $('#sai-log'); if (!el) return;
     if (!L.length) L.push({ who: 'ai', t: 'Ciao, sono Sultan IA. Sono qui in ogni pagina. Posso analizzare il tuo testo, darti rime, creare basi e varianti, cambiare il suono, dirti dove trovare le cose. Insegnami: «ricorda che mi piacciono le basi drill scure». Puoi anche parlarmi con 🎤.' });
-    el.innerHTML = L.slice(-40).map(function (m) { return '<div class="sai-m ' + (m.who === 'me' ? 'me' : 'ai') + '">' + esc(m.t) + '</div>'; }).join(''); el.scrollTop = el.scrollHeight;
+    el.innerHTML = L.slice(-40).map(function (m) { return '<div class="sai-m ' + (m.who === 'me' ? 'me' : 'ai') + (m.wait ? ' wait' : '') + '">' + esc(m.t) + '</div>'; }).join(''); el.scrollTop = el.scrollHeight;
     var ws = dwWsName(), SG = { testo: ['analizza il testo', 'riga 1', 'rime per notte'], base: ['crea 16 basi tipo Shiva', 'crea 8 basi', '808 più lungo'], voce: ['come registro', 'voce con più riverbero', 'dove respiro'], mix: ['master per spotify', 'abbassa gli accordi'], libreria: ['come imparo da un video', 'cosa sai di me'] };
     $('#sai-sugg').innerHTML = (SG[ws] || []).concat(['cosa sai di me']).filter(function (v, i, a) { return a.indexOf(v) === i; }).map(function (q) { return '<button class="chip" data-saiq="' + esc(q) + '">' + esc(q) + '</button>'; }).join('');
     $('#sai-where').textContent = { testo: '· pagina Testo', base: '· pagina Base', voce: '· pagina Voce', mix: '· pagina Mix', libreria: '· Libreria' }[ws] || '';
   }
   function saiSay(t) { saiLog().push({ who: 'ai', t: t }); saiSave(); saiRender(); if (SAI.speak && window.speechSynthesis) { try { speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(t.replace(/[«»•]/g, '')); u.lang = 'it-IT'; u.rate = 1.05; speechSynthesis.speak(u); } catch (e) {} } }
   function saiIsCmd(text) { if (/^(annulla|torna indietro|undo|rimetti come prima|ripristina|rifai|redo|ascolta (la versione )?(prima|dopo|a|b)|fammi sentire (prima|dopo))\b/i.test(String(text).trim().replace(/[’']/g, ' '))) return true; try { var st = talkState(), run = runCommands([text], st); return run.said.length > 0; } catch (e) { return false; } }
+  /* IA vera (CloudAI, gratis con chiave dell'utente salvata solo sul telefono); se spenta o in errore → IA di base (regole) */
+  function saiCtxBase() { var s = cur(), p = s.prod; return { s: s, summary: (p.atmNome || (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre)) + ', ' + p.bpm + ' BPM, ' + NOTES[p.tonic] + ' ' + p.mode }; }
+  function saiLocalOnly(t) { return /^(ricorda|impara|tieni a mente|da ora|d'ora in poi|sappi che|dimentica|cancella dalla memoria|scordati|azzera|cosa (sai|ricordi) di me|cosa hai imparato|la tua memoria)/i.test(String(t).trim()); }
   async function saiAsk(text) {
-    text = String(text || '').trim(); if (!text) return; saiLog().push({ who: 'me', t: text }); saiSave(); saiRender();
-    var s = cur(), p = s.prod, r = SultanAI.respond(text, { page: dwWsName(), lyrics: s.lyrics || '', summary: (p.atmNome || (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre)) + ', ' + p.bpm + ' BPM, ' + NOTES[p.tonic] + ' ' + p.mode, memory: saiMem(), presets: StylePresets.LIST, LyricsEngine: LyricsEngine, WordBank: WordBank, bank: wbStore(), isStudioCommand: saiIsCmd, decisions: decSummary(), seed: saiLog().length });
+    text = String(text || '').trim(); if (!text) return; var hist = saiLog().slice(-8).filter(function (m) { return !m.wait; }); saiLog().push({ who: 'me', t: text }); saiSave(); saiRender();
+    var cfg = CloudAI.getCfg(), B = saiCtxBase(), s = B.s, r = null, note = '';
+    if (CloudAI.ready(cfg) && !saiLocalOnly(text)) {
+      var w = { who: 'ai', t: 'Sto pensando…', wait: true }; saiLog().push(w); saiRender();
+      try {
+        var an = null; try { an = SultanAI.analyzeLyrics({ LyricsEngine: LyricsEngine, lyrics: s.lyrics || '' }); } catch (x) {}
+        r = await CloudAI.ask(text, { page: dwWsName(), lyrics: s.lyrics || '', summary: B.summary, analysis: an ? an.text : '', memory: saiMem(), presets: StylePresets.LIST.map(function (p) { return { id: p.id, nome: p.nome }; }), decisions: decSummary() },
+          { provider: cfg.provider, key: cfg.key, model: cfg.model, history: hist, presetIds: StylePresets.LIST.map(function (p) { return p.id; }) });
+      } catch (e) { note = '(IA vera non disponibile: ' + e.message + ' Rispondo con l\'IA di base.)\n'; r = null; }
+      var ix = saiLog().indexOf(w); if (ix >= 0) saiLog().splice(ix, 1);
+    }
+    if (!r) r = SultanAI.respond(text, { page: dwWsName(), lyrics: s.lyrics || '', summary: B.summary, memory: saiMem(), presets: StylePresets.LIST, LyricsEngine: LyricsEngine, WordBank: WordBank, bank: wbStore(), isStudioCommand: saiIsCmd, decisions: decSummary(), seed: saiLog().length });
+    var after = await saiRun(r.actions);
+    saiSay(note + r.reply + (after ? '\n' + after : ''));
+  }
+  async function saiRun(actions) {
     var after = '';
-    for (var i = 0; i < r.actions.length; i++) {
-      var a = r.actions[i];
+    for (var i = 0; i < actions.length; i++) {
+      var a = actions[i];
       if (a.type === 'remember') { saiMem().push(a.text); persist(); }
       else if (a.type === 'forget') { var f = (a.text || '').toLowerCase(); LIB.settings.aiMem = saiMem().filter(function (m) { return !f || m.toLowerCase().indexOf(f) < 0; }); persist(); }
       else if (a.type === 'go') { dwWs(a.ws); }
@@ -16466,12 +16646,41 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
       }
       else if (a.type === 'studio') { await talkGo(a.text); var last = (typeof TALK !== 'undefined' && TALK.length) ? TALK[TALK.length - 1].reply : ''; if (last) after = last; }
     }
-    saiSay(r.reply + (after ? '\n' + after : ''));
+    return after;
   }
-  $('#sai-btn').addEventListener('click', function () { $('#sai').hidden = false; saiRender(); setTimeout(function () { $('#sai-txt').focus(); }, 50); });
+  function saiModeRender() { var c = CloudAI.getCfg(), el = $('#sai-mode'); if (!el) return; var on = CloudAI.ready(c); el.className = 'sai-mode small' + (on ? ' on' : ''); el.textContent = on ? '● IA vera accesa · ' + CloudAI.PROVIDERS[c.provider].label.split(' ·')[0] + ' · ' + (c.model || CloudAI.PROVIDERS[c.provider].model) : '○ IA di base (sul telefono). Tocca ⚙ per accendere l\'IA vera gratis.'; }
+  function saiSetRender() {
+    var c = CloudAI.getCfg(), sel = $('#sai-prov');
+    sel.innerHTML = Object.keys(CloudAI.PROVIDERS).map(function (k) { return '<option value="' + k + '"' + (k === c.provider ? ' selected' : '') + '>' + esc(CloudAI.PROVIDERS[k].label) + '</option>'; }).join('');
+    saiStepsRender(c.provider); $('#sai-key').value = c.key ? '••••••••' : ''; $('#sai-model').value = c.model || ''; $('#sai-model').placeholder = CloudAI.PROVIDERS[c.provider].model; $('#sai-setmsg').textContent = '';
+  }
+  function saiStepsRender(prov) {
+    var P = CloudAI.PROVIDERS[prov], st = prov === 'groq'
+      ? ['Apri <a href="' + P.keyPage + '" target="_blank" rel="noopener">console.groq.com/keys</a> in Safari e accedi (con Google o email, gratis, senza carta).', 'Tocca <b>Create API Key</b>, scrivi un nome (es. sultan) e conferma.', 'Tocca <b>Copy</b> (la chiave inizia con <span class="mono">gsk_</span>; la vedi una volta sola).', 'Torna qui, incollala sotto e tocca <b>Salva e prova</b>.']
+      : ['Apri <a href="' + P.keyPage + '" target="_blank" rel="noopener">openrouter.ai/keys</a> in Safari e accedi (gratis).', 'Tocca <b>Create API Key</b>; NON aggiungere credito: usiamo solo modelli gratis.', 'Copia la chiave (inizia con <span class="mono">sk-or-</span>).', 'Torna qui, incollala sotto e tocca <b>Salva e prova</b>.'];
+    $('#sai-steps').innerHTML = st.map(function (x) { return '<li>' + x + '</li>'; }).join(''); $('#sai-key').placeholder = P.keyHint + '…'; $('#sai-model').placeholder = P.model;
+  }
+  $('#sai-prov').addEventListener('change', function () { var c = CloudAI.getCfg(); saiStepsRender(this.value); var k = ''; try { k = localStorage.getItem('msa-cloudai-key-' + this.value) || ''; } catch (e) {} $('#sai-key').value = k ? '••••••••' : ''; $('#sai-model').value = this.value === c.provider ? (c.model || '') : ''; });
+  async function saiSaveTest() {
+    var prov = $('#sai-prov').value, kin = $('#sai-key').value.trim(), old = ''; try { old = localStorage.getItem('msa-cloudai-key-' + prov) || ''; } catch (e) {}
+    var key = /^•+$/.test(kin) ? old : kin, m = $('#sai-setmsg');
+    if (!key) { m.textContent = 'Incolla prima la chiave.'; return; }
+    if (!CloudAI.looksLikeKey(prov, key)) { m.textContent = 'Questa non sembra una chiave ' + (prov === 'groq' ? 'Groq (inizia con gsk_)' : 'OpenRouter (inizia con sk-or-)') + '. Controlla di aver copiato tutto, senza spazi.'; return; }
+    var model = $('#sai-model').value.trim(); m.textContent = 'Provo il collegamento…';
+    try {
+      var r = await CloudAI.ask('Rispondi solo: «Collegata. Sono pronta a lavorare con te, Sultan.»', { page: dwWsName() }, { provider: prov, key: key, model: model, timeoutMs: 45000 });
+      CloudAI.setCfg({ provider: prov, key: key, model: model, on: true }); m.textContent = 'Funziona ✓ Risposta: ' + r.reply.slice(0, 120); saiModeRender();
+      saiSay('IA vera accesa (' + CloudAI.PROVIDERS[prov].label.split(' ·')[0] + '). Ora puoi chiedermi di tutto: scrivere strofe nel tuo stile, analizzare il testo, creare basi, cambiare il suono.');
+    } catch (e) { m.textContent = 'Non funziona ancora: ' + e.message + ' La chiave NON è stata salvata.'; }
+  }
+  $('#sai-save').addEventListener('click', saiSaveTest);
+  $('#sai-off').addEventListener('click', function () { var c = CloudAI.getCfg(); CloudAI.setCfg({ provider: c.provider, model: c.model, on: false }); saiModeRender(); $('#sai-setmsg').textContent = 'IA vera spenta. La chiave resta salvata: per riaccenderla tocca Salva e prova.'; });
+  $('#sai-del').addEventListener('click', function () { var prov = $('#sai-prov').value; CloudAI.setCfg({ provider: prov, key: '', on: false }); $('#sai-key').value = ''; saiModeRender(); $('#sai-setmsg').textContent = 'Chiave cancellata da questo telefono.'; });
+  $('#sai-btn').addEventListener('click', function () { $('#sai').hidden = false; saiRender(); saiModeRender(); setTimeout(function () { $('#sai-txt').focus(); }, 50); });
   $('#sai').addEventListener('click', function (e) {
     if (e.target === this || e.target.id === 'sai-x') { this.hidden = true; try { speechSynthesis.cancel(); } catch (x) {} return; }
     var q = e.target.getAttribute && e.target.getAttribute('data-saiq'); if (q) { saiAsk(q); return; }
+    if (e.target.id === 'sai-cfg') { var bx = $('#sai-set'); bx.hidden = !bx.hidden; if (!bx.hidden) saiSetRender(); return; }
     if (e.target.id === 'sai-send') { var v = $('#sai-txt').value; $('#sai-txt').value = ''; saiAsk(v); }
     if (e.target.id === 'sai-voice') { SAI.speak = !SAI.speak; e.target.textContent = SAI.speak ? '🔊' : '🔈'; saiSay(SAI.speak ? 'Ok, da ora ti rispondo anche a voce.' : 'Risposte solo scritte.'); }
     if (e.target.id === 'sai-mic') {
