@@ -930,7 +930,7 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>26/11, 09:43</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>26/11, 09:53</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -15732,7 +15732,8 @@ body[data-ws="base"] #dw-p-qc { order: 3; }
     var p = cur().prod, st = Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre, mood = moodNow() || '';
     var G = { trap: 'italian trap', trapdark: 'dark trap', drill: 'drill', brooklyn: 'brooklyn drill', street: 'street rap', melodico: 'melodic italian pop ballad, piano', emorap: 'emo rap, guitar', rnb: 'r&b', cloud: 'cloud rap, ambient', plugg: 'plugg', rage: 'rage trap, synth', lofi: 'lofi hip hop', boombap: 'boom bap', epico: 'cinematic rap, orchestral', estate: 'summer pop, latin', reggaeton: 'reggaeton', afrotrap: 'afro trap', clubtrap: 'club trap', jersey: 'jersey club', phonk: 'phonk', detroit: 'detroit rap' };
     var M = { malinconico: 'melancholic, sad, emotional', dark: 'dark, mysterious', euforico: 'euphoric, energetic', aggressivo: 'aggressive, intense', romantico: 'romantic, warm', nostalgico: 'nostalgic, dreamy' };
-    var tags = [G[p.genre] || st, M[mood] || 'emotional', $('#ace-voice').value, 'autotune', '808 bass', 'italian lyrics', p.mode === 'minore' ? 'minor key' : 'major key'].concat(aceStyleTags());
+    var vs = LIB.settings.varStyle || '', gk = p.genre; if (vs.slice(0, 2) === 'a:' && StylePresets.byId(vs.slice(2))) gk = StylePresets.byId(vs.slice(2)).base; else if (vs.slice(0, 2) === 'f:' && folderProf(vs.slice(2))) { var fs0 = folderProf(vs.slice(2)).style; gk = { trap: 'trap', drill: 'drill', melodico: 'melodico', estate: 'estate', epico: 'epico' }[fs0] || gk; }
+    var tags = [G[gk] || st, M[mood] || 'emotional', $('#ace-voice').value, 'autotune', '808 bass', 'italian lyrics', p.mode === 'minore' ? 'minor key' : 'major key'].concat(aceStyleTags());
     return tags.filter(function (v, i, a) { return v && a.indexOf(v) === i; }).join(', ');
   }
   /* parole per ACE-Step dal TUO stile: cartella imparata dai video (numeri misurati) o atmosfera scelta, più quello che hai chiesto con i tasti */
