@@ -3060,24 +3060,33 @@
     var cap = o.instr ? aceCaption().replace(/, (male|female) vocals/, '').replace(', autotune', '').replace(', italian lyrics', '') + ', instrumental, no vocals, professional mix, ' + (o.extra || '') : aceCaption();
     ACE.busy = true; if (o.btn) o.btn.disabled = true; var t0 = Date.now(), res = null;
     try {
+      var own = (LIB.settings.creaSpace || '').trim(), GC = await import('https://cdn.jsdelivr.net/npm/@gradio/client@2.8.0/+esm');
+      if (own) { // il TUO spazio: nessun limite giornaliero (CPU gratuita: più lento)
+        m.textContent = 'Mi collego al tuo spazio basi IA (se dormiva, la prima volta 3-5 minuti per svegliarsi)…';
+        var co = await GC.Client.connect(/^https?:/.test(own) ? own : own.replace(/^.*huggingface\.co\/spaces\//, '')), tko = setInterval(function () { m.textContent = 'Il tuo spazio compone ' + (o.instr ? 'la base' : 'la canzone') + ' · ' + Math.round((Date.now() - t0) / 1000) + ' s (circa 1-3 minuti)'; }, 1000), ro;
+        try { ro = await co.predict('/crea', [cap, o.instr ? '' : lyr, p.bpm, o.dur || 60, '']); } finally { clearInterval(tko); }
+        res = ro && ro.data;
+      } else {
       m.textContent = 'Mi collego ad ACE-Step…';
-      var GC = await import('https://cdn.jsdelivr.net/npm/@gradio/client@2.8.0/+esm'), cl = await GC.Client.connect('ACE-Step/Ace-Step-v1.5');
+      var cl = await GC.Client.connect('ACE-Step/Ace-Step-v1.5');
       var api = await cl.view_api(), ep = api && api.named_endpoints && api.named_endpoints['/generation_wrapper']; if (!ep) throw new Error('lo spazio ACE-Step è cambiato');
       var args = ep.parameters.map(function (q) { return q.parameter_has_default ? q.parameter_default : (/Textbox/.test(q.component || '') ? '' : null); });
       var set = function (nm, v) { for (var i = 0; i < ep.parameters.length; i++) if (ep.parameters[i].parameter_name === nm) { args[i] = v; return; } };
       set('generation_mode', 'custom'); set('simple_query_input', ''); set('simple_vocal_language', 'it'); set('param_4', cap); set('param_5', lyr); set('param_6', p.bpm); set('param_9', o.instr ? 'unknown' : 'it'); set('param_15', o.dur || 60); set('param_16', 1); set('param_12', true);
       var tk = setInterval(function () { m.textContent = (o.instr ? 'ACE-Step compone la base' : 'ACE-Step sta cantando il tuo testo') + ' (può esserci coda) · ' + Math.round((Date.now() - t0) / 1000) + ' s'; }, 1000);
       try { var pr = await cl.predict('/generation_wrapper', args); res = pr && pr.data; } finally { clearInterval(tk); }
+      }
       var f = res && res[0], url = f && (f.url || (f.value && f.value.url) || f.path); if (!url) throw new Error('nessun audio restituito');
       out.innerHTML = '<audio controls playsinline src="' + esc(url) + '"></audio><div class="row"><a class="btn sm" href="' + esc(url) + '" download="' + (o.instr ? 'base-ia' : 'demo-cantata') + '.mp3" target="_blank">Salva</a>' + (o.instr ? '<button class="btn sm" data-ace-use="' + esc(url) + '">Usala per registrare la voce</button>' : '') + '</div>';
       m.textContent = 'Fatto in ' + Math.round((Date.now() - t0) / 1000) + ' s · ' + cap + (o.instr ? '' : ' · voce IA: per provare melodia e flow, poi la canti tu.');
       try { out.querySelector('audio').play(); } catch (e) {}
     } catch (e) {
       var w = String((e && e.message) || e);
-      m.textContent = /quota|limit|ZeroGPU/i.test(w) ? 'Limite gratuito di oggi finito per questo telefono (GPU gratuite di Hugging Face). Riprova più tardi o domani.' : 'ACE-Step non ha risposto: ' + w.slice(0, 140);
+      m.textContent = /quota|limit|ZeroGPU/i.test(w) ? 'Limite gratuito di oggi finito sullo spazio pubblico. Senza limiti: crea il TUO spazio basi IA (istruzioni in notes/SPAZIO-BASI-IA.md) e scrivi il nome qui sotto.' : 'ACE-Step non ha risposto: ' + w.slice(0, 140);
     } finally { ACE.busy = false; if (o.btn) o.btn.disabled = false; }
   }
   $('#ace-go').addEventListener('click', function () { aceRun({ msg: $('#ace-msg'), out: $('#ace-out'), btn: this, dur: +$('#ace-dur').value }); });
+  (function () { var n = $('#tb-ai-space'); if (!n) return; n.value = LIB.settings.creaSpace || ''; n.addEventListener('change', function () { LIB.settings.creaSpace = this.value.trim(); persist(); }); })();
   $('#tb-ai').addEventListener('click', function () { var extra = ['piano intro', 'arpeggiated harp', 'dark strings', 'heavy 808 slides', 'guitar melody', 'cinematic pads', 'bell melody', 'choir'][Math.floor(Math.random() * 8)]; aceRun({ instr: true, msg: $('#tb-ai-msg'), out: $('#tb-ai-out'), btn: this, dur: 90, extra: extra }); });
   document.addEventListener('click', async function (e) {
     var u = e.target.getAttribute && e.target.getAttribute('data-ace-use'); if (!u) return; var m = $('#tb-ai-msg');

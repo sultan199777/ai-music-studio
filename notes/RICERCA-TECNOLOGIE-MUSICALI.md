@@ -6,7 +6,7 @@ Legenda stato: ✅ integrato e provato · 🟡 integrato ma non provato fino in 
 ## Generazione di canzoni complete
 | Progetto | Cosa fa | Licenza / commerciale | Hardware | Dove gira per noi | Stato e limiti |
 |---|---|---|---|---|---|
-| **ACE-Step 1.5** | testo + stile → canzone completa con voce (50+ lingue, italiano) | codice e pesi **MIT** (scheda HF) → sì | GPU (consumer); CPU troppo lenta | spazio pubblico ufficiale ACE-Step/Ace-Step-v1.5 (ZeroGPU gratis con limite) | 🟡 integrato (tasto «Fallo cantare», Sultan IA «fallo cantare»). Chiamata arriva allo spazio; non sentita da qui (limite gratuito esaurito per l'IP di prova). Voce IA, non dell'utente. |
+| **ACE-Step 1.5** | testo + stile → canzone completa con voce (50+ lingue, italiano) | codice e pesi **MIT** (scheda HF) → sì | GPU (consumer); CPU troppo lenta | spazio pubblico ufficiale ACE-Step/Ace-Step-v1.5 (ZeroGPU gratis con limite) | ✅ gira anche sul NOSTRO spazio CPU senza limiti (bfloat16: 30 s in 34-59 s, 8,8 GB; space-crea/). 🟡 spazio pubblico (tasto «Fallo cantare»). Chiamata arriva allo spazio; non sentita da qui (limite gratuito esaurito per l'IP di prova). Voce IA, non dell'utente. |
 | YuE / YuE2 | testo → canzone | codice Apache; pesi: fonti discordanti (CC BY-NC per alcune) | GPU 24 GB+ | no | ⛔ licenza non chiara, troppo pesante |
 | MusicGen (Meta) | testo → musica strumentale | codice MIT, **pesi CC-BY-NC** → no commerciale | GPU | no | ⛔ licenza |
 | Stable Audio Open 1.0 | testo → audio/loop 47 s | Stability Community License: commerciale solo sotto 1 M$ di fatturato | GPU | no | ⛔ soglia di fatturato (regola utente) |

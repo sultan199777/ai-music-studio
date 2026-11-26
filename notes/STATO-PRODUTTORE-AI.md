@@ -25,3 +25,11 @@ Regola: un tasto che esiste NON vuol dire ✅. Ogni ✅ ha il suo test.
 - Audio su iPhone: sblocco a ogni tocco + file muto (A). Non verificato sul telefono dell'utente.
 - Memoria iPhone: base intera ~0,8 GB, separazione nel telefono ~1,7 GB (misurato su computer). Per i video lunghi: spazio HF.
 - ACE-Step: limite gratuito giornaliero per indirizzo IP.
+
+## 26/11 — Basi IA senza limiti (ACE-Step sul NOSTRO spazio)
+| Funzione | Stato | Verifica |
+|---|---|---|
+| ACE-Step 1.5 su CPU (mezza precisione) | ✅ misurato | 30 s di base in 34-59 s, picco 8,8 GB (4 CPU); 3 demo create e consegnate all'utente |
+| Spazio «sultan-crea» (space-crea/) | ✅ provato in locale | stesso codice dello spazio, chiamato dall'app: 90 s in 156 s |
+| App → tuo spazio → base nello Studio per registrare | ✅ nel simulatore | crea-t: «Fatto in 156 s», «Usala per registrare» carica la base nello Studio |
+| Spazio vero su Hugging Face (2 CPU gratuite) | 🟡 da creare dall'utente | tempi stimati ~2× |
