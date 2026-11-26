@@ -1929,6 +1929,20 @@
   $('#dw-ai-model').addEventListener('change', function () { aiSet().model = this.value; persist(); aiRender(); });
   $('#dw-ai-test').addEventListener('click', async function () { var m = await StudioAI.pingOllama(aiSet().url); $('#dw-ai-info').textContent = m ? 'Ollama collegato. Modelli presenti: ' + (m.join(', ') || 'nessuno (scaricane uno)') + '.' : 'Ollama non risponde: è acceso sul Mac con OLLAMA_ORIGINS impostato? (Dall\'iPhone non si raggiunge il Mac.)'; });
   // esegue comandi dello Studio (frasi) su una copia dello stato; ritorna cosa è cambiato
+  /* il team: ogni modifica porta il nome dell'agente (modulo) che l'ha fatta davvero */
+  function agentTag(x) {
+    if (/^\(/.test(x) || /^[^\w(]+ \w+:/.test(x)) return x;
+    if (/^(duplico|tolgo (intro|strofa|pre|ritornello|bridge|outro)|sposto|copio|aggiungo (intro|strofa|pre|ritornello|bridge|outro)|intro|strofa|ritornello|bridge|outro|pre-ritornello)\b/i.test(x) && !/batteria|808|basso|melodia|accordi|atmosfera|arpeggio|voce/.test(x)) return '🎬 Arrangiatore: ' + x;
+    if (/^Più (aggressiva|malinconica|potente|commerciale|dolce|energica|cupa) →/.test(x)) return '🎛 Produttore: ' + x;
+    if (/master/i.test(x)) return '💿 Mastering: ' + x;
+    if (/^voce|autotune|vocoder/i.test(x)) return '🎤 Voce: ' + x;
+    if (/riser|impact|reverse|impatto/i.test(x)) return '✨ Sound designer: ' + x;
+    if (/808|batteria|kit|swing|sidechain|velocità|bpm|acceler|rallent/i.test(x)) return '🥁 Beatmaker: ' + x;
+    if (/melodia nuova|giro|accordi nuov|tonalità|scala|su (melodia|accordi|pad|arpeggio)|ottava/i.test(x)) return '🎹 Compositore: ' + x;
+    if (/riverbero|eco|compress|alti|bassi|volume|sinistra|destra|centro|distorsion|alzo|abbasso/i.test(x)) return '🎚 Mix: ' + x;
+    if (/esporto/i.test(x)) return '💾 ' + x;
+    return '🧠 Cervello: ' + x;
+  }
   function runCommands(list, st) {
     var said = [], extra = { variant: false, fromText: false };
     list.forEach(function (cmd) {
@@ -1949,6 +1963,7 @@
       said = said.concat(r.changes);
     });
     var seen = {}; said = said.map(function (x) { return String(x).replace(/\.+$/, ''); }).filter(function (x) { if (seen[x]) return false; seen[x] = 1; return true; });
+    said = said.map(agentTag);
     return { said: said, extra: extra };
   }
   function talkState() {

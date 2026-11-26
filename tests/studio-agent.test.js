@@ -30,3 +30,8 @@ test('mani: bpm a numero, 808, sezione, giro, melodia, strumento, swing, sidecha
   st = mk(); SA.interpret('aggiungi sidechain', st); assert.ok(st.prod.mix.bass.duck > 0);
   st = mk(); const r = SA.interpret('duplica il ritornello', st); assert.strictEqual(r.understood, false); // non lo sa fare: non finge
 });
+test('«e» separa due comandi su tracce diverse, ma non sulla stessa', () => {
+  const SA2 = require('../src/studio-agent.js');
+  assert.deepStrictEqual(SA2.interpret('808 più lungo e voce con più riverbero', { prod: { levels: {} }, mic: {}, ctx: {} }).changes, ['808 più lungo (durata 1.8 s)', 'voce: più riverbero']);
+  assert.deepStrictEqual(SA2.interpret('808 più lungo e più distorto', { prod: { levels: {} }, mic: {}, ctx: {} }).changes, ['808 più lungo (durata 1.8 s)', '808: più distorsione']);
+});

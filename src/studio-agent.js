@@ -28,7 +28,7 @@
     [/a sinistra/, 'pan', -0.6, 'a sinistra', true], [/a destra/, 'pan', 0.6, 'a destra', true], [/al centro/, 'pan', 0, 'al centro', true]
   ];
   function interpret(text, st) {
-    var t = ' ' + String(text || '').toLowerCase().replace(/[’']/g, ' ').replace(/\s+/g, ' ') + ' ', p = st.prod, changes = [], parts = t.split(/[,.;]| e poi | poi /);
+    var t = ' ' + String(text || '').toLowerCase().replace(/[’']/g, ' ').replace(/\s+/g, ' ') + ' ', p = st.prod, changes = [], parts = [].concat.apply([], t.split(/[,.;]| e poi | poi /).map(function (x) { return x.split(/ e (?=(?:il |la |lo |l |i |gli |le |un |una )?(?:voce|voci|808|bass|batteria|melodi|accord|pad|arpegg|atmosfer|cassa|rullant|master))/); }));
     p.mix = p.mix || {}; p.levels = p.levels || {};
     parts.forEach(function (s) {
       var ls = lanesIn(s), hit = false;

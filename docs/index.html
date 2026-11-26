@@ -992,7 +992,7 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>26/11, 13:13</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>26/11, 13:17</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -10053,7 +10053,7 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
     [/a sinistra/, 'pan', -0.6, 'a sinistra', true], [/a destra/, 'pan', 0.6, 'a destra', true], [/al centro/, 'pan', 0, 'al centro', true]
   ];
   function interpret(text, st) {
-    var t = ' ' + String(text || '').toLowerCase().replace(/[’']/g, ' ').replace(/\s+/g, ' ') + ' ', p = st.prod, changes = [], parts = t.split(/[,.;]| e poi | poi /);
+    var t = ' ' + String(text || '').toLowerCase().replace(/[’']/g, ' ').replace(/\s+/g, ' ') + ' ', p = st.prod, changes = [], parts = [].concat.apply([], t.split(/[,.;]| e poi | poi /).map(function (x) { return x.split(/ e (?=(?:il |la |lo |l |i |gli |le |un |una )?(?:voce|voci|808|bass|batteria|melodi|accord|pad|arpegg|atmosfer|cassa|rullant|master))/); }));
     p.mix = p.mix || {}; p.levels = p.levels || {};
     parts.forEach(function (s) {
       var ls = lanesIn(s), hit = false;
@@ -15255,6 +15255,20 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
   $('#dw-ai-model').addEventListener('change', function () { aiSet().model = this.value; persist(); aiRender(); });
   $('#dw-ai-test').addEventListener('click', async function () { var m = await StudioAI.pingOllama(aiSet().url); $('#dw-ai-info').textContent = m ? 'Ollama collegato. Modelli presenti: ' + (m.join(', ') || 'nessuno (scaricane uno)') + '.' : 'Ollama non risponde: è acceso sul Mac con OLLAMA_ORIGINS impostato? (Dall\'iPhone non si raggiunge il Mac.)'; });
   // esegue comandi dello Studio (frasi) su una copia dello stato; ritorna cosa è cambiato
+  /* il team: ogni modifica porta il nome dell'agente (modulo) che l'ha fatta davvero */
+  function agentTag(x) {
+    if (/^\(/.test(x) || /^[^\w(]+ \w+:/.test(x)) return x;
+    if (/^(duplico|tolgo (intro|strofa|pre|ritornello|bridge|outro)|sposto|copio|aggiungo (intro|strofa|pre|ritornello|bridge|outro)|intro|strofa|ritornello|bridge|outro|pre-ritornello)\b/i.test(x) && !/batteria|808|basso|melodia|accordi|atmosfera|arpeggio|voce/.test(x)) return '🎬 Arrangiatore: ' + x;
+    if (/^Più (aggressiva|malinconica|potente|commerciale|dolce|energica|cupa) →/.test(x)) return '🎛 Produttore: ' + x;
+    if (/master/i.test(x)) return '💿 Mastering: ' + x;
+    if (/^voce|autotune|vocoder/i.test(x)) return '🎤 Voce: ' + x;
+    if (/riser|impact|reverse|impatto/i.test(x)) return '✨ Sound designer: ' + x;
+    if (/808|batteria|kit|swing|sidechain|velocità|bpm|acceler|rallent/i.test(x)) return '🥁 Beatmaker: ' + x;
+    if (/melodia nuova|giro|accordi nuov|tonalità|scala|su (melodia|accordi|pad|arpeggio)|ottava/i.test(x)) return '🎹 Compositore: ' + x;
+    if (/riverbero|eco|compress|alti|bassi|volume|sinistra|destra|centro|distorsion|alzo|abbasso/i.test(x)) return '🎚 Mix: ' + x;
+    if (/esporto/i.test(x)) return '💾 ' + x;
+    return '🧠 Cervello: ' + x;
+  }
   function runCommands(list, st) {
     var said = [], extra = { variant: false, fromText: false };
     list.forEach(function (cmd) {
@@ -15275,6 +15289,7 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
       said = said.concat(r.changes);
     });
     var seen = {}; said = said.map(function (x) { return String(x).replace(/\.+$/, ''); }).filter(function (x) { if (seen[x]) return false; seen[x] = 1; return true; });
+    said = said.map(agentTag);
     return { said: said, extra: extra };
   }
   function talkState() {

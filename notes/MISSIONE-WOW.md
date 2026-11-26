@@ -59,7 +59,8 @@ Legenda: ✅ **Funziona** (provato oggi nell'app, numeri misurati) · 🟡 **Nel
 | Generazione | DiffRhythm | 🔴 | Apache 2.0, ma **non pronuncia l'italiano**: solo basi strumentali, eventualmente |
 | Generazione | YuE2 | ⛔ | pesi CC BY-NC 4.0 (file MODEL_LICENSE ufficiale) |
 | **Agenti** | ruoli veri con codice e test: Cervello (produttore), Arrangiatore/beatmaker, Intenzioni creative, Montaggio, Designer suoni, Orecchio misure + Orecchio IA, Controllo qualità, Mix, Master, Voce/Autotune (chat A), Memoria; la chat «IA» smista i comandi | 🟡 | coordinamento = la chat; manca un pannello che mostri «chi ha fatto cosa» |
-| Agenti | pannello del team (chi interviene e perché, per ogni modifica) | 🔴 | |
+| Agenti | ogni modifica dice **quale agente** l'ha fatta (🎬 Arrangiatore, 🎛 Produttore, 🥁 Beatmaker, 🎹 Compositore, 🎚 Mix, 🎤 Voce, ✨ Sound designer, 💿 Mastering, 🧠 Cervello) | ✅ | collaudo: 6 comandi, audio misurato su tutte le 8 tracce cambia; «master per spotify» già così → nessun cambio, e lo dice |
+| Agenti | pannello grafico del team con la storia di chi ha fatto cosa | 🔴 | |
 
 ## 4. Locale gratis · serve hardware · a pagamento
 
