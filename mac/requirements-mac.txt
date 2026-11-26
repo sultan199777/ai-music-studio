@@ -1,0 +1,16 @@
+# Sul Mac (Apple Silicon) torch normale include la scheda grafica Apple (MPS): niente indice CPU.
+torch==2.9.1
+torchaudio==2.9.1
+transformers>=4.51.0,<4.58.0
+diffusers
+gradio==6.32.0
+scipy
+soundfile
+loguru
+einops
+accelerate>=1.12.0
+diskcache
+numba
+vector-quantize-pytorch>=1.27.15
+matplotlib
+huggingface_hub

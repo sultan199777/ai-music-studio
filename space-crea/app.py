@@ -23,7 +23,8 @@ from acestep.llm_inference import LLMHandler
 from acestep.inference import GenerationParams, GenerationConfig, generate_music
 
 H = AceStepHandler()
-H.initialize_service(project_root=ROOT, config_path="acestep-v15-turbo", device="cpu", use_flash_attention=False, compile_model=False, offload_to_cpu=False, offload_dit_to_cpu=False)
+DEVICE = os.environ.get("SULTAN_DEVICE", "cpu")  # "auto" sul Mac: usa la scheda grafica Apple (MPS) se c'è
+H.initialize_service(project_root=ROOT, config_path="acestep-v15-turbo", device=DEVICE, use_flash_attention=False, compile_model=False, offload_to_cpu=False, offload_dit_to_cpu=False)
 LLM = LLMHandler()  # non caricato: niente «ragionamento» del modello linguistico (troppo pesante per la CPU gratuita)
 OUT = os.path.join(tempfile.gettempdir(), "sultan-crea"); os.makedirs(OUT, exist_ok=True)
 
@@ -54,4 +55,4 @@ demo_crea = gr.Interface(fn=crea, inputs=[gr.Textbox(label="Stile (es. dark ital
 demo_rifai = gr.Interface(fn=rifai, inputs=[gr.File(label="Base"), gr.Number(value=0, label="Da (secondi)"), gr.Number(value=15, label="A (secondi)"), gr.Textbox(label="Stile del pezzo nuovo")], outputs=gr.File(label="Base rifatta"), title="Rifai un pezzo", api_name="rifai", concurrency_limit=1)
 demo = gr.TabbedInterface([demo_crea, demo_rifai], ["Crea", "Rifai un pezzo"])
 if __name__ == "__main__":
-    demo.queue(max_size=8).launch()
+    demo.queue(max_size=8).launch(server_name=os.environ.get("SULTAN_HOST", None), server_port=int(os.environ.get("SULTAN_PORT", "7860")))

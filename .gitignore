@@ -5,3 +5,5 @@ docs/_models/
 docs/tf/transformers.min.js
 assets/tf/transformers.min.js
 space-crea/ace/
+mac/.venv/
+mac/motore.log

@@ -23,39 +23,43 @@ Regole sempre valide: solo licenze MIT / Apache / BSD / CC0; niente GPL/AGPL, CC
 
 | Tecnologia | A cosa serve | Licenza (fonte) | Dove gira | Stato per noi |
 |---|---|---|---|---|
-| **YuE** (HKUST/M-A-P) | canzone intera da testo, con voce | Apache 2.0 secondo la scheda ufficiale; vecchie copie dicono CC BY-NC → controllare il file LICENSE ufficiale prima | GPU (Mac potente o server) | Da verificare |
-| **DiffRhythm** | canzone intera da testo, veloce | Apache 2.0 (codice e pesi) | GPU | Da verificare |
+| **YuE / YuE2** (HKUST/M-A-P) | canzone intera da testo, con voce | codice Apache; **pesi YuE2 CC BY-NC 4.0** (MODEL_LICENSE nel repository ufficiale, letto 26/11) | GPU NVIDIA 24 GB | ⛔ escluso |
+| **DiffRhythm** | canzone intera da testo, veloce | Apache 2.0 (LICENSE ufficiale) | Mac o GPU 8 GB | pronuncia solo cinese/inglese/francese/tedesco/coreano: **non l'italiano** |
 | **SongGeneration / LeVo** (Tencent) | canzone da testo | non chiara | GPU | **Non usare** finché la licenza non è chiara |
 | **ACE-Step 1.5** | base e voce che canta il TUO testo | MIT | CPU lento / GPU veloce | Spazio pronto in `space-crea/`. **Misurato**: 30 s in 34-59 s su CPU. Manca solo crearlo su Hugging Face (stasera) |
-| **LAION CLAP** | riconoscere strumenti, suoni, emozioni («ascolta e descrivi») | Apache 2.0 (pesi ufficiali) | browser con transformers.js | Da provare: candidato per le «orecchie» |
+| **LAION CLAP** | riconoscere strumenti, suoni, emozioni | Apache 2.0 (pesi ufficiali) | browser (transformers.js) | **Integrato** (Orecchio IA). Misurato: 7/9 strumenti, 156 MB, 0,6 s per pezzo; emozione sul mix poco affidabile |
 | **ableton-mcp** (ahujasid) | far comandare Ableton a un'IA | MIT | Mac + Ableton (a pagamento) | Solo se un giorno compri Ableton |
 | **Signalsmith Stretch** | cambiare tono e velocità con qualità alta (autotune, doppie voci) | MIT (con versione Web/WASM ufficiale) | browser | Candidato per migliorare pitch/formant. **Rubber Band è GPL: no** |
 | **sqlite-vec** | memoria «per significato» | MIT o Apache | browser (WASM) | Per ora non serve: i dati sono pochi. Quando serve, dopo |
 
-## 3. Cosa ha GIÀ l'app (stato onesto)
+## 3. Tabella delle funzionalità (aggiornata 26/11 sera)
 
-| Capacità | Com'è fatta | Stato |
-|---|---|---|
-| **Orecchie**: BPM, battiti, battute | Beat This! (MIT) | Nel codice |
-| Tonalità, accordi, sezioni | key-detect, base-analysis, auto-sections | Nel codice |
-| Livelli, sub/808, fango, distorsione, dinamica | Orecchio (`ear.js`) | Nel codice |
-| Separare voce/batteria/basso/resto | telefono: SCNet (pesante); tuo spazio: htdemucs, Mel-RoFormer, **Precisa**, **6 tracce** | **Misurato oggi** sul server di prova: 6 tracce in 21 s per 20 s di canzone, «Precisa» in 88 s |
-| Audio → note (MIDI) | Basic Pitch di Spotify (Apache) | **Misurato oggi**: 7 note su 7 giuste |
-| Parole dalla voce | Whisper (MIT) | Nel codice |
-| Confrontare basi / riascoltarsi | QualityCheck (impronta, somiglianza) + nuovo tentativo automatico | Nel codice; misurato ieri |
-| **Cervello**: testo → emozione, BPM, tonalità, giro, melodia, batteria, arrangiamento | SultanBrain + Arranger + 39 stili + piani d'arrangiamento | **Misurato oggi**: 5 basi di fila tutte diverse, anche dopo aver riaperto l'app |
-| **Mani**: comandi a parole → modifiche vere | StudioAgent + ProducerActions + chat «IA» | **Misurato oggi: 18 comandi su 20 funzionano** (vedi sotto) |
-| Annulla | dalla chat e dal pannello | **Misurato oggi** |
-| **Voce**: autotune (PSOLA), autotune in cuffia (sperimentale), formanti, effetti, vocoder, catena voce | autotune.js, realtime-tune.js, formant.js, voice-fx.js | Nel codice (chat A) |
-| Voce che canta le parole vere | ACE-Step | Bloccato: serve il tuo spazio Hugging Face (stasera) |
-| Suoni veri | 48 strumenti + percussioni registrate (CC0) | **Misurato oggi**: 104 suoni su 104 suonano |
-| **Memoria** permanente | memoria nel telefono + archivio privato su GitHub + profilo gusti (♥/✕) + memoria «ricorda che…» | Nel codice |
-| IA che ragiona in linguaggio libero | WebLLM/Qwen nel browser, Ollama sul Mac (gratis) | Nel codice, facoltativa |
+Legenda: ✅ **Funziona** (provato oggi nell'app, numeri misurati) · 🟡 **Nel codice** (test automatici, non riprovato oggi) · 🔴 **Da sviluppare** · ⛔ **Escluso** (licenza o costi)
 
-### Collaudo delle «mani» (oggi, nell'app, iPhone simulato)
-Prima: 9 comandi su 20 diventavano modifiche vere; «annulla» non funzionava e due risposte dicevano «Fatto» senza cambiare niente.
-Dopo la correzione di oggi funzionano: bpm 140 · più 808 · 808 più lungo · togli la batteria nell'intro (solo l'intro) · più veloce · tonalità la minore · riverbero voce · alza melodia · abbassa basso · sidechain · più swing · cambia la melodia · cambia gli accordi · riser prima del ritornello · compressione voce · metti il piano al posto della chitarra · esporta la base · annulla.
-Ancora **non sa**: «duplica il ritornello» (lo dice, non finge). Quando non cambia niente risponde «Era già così», non «Fatto».
+| Area | Capacità | Stato | Prova / note |
+|---|---|---|---|
+| **Mani** | comandi a parole → modifiche vere (bpm a numero, 808, swing, sidechain, accordi, melodia, strumenti, riverbero, compressione, riser, esporta) | ✅ | 18/20 comandi del collaudo |
+| Mani | **montaggio parti**: duplica, togli, sposta, copia, allunga/accorcia, aggiungi (intro/strofa/pre/ritornello/bridge/outro) con il testo che segue la sua parte | ✅ | «duplica il ritornello» 21→28 s, «togli l'intro» 28→24,5 s; karaoke resta a tempo (test) |
+| Mani | **annulla / ripristina** (barra in alto e in chat: «annulla», «ripristina») anche su Crea/Cambia base | ✅ | dopo annulla l'impronta audio è identica a prima |
+| Mani | **ascolto A/B** prima/dopo ogni modifica (tasti A·prima, B·dopo o «ascolta prima/dopo») | ✅ | le due versioni suonano esattamente come misurate |
+| Mani | automazioni (volume/filtro che cambiano nel tempo), taglio a metà parte | 🔴 | prossimo passo |
+| **Creatività** | «più aggressiva / malinconica / potente / commerciale / dolce / energica / cupa»: ricetta da produttore su scala, giro, tempo, batteria, 808, mix, master, struttura, con il **perché** di ogni scelta | ✅ | ogni intenzione cambia ≥3 cose (test); nell'app l'audio cambia |
+| **Memoria** | decisioni tenute/annullate (per modifica), usate dalle intenzioni (salta ciò che hai annullato ≥2 volte) | ✅ | «cosa sai di me» le elenca |
+| Memoria | frasi «ricorda che…», gusti ♥/✕, profilo di produzione, ascolti dell'orecchio IA, archivio privato su GitHub | 🟡 | |
+| Memoria | ricerca «per significato» (database vettoriale) | 🔴 | non serve finché i dati sono pochi |
+| **Orecchie** | **Orecchio IA (LAION CLAP)**: strumenti ed emozione per parte, confronto con gli strumenti previsti | ✅ sperimentale | strumenti singoli 7/9 giusti; sul mix completo l'emozione è **poco affidabile** (ha detto «allegra» per una trap scura); 156 MB, 0,6 s per pezzo; ha trovato un pad non udibile |
+| Orecchie | BPM/battute (Beat This!), tonalità, accordi, sezioni, livelli/808/fango/distorsione (Orecchio misure) | 🟡 | |
+| Orecchie | audio → note (Basic Pitch) | ✅ | 7/7 note (prova di ieri) |
+| Orecchie | separazione 4 e 6 tracce, «Precisa» (sul tuo spazio) | ✅ sul server | 6 tracce in 21 s per 20 s di canzone |
+| **Voce** | voce IA che canta il TUO testo in italiano (ACE-Step) | ✅ sul server | «Amo tanto gli altri» cantata: `notes/demo-acestep-voce-italiana.mp3`. Sul telefono serve lo spazio Hugging Face (stasera) o il Mac |
+| Voce | autotune, formanti, effetti, vocoder, catena voce (chat A) | 🟡 | |
+| Voce | doppie voci/armonie di qualità (Signalsmith Stretch, MIT) | 🔴 | da provare con la chat A |
+| **Generazione** | basi dal testo (motore nostro, 39 stili, piani d'arrangiamento) | ✅ | 5 basi diverse di fila anche dopo riapertura |
+| Generazione | **Mac**: un comando avvia app + ACE-Step locale (`mac/avvia.sh`) | ✅ catena provata su Linux | app da localhost → motore locale: canzone di 10 s in 21 s, nessun errore. Sul Mac vero: da misurare |
+| Generazione | DiffRhythm | 🔴 | Apache 2.0, ma **non pronuncia l'italiano**: solo basi strumentali, eventualmente |
+| Generazione | YuE2 | ⛔ | pesi CC BY-NC 4.0 (file MODEL_LICENSE ufficiale) |
+| **Agenti** | ruoli veri con codice e test: Cervello (produttore), Arrangiatore/beatmaker, Intenzioni creative, Montaggio, Designer suoni, Orecchio misure + Orecchio IA, Controllo qualità, Mix, Master, Voce/Autotune (chat A), Memoria; la chat «IA» smista i comandi | 🟡 | coordinamento = la chat; manca un pannello che mostri «chi ha fatto cosa» |
+| Agenti | pannello del team (chi interviene e perché, per ogni modifica) | 🔴 | |
 
 ## 4. Locale gratis · serve hardware · a pagamento
 
@@ -71,6 +75,10 @@ Non servono 12 programmi diversi. Oggi nell'app ci sono già ruoli veri: Cervell
 - Impara da canzoni/video caricati (solo misure, mai l'audio).
 - «Ricorda che…» salva frasi nella memoria.
 - Non dichiara di aver imparato se non ha salvato: il salvataggio è nel telefono e nell'archivio GitHub.
+
+## 6b. Altre tecnologie da tenere d'occhio (non ancora verificate da me)
+- **torchcrepe / RMVPE** (intonazione precisa, per un autotune migliore) · **Demucs v4** (già usato) · **audiomentations** (MIT).
+- Da **escludere** per licenza: Essentia.js (AGPL), pedalboard di Spotify (GPL-3), Matchering (GPL-3), Rubber Band (GPL), modelli madmom (CC BY-NC-SA), MusicGen (pesi CC BY-NC), Stable Audio Open (soglia di fatturato).
 
 ## 7. Piano a fasi (uno alla volta, ognuno provato prima di dire «fatto»)
 1. **Stasera**: crei lo spazio Hugging Face → voce che canta davvero le tue parole (ACE-Step) e basi IA senza limiti. Poi lo spazio di separazione.
