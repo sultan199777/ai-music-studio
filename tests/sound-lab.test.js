@@ -8,7 +8,7 @@ const A = require('../src/arranger.js');
 const AA = require('../src/audio-analysis.js');
 
 const dir = path.join(__dirname, '..', 'assets', 'inst');
-for (const f of fs.readdirSync(dir)) I.register(JSON.parse(fs.readFileSync(path.join(dir, f))));
+for (const f of fs.readdirSync(dir).filter(x => x !== 'realperc.json')) I.register(JSON.parse(fs.readFileSync(path.join(dir, f))));
 const SR = 22050;
 const centroid = (x, a, n) => { let num = 0, den = 0; for (let k = 1; k < 64; k++) { let re = 0, im = 0; for (let i = 0; i < n; i++) { const w = 2 * Math.PI * k * i / n; re += x[a + i] * Math.cos(w); im -= x[a + i] * Math.sin(w); } const m = Math.hypot(re, im); num += k * m; den += m; } return num / den; };
 

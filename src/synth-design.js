@@ -85,15 +85,19 @@
   function membrane(sr, f0, bend, dec, noiseAmt, seed) { var n = Math.round(sr * dec * 4), y = new Float32Array(n), r = noise(seed), ph = 0, lp = 0; for (var i = 0; i < n; i++) { var t = i / sr; ph += 2 * Math.PI * f0 * (1 + bend * Math.exp(-t * 60)) / sr; lp += 0.3 * (r() - lp); y[i] = (Math.sin(ph) + noiseAmt * lp * Math.exp(-t * 80)) * Math.exp(-t / dec) * 0.8; } return y; }
   function shaker(sr) { var n = Math.round(sr * 0.09), y = new Float32Array(n), r = noise(13), hp = 0, pv = 0; for (var i = 0; i < n; i++) { var x = r(); hp = 0.85 * (hp + x - pv); pv = x; var t = i / n; y[i] = hp * Math.sin(Math.PI * t) * 0.5; } return y; }
   var PERC = {
-    conga: { nome: 'Conga', hit: function (sr, acc) { return membrane(sr, acc ? 330 : 220, 0.3, 0.12, 0.2, 21); }, steps: [3, 6, 10, 11, 14], acc: [6, 14] },
-    bongo: { nome: 'Bongo', hit: function (sr, acc) { return membrane(sr, acc ? 520 : 400, 0.25, 0.07, 0.3, 22); }, steps: [2, 5, 7, 10, 13, 15], acc: [7, 15] },
-    cajon: { nome: 'Cajón', hit: function (sr, acc) { return acc ? membrane(sr, 180, 0.2, 0.06, 1.2, 23) : membrane(sr, 75, 0.5, 0.1, 0.4, 24); }, steps: [0, 4, 7, 10, 12], acc: [4, 12] },
-    shaker: { nome: 'Shaker', hit: function (sr) { return shaker(sr); }, steps: [0, 2, 4, 6, 8, 10, 12, 14], acc: [2, 6, 10, 14] },
+    tamb: { nome: 'Tamburello (vero)', real: 'tamb', hit: function (sr) { return shaker(sr); }, steps: [4, 12], acc: [4, 12] },
+    cowbell: { nome: 'Campanaccio (vero)', real: 'cowbell', hit: function (sr, acc) { return membrane(sr, 800, 0.05, 0.1, 0.05, 26); }, steps: [0, 6, 10], acc: [0] },
+    claves: { nome: 'Claves (vere)', real: 'claves', hit: function (sr) { return membrane(sr, 2400, 0.02, 0.04, 0.02, 27); }, steps: [0, 3, 6, 10, 12], acc: [0, 10] },
+    conga: { real: 'conga', nome: 'Conga', hit: function (sr, acc) { return membrane(sr, acc ? 330 : 220, 0.3, 0.12, 0.2, 21); }, steps: [3, 6, 10, 11, 14], acc: [6, 14] },
+    bongo: { real: 'bongo', nome: 'Bongo', hit: function (sr, acc) { return membrane(sr, acc ? 520 : 400, 0.25, 0.07, 0.3, 22); }, steps: [2, 5, 7, 10, 13, 15], acc: [7, 15] },
+    cajon: { real: 'cajon', nome: 'Cajón', hit: function (sr, acc) { return acc ? membrane(sr, 180, 0.2, 0.06, 1.2, 23) : membrane(sr, 75, 0.5, 0.1, 0.4, 24); }, steps: [0, 4, 7, 10, 12], acc: [4, 12] },
+    shaker: { real: 'shaker', nome: 'Shaker', hit: function (sr) { return shaker(sr); }, steps: [0, 2, 4, 6, 8, 10, 12, 14], acc: [2, 6, 10, 14] },
     tabla: { nome: 'Tabla', hit: function (sr, acc) { return membrane(sr, acc ? 480 : 150, acc ? 0.05 : 0.8, acc ? 0.18 : 0.15, 0.1, 25); }, steps: [0, 3, 6, 8, 11, 14], acc: [3, 11] }
   };
   /** Colpi di percussione per la base: [{bar, step, buf, track:'hat'}] nelle sezioni indicate. */
   function percEvents(type, sections, sr, sectionsOn) {
-    var P = PERC[type]; if (!P) return []; var hitA = P.hit(sr, true), hitN = P.hit(sr, false), out = [];
+    var P = PERC[type]; if (!P) return []; var R = RP(), real = R && R.ready() && P.real && R.has(P.real);
+    var hitA = real ? R.hit(P.real, sr, 0, 0.9) : P.hit(sr, true), hitN = real ? R.hit(P.real, sr, 1, 0.65) : P.hit(sr, false), out = [];
     sections.forEach(function (s) { if (sectionsOn.indexOf(s.name) < 0) return; for (var b = 0; b < s.bars; b++) P.steps.forEach(function (st) { var a = P.acc.indexOf(st) >= 0; out.push({ bar: s.startBar + b, step: st, buf: a ? hitA : hitN, track: 'hat', gain: a ? 0.5 : 0.35 }); }); });
     return out;
   }
@@ -174,7 +178,9 @@
     { id: 'pro:glitch', nome: 'Pluck digitale', ruoli: ["arpeggio"], tipo: 'percussivo', range: [60, 96], fn: function (m, d, sr) { return fm({ ratio: 11, index: 3, idxDecay: 0.03, indexSus: 0, decay: 0.25, release: 0.1 }, m, d, sr); }, come: 'Colpi digitali strani: digicore e hyperpop.' }
   ];
   // ---------- KIT di batteria (sintetizzati, caratteri diversi) ----------
+  function RP() { return (typeof self !== 'undefined' && self.RealPerc) || (typeof global !== 'undefined' && global.RealPerc) || null; }
   var KITS = {
+    veri: { nome: 'Batteria vera (registrata)', real: true, kick: { f0: 150, f1: 44, sweep: 40, decay: 0.34, click: 0.3, drive: 1.5 }, snare: { tone: 190, toneAmt: 0.35, noise: 0.7, decay: 0.16, bp: 2200 }, clap: { spread: 0.012, decay: 0.2, bp: 1400 }, hat: { decay: 0.045, hp: 7000 } },
     trap: { nome: 'Trap pesante', kick: { f0: 160, f1: 46, sweep: 38, decay: 0.32, click: 0.35, drive: 1.6 }, snare: { tone: 200, toneAmt: 0.35, noise: 0.7, decay: 0.16, bp: 2200 }, clap: { spread: 0.012, decay: 0.2, bp: 1400 }, hat: { decay: 0.045, hp: 7000 } },
     drill: { nome: 'Drill', kick: { f0: 140, f1: 50, sweep: 55, decay: 0.22, click: 0.5, drive: 2 }, snare: { tone: 330, toneAmt: 0.5, noise: 0.55, decay: 0.11, bp: 3000 }, clap: { spread: 0.009, decay: 0.14, bp: 1800 }, hat: { decay: 0.035, hp: 8000 } },
     boombap: { nome: 'Boom bap polveroso', kick: { f0: 120, f1: 52, sweep: 30, decay: 0.28, click: 0.2, drive: 1.3, lp: 2500 }, snare: { tone: 180, toneAmt: 0.45, noise: 0.6, decay: 0.2, bp: 1600, lp: 5000 }, clap: { spread: 0.014, decay: 0.18, bp: 1200, lp: 4000 }, hat: { decay: 0.06, hp: 5000, lp: 9000 } },
@@ -192,7 +198,14 @@
     if (C.clap) { C.clap.bp = j(C.clap.bp, 0.25); C.clap.decay = j(C.clap.decay, 0.3); } C.hat.decay = j(C.hat.decay, 0.35); C.hat.hp = j(C.hat.hp, 0.15); return C;
   }
   function kitRender(kitId, part, o, sr, v) {
-    var K = kitVary(KITS[kitId] || KITS.trap, v), r = noise(31 + part.length + (v ? v % 97 : 0)), i, n, y;
+    var R = RP(), KK = KITS[kitId] || KITS.trap;
+    if (KK.real && R && R.ready() && part !== 'kick') { // colpi registrati veri (CC0); la cassa resta 808 sintetica
+      var sv = ((v >>> 0) || 0), semi = ((sv % 5) - 2) * 0.5;
+      if (part === 'snare') return R.hit(sv % 2 ? 'snare' : 'snare2', sr, sv, 0.9, semi);
+      if (part === 'clap') return R.hit('clap', sr, sv, 0.95, semi);
+      if (part === 'hat') return R.hit(o && o.open ? 'hato' : 'hatc', sr, sv, o && o.open ? 0.6 : 0.75, semi * 0.5);
+    }
+    var K = kitVary(KK, v), r = noise(31 + part.length + (v ? v % 97 : 0)), i, n, y;
     if (part === 'kick') { var k = K.kick, ph = 0; n = Math.round(((o && o.big) ? k.decay * 1.6 : k.decay) * sr * 1.6); y = new Float32Array(n);
       for (i = 0; i < n; i++) { var t = i / sr; ph += 2 * Math.PI * (k.f1 + (k.f0 - k.f1) * Math.exp(-t * k.sweep)) / sr; y[i] = Math.tanh(k.drive * (Math.sin(ph) * Math.exp(-t / k.decay) + k.click * r() * Math.exp(-t * 400))) / Math.tanh(k.drive) * Math.min(1, i / 20); }
       return lp1(y, sr, k.lp); }

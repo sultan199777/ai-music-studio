@@ -505,7 +505,7 @@
     if (p.seed === LIB.settings.lastSeed) return; LIB.settings.lastSeed = p.seed; var H = LIB.settings.baseHist || (LIB.settings.baseHist = []);
     var kits = Object.keys(SynthDesign.KITS), R = Instruments.RECIPES[p.genre] || {}, sd = (p.seed >>> 0) || 1;
     var usedK = H.slice(-2).map(function (h) { return h.kit; });
-    if (!p.kitManual) { var opts = kits.filter(function (k) { return usedK.indexOf(k) < 0; }); if (R.kit && usedK.indexOf(R.kit) < 0 && sd % 3) p.kit = R.kit; else p.kit = (opts.length ? opts : kits)[sd % (opts.length || kits.length)]; }
+    if (!p.kitManual && (sd % 2) && usedK.indexOf('veri') < 0 && window.RealPerc && RealPerc.ready()) p.kit = 'veri'; else if (!p.kitManual) { var opts = kits.filter(function (k) { return usedK.indexOf(k) < 0; }); if (R.kit && usedK.indexOf(R.kit) < 0 && sd % 3) p.kit = R.kit; else p.kit = (opts.length ? opts : kits)[sd % (opts.length || kits.length)]; }
     var inst = p.inst = Object.assign({}, p.inst || {});
     ['melodia', 'accordi', 'pad', 'arpeggio'].forEach(function (role, k) {
       var used = H.slice(-5).map(function (h) { return h.inst && h.inst[role]; }), l = (R[role] || []).filter(function (id) { return !BANNED_INST[id]; });
@@ -1186,6 +1186,7 @@
     return false;
   }
   async function ensureInst() {
+    try { if (window.RealPerc && !RealPerc.ready()) await RealPerc.load('inst/realperc.json'); } catch (e) {} // colpi veri registrati (CC0)
     var inst = cur().prod.inst || {}, miss = [];
     for (var r in inst) if (inst[r] && !(await loadInst(inst[r]))) miss.push(instName(inst[r]));
     if (miss.length) $('#b-in-info').innerHTML = '<span class="err">Non riesco a scaricare: ' + esc(miss.join(', ')) + '. Uso i suoni sintetici (serve internet la prima volta).</span>';
@@ -2499,7 +2500,7 @@
     var base = new Float32Array(n), rhythm = new Float32Array(n), orig = new Float32Array(n);
     for (i = 0; i < n; i++) { base[i] = st.drums[i] + st.bass[i] + st.other[i]; rhythm[i] = st.drums[i] + st.bass[i]; orig[i] = base[i] + voice[i]; }
     var trS = out[4] && out[4].lines && out[4].lines.length ? { lines: out[4].lines, text: out[4].text || '' } : null;
-    return { tr: trS, sr: 44100, voice: voice, base: base, stems: st, rhythm: rhythm, orig: orig, ai: true, note: (trS ? 'Parole trascritte sul tuo spazio. ' : '') + 'Separato sul tuo spazio Hugging Face (' + (modo === 'pulita' ? 'Mel-Band RoFormer + htdemucs' : 'htdemucs') + '), canzone intera, in ' + Math.round((Date.now() - t0) / 1000) + ' s.' };
+    return { tr: trS, sr: 44100, voice: voice, base: base, stems: st, rhythm: rhythm, orig: orig, ai: true, note: (trS ? 'Parole trascritte sul tuo spazio. ' : '') + 'Separato sul tuo spazio Hugging Face (' + ({ pulita: 'Mel-Band RoFormer + htdemucs', precisa: 'htdemucs_ft', '6tracce': 'htdemucs_6s, 6 tracce' }[modo] || 'htdemucs') + '), canzone intera, in ' + Math.round((Date.now() - t0) / 1000) + ' s.' };
   }
   async function sepFast(f, el, quick) {
     var d = await decodeStereo(f, 32000), sr = d.sr, i, mx = Math.round(sr * learnSecs());
@@ -3177,6 +3178,51 @@
   $('#tb-go').addEventListener('click', function () { tbCreate(false); });
   $('#tb-new').addEventListener('click', function () { tbCreate(true); });
   $('#dw-lyrics').addEventListener('input', function () { clearTimeout(tbRender.t); tbRender.t = setTimeout(tbRender, 400); });
+
+  /* ---------- Agente Melodia: la tua voce canticchiata → note (Basic Pitch di Spotify, Apache 2.0, modello < 1 MB) ---------- */
+  var MELO = { bp: null, mod: null };
+  async function meloNotes(x, sr, msg) {
+    msg.textContent = 'Carico Basic Pitch (la prima volta circa 3 MB)…';
+    if (!MELO.mod) MELO.mod = await import('https://cdn.jsdelivr.net/npm/@spotify/basic-pitch@1.0.1/+esm');
+    if (!MELO.bp) MELO.bp = new MELO.mod.BasicPitch('https://cdn.jsdelivr.net/npm/@spotify/basic-pitch@1.0.1/model/model.json');
+    var y = x; if (sr !== 22050) { var r = sr / 22050, n = Math.floor(x.length / r); y = new Float32Array(n); for (var i = 0; i < n; i++) { var q = i * r, j = Math.floor(q), f = q - j; y[i] = (x[j] || 0) * (1 - f) + (x[j + 1] || 0) * f; } }
+    if (y.length > 22050 * 30) y = y.subarray(0, 22050 * 30);
+    var fr = [], on = [], co = []; msg.textContent = 'Ascolto le note…';
+    await MELO.bp.evaluateModel(y, function (a, b, c) { fr.push.apply(fr, a); on.push.apply(on, b); co.push.apply(co, c); }, function (pr) { msg.textContent = 'Ascolto le note… ' + Math.round(pr * 100) + '%'; });
+    var ev = MELO.mod.noteFramesToTime(MELO.mod.addPitchBendsToNoteEvents(co, MELO.mod.outputToNotesPoly(fr, on, 0.3, 0.3, 6))).sort(function (a, b) { return a.startTimeSeconds - b.startTimeSeconds; });
+    // la voce canta una nota alla volta: tengo la più forte nei sovrapposti e unisco i pezzi della stessa nota
+    var out = []; ev.forEach(function (n) { var l = out[out.length - 1]; if (l && Math.abs(n.pitchMidi - l.pitchMidi) === 0 && n.startTimeSeconds - (l.startTimeSeconds + l.durationSeconds) < 0.12) { l.durationSeconds = n.startTimeSeconds + n.durationSeconds - l.startTimeSeconds; return; } if (l && n.startTimeSeconds < l.startTimeSeconds + l.durationSeconds - 0.05) { if ((n.amplitude || 0) > (l.amplitude || 0)) out[out.length - 1] = n; return; } out.push(Object.assign({}, n)); });
+    return out;
+  }
+  function meloToRoll(ev, p) {
+    var beat = 60 / p.bpm, stepS = beat / 4, t0 = ev.length ? ev[0].startTimeSeconds : 0, first = 0, map = null; try { map = songMap(); } catch (e) {}
+    if (map && map.lines && map.lines.length) first = map.lines[0].startBar; else first = 1;
+    var ms = ev.map(function (n) { return n.pitchMidi; }).sort(function (a, b) { return a - b; }), med = ms.length ? ms[ms.length >> 1] : 64, shift = 0; while (med + shift < 62) shift += 12; while (med + shift > 76) shift -= 12;
+    var notes = ev.map(function (n) { var st = Math.round((n.startTimeSeconds - t0) / stepS), len = Math.max(1, Math.round(n.durationSeconds / stepS)); return { bar: first + Math.floor(st / 16), step: st % 16, len: Math.min(16, len), midi: n.pitchMidi + shift, vel: 0.9 }; }).filter(function (n) { return n.bar < (p.bars || 999); });
+    // la melodia si ripete su tutta la canzone, così il gancio torna
+    var span = notes.length ? notes[notes.length - 1].bar - first + 1 : 0, all = notes.slice(); if (span > 0 && p.bars) for (var b = first + span; b + span <= p.bars; b += span) notes.forEach(function (n) { all.push(Object.assign({}, n, { bar: n.bar + (b - first) })); });
+    return all;
+  }
+  async function meloApply(x, sr, btn) {
+    var m = $('#melo-msg'), p = cur().prod; btn.disabled = true;
+    try { var ev = await meloNotes(x, sr, m); if (!ev.length) { m.textContent = 'Non ho sentito note chiare: canta più vicino al microfono, una nota alla volta.'; return; }
+      var notes = meloToRoll(ev, p); p.notes = Object.assign({}, p.notes || {}, { lead: notes }); persist(); dwStop(); dwChanged(true);
+      m.textContent = 'Ho trovato ' + ev.length + ' note: ' + ev.slice(0, 12).map(function (n) { return NOTES[n.pitchMidi % 12]; }).join(' ') + (ev.length > 12 ? '…' : '') + '. Ora la base suona la TUA melodia. Premi ▶ in alto; per correggere una nota apri la traccia Melodia.';
+      setTimeout(function () { dwPlay(0); }, 400);
+    } catch (e) { m.textContent = 'Non ci sono riuscito: ' + ((e && e.message) || e); } finally { btn.disabled = false; }
+  }
+  $('#melo-take').addEventListener('click', function () { var t = voiceTake(); if (!t) { $('#melo-msg').textContent = 'Non hai ancora registrato: usa «Canticchia 10 secondi».'; return; } meloApply(t.mono, t.sr, this); });
+  $('#melo-off').addEventListener('click', function () { var p = cur().prod; if (p.notes) { delete p.notes.lead; if (!Object.keys(p.notes).length) p.notes = null; } persist(); dwStop(); dwChanged(true); $('#melo-msg').textContent = 'Torno alla melodia creata dall\'IA.'; });
+  $('#melo-rec').addEventListener('click', async function () {
+    var m = $('#melo-msg'), btn = this; if (!micOk() || !window.MediaRecorder) { m.textContent = 'Microfono non disponibile: apri il sito in Safari e consenti il microfono.'; return; }
+    try { var st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true } }), mr = new MediaRecorder(st), ch = [];
+      mr.ondataavailable = function (e) { if (e.data && e.data.size) ch.push(e.data); }; var done = new Promise(function (r) { mr.onstop = r; }); mr.start(); btn.disabled = true;
+      for (var k = 10; k > 0; k--) { m.textContent = '● Canticchia la melodia… ' + k; await new Promise(function (r) { setTimeout(r, 1000); }); }
+      mr.stop(); await done; st.getTracks().forEach(function (t) { t.stop(); }); btn.disabled = false;
+      var ab = await new Blob(ch, { type: mr.mimeType || 'audio/mp4' }).arrayBuffer(), dec = await new Promise(function (res, rej) { getCtx().decodeAudioData(ab, res, rej); });
+      await meloApply(dec.getChannelData(0), dec.sampleRate, btn);
+    } catch (e) { btn.disabled = false; m.textContent = 'Non riesco a registrare: ' + ((e && e.message) || e); }
+  });
   SHOW.daw = function () { applyMoodBg(moodNow()); dwWs(dwWsName()); try { tbRender(); } catch (e) {} projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */

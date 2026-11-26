@@ -7,7 +7,7 @@ const A = require('../src/arranger.js');
 const AA = require('../src/audio-analysis.js');
 
 const dir = path.join(__dirname, '..', 'assets', 'inst');
-const loadAll = () => { for (const f of fs.readdirSync(dir)) I.register(JSON.parse(fs.readFileSync(path.join(dir, f)))); };
+const loadAll = () => { for (const f of fs.readdirSync(dir).filter(x => x !== 'realperc.json')) I.register(JSON.parse(fs.readFileSync(path.join(dir, f)))); };
 const pitchOf = (x, sr, t = 0.12) => { const p = AA.detectPitch(x, Math.round(t * sr), 2048, sr, 30, 2500); return p.clarity > 0.7 ? AA.freqToMidi(p.f0) : null; };
 
 test('ogni strumento a campioni del catalogo ha il suo file CC0, decodificabile e pulito', () => {
