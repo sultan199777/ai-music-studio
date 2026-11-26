@@ -1484,6 +1484,7 @@
     var nx = $('#dw-next'); if (!nx) { var bar = $('#v-daw .dw-transport') || $('#v-daw').firstElementChild; if (!bar || !bar.parentNode) return; nx = document.createElement('div'); nx.id = 'dw-next'; nx.className = 'dw-panel'; nx.style.cssText = 'margin:8px 0;padding:12px;border:2px solid var(--accent,#8b5cf6);border-radius:12px'; bar.parentNode.insertBefore(nx, $('#dw-ws') || bar.nextSibling); }
     var TX = { testo: ['Passo 1 di 4 · Scrivi il testo', 'Incolla o scrivi la tua canzone. Il titolo e il ritornello li capisco io.', 'Vai al testo'], base: ['Passo 2 di 4 · Crea la base', 'Premi il tasto grande «Crea base». Se non ti piace, premilo ancora: ogni volta nasce una base nuova.', 'Vai alla base'], voce: ['Passo 3 di 4 · Registra la voce', 'Metti le cuffie, premi ● e canta sulla base (microfono solo da Safari).', 'Vai alla voce'], mix: ['Passo 4 di 4 · Mix e salvataggio', 'Regola i volumi, ascolta tutto e salva la canzone.', 'Vai al mix'] };
     if (!first) { nx.innerHTML = '<b>Canzone pronta</b><div class="small muted">Hai fatto tutti i passi. Per un\'altra versione torna alla base e premi «Nuova variante».</div>'; return; }
+    nx.hidden = first === dwWsName(); if (nx.hidden) return;
     nx.innerHTML = '<b>' + TX[first][0] + '</b><div class="small muted" style="margin:4px 0 8px">' + TX[first][1] + '</div><button class="btn pri" id="dw-next-go" data-go="' + first + '" style="width:100%">' + TX[first][2] + '</button>';
   }
   document.addEventListener('click', function (e) { var g = e.target.closest && e.target.closest('#dw-next-go'); if (g) { dwWs(g.getAttribute('data-go')); window.scrollTo(0, 0); } });
@@ -1539,6 +1540,7 @@
   }
   async function dwPlay(from) {
     var ctx = getCtx(); if (!ctx) { $('#dw-msg').textContent = 'Questo browser non riproduce audio.'; return; }
+    var s0 = cur(); if ((s0.lyrics || '').trim() && !s0.brainFor && !s0.prod.atmNome && !s0.genreManual && !DW.firstFromText) { DW.firstFromText = true; $('#dw-msg').textContent = 'Prima creo la base dal tuo testo…'; await Promise.resolve(runBrain(false)); try { tbRender(); } catch (e) {} return; }
     stopPlay(); dwStop(true, true);
     $('#dw-msg').textContent = SESSION.base ? '' : 'Compongo la base…'; await tick();
     var b; try { b = await dwBase(); } catch (e) { $('#dw-msg').textContent = 'Non riesco a creare la base.'; return; }
@@ -2657,7 +2659,7 @@
   });
   function dwWsName() { var w = LIB.settings.ws; return ['testo', 'base', 'voce', 'mix', 'libreria'].indexOf(w) >= 0 ? w : 'testo'; }
   function dwWs(ws) {
-    LIB.settings.ws = ws; persist(); document.body.dataset.ws = ws; try { foldApply(ws); } catch (e) {}
+    LIB.settings.ws = ws; persist(); document.body.dataset.ws = ws; try { foldApply(ws); } catch (e) {} try { dwSteps(); tbRender(); } catch (e) {}
     var adv = !!LIB.settings.adv; $$('#v-daw [data-ws]').forEach(function (el) { var a = el.getAttribute('data-adv'); el.hidden = (' ' + el.getAttribute('data-ws') + ' ').indexOf(' ' + ws + ' ') < 0 || (!adv && a && (' ' + a + ' ').indexOf(' ' + ws + ' ') >= 0); });
     var ab = $('#dw-adv'); if (ab) ab.textContent = adv ? 'Nascondi strumenti avanzati' : 'Mostra strumenti avanzati';
     $$('#tabs a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-ws') === ws); });
@@ -3066,7 +3068,26 @@
     persist(); m.textContent = act + ' (' + pf.n[fb] + (pf.n[fb] === 1 ? ' volta' : ' volte') + ' finora: più lo dici, più pesa. Si può azzerare dall\'IA con «dimentica le mie preferenze».)'; qcRender();
     if (fb !== 'like') { dwStop(); dwChanged(true); projLine(); setTimeout(function () { dwPlay(0); }, 400); }
   });
-  SHOW.daw = function () { applyMoodBg(moodNow()); dwWs(dwWsName()); projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
+
+  /* ---------- Pagina Testo: «Crea la base da questo testo» e «Cambia base» (ogni pressione = base nuova dal testo) ---------- */
+  function tbRender() {
+    var s = cur(), made = !!(s.prod && (s.prod.atmNome || s.brainFor)) && !!(s.lyrics || '').trim(), p = s.prod;
+    $('#tb-go').textContent = made ? '▶ Ascolta la base' : '🎵 Crea la base da questo testo'; $('#tb-new').hidden = !made;
+    $('#tb-now').textContent = made ? 'Base attuale: ' + (p.atmNome || (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre)) + ' · ' + p.bpm + ' BPM · ' + NOTES[p.tonic] + ' ' + p.mode + '. Ogni «Cambia base» ne crea una nuova, diversa, sempre dal tuo testo.' : '';
+  }
+  async function tbCreate(fresh) {
+    var s = cur(), m = $('#tb-now'); if (!(s.lyrics || '').trim()) { m.textContent = 'Scrivi o incolla prima il testo qui sopra.'; return; }
+    $('#tb-go').disabled = $('#tb-new').disabled = true; m.textContent = 'Sto componendo una base nuova dal tuo testo…';
+    try {
+      if (!fresh && s.brainFor) { await dwPlay(0); }
+      else { var again = !!s.brainFor && s.brainFor === SultanBrain.hash(s.lyrics.trim()); await Promise.resolve(runBrain(again)); try { refApply(); } catch (e) {} }
+    } catch (e) { m.textContent = 'Non sono riuscito: ' + ((e && e.message) || e); }
+    $('#tb-go').disabled = $('#tb-new').disabled = false; setTimeout(tbRender, 300);
+  }
+  $('#tb-go').addEventListener('click', function () { tbCreate(false); });
+  $('#tb-new').addEventListener('click', function () { tbCreate(true); });
+  $('#dw-lyrics').addEventListener('input', function () { clearTimeout(tbRender.t); tbRender.t = setTimeout(tbRender, 400); });
+  SHOW.daw = function () { applyMoodBg(moodNow()); dwWs(dwWsName()); try { tbRender(); } catch (e) {} projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
   $('#ib-file').addEventListener('change', async function (e) {

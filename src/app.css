@@ -471,3 +471,8 @@ body[data-ws="testo"] { --step: #b79cff; } body[data-ws="base"] { --step: #e3c48
 .ace-box { margin: 10px 0; padding: 10px 12px; border-radius: 14px; background: rgba(183,156,255,.08); border: 1px solid rgba(183,156,255,.25); }
 .ace-box audio { width: 100%; margin-top: 8px; }
 body[data-ws="base"] #dw-p-qc { order: 3; }
+
+/* tasti chiari sotto il testo: crea / cambia base */
+.tb-bar { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.tb-bar .btn { flex: 1 1 160px; min-height: 52px; font-size: 16px; font-weight: 700; }
+.tb-now { margin-top: 8px; opacity: .85; }
