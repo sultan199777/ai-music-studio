@@ -43,3 +43,10 @@ Etichette: Misurato = provato da me; Fonte = letto in una pagina; Mia conoscenza
 - Qualsiasi servizio a pagamento: NO senza approvazione.
 - Computer/GPU: modalità Studio della separazione, Ollama.
 - Limite onesto: gli «agenti» sono regole e misure, non persone né un modello di linguaggio; il giudizio sul suono resta all'orecchio dell'utente.
+
+## STATO (26 nov, fatto e provato; Chromium iPhone emulato, NON su iPhone vero)
+- 1 Prima/dopo: `src/ab-check.js` (+ Orecchio) → in «Ascolta» mostra punteggio prima→dopo e verdetto; `src/undo-stack.js` = pulsante «Annulla l'ultima modifica». Provato: fix applicato (accordi/pad 100→85%), verdetto «migliorato», annulla ripristina i livelli esatti.
+- 3 Decisioni: `src/decisions.js`; registrate applicazioni/annullamenti/voti; dopo 2 annullamenti dello stesso consiglio nello stesso genere l'Orecchio non lo ripete («Non tocco…»). Salvate anche nell'archivio online (`archive.js`, solo etichette).
+- 2 Audio→MIDI: `src/audio-midi.js` (YIN monofonico, basso e melodia, file .mid); card «Basso e melodia in MIDI» in Impara. Test sintetici esatti; su musica vera non misurato. Accordi NON fatti (serve modello, es. Basic Pitch, da autorizzare).
+- 4 Squadra: `src/agents.js` 12 ruoli + «Intelligenza centrale» (regole e misure, non modello di linguaggio), nel riquadro «Ascolta» e in «Crea base».
+- Annulla coperto solo per le correzioni dell'Orecchio; altri agenti (Studio, Producer) hanno già il loro annulla, non ancora uniti.
