@@ -513,6 +513,13 @@ body[data-ws="base"] #dw-p-arr { order: 2; } body[data-ws="base"] #dw-p-var { or
 body[data-ws="base"] #dw-p-suoni { order: 4; }
 body[data-ws="libreria"] #dw-p-suoni { order: 3; }
 
+/* Cronologia: annulla / ripristina / ascolta prima-dopo */
+.dw-hist{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 10px;margin:0 0 4px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.dw-hist .dw-hist-ab{display:inline-flex;gap:4px;margin-left:auto}
+.dw-hist small{flex-basis:100%;font-size:12px;line-height:1.3}
+.dw-hist .btn:disabled{opacity:.4}
+#v-daw > .dw-hist{order:-9}
+
 /* ===== VOICE LAB (stile Cosmo: usa le variabili del tema) ===== */
 .vl .vl-auto{font-size:1.25rem;min-height:60px;margin:8px 0 4px;letter-spacing:.04em}
 .vl .vl-hint{margin:2px 0 8px}
@@ -647,6 +654,7 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
     </div>
     <button class="dw-proj" id="dw-proj"><span id="dw-proj-t">Progetto</span><svg><use href="#i-gear"/></svg></button>
   </div>
+  <div class="dw-hist" id="dw-hist" data-ws="base voce mix"><button class="btn sm" id="hist-undo" title="Annulla l'ultima modifica">↶ Annulla</button><button class="btn sm" id="hist-redo" title="Rifai la modifica annullata">↷ Ripristina</button><span class="dw-hist-ab"><button class="btn sm" id="hist-a" title="Ascolta com'era prima">A · prima</button><button class="btn sm" id="hist-b" title="Ascolta com'è dopo">B · dopo</button></span><small id="hist-what" class="muted"></small></div>
 
 
   <section class="dw-panel dw-lyric karaoke" id="dw-kar" data-ws="voce"><div><b>Qui scorre il testo mentre canti</b><small>Premi ● per registrare sulla base. Il testo si scrive nel passo 1.</small></div></section>
@@ -732,6 +740,8 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
     <p class="small muted">Dopo ogni base l'IA misura cosa c'è dentro: se è diversa dalle precedenti, accordi, melodia, batteria, 808, energia del ritornello, audio. Il gusto resta da ascoltare: dimmelo con i tasti sotto e lo userò nelle prossime basi.</p>
     <div id="qc-list"></div>
     <div class="row"><button class="btn pri" id="qc-fix">Migliora i punti deboli</button></div>
+    <div class="qc-clap"><p class="small" style="margin:12px 0 4px"><b>Orecchio IA</b> (LAION CLAP, gratis, Apache 2.0): ascolta la base e dice quali strumenti ed emozione sente. Prima volta: scarica circa 156 MB. Misurato: 7 strumenti su 9 riconosciuti, 0,6 s per pezzo.</p>
+    <div class="row"><button class="btn" id="qc-clap">👂 Ascolta la base con l'IA</button></div><div class="status" id="qc-clap-out" aria-live="polite"></div></div>
     <p class="small" style="margin:10px 0 4px"><b>Cosa ne pensi?</b> (impara dalle tue scelte)</p>
     <div class="chips" id="qc-fb"></div>
     <div class="status" id="qc-msg"></div>
@@ -982,7 +992,7 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
   <div class="card"><div class="card-head"><h3>I tuoi due microfoni</h3><span class="tag soon">Nuovo</span></div>
     <p class="small muted"><b>Mic 1</b> registra la voce pulita e la intoni dopo. <b>Mic 2</b> ti fa sentire l'autotune in cuffia mentre canti e salva due prove (con autotune e pulita). Usa cuffie con filo e apri il sito da Safari.</p>
     <div class="row"><button class="btn pri" id="h-mic1">Mic 1 · Pulito</button><button class="btn pri" id="h-mic2">Mic 2 · Autotune live</button></div>
-    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>26/11, 12:57</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
+    <p class="small muted" style="margin-top:8px">Versione dell'app: <b>26/11, 13:06</b>. Se non coincide con l'ultima che ti dico, chiudi e riapri la pagina.</p>
   </div>
   <div class="card"><div class="card-head"><h3>Il percorso, passo dopo passo</h3></div>
     <ol class="steps" id="h-steps"></ol></div>
@@ -1357,7 +1367,7 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
     <p class="small muted">Si salvano testi, versioni, dati e piani. Le registrazioni audio e le foto non vengono conservate: restano sul tuo telefono (Memo Vocali / File) e le ricarichi quando serve.</p>
   </div>
   <div class="card"><h3>Servizi collegati</h3><ul class="clean small" id="x-int"></ul></div>
-  <div class="card"><h3>Informazioni</h3><p class="small muted">398 test automatici superati su 398 · versione del 26 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
+  <div class="card"><h3>Informazioni</h3><p class="small muted">403 test automatici superati su 403 · versione del 26 nov 2026. Distinzione usata ovunque: <span class="tag m">Misurato</span> calcolato sul tuo file · <span class="tag a">Analisi</span> regola applicata al testo · <span class="tag i">Ipotesi</span> suggerimento da verificare ascoltando.</p></div>
 </main>
 </div>
 
@@ -6858,7 +6868,7 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
     }
     if (/dimentica le mie preferenze|azzera (le )?preferenze|cancella (le )?preferenze/.test(t)) return { reply: 'Fatto: ho azzerato le preferenze di produzione (pianoforte, profondità, batteria, spazio voce…). La memoria delle frasi che mi hai insegnato resta: per quella usa «dimentica …».', actions: [{ type: 'resetprefs' }] };
     if (/^(dimentica|cancella dalla memoria|scordati)/.test(t)) { var f = t.replace(/^(dimentica|cancella dalla memoria|scordati)\s*(di|che)?\s*/, ''); A.push({ type: 'forget', text: f }); return { reply: f ? 'Tolgo dalla memoria quello che parla di «' + f + '».' : 'Dimmi cosa dimenticare (es. «dimentica Shiva»).', actions: A }; }
-    if (/cosa (sai|ricordi) di me|cosa hai imparato|la tua memoria/.test(t)) { var mm = ctx.memory || []; return { reply: mm.length ? 'Ricordo:\n• ' + mm.slice(-15).join('\n• ') : 'Non mi hai ancora insegnato niente. Prova: «ricorda che mi piacciono le basi drill scure» o «non voglio il flauto».', actions: [] }; }
+    if (/cosa (sai|ricordi) di me|cosa hai imparato|la tua memoria/.test(t)) { var mm = ctx.memory || [], dd = ctx.decisions || ''; return { reply: (mm.length ? 'Ricordo:\n• ' + mm.slice(-15).join('\n• ') : 'Non mi hai ancora insegnato frasi («ricorda che…»).') + (dd ? '\n\nDalle tue modifiche:\n' + dd : ''), actions: [] }; }
     // rime
     var rm = t.match(/rim[ae]\s+(?:per|con|a|di)\s+([a-zà-ú']+)/) || t.match(/cosa rima con\s+([a-zà-ú']+)/);
     if (rm) return { reply: rhymesFor(rm[1], ctx) || 'Il dizionario delle rime non è pronto.', actions: [] };
@@ -6979,6 +6989,198 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
     return { checks: C, fingerprint: fp, similarity: simMax, score: Math.round(ok / Math.max(1, mis.length) * 100), weak: mis.filter(function (c) { return !c.ok; }) };
   }
   return { fingerprint: fingerprint, similarity: similarity, check: check, energyBySection: energyBySection };
+});
+
+/*
+ * Forma della canzone: montaggio delle PARTI (intro, strofa, pre, ritornello, bridge, outro).
+ * Duplica, togli, sposta, copia, allunga/accorcia, aggiungi. Le righe del testo seguono la loro parte
+ * (karaoke e guida restano a tempo). Le modifiche sono una lista di operazioni (prod.form) applicata
+ * sopra la mappa del testo: si può annullare, ripetere e rifare da capo. Funzioni pure, testate.
+ *   apply(map, ops) → nuova mappa {plan, lines, totalBars, barSec, firstLine}
+ *   parse(testo, plan) → {op} oppure null (se la frase non è un'operazione sulle parti)
+ *   describe(op, plan) → frase in italiano
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.SongForm = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  var NAMES = ['intro', 'strofa', 'pre', 'ritornello', 'bridge', 'outro'];
+  var LABEL = { intro: 'intro', strofa: 'strofa', pre: 'pre-ritornello', ritornello: 'ritornello', bridge: 'bridge', outro: 'outro' };
+  function clone(x) { return JSON.parse(JSON.stringify(x)); }
+  function blocksOf(map) {
+    var cur = 0, barSec = map.barSec || 2;
+    return map.plan.map(function (s) {
+      var b = { name: s[0], bars: s[1], lines: [] }, a = cur, z = cur + s[1];
+      (map.lines || []).forEach(function (l) { if (l.startBar >= a && l.startBar < z) { var c = clone(l); c._rel = l.startBar - a; b.lines.push(c); } });
+      cur = z; return b;
+    });
+  }
+  function shiftLine(l, dBars, barSec) {
+    var d = dBars * barSec; l.startBar += dBars; if (typeof l.start === 'number') l.start += d; if (typeof l.end === 'number') l.end += d;
+    (l.words || []).forEach(function (w) { if (typeof w.start === 'number') w.start += d; if (typeof w.end === 'number') w.end += d; });
+  }
+  function rebuild(blocks, map) {
+    var barSec = map.barSec || 2, cur = 0, plan = [], lines = [];
+    blocks.forEach(function (b) {
+      plan.push([b.name, b.bars]);
+      b.lines.forEach(function (l) { if (l._rel >= b.bars) return; var c = clone(l), want = cur + l._rel; shiftLine(c, want - c.startBar, barSec); delete c._rel; c.section = b.name; lines.push(c); });
+      cur += b.bars;
+    });
+    return { plan: plan, lines: lines, totalBars: cur, barSec: barSec, firstLine: lines.length ? lines[0].startBar : null };
+  }
+  function idxOk(bl, i) { return typeof i === 'number' && i >= 0 && i < bl.length; }
+  function applyOne(bl, op) {
+    var b;
+    if (op.op === 'dup' && idxOk(bl, op.i)) { b = clone(bl[op.i]); bl.splice(op.i + 1, 0, b); }
+    else if (op.op === 'del' && idxOk(bl, op.i) && bl.length > 1) bl.splice(op.i, 1);
+    else if (op.op === 'move' && idxOk(bl, op.i)) { b = bl.splice(op.i, 1)[0]; var to = Math.max(0, Math.min(bl.length, op.to)); bl.splice(to, 0, b); }
+    else if (op.op === 'copy' && idxOk(bl, op.i)) { b = clone(bl[op.i]); bl.splice(Math.max(0, Math.min(bl.length, op.to)), 0, b); }
+    else if (op.op === 'bars' && idxOk(bl, op.i)) bl[op.i].bars = Math.max(1, Math.min(32, op.bars));
+    else if (op.op === 'add' && NAMES.indexOf(op.name) >= 0) bl.splice(Math.max(0, Math.min(bl.length, op.at)), 0, { name: op.name, bars: Math.max(1, Math.min(16, op.bars || 4)), lines: [] });
+    return bl;
+  }
+  function apply(map, ops) {
+    if (!map || !map.plan) return map;
+    var bl = blocksOf(map); (ops || []).forEach(function (op) { applyOne(bl, op); });
+    var out = rebuild(bl, map); if (bl.length > 160) return map; return out;
+  }
+  /* ---- capire la frase ---- */
+  var ORD = { prim: 1, '1': 1, second: 2, '2': 2, terz: 3, '3': 3, quart: 4, '4': 4, ultim: -1 };
+  function secName(w) { if (!w) return null; if (/^ritornell|^chorus|^gancio/.test(w)) return 'ritornello'; if (/^strof/.test(w)) return 'strofa'; if (/^intro/.test(w)) return 'intro'; if (/^outro|^finale|^chiusura/.test(w)) return 'outro'; if (/^bridge|^ponte/.test(w)) return 'bridge'; if (/^pre/.test(w)) return 'pre'; return null; }
+  var SEC_RE = '(intro|strofa|strofe|ritornello|ritornelli|pre(?:-?ritornello)?|bridge|ponte|outro|finale|chiusura)';
+  function findRef(t, plan, after) {
+    // «il secondo ritornello», «ritornello 2», «l'ultima strofa», «il ritornello»
+    var re = new RegExp('(?:(prim|second|terz|quart|ultim)[oaie]\\s+)?' + SEC_RE + '(?:\\s+(\\d))?', 'g'), m, start = after || 0;
+    re.lastIndex = start; m = re.exec(t); if (!m) return null;
+    var name = secName(m[2]), occ = m[1] ? ORD[m[1]] : (m[3] ? +m[3] : 0), idx = [];
+    plan.forEach(function (s, i) { if (s[0] === name) idx.push(i); });
+    if (!idx.length) return { name: name, i: -1, end: re.lastIndex };
+    var i = occ === -1 ? idx[idx.length - 1] : occ > 0 ? idx[occ - 1] : (/(dupl|copi|sposta)/.test(t) && name === 'ritornello' ? idx[idx.length - 1] : idx[0]);
+    return { name: name, i: i == null ? -1 : i, end: re.lastIndex, occ: occ };
+  }
+  function whereTo(t, plan, from) {
+    if (/all.?inizio|in apertura|per prim/.test(t)) return 0;
+    if (/alla fine|in fondo|in chiusura/.test(t)) return plan.length;
+    var m = t.match(/(prima|dopo)\s+(?:del|della|dello|dell|l)?\s*/);
+    if (m) { var r = findRef(t, plan, t.indexOf(m[0]) + m[0].length); if (r && r.i >= 0) return m[1] === 'prima' ? r.i : r.i + 1; }
+    return null;
+  }
+  function parse(text, plan) {
+    var t = ' ' + String(text || '').toLowerCase().replace(/[’']/g, ' ').replace(/\s+/g, ' ') + ' ';
+    if (!plan || !plan.length) return null;
+    if (/(batteria|\b808\b|bass[oi]|melodi|accord|\bpad\b|\bvoc|arpegg|cassa|rullant|hi.?hat|piano|chitarr|archi|violin|synth|effett|riser|impact|reverse|riverb|\beco\b|delay|atmosfer)/.test(t)) return null;
+    var verb = t.match(/\b(duplica|raddoppia|ripeti|togli|taglia|elimina|cancella|rimuovi|leva|sposta|metti|copia|incolla|allunga|accorcia|aggiungi|inserisci)\b/);
+    if (!verb) return null; var v = verb[1], ref = findRef(t, plan, t.indexOf(v) + v.length);
+    // aggiungi una parte nuova (senza testo): «aggiungi un bridge di 4 battute dopo il ritornello»
+    if (/aggiungi|inserisci/.test(v)) {
+      if (!ref) return null; var nb = (t.match(/(\d{1,2})\s*battut/) || [])[1], at = whereTo(t.slice(ref.end), plan) ;
+      if (at == null) at = ref.name === 'intro' ? 0 : ref.name === 'outro' ? plan.length : (function () { var last = -1; plan.forEach(function (s, i) { if (s[0] === 'ritornello') last = i; }); return last >= 0 ? last + 1 : plan.length; })();
+      return { op: 'add', name: ref.name, bars: nb ? +nb : (ref.name === 'intro' || ref.name === 'outro' ? 2 : 4), at: at };
+    }
+    if (!ref) return null;
+    if (ref.i < 0) return { op: 'none', why: 'nella canzone non c\'è ' + (ref.occ ? 'quel ' : 'un ') + LABEL[ref.name] };
+    if (/duplica|raddoppia|ripeti/.test(v)) return { op: 'dup', i: ref.i };
+    if (/togli|taglia|elimina|cancella|rimuovi|leva/.test(v)) { if (/battut|più cort/.test(t)) return null; return { op: 'del', i: ref.i }; }
+    if (/allunga|accorcia/.test(v)) { var n = +((t.match(/(\d{1,2})\s*battut/) || [])[1] || (v === 'allunga' ? 2 : 1)); return { op: 'bars', i: ref.i, bars: plan[ref.i][1] + (v === 'allunga' ? n : -n) }; }
+    var to = whereTo(t.slice(ref.end), plan, ref.i);
+    if (to == null) return null;
+    if (/copia|incolla/.test(v)) return { op: 'copy', i: ref.i, to: to };
+    if (/sposta|metti/.test(v)) { if (to > ref.i) to -= 1; return { op: 'move', i: ref.i, to: to }; }
+    return null;
+  }
+  function nth(plan, i) { var n = 0; for (var k = 0; k <= i; k++) if (plan[k][0] === plan[i][0]) n++; var tot = plan.filter(function (s) { return s[0] === plan[i][0]; }).length; return LABEL[plan[i][0]] + (tot > 1 ? ' ' + n : ''); }
+  function describe(op, plan) {
+    if (!op) return ''; if (op.op === 'none') return '(' + op.why + ')';
+    if (op.op === 'dup') return 'duplico ' + nth(plan, op.i) + ' (' + plan[op.i][1] + ' battute)';
+    if (op.op === 'del') return 'tolgo ' + nth(plan, op.i);
+    if (op.op === 'bars') return nth(plan, op.i) + ': ' + plan[op.i][1] + ' → ' + op.bars + ' battute';
+    if (op.op === 'add') return 'aggiungo ' + LABEL[op.name] + ' di ' + op.bars + ' battute';
+    var pos = op.to <= 0 ? 'all\'inizio' : op.to >= plan.length ? 'alla fine' : 'prima di ' + nth(plan, op.to);
+    if (op.op === 'copy') return 'copio ' + nth(plan, op.i) + ' ' + pos;
+    if (op.op === 'move') return 'sposto ' + nth(plan, op.i) + ' ' + (op.to === 0 ? 'all\'inizio' : 'in posizione ' + (op.to + 1));
+    return '';
+  }
+  function summary(plan) { return plan.map(function (s, i) { return nth(plan, i) + ' (' + s[1] + ')'; }).join(' → '); }
+  return { apply: apply, parse: parse, describe: describe, summary: summary, NAMES: NAMES };
+});
+
+/*
+ * Intenzioni creative: «più aggressiva», «più malinconica», «più potente», «più commerciale», «più dolce»,
+ * «più energica», «più cupa». Ogni intenzione è una RICETTA DA PRODUTTORE: più scelte musicali insieme
+ * (scala, giro di accordi, velocità, batteria, 808, mix, master, struttura), ognuna con il suo «perché».
+ * Le scelte che hai annullato più volte (memoria delle decisioni) vengono saltate e lo dice.
+ *   match(testo) → id intenzione o null
+ *   apply(id, prod, ctx) → {nome, fatti:[{k, txt, why}], saltati:[txt]}   (modifica prod)
+ *   ctx = {plan, sections:[{name,startBar}], styleBpm, refused:{chiave: volte}}
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.CreativeIntents = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  function mixOf(p, lane) { p.mix = p.mix || {}; return (p.mix[lane] = Object.assign({ low: 0, mid: 0, midHz: 1200, high: 0, comp: 0, sat: 0, pan: 0, rev: 0, dly: 0, duck: 0 }, p.mix[lane] || {})); }
+  function lv(p, k, d) { p.levels = p.levels || {}; var v = p.levels[k] == null ? 1 : p.levels[k]; p.levels[k] = Math.max(0, Math.min(2, Math.round((v + d) * 100) / 100)); return Math.round(p.levels[k] * 100); }
+  function cl(v, a, b) { return Math.max(a, Math.min(b, Math.round(v * 100) / 100)); }
+  function b808(p) { p.b808 = Object.assign({ decay: 1.2, punch: 0.6, drive: 0.5, tone: 0.6, click: 0.3 }, p.b808 || {}); p.bassStyle = '808'; return p.b808; }
+  function pickProg(p, list) { var c = JSON.stringify(p.prog || []), ok = list.filter(function (x) { return JSON.stringify(x) !== c; }); return ok[((p.seed || 1) + (p.melSeed || 0)) % ok.length] || list[0]; }
+  function deg(pr) { var R = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII']; return pr.map(function (d) { return R[d]; }).join('-'); }
+  var I = {
+    aggressiva: { nome: 'Più aggressiva', re: /aggressiv|cattiv|violent|più dur[ao]|più rabbios|incazzat|minaccios/, steps: [
+      ['808drive', function (p) { var b = b808(p); b.drive = cl(b.drive + 0.25, 0, 1); b.punch = cl(b.punch + 0.2, 0, 1); return '808 più sporco e con più colpo'; }, 'la distorsione aggiunge armoniche: l\'808 si sente anche sulle casse piccole e suona minaccioso'],
+      ['kit', function (p) { if (p.kit === 'drill') return null; p.kit = 'drill'; return 'batteria drill (colpi secchi)'; }, 'rullante e hi-hat più duri e corti tagliano il mix'],
+      ['drumsat', function (p) { var m = mixOf(p, 'drums'); m.sat = cl(m.sat + 0.25, 0, 1); m.high = cl(m.high + 2, -12, 12); return 'batteria saturata e più brillante'; }, 'saturazione = transienti più aggressivi, alti = più presenza'],
+      ['minore', function (p) { if (p.mode === 'minore') return null; p.mode = 'minore'; return 'scala minore'; }, 'la scala minore porta tensione'],
+      ['bpm', function (p) { if (p.bpm >= 150) return null; p.bpm = Math.min(160, p.bpm + 6); return 'velocità ' + p.bpm + ' BPM'; }, 'un po\' più veloce = più urgenza'],
+      ['heavy', function (p) { if (p.heavy) return null; p.heavy = true; return 'arrangiamento pesante'; }, 'più colpi e più basso nelle parti forti']] },
+    malinconica: { nome: 'Più malinconica', re: /malinconic|malinconia|nostalgic|più trist|struggent|commovent|emozionant/, steps: [
+      ['minore', function (p) { if (p.mode === 'minore') return null; p.mode = 'minore'; return 'scala minore'; }, 'il minore è il colore della tristezza nella musica occidentale'],
+      ['prog', function (p) { var pr = pickProg(p, p.mode === 'minore' ? [[0, 5, 2, 6], [0, 3, 6, 5], [5, 6, 0, 0], [0, 5, 3, 4]] : [[5, 3, 0, 4], [0, 4, 5, 3]]); p.prog = pr.slice(); p.chordBars = null; return 'giro ' + deg(pr); }, 'giri che passano dal VI grado sospendono e «non risolvono»: suonano nostalgici'],
+      ['bpm', function (p) { if (p.bpm <= 70) return null; p.bpm = Math.max(60, p.bpm - 8); return 'più lenta: ' + p.bpm + ' BPM'; }, 'più spazio tra le note = più respiro e malinconia'],
+      ['pad', function (p) { return 'atmosfera al ' + lv(p, 'pad', 0.2) + '%'; }, 'gli archi/pad lunghi creano il «letto» emotivo'],
+      ['drumsdown', function (p) { return 'batteria al ' + lv(p, 'batteria', -0.15) + '%'; }, 'meno batteria lascia più spazio alla voce e all\'armonia'],
+      ['leadrev', function (p) { var m = mixOf(p, 'lead'); m.rev = cl(m.rev + 0.2, 0, 1); return 'melodia con più riverbero'; }, 'il riverbero allontana la melodia: suona come un ricordo'],
+      ['piano', function (p) { p.inst = Object.assign({}, p.inst || {}); if (p.inst.melodia === 'piano') return null; p.inst.melodia = 'piano'; return 'melodia al pianoforte'; }, 'il pianoforte è lo strumento più usato nelle ballate tristi']] },
+    potente: { nome: 'Più potente', re: /potent|potenza|epic[ao]|grandios|esplosiv|più grand|più pien[ao]|più impatto/, steps: [
+      ['drumsup', function (p) { return 'batteria al ' + lv(p, 'batteria', 0.15) + '%'; }, 'la batteria è il motore dell\'energia'],
+      ['bassup', function (p) { var v = lv(p, 'basso', 0.15), m = mixOf(p, 'bass'); m.low = cl(m.low + 2, -12, 12); return '808/basso al ' + v + '% con più sub'; }, 'il sub-basso si sente nel petto: dà potenza fisica'],
+      ['chorusfull', function (p) { p.secMix = Object.assign({}, p.secMix || {}); p.secMix.ritornello = Object.assign({}, p.secMix.ritornello || {}, { pad: 1, chords: 0.85, arp: 0.9 }); return 'ritornello più pieno (pad, accordi, arpeggio)'; }, 'il ritornello deve essere la parte più densa: contrasto con la strofa'],
+      ['impact', function (p, c) { var r = (c.sections || []).filter(function (s) { return s.name === 'ritornello'; }); if (!r.length) return null; var have = (p.fxList || []).filter(function (f) { return f.type === 'impact'; }).length; if (have) return null; p.fxList = (p.fxList || []).concat(r.map(function (s) { return { type: 'impact', bar: s.startBar }; })); return 'impatto all\'inizio di ' + r.length + ' ritornell' + (r.length > 1 ? 'i' : 'o'); }, 'un colpo forte sull\'entrata del ritornello segna il cambio di energia'],
+      ['master', function (p) { p.mpro = Object.assign({ target: 'forte', width: 1.1, sat: 0.25, comp: 0.35, match: false }, p.mpro || {}); p.mpro.target = 'forte'; p.mpro.width = cl(Math.max(p.mpro.width, 1.35), 0, 2); return 'master forte e più largo'; }, 'volume finale più alto e stereo più ampio = suono più grande']] },
+    commerciale: { nome: 'Più commerciale', re: /commercial|radiofonic|orecchiabil|da classifica|mainstream|più pop\b|hit|tormentone/, steps: [
+      ['prog', function (p) { var pr = pickProg(p, p.mode === 'minore' ? [[0, 5, 2, 6], [0, 5, 3, 4]] : [[0, 4, 5, 3], [5, 3, 0, 4]]); p.prog = pr.slice(); p.chordBars = null; return 'giro ' + deg(pr); }, 'sono i giri più usati nelle hit: l\'orecchio li riconosce subito'],
+      ['hook', function (p) { return 'melodia (gancio) al ' + lv(p, 'melodia', 0.15) + '%'; }, 'il gancio melodico deve sentirsi chiaro'],
+      ['intro', function (p, c) { var pl = c.plan || []; if (!pl.length || pl[0][0] !== 'intro' || pl[0][1] <= 1) return null; p.form = (p.form || []).concat([{ op: 'bars', i: 0, bars: 1 }]); return 'intro corta (1 battuta)'; }, 'nelle hit la voce entra presto: chi ascolta non salta il brano'],
+      ['bpm', function (p, c) { var t = c.styleBpm; if (!t || Math.abs(p.bpm - t) <= 4) return null; p.bpm = Math.round((p.bpm + t * 2) / 3); return 'velocità ' + p.bpm + ' BPM (tipica del genere)'; }, 'il tempo tipico del genere è quello che il pubblico si aspetta'],
+      ['voice', function (p) { var m = mixOf(p, 'voice'); m.comp = cl(m.comp + 0.2, 0, 1); m.high = cl(m.high + 2, -12, 12); return 'voce compressa e brillante'; }, 'nelle produzioni commerciali la voce è sempre davanti e chiara'],
+      ['master', function (p) { p.mpro = Object.assign({ target: 'forte', width: 1.1, sat: 0.25, comp: 0.35, match: false }, p.mpro || {}); p.mpro.target = 'streaming'; return 'master per Spotify/streaming'; }, 'volume giusto per le piattaforme (niente schiacciamento)']] },
+    dolce: { nome: 'Più dolce', re: /più dolc|rilassat|morbid|tranquill|chill|soft|delicat/, steps: [
+      ['bpm', function (p) { if (p.bpm <= 70) return null; p.bpm = Math.max(60, p.bpm - 6); return 'più lenta: ' + p.bpm + ' BPM'; }, 'meno fretta = più calma'],
+      ['kit', function (p) { if (p.kit === 'lofi') return null; p.kit = 'lofi'; return 'batteria lo-fi morbida'; }, 'colpi smussati e meno aggressivi'],
+      ['drumsoft', function (p) { var m = mixOf(p, 'drums'); m.sat = cl(m.sat - 0.2, 0, 1); m.high = cl(m.high - 2, -12, 12); return 'batteria più scura e pulita (' + lv(p, 'batteria', -0.2) + '%)'; }, 'meno alti e meno distorsione = suono gentile'],
+      ['pad', function (p) { return 'atmosfera al ' + lv(p, 'pad', 0.15) + '%'; }, 'suoni lunghi e morbidi avvolgono'],
+      ['leadrev', function (p) { var m = mixOf(p, 'lead'); m.rev = cl(m.rev + 0.15, 0, 1); return 'melodia con più riverbero'; }, 'spazio e morbidezza']] },
+    energica: { nome: 'Più energica', re: /energic|più carica|movimentat|ballabil|più ritm|più vivac|più spinta/, steps: [
+      ['bpm', function (p) { if (p.bpm >= 160) return null; p.bpm = Math.min(165, p.bpm + 8); return 'più veloce: ' + p.bpm + ' BPM'; }, 'più battiti al minuto = più energia'],
+      ['duck', function (p) { var m = mixOf(p, 'bass'); m.duck = cl(m.duck + 0.25, 0, 1); var a = mixOf(p, 'pad'); a.duck = cl(a.duck + 0.25, 0, 1); return 'sidechain su 808 e pad (effetto «pompa»)'; }, 'il suono che respira con la cassa fa muovere'],
+      ['drumsup', function (p) { return 'batteria al ' + lv(p, 'batteria', 0.1) + '%'; }, 'il ritmo davanti'],
+      ['straight', function (p) { if (!p.groove || !p.groove.swing) return null; p.groove = Object.assign({}, p.groove, { swing: 0 }); return 'ritmo dritto (niente swing)'; }, 'il ritmo dritto spinge di più']] },
+    cupa: { nome: 'Più cupa', re: /cup[ao]|più scur[ao]|dark|tenebros|inquietant|oscur/, steps: [
+      ['minore', function (p) { if (p.mode === 'minore') return null; p.mode = 'minore'; return 'scala minore'; }, 'il minore scurisce subito'],
+      ['low', function (p) { p.tonic = ((p.tonic || 0) + 10) % 12; return 'tonalità più bassa di un tono'; }, 'note più basse = colore più scuro'],
+      ['dark', function (p) { mixOf(p, 'chords').high = cl(mixOf(p, 'chords').high - 3, -12, 12); mixOf(p, 'lead').high = cl(mixOf(p, 'lead').high - 2, -12, 12); return 'accordi e melodia meno brillanti'; }, 'togliere gli alti rende il suono chiuso e misterioso'],
+      ['pad', function (p) { return 'atmosfera al ' + lv(p, 'pad', 0.1) + '%'; }, 'un tappeto scuro sotto tutto']] }
+  };
+  function match(t) { t = ' ' + String(t || '').toLowerCase() + ' '; for (var k in I) if (I[k].re.test(t)) return k; return null; }
+  function apply(id, p, ctx) {
+    var it = I[id]; if (!it) return null; ctx = ctx || {}; var ref = ctx.refused || {}, fatti = [], saltati = [];
+    it.steps.forEach(function (s) {
+      if ((ref[id + ':' + s[0]] || 0) >= 2) { saltati.push(s[0]); return; }
+      var r = s[1](p, ctx); if (r) fatti.push({ k: id + ':' + s[0], txt: r, why: s[2] });
+    });
+    return { nome: it.nome, fatti: fatti, saltati: saltati };
+  }
+  return { match: match, apply: apply, LIST: Object.keys(I).map(function (k) { return { id: k, nome: I[k].nome }; }) };
 });
 
 /*
@@ -13602,9 +13804,13 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
   });
   // Mappa della canzone: se c'è un testo, la struttura della base viene dal testo (righe sulle battute giuste).
   function songMap() {
-    var s = cur(), p = s.prod;
-    if (p.useLyrics === false || !lyricLines(s.lyrics).length) return null;
-    return SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {} });
+    var s = cur(), p = s.prod, m = null;
+    if (!(p.useLyrics === false || !lyricLines(s.lyrics).length)) m = SongMap.build(s.lyrics, { bpm: p.bpm, syll: LyricsEngine.lineSyllables, modes: s.modes || {} });
+    if (p.form && p.form.length) { // montaggio delle parti (duplica, togli, sposta…): il testo segue la sua parte
+      if (!m) { var b0 = p.bars || 8; m = { plan: Arranger.planStructure(b0), lines: [], totalBars: b0, barSec: 240 / p.bpm, firstLine: null }; }
+      m = SongForm.apply(m, p.form);
+    }
+    return m;
   }
   /* iPhone: base a 24 kHz (25% di memoria in meno, misurata); computer: 32 kHz */
   var BASE_SR = (function () { try { return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ? 24000 : 32000; } catch (e) { return 32000; } })();
@@ -15055,6 +15261,15 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
       if (/nuova variante/i.test(cmd)) { st.prod.seed = (st.prod.seed || 1) + 1; said.push('nuova variante'); extra.variant = true; return; }
       if (/crea la base dal testo|base dal testo/i.test(cmd)) { extra.fromText = true; said.push('base dal testo'); return; }
       if (/\b(esporta|scarica|salva) (la )?(base|canzone|traccia|mp3|wav)\b/i.test(cmd)) { extra.export = true; said.push('esporto la base (file audio)'); return; }
+      // montaggio delle parti della canzone
+      var fop = SongForm.parse(cmd, st.ctx.plan);
+      if (fop) { said.push(SongForm.describe(fop, st.ctx.plan)); if (fop.op !== 'none') { st.prod.form = (st.prod.form || []).concat([fop]); st.ctx.plan = SongForm.apply({ plan: st.ctx.plan, lines: [], barSec: 1 }, [fop]).plan; extra.form = true; } return; }
+      // intenzioni creative: ricette da produttore con il perché
+      var ci = CreativeIntents.match(cmd);
+      if (ci) { var r0 = CreativeIntents.apply(ci, st.prod, { plan: st.ctx.plan, sections: st.ctx.sections, styleBpm: (Arranger.STYLES[st.prod.genre] || {}).bpm, refused: decRefused() }); st.intentKeys = (st.intentKeys || []).concat(r0.fatti.map(function (f) { return f.k; }));
+        if (r0.fatti.length) said.push(r0.nome + ' → ' + r0.fatti.map(function (f) { return f.txt + ' (' + f.why + ')'; }).join('; ') + (r0.saltati.length ? '. Salto ' + r0.saltati.length + ' scelta/e che hai annullato più volte' : ''));
+        else said.push('(' + r0.nome.toLowerCase() + ': è già tutto così' + (r0.saltati.length ? ', e salto le scelte che hai annullato più volte' : '') + ')');
+        return; }
       st.skipPA = false; var r = StudioAgent.interpret(cmd, st), pa = st.skipPA ? { understood: false } : ProducerActions.interpret(cmd, st.prod);
       if (pa.understood) { ['bpm', 'mode', 'bassStyle', 'reverb', 'levels', 'sec', 'tonic', 'genre', 'tune'].forEach(function (k) { if (pa.state[k] !== undefined) st.prod[k] = pa.state[k]; }); said = said.concat(pa.notes); }
       said = said.concat(r.changes);
@@ -15064,15 +15279,43 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
   }
   function talkState() {
     var s = cur(), b = SESSION.base;
-    return { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())), ctx: { progs: (StylePresets.PROGS[s.prod.mode] || StylePresets.PROGS.minore || []), inst: Instruments.CATALOG.map(function (c) { return { id: c.id, nome: c.nome }; }), sections: b && b.sections ? b.sections.map(function (x) { return { name: x.name, startBar: x.startBar }; }) : [], leadNotes: b && b.events ? b.events.lead.filter(function (n) { return n.bar != null; }).map(function (n) { return { bar: n.bar, step: n.step, len: Math.max(1, Math.round(n.len || 2)), midi: Math.round(n.midi) }; }) : [] } };
+    var pm0 = null; try { pm0 = songMap(); } catch (e) {}
+    return { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())), ctx: { plan: pm0 ? pm0.plan : Arranger.planStructure(s.prod.bars || 8), progs: (StylePresets.PROGS[s.prod.mode] || StylePresets.PROGS.minore || []), inst: Instruments.CATALOG.map(function (c) { return { id: c.id, nome: c.nome }; }), sections: b && b.sections ? b.sections.map(function (x) { return { name: x.name, startBar: x.startBar }; }) : [], leadNotes: b && b.events ? b.events.lead.filter(function (n) { return n.bar != null; }).map(function (n) { return { bar: n.bar, step: n.step, len: Math.max(1, Math.round(n.len || 2)), midi: Math.round(n.midi) }; }) : [] } };
   }
-  async function talkUndo() {
-    for (var i = TALK.length - 1; i >= 0; i--) { var h = TALK[i]; if (h.before && (h.state === 'attesa' || h.state === 'accettato')) { cur().prod = h.before.prod; LIB.settings.mic = h.before.mic; persist(); h.state = 'annullato'; talkRender(); await talkApply(h.mic); return 'Annullato: «' + h.text + '». La base è tornata com\'era prima.'; } }
-    return 'Non c\'è niente da annullare.';
+  /* ---------- Cronologia della canzone: annulla, ripristina, ascolta prima/dopo (A/B) ---------- */
+  function histOf() { var s = cur(); return s.hist || (s.hist = { u: [], r: [] }); }
+  function histSnap() { return { p: JSON.stringify(cur().prod), m: JSON.stringify(micSet()) }; }
+  function histPush(label, snap) { var h = histOf(); snap = snap || histSnap(); snap.l = label; h.u.push(snap); if (h.u.length > 15) h.u.shift(); h.r = []; persist(); histUi(); }
+  async function histGo(dir, play) {
+    var h = histOf(), from = dir < 0 ? h.u : h.r, to = dir < 0 ? h.r : h.u; if (!from.length) return null;
+    var cs = histSnap(), sn = from.pop(); cs.l = sn.l; to.push(cs);
+    cur().prod = JSON.parse(sn.p); LIB.settings.mic = JSON.parse(sn.m); persist(); decMark(sn.l, dir > 0); histUi();
+    await talkApply(sn.m !== cs.m); if (play) { try { dwPlay(0); } catch (e) {} } return sn.l;
   }
+  function histUi() {
+    var h = histOf(), w = $('#hist-what'); if (!w) return;
+    $('#hist-undo').disabled = $('#hist-a').disabled = !h.u.length; $('#hist-redo').disabled = $('#hist-b').disabled = !h.r.length;
+    w.textContent = h.u.length ? 'Ultima modifica: «' + h.u[h.u.length - 1].l + '»' + (h.r.length ? ' · da rifare: «' + h.r[h.r.length - 1].l + '»' : '') : (h.r.length ? 'Da rifare: «' + h.r[h.r.length - 1].l + '»' : 'Le modifiche si potranno annullare e confrontare qui');
+  }
+  async function histBtn(dir, play, msg) { var l = await histGo(dir, play); var w = $('#hist-what'); if (w && l) w.textContent = msg.replace('%', l); else if (w) w.textContent = 'Niente da ' + (dir < 0 ? 'annullare' : 'rifare') + '.'; }
+  $('#hist-undo').addEventListener('click', function () { histBtn(-1, false, 'Annullato: «%». Premi ↷ per rifarlo.'); });
+  $('#hist-redo').addEventListener('click', function () { histBtn(1, false, 'Rifatto: «%».'); });
+  $('#hist-a').addEventListener('click', function () { histBtn(-1, true, '▶ A: ascolti com\'era PRIMA di «%». Premi B per sentire dopo.'); });
+  $('#hist-b').addEventListener('click', function () { histBtn(1, true, '▶ B: ascolti DOPO «%». Premi A per sentire prima.'); });
+  /* memoria delle decisioni: cosa hai tenuto e cosa hai annullato (usata dalle intenzioni creative) */
+  function decs() { return LIB.settings.decisions || (LIB.settings.decisions = []); }
+  function decAdd(text, said, keys) { decs().push({ t: Date.now(), text: String(text).slice(0, 80), said: (said || []).slice(0, 3).map(function (x) { return String(x).slice(0, 120); }), keys: keys || [], kept: true }); if (decs().length > 200) decs().shift(); persist(); }
+  function decMark(label, kept) { var D = decs(); for (var i = D.length - 1; i >= 0; i--) if (D[i].text === String(label).slice(0, 80)) { D[i].kept = kept; break; } persist(); }
+  function decRefused() { var r = {}; decs().forEach(function (d) { if (!d.kept) (d.keys || []).forEach(function (k) { r[k] = (r[k] || 0) + 1; }); }); return r; }
+  function decSummary() { var D = decs(); if (!D.length) return ''; var kept = D.filter(function (d) { return d.kept; }), no = D.filter(function (d) { return !d.kept; }); return (kept.length ? '• Tenute (' + kept.length + '): ' + kept.slice(-6).map(function (d) { return '«' + d.text + '»'; }).join(', ') : '') + (no.length ? '\n• Annullate (' + no.length + '): ' + no.slice(-6).map(function (d) { return '«' + d.text + '»'; }).join(', ') : ''); }
+  async function talkUndo() { var l = await histGo(-1); return l ? 'Annullato: «' + l + '». La base è tornata com\'era prima. Scrivi «ripristina» per rifarlo.' : 'Non c\'è niente da annullare.'; }
   async function talkGo(text) {
     text = (text || '').trim(); if (!text) return;
-    if (/^(annulla|torna indietro|undo|rimetti com era|rimetti come prima)\b/i.test(text.replace(/[’']/g, ' '))) { var u = await talkUndo(); TALK.push({ text: text, reply: u, state: 'nulla' }); talkRender(); return; }
+    var tq = text.toLowerCase().replace(/[’']/g, ' ');
+    if (/^(annulla|torna indietro|undo|rimetti com era|rimetti come prima)\b/.test(tq)) { var u = await talkUndo(); TALK.push({ text: text, reply: u, state: 'nulla' }); talkRender(); return; }
+    if (/^(ripristina|rifai|redo|rimetti la modifica)\b/.test(tq)) { var rl = await histGo(1); TALK.push({ text: text, reply: rl ? 'Rifatto: «' + rl + '».' : 'Non c\'è niente da rifare.', state: 'nulla' }); talkRender(); return; }
+    if (/^(ascolta|fammi sentire|senti) (la versione )?(prima|di prima|a)\b/.test(tq)) { var al = await histGo(-1, true); TALK.push({ text: text, reply: al ? '▶ Ascolti com\'era PRIMA di «' + al + '». Scrivi «ascolta dopo» per confrontare.' : 'Non c\'è una versione precedente.', state: 'nulla' }); talkRender(); return; }
+    if (/^(ascolta|fammi sentire|senti) (la versione )?(dopo|nuova|b)\b/.test(tq)) { var bl = await histGo(1, true); TALK.push({ text: text, reply: bl ? '▶ Ascolti DOPO «' + bl + '».' : 'Stai già ascoltando l\'ultima versione.', state: 'nulla' }); talkRender(); try { if (!bl) dwPlay(0); } catch (e) {} return; }
     var s = cur(), a = aiSet(), before = { prod: JSON.parse(JSON.stringify(s.prod)), mic: JSON.parse(JSON.stringify(micSet())) }, st = talkState(), reply = '', lyr = [];
     var cmds = [text];
     if (a.engine !== 'regole') {
@@ -15088,6 +15331,7 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
     if (a.engine !== 'regole' && !run.said.length) { st = talkState(); run = runCommands([text], st); if (run.said.length) reply = (reply ? reply + ' ' : '') + '(Ho usato le regole sulla tua frase.)'; }
     if (!run.said.length && !lyr.length) { TALK.push({ text: text, reply: (reply ? reply + ' ' : '') + (a.engine === 'regole' ? 'Non l\'ho capito, quindi non ho cambiato niente. Prova: ' + StudioAgent.EXAMPLES.slice(0, 4).join(' · ') : 'Nessuna modifica alla base.'), state: 'nulla' }); talkRender(); return; }
     if (!run.extra.export && !run.extra.fromText && !st.micChanged && JSON.stringify(before.prod) === JSON.stringify(st.prod)) { TALK.push({ text: text, reply: run.said.every(function (x) { return /^\(/.test(x); }) ? run.said.join(' ').replace(/^\(|\)$/g, '') + '. Non ho cambiato niente.' : 'Era già così (' + run.said.join('; ') + '): non ho cambiato niente.', state: 'nulla' }); talkRender(); return; }
+    histPush(text.slice(0, 60), { p: JSON.stringify(before.prod), m: JSON.stringify(before.mic) }); decAdd(text, run.said, st.intentKeys);
     s.prod = st.prod; LIB.settings.mic = st.mic; if (before.prod.genre !== s.prod.genre && Arranger.STYLES[s.prod.genre]) { s.prod.mix = null; applyRecipe(s.prod.genre); } persist();
     TALK.push({ text: text, reply: (reply ? reply + ' ' : '') + (run.said.length ? 'Fatto: ' + run.said.join('; ') + '. Se non ti piace, Annulla.' : ''), lyrics: lyr, state: run.said.length ? 'attesa' : 'nulla', before: before, mic: !!st.micChanged }); talkRender();
     coachRec('change', coachCtx(), { role: 'chat', from: null, to: text.slice(0, 40) });
@@ -15105,7 +15349,7 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
     var lb = e.target.closest('[data-tkl]'); if (lb) { var hh = TALK[+lb.getAttribute('data-tkl')], s1 = cur(); s1.lyrics = (s1.lyrics ? s1.lyrics.replace(/\s+$/, '') + '\n' : '') + hh.lyrics.join('\n'); persist(); dwFill(); dwChanged(true); lb.textContent = 'Aggiunte ✓'; lb.disabled = true; return; }
     var b = e.target.closest('[data-tk]'); if (!b) return; var h = TALK[TALK.length - 1]; if (!h || h.state !== 'attesa') return;
     if (b.getAttribute('data-tk') === 'ok') { h.state = 'accettato'; coachRec('like', coachCtx()); talkRender(); return; }
-    cur().prod = h.before.prod; LIB.settings.mic = h.before.mic; persist(); h.state = 'annullato'; coachRec('dislike', coachCtx()); talkRender(); await talkApply(h.mic);
+    h.state = 'annullato'; coachRec('dislike', coachCtx()); talkRender(); await histGo(-1);
   });
   // ---------- Mastering professionale, riferimento A/B, tracce separate ----------
   var MP = { ref: null, out: null };
@@ -15869,7 +16113,7 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
   function dwWs(ws) {
     LIB.settings.ws = ws; persist(); document.body.dataset.ws = ws; try { dwSteps(); tbRender(); } catch (e) {}
     var adv = !!LIB.settings.adv; $$('#v-daw [data-ws]').forEach(function (el) { var a = el.getAttribute('data-adv'); el.hidden = (' ' + el.getAttribute('data-ws') + ' ').indexOf(' ' + ws + ' ') < 0 || (!adv && a && (' ' + a + ' ').indexOf(' ' + ws + ' ') >= 0); });
-    try { foldApply(ws); } catch (e) {} // dopo aver mostrato/nascosto i pannelli del passo
+    try { foldApply(ws); histUi(); } catch (e) {} // dopo aver mostrato/nascosto i pannelli del passo
     var ab = $('#dw-adv'); if (ab) ab.textContent = adv ? 'Nascondi strumenti avanzati' : 'Mostra strumenti avanzati';
     $$('#tabs a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-ws') === ws); });
     if (ws === 'base' || ws === 'voce' || ws === 'mix') setTimeout(function () { if (SESSION.base) { dwDraw(SESSION.base); prDraw(); } }, 30);
@@ -16187,10 +16431,10 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
     $('#sai-where').textContent = { testo: '· pagina Testo', base: '· pagina Base', voce: '· pagina Voce', mix: '· pagina Mix', libreria: '· Libreria' }[ws] || '';
   }
   function saiSay(t) { saiLog().push({ who: 'ai', t: t }); saiSave(); saiRender(); if (SAI.speak && window.speechSynthesis) { try { speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(t.replace(/[«»•]/g, '')); u.lang = 'it-IT'; u.rate = 1.05; speechSynthesis.speak(u); } catch (e) {} } }
-  function saiIsCmd(text) { if (/^(annulla|torna indietro|undo|rimetti come prima)\b/i.test(String(text).trim())) return true; try { var st = talkState(), run = runCommands([text], st); return run.said.length > 0; } catch (e) { return false; } }
+  function saiIsCmd(text) { if (/^(annulla|torna indietro|undo|rimetti come prima|ripristina|rifai|redo|ascolta (la versione )?(prima|dopo|a|b)|fammi sentire (prima|dopo))\b/i.test(String(text).trim().replace(/[’']/g, ' '))) return true; try { var st = talkState(), run = runCommands([text], st); return run.said.length > 0; } catch (e) { return false; } }
   async function saiAsk(text) {
     text = String(text || '').trim(); if (!text) return; saiLog().push({ who: 'me', t: text }); saiSave(); saiRender();
-    var s = cur(), p = s.prod, r = SultanAI.respond(text, { page: dwWsName(), lyrics: s.lyrics || '', summary: (p.atmNome || (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre)) + ', ' + p.bpm + ' BPM, ' + NOTES[p.tonic] + ' ' + p.mode, memory: saiMem(), presets: StylePresets.LIST, LyricsEngine: LyricsEngine, WordBank: WordBank, bank: wbStore(), isStudioCommand: saiIsCmd, seed: saiLog().length });
+    var s = cur(), p = s.prod, r = SultanAI.respond(text, { page: dwWsName(), lyrics: s.lyrics || '', summary: (p.atmNome || (Arranger.STYLES[p.genre] ? Arranger.STYLES[p.genre].label : p.genre)) + ', ' + p.bpm + ' BPM, ' + NOTES[p.tonic] + ' ' + p.mode, memory: saiMem(), presets: StylePresets.LIST, LyricsEngine: LyricsEngine, WordBank: WordBank, bank: wbStore(), isStudioCommand: saiIsCmd, decisions: decSummary(), seed: saiLog().length });
     var after = '';
     for (var i = 0; i < r.actions.length; i++) {
       var a = r.actions[i];
@@ -16350,6 +16594,7 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
   }
   async function tbCreate(fresh) {
     var s = cur(), m = $('#tb-now'); if (!(s.lyrics || '').trim()) { m.textContent = 'Scrivi o incolla prima il testo qui sopra.'; return; } SESSION.useImported = false; DW.bufKey = '';
+    if (s.brainFor) histPush(fresh ? 'cambia base' : 'crea base');
     $('#tb-go').disabled = $('#tb-new').disabled = true; m.textContent = 'Sto componendo una base nuova dal tuo testo…';
     try {
       if (false) { }
@@ -16458,6 +16703,32 @@ body[data-ws="libreria"] #dw-p-suoni { order: 3; }
   $('#snd-tabs').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; SND.g = b.getAttribute('data-g'); sndRender(); });
   $('#snd-list').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) sndPlay(b); });
   sndRender();
+  /* ---------- Orecchio IA: LAION CLAP (Apache 2.0) ascolta la base e la descrive; confronto con ciò che doveva essere ---------- */
+  var CLAP = { clf: null };
+  var CLAP_INST = { piano: 'piano', epiano: 'electric piano', violins: 'violin', violin: 'violin', cellos: 'cello', guitar: 'acoustic guitar', nylon: 'acoustic guitar', eguitar: 'electric guitar', flute: 'flute', trumpet: 'trumpet', sax: 'saxophone', marimba: 'marimba', harp: 'harp', bells: 'bells', glock: 'glockenspiel', organ: 'organ', choir: 'choir', kalimba: 'kalimba' };
+  var CLAP_LAB = ['piano', 'electric piano', 'violin', 'cello', 'acoustic guitar', 'electric guitar', 'flute', 'trumpet', 'saxophone', 'marimba', 'harp', 'bells', 'organ', 'synthesizer', 'choir', '808 bass', 'drum kit'];
+  var CLAP_MOOD = [['sad emotional music', 'triste'], ['aggressive dark music', 'aggressiva e scura'], ['happy upbeat music', 'allegra'], ['calm relaxing music', 'calma'], ['epic powerful music', 'epica e potente'], ['romantic love song', 'romantica']];
+  async function clapRun() {
+    var o = $('#qc-clap-out'), btn = $('#qc-clap'); btn.disabled = true;
+    try {
+      if (!CLAP.clf) { o.textContent = 'Scarico l\'orecchio IA (circa 156 MB, solo la prima volta)…'; var tf = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2/dist/transformers.min.js'); tf.env.backends.onnx.wasm.wasmPaths = new URL('tf/', location.href).href; CLAP.clf = await tf.pipeline('zero-shot-audio-classification', 'Xenova/clap-htsat-unfused', { dtype: 'q8', progress_callback: function (x) { if (x && x.progress && x.file && /onnx/.test(x.file)) o.textContent = 'Scarico l\'orecchio IA: ' + Math.round(x.progress) + '%'; } }); }
+      o.textContent = 'Ascolto la base…'; var mx = buildMix({ voice: false }), x = mx.samples, sr = mx.sr, SR = 48000, b = SESSION.base, p = cur().prod;
+      function seg(t0, t1) { var n = Math.round((t1 - t0) * SR), y = new Float32Array(n), r = sr / SR; for (var i = 0; i < n; i++) { var q = t0 * sr + i * r, j = Math.floor(q), f = q - j; y[i] = (x[j] || 0) * (1 - f) + (x[j + 1] || 0) * f; } return y; }
+      var secs = (b && b.sections ? b.sections : [{ name: 'base', startSec: 0, endSec: x.length / sr }]).filter(function (s, i, a) { return a.findIndex(function (z) { return z.name === s.name; }) === i; }).slice(0, 4), lines = [], inst = {}, mood = {};
+      for (var k = 0; k < secs.length; k++) {
+        var s = secs[k], a0 = s.startSec, a1 = Math.min(s.endSec, a0 + 10); if (a1 - a0 < 2) continue; var y = seg(a0, a1);
+        var ri = (await CLAP.clf(y, CLAP_LAB)).sort(function (u, v) { return v.score - u.score; }), rm = (await CLAP.clf(y, CLAP_MOOD.map(function (m) { return m[0]; }))).sort(function (u, v) { return v.score - u.score; });
+        ri.forEach(function (r) { inst[r.label] = Math.max(inst[r.label] || 0, r.score); }); rm.forEach(function (r) { mood[r.label] = (mood[r.label] || 0) + r.score / secs.length; });
+        lines.push('<b>' + esc(s.name) + '</b>: ' + ri.slice(0, 3).map(function (r) { return esc(r.label) + ' ' + Math.round(r.score * 100) + '%'; }).join(', '));
+      }
+      var top = Object.keys(mood).sort(function (u, v) { return mood[v] - mood[u]; })[0], moodIt = (CLAP_MOOD.filter(function (m) { return m[0] === top; })[0] || [0, top])[1];
+      var want = Object.keys(p.inst || {}).map(function (r) { return [r, CLAP_INST[p.inst[r]]]; }).filter(function (z) { return z[1]; }), heard = want.map(function (z) { var sc = inst[z[1]] || 0; return z[0] + ' (' + z[1] + '): ' + (sc >= 0.15 ? 'sentito ✓' : 'poco udibile') + ' ' + Math.round(sc * 100) + '%'; });
+      o.innerHTML = lines.join('<br>') + '<br><b>Emozione che sento:</b> ' + esc(moodIt) + ' (' + Math.round(mood[top] * 100) + '%)' + (heard.length ? '<br><b>Strumenti che la base dovrebbe avere:</b> ' + heard.map(esc).join(' · ') : '') + '<br><span class="muted">Ipotesi del modello, non misure: affidabile su strumenti acustici, meno su chitarra, sax e generi elettronici.</span>';
+      try { var D = LIB.settings.ears || (LIB.settings.ears = []); D.push({ t: Date.now(), genre: p.genre, mood: moodIt, inst: Object.keys(inst).sort(function (u, v) { return inst[v] - inst[u]; }).slice(0, 3) }); if (D.length > 50) D.shift(); persist(); } catch (e) {}
+    } catch (e) { o.textContent = 'L\'orecchio IA non ce l\'ha fatta: ' + ((e && e.message) || e) + '. Su iPhone può mancare memoria: chiudi le altre app e riprova.'; }
+    btn.disabled = false;
+  }
+  $('#qc-clap').addEventListener('click', clapRun);
   SHOW.daw = function () { applyMoodBg(moodNow()); dwWs(dwWsName()); try { tbRender(); } catch (e) {} projLine(); aiRender(); atmRender(); try { pfRender(); } catch (e) {} verRender(); dwFill(); mixRender(); clipsRender(); dsRender(); mpRender(); talkRender(); setTimeout(prDraw, 400); micRender(); learnRender(); sepInfo(); agentsRender(); dwRefresh().then(function () { var k = SESSION.baseKey; if (AG.key !== k) { AG.key = k; agentsRun(); } }); };
 
   /* base importata */
